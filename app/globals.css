@@ -39,6 +39,9 @@
   .border-stroke {
     border-color: var(--color-stroke);
   }
+  .border-primary {
+    border-color: var(--color-primary);
+  }
   .text-dark {
     color: var(--color-dark);
   }

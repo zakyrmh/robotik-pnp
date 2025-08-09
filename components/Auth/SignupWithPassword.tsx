@@ -1,34 +1,69 @@
 "use client";
-import { EmailIcon, PasswordIcon, UserIcon } from "@/assets/icons";
+
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import { auth, db } from "@/lib/firebaseConfig";
+import { doc, setDoc } from "firebase/firestore";
 import InputGroup from "../FormElements/InputGroup";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { EmailIcon, PasswordIcon, UserIcon } from "@/assets/icons";
 
 export default function SignupWithPassword() {
-  const [data, setData] = useState({
-    name: process.env.NEXT_PUBLIC_DEMO_USER_NAME || "",
-    email: process.env.NEXT_PUBLIC_DEMO_USER_MAIL || "",
-    password: process.env.NEXT_PUBLIC_DEMO_USER_PASS || "",
-    remember: false,
-  });
-
+  const router = useRouter();
+  
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [repassword, setRepassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setData({
-      ...data,
-      [e.target.name]: e.target.value,
-    });
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    if (!name || !email || !password || !repassword) {
+      setError("Please fill in all the fields.");
+      setLoading(false);
+      return;
+    }
+
+    if (password !== repassword) {
+      setError("Password and re-password do not match.");
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
+      const user = userCredential.user;
+
+      await setDoc(doc(db, "users", user.uid), {
+        name,
+        email: user.email,
+        createdAt: new Date(),
+      });
+      
+      clear();
+      router.push("/login");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    // You can remove this code block
-    setLoading(true);
-
-    setTimeout(() => {
-      setLoading(false);
-    }, 1000);
+  const clear = () => {
+    setName("");
+    setEmail("");
+    setPassword("");
+    setRepassword("");
   };
 
   return (
@@ -39,8 +74,8 @@ export default function SignupWithPassword() {
         className="mb-4 [&_input]:py-[15px]"
         placeholder="Enter your full name"
         name="name"
-        handleChange={handleChange}
-        value={data.name}
+        handleChange={(e) => setName(e.target.value)}
+        value={name}
         icon={<UserIcon className="text-gray-500" />}
       />
 
@@ -50,8 +85,8 @@ export default function SignupWithPassword() {
         className="mb-4 [&_input]:py-[15px]"
         placeholder="Enter your email"
         name="email"
-        handleChange={handleChange}
-        value={data.email}
+        handleChange={(e) => setEmail(e.target.value)}
+        value={email}
         icon={<EmailIcon className="text-gray-500" />}
       />
 
@@ -61,21 +96,25 @@ export default function SignupWithPassword() {
         className="mb-4 [&_input]:py-[15px]"
         placeholder="Enter your password"
         name="password"
-        handleChange={handleChange}
-        value={data.password}
+        handleChange={(e) => setPassword(e.target.value)}
+        value={password}
         icon={<PasswordIcon className="text-gray-500" />}
       />
 
       <InputGroup
         type="password"
         label="Re-type Password"
-        className="mb-5 [&_input]:py-[15px]"
+        className="mb-6 [&_input]:py-[15px]"
         placeholder="Re-enter your password"
         name="password"
-        handleChange={handleChange}
-        value={data.password}
+        handleChange={(e) => setRepassword(e.target.value)}
+        value={repassword}
         icon={<PasswordIcon className="text-gray-500" />}
       />
+
+      {error && (
+        <p className="text-red-500 text-center text-sm font-light mb-5">{error}</p>
+      )}
 
       <div className="mb-4.5">
         <button
@@ -84,7 +123,7 @@ export default function SignupWithPassword() {
         >
           Sign Up
           {loading && (
-            <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-white border-t-transparent dark:border-primary dark:border-t-transparent" />
+            <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-white border-t-transparent dark:border-t-transparent" />
           )}
         </button>
       </div>

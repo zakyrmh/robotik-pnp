@@ -4,32 +4,40 @@ import Link from "next/link";
 import React, { useState } from "react";
 import InputGroup from "../FormElements/InputGroup";
 import { Checkbox } from "../FormElements/checkbox";
+import { browserLocalPersistence, browserSessionPersistence, setPersistence, signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebaseConfig";
+import { useRouter } from "next/navigation";
 
 export default function SigninWithPassword() {
-  const [data, setData] = useState({
-    email: process.env.NEXT_PUBLIC_DEMO_USER_MAIL || "",
-    password: process.env.NEXT_PUBLIC_DEMO_USER_PASS || "",
-    remember: false,
-  });
+  const router = useRouter();
 
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [remember, setRemember] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setData({
-      ...data,
-      [e.target.name]: e.target.value,
-    });
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
+      await signInWithEmailAndPassword(auth, email, password);
+
+      clear();
+      router.push("/dashboard");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    // You can remove this code block
-    setLoading(true);
-
-    setTimeout(() => {
-      setLoading(false);
-    }, 1000);
+  const clear = () => {
+    setEmail("");
+    setPassword("");
   };
 
   return (
@@ -40,8 +48,8 @@ export default function SigninWithPassword() {
         className="mb-4 [&_input]:py-[15px]"
         placeholder="Enter your email"
         name="email"
-        handleChange={handleChange}
-        value={data.email}
+        handleChange={(e) => setEmail(e.target.value)}
+        value={email}
         icon={<EmailIcon className="text-gray-500" />}
       />
 
@@ -51,8 +59,8 @@ export default function SigninWithPassword() {
         className="mb-4 [&_input]:py-[15px]"
         placeholder="Enter your password"
         name="password"
-        handleChange={handleChange}
-        value={data.password}
+        handleChange={(e) => setPassword(e.target.value)}
+        value={password}
         icon={<PasswordIcon className="text-gray-500" />}
       />
 
@@ -63,12 +71,8 @@ export default function SigninWithPassword() {
           withIcon="check"
           minimal
           radius="md"
-          onChange={(e) =>
-            setData({
-              ...data,
-              remember: e.target.checked,
-            })
-          }
+          checked={remember}
+          onChange={(e) => setRemember(e.target.checked)}
         />
 
         <Link
@@ -79,6 +83,10 @@ export default function SigninWithPassword() {
         </Link>
       </div>
 
+      {error && (
+        <p className="text-red-500 text-center text-sm font-light mb-5">{error}</p>
+      )}
+
       <div className="mb-4.5">
         <button
           type="submit"
@@ -86,7 +94,7 @@ export default function SigninWithPassword() {
         >
           Sign In
           {loading && (
-            <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-white border-t-transparent dark:border-primary dark:border-t-transparent" />
+            <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-white border-t-transparent dark:border-t-transparent" />
           )}
         </button>
       </div>
