@@ -69,7 +69,7 @@ export default function SignupWithPassword() {
   return (
     <form onSubmit={handleSubmit}>
       <InputGroup
-        type="name"
+        type="text"
         label="Name"
         className="mb-4 [&_input]:py-[15px]"
         placeholder="Enter your full name"

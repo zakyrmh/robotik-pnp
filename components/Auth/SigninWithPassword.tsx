@@ -4,9 +4,15 @@ import Link from "next/link";
 import React, { useState } from "react";
 import InputGroup from "../FormElements/InputGroup";
 import { Checkbox } from "../FormElements/checkbox";
-import { browserLocalPersistence, browserSessionPersistence, setPersistence, signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebaseConfig";
+import {
+  browserLocalPersistence,
+  browserSessionPersistence,
+  setPersistence,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
+import { auth, db } from "@/lib/firebaseConfig";
 import { useRouter } from "next/navigation";
+import { doc, getDoc } from "firebase/firestore";
 
 export default function SigninWithPassword() {
   const router = useRouter();
@@ -23,11 +29,31 @@ export default function SigninWithPassword() {
     setError("");
 
     try {
-      await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
-      await signInWithEmailAndPassword(auth, email, password);
+      await setPersistence(
+        auth,
+        remember ? browserLocalPersistence : browserSessionPersistence
+      );
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const uid = userCredential.user.uid;
+
+      const userDoc = await getDoc(doc(db, "users", uid));
+
+      if (!userDoc.exists()) {
+        router.replace("/verification");
+      } else {
+        const userData = userDoc.data();
+        if (!userData.role) {
+          router.replace("/verification");
+        } else {
+          router.replace("/dashboard");
+        }
+      }
 
       clear();
-      router.push("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
@@ -84,7 +110,9 @@ export default function SigninWithPassword() {
       </div>
 
       {error && (
-        <p className="text-red-500 text-center text-sm font-light mb-5">{error}</p>
+        <p className="text-red-500 text-center text-sm font-light mb-5">
+          {error}
+        </p>
       )}
 
       <div className="mb-4.5">
