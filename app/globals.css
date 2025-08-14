@@ -11,6 +11,7 @@
   --color-dark-6: rgb(156 163 175);
   --color-gray-2: rgb(243 244 246);
   --color-stroke: rgb(230 235 241);
+  --color-stroke-dark: rgb(39 48 62);
   --color-primary: rgb(87 80 241);
 }
 
@@ -39,6 +40,9 @@
   .border-stroke {
     border-color: var(--color-stroke);
   }
+  .border-stroke-dark {
+    border-color: val(--color-stroke-dark);
+  }
   .border-primary {
     border-color: var(--color-primary);
   }
@@ -51,5 +55,4 @@
   .text-dark-6 {
     color: var(--color-dark-6);
   }
-
 }

@@ -7,7 +7,17 @@ import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebaseConfig";
 import { useRouter } from "next/navigation";
 import InputGroup from "@/components/FormElements/InputGroup";
-import { doc, updateDoc, setDoc, getDoc, where, collection, query, getDocs, deleteDoc } from "firebase/firestore";
+import {
+  doc,
+  updateDoc,
+  setDoc,
+  getDoc,
+  where,
+  collection,
+  query,
+  getDocs,
+  deleteDoc,
+} from "firebase/firestore";
 
 export default function Verification() {
   const router = useRouter();
@@ -20,21 +30,17 @@ export default function Verification() {
     if (!authLoading) {
       if (!user) {
         router.push("/login");
+      } else {
+        const checkVerificationStatus = async () => {
+          const userDoc = await getDoc(doc(db, "users", user.uid));
+          if (userDoc.exists() && userDoc.data()?.role) {
+            router.push("/dashboard");
+          }
+        };
+        checkVerificationStatus();
       }
     }
   }, [authLoading, user, router]);
-
-  useEffect(() => {
-    const checkVerificationStatus = async () => {
-      if (user && !authLoading) {
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists() && userDoc.data()?.role) {
-          router.push("/dashboard");
-        }
-      }
-    };
-    checkVerificationStatus();
-  }, [user, authLoading, router]);
 
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,14 +48,14 @@ export default function Verification() {
 
     try {
       setLoading(true);
-      
+
       const membersRef = collection(db, "members");
       const q = query(
         membersRef,
         where("name", "==", name.trim()),
         where("memberNo", "==", memberNo.trim())
-      )
-    
+      );
+
       const querySnapshot = await getDocs(q);
 
       if (querySnapshot.empty) {
