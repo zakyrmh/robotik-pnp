@@ -10,6 +10,8 @@ interface PropsType {
   className?: string;
   icon?: React.ReactNode;
   defaultValue?: string;
+  value?: string;
+  onChange?: (value: string) => void;
 }
 
 export function TextAreaGroup({
@@ -21,8 +23,14 @@ export function TextAreaGroup({
   className,
   icon,
   defaultValue,
+  value,
+  onChange,
 }: PropsType) {
   const id = useId();
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    if (onChange) onChange(e.target.value);
+  };
 
   return (
     <div className={cn(className)}>
@@ -31,6 +39,7 @@ export function TextAreaGroup({
         className="mb-3 block text-body-sm font-medium text-dark dark:text-white"
       >
         {label}
+        {required && <span className="ml-1 select-none text-red">*</span>}
       </label>
 
       <div className="relative mt-3 [&_svg]:pointer-events-none [&_svg]:absolute [&_svg]:left-5.5 [&_svg]:top-5.5">
@@ -39,9 +48,11 @@ export function TextAreaGroup({
           rows={6}
           placeholder={placeholder}
           defaultValue={defaultValue}
+          value={value}
+          onChange={handleChange}
           className={cn(
             "w-full rounded-lg border-[1.5px] border-stroke bg-transparent px-5.5 py-3 text-dark outline-none transition focus:border-primary disabled:cursor-default disabled:bg-gray-2 data-[active=true]:border-primary dark:border-dark-3 dark:bg-dark-2 dark:text-white dark:focus:border-primary dark:disabled:bg-dark dark:data-[active=true]:border-primary",
-            icon && "py-5 pl-13 pr-5",
+            icon && "py-5 pl-13 pr-5"
           )}
           required={required}
           disabled={disabled}
