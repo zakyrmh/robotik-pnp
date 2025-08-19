@@ -20,7 +20,7 @@ export function UserInfo() {
   const USER = {
     name: user?.displayName,
     email: user?.email,
-    img: user?.photoURL || "/images/user/user-01.png",
+    img: user?.photoURL || "/images/user/image.png",
   };
 
   return (
@@ -31,7 +31,7 @@ export function UserInfo() {
         <figure className="flex items-center gap-3">
           <Image
             src={USER.img}
-            className="size-12"
+            className="size-12 rounded-full"
             alt={`Avatar of ${USER.name}`}
             role="presentation"
             width={200}
@@ -61,7 +61,7 @@ export function UserInfo() {
         <figure className="flex items-center gap-2.5 px-5 py-3.5">
           <Image
             src={USER.img}
-            className="size-12"
+            className="size-12 rounded"
             alt={`Avatar for ${USER.name}`}
             role="presentation"
             width={200}

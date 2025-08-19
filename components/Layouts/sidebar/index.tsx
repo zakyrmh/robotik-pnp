@@ -1,7 +1,7 @@
 "use client";
 
-import { Logo } from "@/components/logo";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -94,9 +94,15 @@ export function Sidebar() {
             <Link
               href={"/"}
               onClick={() => isMobile && toggleSidebar()}
-              className="px-0 py-2.5 min-[850px]:py-0"
+              className="flex items-center gap-3.5 px-0 py-2 min-[850px]:py-0"
             >
-              <Logo />
+                <Image
+                  src="/images/logo/logo.webp"
+                  alt="Logo Robotik PNP"
+                  width={55}
+                  height={55}
+                />
+                <span className="text-lg font-semibold">Robotik PNP</span>
             </Link>
 
             {isMobile && (
