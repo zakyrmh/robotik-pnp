@@ -1,5 +1,5 @@
-import Signup from "@/components/Auth/Signup";
 
+import RegisterForm from "@/app/(auth)/caang/register/RegisterForm";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
@@ -14,7 +14,7 @@ export default function SignIn() {
       <div className="flex flex-wrap items-center">
         <div className="w-full xl:w-1/2">
           <div className="w-full p-4 sm:p-12.5 xl:p-15">
-            <Signup />
+            <RegisterForm />
           </div>
         </div>
 

@@ -30,24 +30,20 @@ export default function Dashboard() {
       if (!user) {
         router.push("/login");
       } else {
-        const checkVerificationStatus = async () => {
+        const checkRegisteration = async () => {
           try {
-            const userDoc = await getDoc(doc(db, "users", user.uid));
-            if (userDoc.exists() && userDoc.data()?.role === "members") {
-              router.push("/dashboard");
-            } else if (userDoc.exists() && !userDoc.data()?.role) {
-              router.push("/verification");
-            } else if (userDoc.data()?.registration === true) {
+            const userDoc = await getDoc(doc(db, "caang", user.uid));
+            if (userDoc.data()?.registration === true) {
               router.push("/review-pendaftaran");
             }
           } catch (err) {
             console.error("Gagal cek role:", err);
           }
-        };
-        checkVerificationStatus();
+        }
+        checkRegisteration();
       }
     }
-  }, [authLoading, user, router]);
+  }, [user, authLoading, router]);
 
   const handleFileChange = (
     e: React.ChangeEvent<HTMLInputElement>,

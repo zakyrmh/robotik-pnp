@@ -1,8 +1,7 @@
-import Signin from "@/components/Auth/Signin";
-
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import LoginForm from "@/app/(auth)/login/LoginForm";
 
 export const metadata: Metadata = {
   title: "Login | UKM Robotik PNP",
@@ -14,7 +13,7 @@ export default function SignIn() {
       <div className="flex flex-wrap items-center">
         <div className="w-full xl:w-1/2">
           <div className="w-full p-4 sm:p-12.5 xl:p-15">
-            <Signin />
+            <LoginForm />
           </div>
         </div>
 

@@ -84,7 +84,7 @@ export async function POST(request: Request) {
     const webContentLink = meta.data.webContentLink ?? null;
 
     // Fallback: link universal ke file berdasarkan id
-    const fallbackUrl = `https://drive.google.com/uc?id=${fileId}&export=download`;
+    const fallbackUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
 
     // Prioritas: webViewLink > webContentLink > fallback
     const fileUrl = webViewLink || webContentLink || fallbackUrl;
