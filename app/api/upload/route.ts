@@ -6,7 +6,7 @@ import { Readable } from "stream";
 export async function POST(request: Request) {
   try {
     const data = await request.formData();
-    const file: File | null = data.get("file") as unknown as File;
+    const file = data.get("file") as unknown as File | null;
     const newFileName = (data.get("newFileName") as string) || undefined;
 
     if (!file) {
@@ -16,20 +16,35 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET || !process.env.GOOGLE_REFRESH_TOKEN) {
+    // Optional: cek ukuran file (jika ingin batasi server-side juga)
+    const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+    if (file instanceof Blob && file.size > MAX_SIZE) {
+      return NextResponse.json(
+        { success: false, message: "File terlalu besar (maks 5MB)." },
+        { status: 400 }
+      );
+    }
+
+    const { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN } =
+      process.env;
+
+    if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET || !GOOGLE_REFRESH_TOKEN) {
       console.error("Missing Google credentials in env");
-      return NextResponse.json({ success: false, message: "Server config error" }, { status: 500 });
+      return NextResponse.json(
+        { success: false, message: "Server config error" },
+        { status: 500 }
+      );
     }
 
     // inisialisasi OAuth2 client dengan refresh token (server-side)
     const oAuth2Client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
+      GOOGLE_CLIENT_ID,
+      GOOGLE_CLIENT_SECRET,
       "http://localhost"
     );
 
     oAuth2Client.setCredentials({
-      refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
+      refresh_token: GOOGLE_REFRESH_TOKEN,
     });
 
     const drive = google.drive({ version: "v3", auth: oAuth2Client });
@@ -38,7 +53,9 @@ export async function POST(request: Request) {
     const fileBuffer = Buffer.from(await file.arrayBuffer());
     const fileStream = Readable.from(fileBuffer);
 
-    const parents = process.env.GOOGLE_FOLDER_ID ? [process.env.GOOGLE_FOLDER_ID] : undefined;
+    const parents = process.env.GOOGLE_FOLDER_ID
+      ? [process.env.GOOGLE_FOLDER_ID]
+      : undefined;
 
     // Create file
     const createRes = await drive.files.create({
@@ -101,7 +118,11 @@ export async function POST(request: Request) {
     if (error instanceof Error) errorMessage = error.message;
     console.error("Error saat mengunggah ke Google Drive:", error);
     return NextResponse.json(
-      { success: false, message: "Gagal mengunggah file.", error: errorMessage },
+      {
+        success: false,
+        message: "Gagal mengunggah file.",
+        error: errorMessage,
+      },
       { status: 500 }
     );
   }

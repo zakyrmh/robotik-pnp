@@ -2,22 +2,32 @@
 
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebaseConfig";
-import { setDoc, doc, getDoc, serverTimestamp, updateDoc } from "firebase/firestore";
+import { setDoc, doc, getDoc, serverTimestamp } from "firebase/firestore";
 import { TextAreaGroup } from "@/components/FormElements/InputGroup/text-area";
 import { ShowcaseSection } from "@/components/Layouts/showcase-section";
 import InputGroup from "@/components/FormElements/InputGroup";
 import { Select } from "@/components/FormElements/select";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { initialFormData } from "@/types/pendaftaran";
 import type { FormData } from "@/types/pendaftaran";
 import { useRouter } from "next/navigation";
 import JurusanProdiSelect from "@/components/Pendaftaran/JurusanProdiSelect";
 
+type FileKeys = "pasFoto" | "buktiPembayaran" | "buktiFollowSosmed";
+type FilesState = Record<FileKeys, File | null>;
+
+const ALLOWED_TYPES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "application/pdf",
+];
+
 export default function Dashboard() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [formData, setFormData] = useState<FormData>(initialFormData);
-  const [files, setFiles] = useState<{ [key: string]: File | null }>({
+  const [files, setFiles] = useState<FilesState>({
     pasFoto: null,
     buktiPembayaran: null,
     buktiFollowSosmed: null,
@@ -25,108 +35,178 @@ export default function Dashboard() {
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
 
+  // Ref untuk mencegah setState setelah unmount
+  const isMounted = useRef(true);
   useEffect(() => {
-    if (!authLoading) {
-      if (!user) {
-        router.push("/login");
-      } else {
-        const checkRegisteration = async () => {
-          try {
-            const userDoc = await getDoc(doc(db, "caang", user.uid));
-            if (userDoc.data()?.registration === true) {
-              router.push("/review-pendaftaran");
-            }
-          } catch (err) {
-            console.error("Gagal cek role:", err);
-          }
-        }
-        checkRegisteration();
-      }
-    }
-  }, [user, authLoading, router]);
-
-  const handleFileChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    fieldName: string
-  ) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-
-      // Validasi Ukuran File (5MB)
-      const maxSizeInBytes = 5 * 1024 * 1024;
-      if (file.size > maxSizeInBytes) {
-        setError(`Ukuran file ${fieldName} tidak boleh lebih dari 5MB.`);
-        e.target.value = ""; // Reset input file
-        return;
-      }
-
-      // Validasi Tipe File
-      const allowedTypes = [
-        "image/jpeg",
-        "image/jpg",
-        "image/png",
-        "application/pdf",
-      ];
-      if (!allowedTypes.includes(file.type)) {
-        setError(`Tipe file ${fieldName} harus gambar (JPG, PNG) atau PDF.`);
-        e.target.value = ""; // Reset input file
-        return;
-      }
-
-      // Jika valid, simpan ke state
-      setFiles((prev) => ({ ...prev, [fieldName]: file }));
-      setError(""); // Hapus pesan error jika berhasil
-    }
-  };
-
-  const handleChange = useCallback((field: keyof FormData, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    return () => {
+      isMounted.current = false;
+    };
   }, []);
 
-  // Ambil preview nama dari users (sekali) — hanya untuk mengisi namaLengkap awal
+  const maxSizeInBytes = useMemo(() => 5 * 1024 * 1024, []);
+
+  // Redirect ke login jika belum autentikasi & cek pendaftaran
+  useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+
+    const checkRegistration = async () => {
+      try {
+        const docRef = doc(db, "caang_registration", user.uid);
+        const snap = await getDoc(docRef);
+        if (snap.exists() && snap.data()?.registration === true) {
+          router.push("/review-pendaftaran");
+        }
+      } catch (err) {
+        console.error("Gagal cek pendaftaran:", err);
+      }
+    };
+
+    checkRegistration();
+  }, [user, authLoading, router]);
+
+  // Ambil nama dari doc users (sekali)
   useEffect(() => {
     if (!user?.uid) return;
+    let cancelled = false;
 
     const fetchUserPreview = async () => {
       try {
         setIsLoading(true);
         const docRef = doc(db, "users", user.uid);
         const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
+        if (!cancelled && docSnap.exists()) {
+          const data = docSnap.data() as Record<string, unknown>;
           const namaDariDoc =
             (data?.namaLengkap as string | undefined) ??
             (data?.name as string | undefined) ??
             (data?.displayName as string | undefined);
 
           if (namaDariDoc) {
-            // hanya atur nama jika saat ini masih kosong (tidak menimpa input user)
             setFormData((prev) => ({
               ...prev,
               namaLengkap: prev.namaLengkap || namaDariDoc,
             }));
           }
         }
-      } catch (error) {
-        console.error("Gagal mengambil user data:", error);
+      } catch (err) {
+        console.error("Gagal mengambil user data:", err);
       } finally {
-        setIsLoading(false);
+        if (!cancelled && isMounted.current) setIsLoading(false);
       }
     };
 
     fetchUserPreview();
+
+    return () => {
+      cancelled = true;
+    };
   }, [user?.uid]);
 
-  const removeUndefined = (obj: Record<string, unknown>) => {
-    return Object.fromEntries(
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      Object.entries(obj).filter(([_, v]) => v !== undefined)
-    );
+  const handleChange = useCallback((field: keyof FormData, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  }, []);
+
+  const sanitizeFileName = (s: string) =>
+    s.replace(/[^a-zA-Z0-9\-_.]/g, "_").slice(0, 200);
+
+  const getFileExtension = (name: string) => {
+    const parts = name.split(".");
+    return parts.length > 1 ? parts.pop()!.toLowerCase() : "";
+  };
+
+  const handleFileChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    fieldName: FileKeys
+  ) => {
+    const input = e.currentTarget;
+    const file = input.files?.[0] ?? null;
+
+    if (!file) {
+      setFiles((prev) => ({ ...prev, [fieldName]: null }));
+      return;
+    }
+
+    // Validasi ukuran
+    if (file.size > maxSizeInBytes) {
+      setError(`Ukuran file ${fieldName} tidak boleh lebih dari 5MB.`);
+      input.value = "";
+      return;
+    }
+
+    // Validasi tipe
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setError(`Tipe file ${fieldName} harus JPG/PNG atau PDF.`);
+      input.value = "";
+      return;
+    }
+
+    setFiles((prev) => ({ ...prev, [fieldName]: file }));
+    setError("");
+  };
+
+  // Hapus properti undefined dari object
+  const removeUndefined = (obj: Record<string, unknown>) =>
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    Object.fromEntries(Object.entries(obj).filter(([_, v]) => v !== undefined));
+
+  type UploadResponse = {
+    success?: boolean;
+    message?: string;
+    fileUrl?: string;
+    [k: string]: unknown;
+  };
+
+  // Helper: unggah file dan parsing response dengan aman
+  const uploadSingleFile = async (file: File, key: string): Promise<string> => {
+    const baseName = formData.namaLengkap || user?.uid || "user";
+    const ext = getFileExtension(file.name) || "bin";
+    const newFileName = `${sanitizeFileName(baseName)}-${key}.${ext}`;
+
+    const fd = new FormData();
+    fd.append("file", file);
+    fd.append("newFileName", newFileName);
+
+    const res = await fetch("/api/upload", {
+      method: "POST",
+      body: fd,
+    });
+
+    const text = await res.text();
+
+    // parsing JSON dengan aman tanpa menggunakan `any`
+    let parsed: UploadResponse = {};
+    if (text) {
+      try {
+        parsed = JSON.parse(text) as UploadResponse;
+      } catch (parseError) {
+        console.error("Gagal parse response upload:", parseError);
+        throw new Error(
+          "Upload gagal: server mengembalikan response tidak valid."
+        );
+      }
+    }
+
+    if (!res.ok || !parsed.success) {
+      throw new Error(parsed.message || "Gagal mengunggah file.");
+    }
+
+    if (!parsed.fileUrl) {
+      throw new Error(
+        "Upload berhasil tetapi server tidak mengembalikan fileUrl."
+      );
+    }
+
+    return parsed.fileUrl;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validasi sebelum mulai loading
     if (!formData.namaLengkap || !formData.nim || !formData.noHp) {
       setError("Lengkapi Nama Lengkap, NIM, dan No HP sebelum submit.");
       return;
@@ -139,77 +219,54 @@ export default function Dashboard() {
       return;
     }
 
+    if (isLoading) return; // cegah double submit
     setIsLoading(true);
     setError("");
 
     try {
-      const uploadedFileUrls: { [key: string]: string } = {};
+      // Unggah paralel
+      const entries = Object.entries(files).filter(([, v]) => v) as [
+        FileKeys,
+        File
+      ][];
 
-      // Proses unggah untuk setiap file
-      for (const key of Object.keys(files)) {
-        const file = files[key];
-        if (file) {
-          // 1. Mengubah Nama File
-          const fileExtension = file.name.split(".").pop();
-          const cleanUserName = formData.namaLengkap.replace(
-            /[^a-zA-Z0-9]/g,
-            "_"
-          ); // Bersihkan nama user
-          const newFileName = `${cleanUserName}-${key}.${fileExtension}`;
+      const uploadPromises = entries.map(([key, file]) =>
+        uploadSingleFile(file, key)
+      );
 
-          // 2. Kirim ke API
-          const uploadFormData = new FormData();
-          uploadFormData.append("file", file);
-          uploadFormData.append("newFileName", newFileName); // Kirim nama baru ke API
+      const urls = await Promise.all(uploadPromises);
 
-          const response = await fetch("/api/upload", {
-            method: "POST",
-            body: uploadFormData,
-          });
+      const uploadedFileUrls: Record<string, string> = {};
+      entries.forEach(([key], idx) => {
+        uploadedFileUrls[key] = urls[idx];
+      });
 
-          const result = await response.json();
-
-          if (!response.ok || !result.success) {
-            throw new Error(result.message || "Gagal mengunggah file.");
-          }
-
-          // 3. Simpan URL yang dikembalikan API
-          uploadedFileUrls[key] = result.fileUrl; // Asumsikan API mengembalikan { success: true, fileUrl: '...' }
-        }
-      }
-
-      // 4. Gabungkan data form dengan URL file
       const finalData = {
         ...formData,
-        ...uploadedFileUrls, // Menimpa/menambah field pasFoto, dll. dengan URL
+        ...uploadedFileUrls,
         userId: user?.uid,
         createdAt: serverTimestamp(),
+        registration: true, // simpan flag sekaligus
       };
 
       const cleanedData = removeUndefined(finalData);
 
-      // 5. Simpan semua data ke Firestore
-      const docRef = doc(db, "caang_registration", user!.uid);
-      await setDoc(docRef, cleanedData);
-      const userDocRef = doc(db, "users", user!.uid);
-      await updateDoc(userDocRef, {
-        registration: true,
-      });
+      if (!user?.uid) throw new Error("User tidak ditemukan saat submit.");
 
-      console.log("Data berhasil disimpan ke Firestore:", cleanedData);
+      const docRef = doc(db, "caang_registration", user.uid);
+      // merge true agar tidak menimpa field lain
+      await setDoc(docRef, cleanedData, { merge: true });
 
-      alert("Pendaftaran berhasil!");
-      router.push("/review-pendaftaran");
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error("Error dalam proses pendaftaran: ", error);
-        setError(error.message || "Terjadi kesalahan saat mengirim data.");
-      } else {
-        console.error("Unknown error: ", error);
-        setError("Terjadi kesalahan tidak diketahui.");
+      if (isMounted.current) {
+        alert("Pendaftaran berhasil!");
+        router.push("/review-pendaftaran");
       }
+    } catch (err: unknown) {
+      console.error("Error dalam proses pendaftaran: ", err);
+      if (err instanceof Error) setError(err.message);
+      else setError("Terjadi kesalahan tidak diketahui.");
     } finally {
-      setIsLoading(false);
+      if (isMounted.current) setIsLoading(false);
     }
   };
   return (
@@ -427,34 +484,44 @@ export default function Dashboard() {
           </h3>
           <div className="mb-4.5 flex flex-col gap-4.5 xl:flex-row">
             <div className="flex flex-col gap-4.5 xl:w-1/2">
-              <InputGroup
-                type="file"
-                fileStyleVariant="style1"
-                label="Pas Foto"
-                placeholder="Masukkan Pas Foto"
-                handleChange={(e) => handleFileChange(e, "pasFoto")}
-                required
-              />
-
-              <InputGroup
-                type="file"
-                fileStyleVariant="style1"
-                label="Bukti Pembayaran"
-                placeholder="Masukkan Bukti Pembayaran"
-                handleChange={(e) => handleFileChange(e, "buktiPembayaran")}
-                required
-              />
+              <div className="flex flex-col">
+                <InputGroup
+                  type="file"
+                  fileStyleVariant="style1"
+                  label="Pas Foto"
+                  placeholder="Masukkan Pas Foto"
+                  handleChange={(e) => handleFileChange(e, "pasFoto")}
+                  required
+                />
+                <p className="text-sm mt-2">Jenis file: .jpg, .jpeg, .png</p>
+                <p className="text-sm mt-1">Maksimal ukuran file 5MB</p>
+              </div>
+              <div className="flex flex-col">
+                <InputGroup
+                  type="file"
+                  fileStyleVariant="style1"
+                  label="Bukti Pembayaran"
+                  placeholder="Masukkan Bukti Pembayaran"
+                  handleChange={(e) => handleFileChange(e, "buktiPembayaran")}
+                  required
+                />
+                <p className="text-sm mt-2">Jenis file: .jpg, .jpeg, .png</p>
+                <p className="text-sm mt-1">Maksimal ukuran file 5MB</p>
+              </div>
             </div>
-
             <div className="flex flex-col gap-4.5 xl:w-1/2">
-              <InputGroup
-                type="file"
-                fileStyleVariant="style1"
-                label="Bukti Follow Sosmed"
-                placeholder="Masukkan Bukti Follow Sosmed"
-                handleChange={(e) => handleFileChange(e, "buktiFollowSosmed")}
-                required
-              />
+              <div className="flex flex-col">
+                <InputGroup
+                  type="file"
+                  fileStyleVariant="style1"
+                  label="Bukti Follow Sosmed"
+                  placeholder="Masukkan Bukti Follow Sosmed"
+                  handleChange={(e) => handleFileChange(e, "buktiFollowSosmed")}
+                  required
+                />
+                <p className="text-sm mt-2">Jenis file: .jpg, .jpeg, .png</p>
+                <p className="text-sm mt-1">Maksimal ukuran file 5MB</p>
+              </div>
             </div>
           </div>
 
