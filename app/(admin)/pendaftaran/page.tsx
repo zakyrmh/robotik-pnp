@@ -35,6 +35,14 @@ export default function Dashboard() {
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
 
+  // States untuk upload progress modal
+  const [isUploadModalVisible, setIsUploadModalVisible] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number>(0); // 0 - 100
+  const [currentUploadingFile, setCurrentUploadingFile] = useState<string>(""); // Nama file yang sedang diupload
+
+  // Menyimpan progres tiap file sehingga kita bisa hitung rata-rata
+  const perFileProgressRef = useRef<Record<string, number>>({});
+
   // Ref untuk mencegah setState setelah unmount
   const isMounted = useRef(true);
   useEffect(() => {
@@ -160,47 +168,147 @@ export default function Dashboard() {
     [k: string]: unknown;
   };
 
-  // Helper: unggah file dan parsing response dengan aman
-  const uploadSingleFile = async (file: File, key: string): Promise<string> => {
+  /**
+   * uploadSingleFile menggunakan XMLHttpRequest sehingga kita dapat memantau upload progress.
+   * onProgress dipanggil dengan angka 0..100.
+   * PERBAIKAN: Menambahkan callback untuk update nama file yang sedang diupload
+   */
+  const uploadSingleFile = (
+    file: File,
+    key: string,
+    onProgress?: (p: number) => void,
+    onFileNameUpdate?: (fileName: string) => void
+  ): Promise<string> => {
     const baseName = formData.namaLengkap || user?.uid || "user";
     const ext = getFileExtension(file.name) || "bin";
     const newFileName = `${sanitizeFileName(baseName)}-${key}.${ext}`;
 
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("newFileName", newFileName);
+    // Update nama file yang sedang diupload
+    onFileNameUpdate?.(key);
 
-    const res = await fetch("/api/upload", {
-      method: "POST",
-      body: fd,
-    });
-
-    const text = await res.text();
-
-    // parsing JSON dengan aman tanpa menggunakan `any`
-    let parsed: UploadResponse = {};
-    if (text) {
+    return new Promise((resolve, reject) => {
       try {
-        parsed = JSON.parse(text) as UploadResponse;
-      } catch (parseError) {
-        console.error("Gagal parse response upload:", parseError);
-        throw new Error(
-          "Upload gagal: server mengembalikan response tidak valid."
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("newFileName", newFileName);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/upload");
+
+        // PERBAIKAN: Progress tracking yang lebih akurat
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const percent = Math.round((event.loaded / event.total) * 100);
+            // Console log untuk debugging
+            console.log(`Upload progress for ${key}: ${percent}%`);
+            onProgress?.(percent);
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            const text = xhr.responseText;
+            let parsed: UploadResponse = {};
+            if (text) {
+              try {
+                parsed = JSON.parse(text) as UploadResponse;
+              } catch (parseError) {
+                console.error("Gagal parse response upload:", parseError);
+                reject(
+                  new Error(
+                    "Upload gagal: server mengembalikan response tidak valid."
+                  )
+                );
+                return;
+              }
+            }
+            if (!parsed.success) {
+              reject(new Error(parsed.message || "Gagal mengunggah file."));
+              return;
+            }
+            if (!parsed.fileUrl) {
+              reject(
+                new Error(
+                  "Upload berhasil tetapi server tidak mengembalikan fileUrl."
+                )
+              );
+              return;
+            }
+            resolve(parsed.fileUrl);
+          } else {
+            reject(new Error("Gagal mengunggah file (status error)."));
+          }
+        };
+
+        xhr.onerror = () => {
+          reject(new Error("Terjadi kesalahan jaringan saat upload."));
+        };
+
+        xhr.send(fd);
+      } catch (err) {
+        reject(err);
+      }
+    });
+  };
+
+  // Fungsi updateOverallProgress dihapus karena tidak digunakan lagi
+  // Progress sekarang dihitung langsung dalam uploadFilesSequentially
+
+  /**
+   * PERBAIKAN: Upload sequential untuk progress yang lebih jelas
+   */
+  const uploadFilesSequentially = async (
+    entries: [FileKeys, File][]
+  ): Promise<string[]> => {
+    const urls: string[] = [];
+
+    for (let i = 0; i < entries.length; i++) {
+      const [key, file] = entries[i];
+      
+      // Reset progress untuk file ini
+      perFileProgressRef.current[key] = 0;
+      
+      try {
+        const url = await uploadSingleFile(
+          file,
+          key,
+          (progress) => {
+            // Update progress untuk file ini
+            perFileProgressRef.current[key] = progress;
+            
+            // Hitung overall progress berdasarkan file yang sudah selesai dan sedang berjalan
+            const completedFiles = i; // jumlah file yang sudah selesai
+            const currentFileProgress = progress; // progress file saat ini
+            const totalFiles = entries.length;
+            
+            const overallProgress = Math.round(
+              ((completedFiles * 100) + currentFileProgress) / totalFiles
+            );
+            
+            console.log(`File ${key}: ${progress}%, Overall: ${overallProgress}%`);
+            
+            if (isMounted.current) {
+              setUploadProgress(overallProgress);
+            }
+          },
+          (fileName) => {
+            if (isMounted.current) {
+              setCurrentUploadingFile(fileName);
+            }
+          }
         );
+        
+        urls.push(url);
+        
+        // Set progress file ini ke 100% setelah selesai
+        perFileProgressRef.current[key] = 100;
+        
+      } catch (error) {
+        throw error;
       }
     }
 
-    if (!res.ok || !parsed.success) {
-      throw new Error(parsed.message || "Gagal mengunggah file.");
-    }
-
-    if (!parsed.fileUrl) {
-      throw new Error(
-        "Upload berhasil tetapi server tidak mengembalikan fileUrl."
-      );
-    }
-
-    return parsed.fileUrl;
+    return urls;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -224,17 +332,31 @@ export default function Dashboard() {
     setError("");
 
     try {
-      // Unggah paralel
+      // Persiapkan entries yang akan diunggah
       const entries = Object.entries(files).filter(([, v]) => v) as [
         FileKeys,
         File
       ][];
 
-      const uploadPromises = entries.map(([key, file]) =>
-        uploadSingleFile(file, key)
-      );
+      // PERBAIKAN: Reset semua progress tracking
+      perFileProgressRef.current = {};
+      entries.forEach(([key]) => {
+        perFileProgressRef.current[key] = 0;
+      });
+      
+      setUploadProgress(0);
+      setCurrentUploadingFile("");
+      setIsUploadModalVisible(true); // tampilkan modal progress
 
-      const urls = await Promise.all(uploadPromises);
+      // PERBAIKAN: Upload file secara sequential untuk tracking yang lebih jelas
+      console.log("Memulai upload files...");
+      const urls = await uploadFilesSequentially(entries);
+
+      // Set progress complete
+      if (isMounted.current) {
+        setUploadProgress(100);
+        setCurrentUploadingFile("Menyelesaikan...");
+      }
 
       const uploadedFileUrls: Record<string, string> = {};
       entries.forEach(([key], idx) => {
@@ -258,17 +380,32 @@ export default function Dashboard() {
       await setDoc(docRef, cleanedData, { merge: true });
 
       if (isMounted.current) {
-        alert("Pendaftaran berhasil!");
-        router.push("/review-pendaftaran");
+        // Berikan waktu untuk user melihat 100% progress
+        setTimeout(() => {
+          if (isMounted.current) {
+            setIsUploadModalVisible(false);
+            alert("Pendaftaran berhasil!");
+            router.push("/review-pendaftaran");
+          }
+        }, 1000); // Increase delay to 1 second
       }
     } catch (err: unknown) {
       console.error("Error dalam proses pendaftaran: ", err);
       if (err instanceof Error) setError(err.message);
       else setError("Terjadi kesalahan tidak diketahui.");
+      // sembunyikan modal jika terjadi error
+      if (isMounted.current) {
+        setIsUploadModalVisible(false);
+        setUploadProgress(0);
+        setCurrentUploadingFile("");
+      }
     } finally {
-      if (isMounted.current) setIsLoading(false);
+      if (isMounted.current) {
+        setIsLoading(false);
+      }
     }
   };
+
   return (
     <>
       <ShowcaseSection title="Formulir Pendaftaran CAANG" className="!p-6.5">
@@ -423,35 +560,6 @@ export default function Dashboard() {
               onChangeJurusan={(j) => handleChange("jurusan", j)}
               onChangeProdi={(p) => handleChange("prodi", p)}
             />
-            {/* <div className="flex flex-col gap-4.5 xl:flex-row xl:gap-4">
-              <Select
-                label="Jurusan"
-                placeholder="Pilih Jurusan"
-                className="w-full"
-                items={[
-                  { label: "Elektro", value: "elektro" },
-                  {
-                    label: "Teknologi Informasi",
-                    value: "teknologiInformasi",
-                  },
-                ]}
-                value={formData.jurusan ?? ""}
-                onChange={(value) => handleChange("jurusan", value)}
-                required
-              />
-              <Select
-                label="Program Studi"
-                placeholder="Pilih Program Studi"
-                className="w-full"
-                items={[
-                  { label: "D4 Elektronika", value: "d4Elektronika" },
-                  { label: "D3 Elektronika", value: "d3Elektronika" },
-                ]}
-                value={formData.prodi ?? ""}
-                onChange={(value) => handleChange("prodi", value)}
-                required
-              />
-            </div> */}
           </div>
 
           <TextAreaGroup
@@ -557,7 +665,7 @@ export default function Dashboard() {
           </div>
 
           {error && (
-            <p className="text-red-500">
+            <p className="text-red-500 mb-4">
               <span className="font-semibold">Error:</span> {error}
             </p>
           )}
@@ -571,6 +679,36 @@ export default function Dashboard() {
           </button>
         </form>
       </ShowcaseSection>
+
+      {/* PERBAIKAN: Modal upload progress yang lebih informatif */}
+      {isUploadModalVisible && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="w-[90%] max-w-md rounded-lg bg-white p-6 shadow-lg">
+            <h4 className="mb-3 text-lg font-semibold">Mengunggah file...</h4>
+            
+            {/* Tampilkan file yang sedang diupload */}
+            {currentUploadingFile && (
+              <p className="text-sm mb-2 text-gray-600">
+                Mengupload: <span className="font-medium">{currentUploadingFile}</span>
+              </p>
+            )}
+            
+            <p className="text-sm mb-4">Progress: {uploadProgress}%</p>
+
+            {/* Progress bar dengan animasi yang smooth */}
+            <div className="w-full h-3 rounded-md bg-gray-200 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-300 ease-out"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+
+            <p className="mt-3 text-xs text-gray-500">
+              Jangan tutup halaman sampai proses selesai.
+            </p>
+          </div>
+        </div>
+      )}
     </>
   );
 }
