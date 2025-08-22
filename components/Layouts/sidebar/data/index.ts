@@ -45,3 +45,21 @@ export const NAV_PROSPECTIVE_MEMBER: NavSection[] = [
     ],
   },
 ]
+
+export const NAV_REGISTERED_MEMBER: NavSection[] = [
+  {
+    label: "MAIN MENU",
+    items: [
+      {
+        title: "Dashboard",
+        icon: Icons.HomeIcon,
+        items: [],
+      },
+      {
+        title: "Review Pendaftaran",
+        icon: Icons.Alphabet,
+        items: [],
+      },
+    ],
+  },
+]

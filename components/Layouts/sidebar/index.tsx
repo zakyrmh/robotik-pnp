@@ -5,7 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { NAV_MEMBERS, NAV_PROSPECTIVE_MEMBER } from "./data";
+import {
+  NAV_MEMBERS,
+  NAV_PROSPECTIVE_MEMBER,
+  NAV_REGISTERED_MEMBER,
+} from "./data";
 import { ArrowLeftIcon, ChevronUp } from "./icons";
 import { MenuItem } from "./menu-item";
 import { useSidebarContext } from "./sidebar-context";
@@ -19,6 +23,7 @@ export function Sidebar() {
   const { setIsOpen, isOpen, isMobile, toggleSidebar } = useSidebarContext();
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [role, setRole] = useState<string | null>(null);
+  const [registration, setRegistration] = useState<boolean | null>(false);
 
   const toggleExpanded = (title: string) => {
     setExpandedItems((prev) => (prev.includes(title) ? [] : [title]));
@@ -30,6 +35,16 @@ export function Sidebar() {
         try {
           const docRef = doc(db, "users", user.uid);
           const docSnap = await getDoc(docRef);
+
+          const docRefCaang = doc(db, "caang_registration", user.uid);
+          const docSnapCaang = await getDoc(docRefCaang);
+
+          if (docSnapCaang.exists()) {
+            setRegistration(docSnapCaang.data()?.registration === true);
+          } else {
+            setRegistration(false);
+          }
+
           if (docSnap.exists()) {
             setRole(docSnap.data().role || null);
           } else {
@@ -44,7 +59,13 @@ export function Sidebar() {
     }
   }, [user?.uid]);
 
-  const NAV_DATA = role === "member" ? NAV_MEMBERS : NAV_PROSPECTIVE_MEMBER;
+  // const NAV_DATA = role === "member" ? NAV_MEMBERS : NAV_PROSPECTIVE_MEMBER;
+  const NAV_DATA =
+    role === "member"
+      ? NAV_MEMBERS
+      : registration === true
+      ? NAV_REGISTERED_MEMBER
+      : NAV_PROSPECTIVE_MEMBER;
 
   useEffect(() => {
     // Keep collapsible open, when its subpage is active
@@ -96,13 +117,13 @@ export function Sidebar() {
               onClick={() => isMobile && toggleSidebar()}
               className="flex items-center gap-3.5 px-0 py-2 min-[850px]:py-0"
             >
-                <Image
-                  src="/images/logo/logo.webp"
-                  alt="Logo Robotik PNP"
-                  width={55}
-                  height={55}
-                />
-                <span className="text-lg font-semibold">Robotik PNP</span>
+              <Image
+                src="/images/logo/logo.webp"
+                alt="Logo Robotik PNP"
+                width={55}
+                height={55}
+              />
+              <span className="text-lg font-semibold">Robotik PNP</span>
             </Link>
 
             {isMobile && (

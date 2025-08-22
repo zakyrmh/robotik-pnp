@@ -104,7 +104,7 @@ export async function POST(request: Request) {
     const fallbackUrl = `https://drive.google.com/uc?export=view&id=${fileId}`;
 
     // Prioritas: webViewLink > webContentLink > fallback
-    const fileUrl = webViewLink || webContentLink || fallbackUrl;
+    const fileUrl = fallbackUrl || webViewLink || webContentLink;
 
     return NextResponse.json({
       success: true,

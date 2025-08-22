@@ -16,11 +16,9 @@ export default function Dashboard() {
     }
   });
 
-  console.log(user);
-
   return (
     <>
-      <p>{user?.displayName}</p>
+      <p>Welcome, {user?.displayName}</p>
     </>
   );
 }

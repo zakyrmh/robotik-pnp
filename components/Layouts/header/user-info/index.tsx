@@ -9,19 +9,43 @@ import {
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LogOutIcon, SettingsIcon, UserIcon } from "./icons";
 import { useAuth } from "@/hooks/useAuth";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebaseConfig";
 
 export function UserInfo() {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
+  const [photoURL, setPhotoURL] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (!user?.uid) return;
+
+      try {
+        const ref = doc(db, "caang_registration", user.uid);
+        const snap = await getDoc(ref);
+
+        if (snap.exists()) {
+          const data = snap.data();
+          setPhotoURL(data.pasFoto ?? null);
+        }
+      } catch (error) {
+        console.error("Error fetching user photoURL from Firestore:", error);
+      }
+    };
+
+    fetchUserData();
+  }, [user?.uid]);
 
   const USER = {
     name: user?.displayName,
     email: user?.email,
-    img: user?.photoURL || "/images/user/image.png",
+    img: photoURL || "/images/user/image.png",
   };
+
 
   return (
     <Dropdown isOpen={isOpen} setIsOpen={setIsOpen}>
@@ -68,7 +92,7 @@ export function UserInfo() {
             height={200}
           />
 
-          <figcaption className="space-y-1 text-base font-medium">
+          <figcaption className="space-y-1 text-sm">
             <div className="mb-2 leading-none text-dark dark:text-white">
               {USER.name}
             </div>
