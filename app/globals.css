@@ -55,4 +55,46 @@
   .text-dark-6 {
     color: var(--color-dark-6);
   }
+
+  .animate-line1 {
+    animation: line 10s linear infinite;
+  }
+
+  @keyframes line-revert {
+    0%,
+    to {
+      transform: translateY(100%);
+    }
+
+    50% {
+      transform: translateY(0);
+    }
+  }
+
+  .animate-line2 {
+    animation: line-revert 8s linear infinite;
+  }
+
+  @keyframes line {
+    0%,
+    to {
+      transform: translateY(0);
+    }
+
+    50% {
+      transform: translateY(100%);
+    }
+  }
+
+  .animate-line3 {
+    animation: line 7s linear infinite;
+  }
+
+  @keyframes ping {
+    75%,
+    to {
+      transform: scale(2);
+      opacity: 0;
+    }
+  }
 }
