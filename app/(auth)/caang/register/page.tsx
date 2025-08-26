@@ -1,14 +1,20 @@
-
 import RegisterForm from "@/app/(auth)/caang/register/RegisterForm";
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
   title: "Register | Robotik PNP",
 };
 
 export default function SignIn() {
+  const targetTime = new Date("2025-09-01T01:00:00Z");
+  const now = new Date();
+
+  if (now < targetTime) {
+    redirect("/");
+  }
   return (
     <>
       <div className="flex flex-wrap items-center">
@@ -27,7 +33,9 @@ export default function SignIn() {
                 width={43}
                 height={43}
               />
-              <span className="font-semibold text-dark dark:text-white">Robotik PNP</span>
+              <span className="font-semibold text-dark dark:text-white">
+                Robotik PNP
+              </span>
             </Link>
             <p className="mb-3 text-xl font-medium text-dark dark:text-white">
               Welcome to Robotik PNP
