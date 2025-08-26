@@ -1,6 +1,13 @@
 "use client";
 
+import { LogOutIcon, SettingsIcon, UserIcon } from "./icons";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "@/lib/firebaseConfig";
 import { ChevronUpIcon } from "@/assets/icons";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
+import { signOut } from "firebase/auth";
 import {
   Dropdown,
   DropdownContent,
@@ -9,16 +16,12 @@ import {
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { LogOutIcon, SettingsIcon, UserIcon } from "./icons";
-import { useAuth } from "@/hooks/useAuth";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "@/lib/firebaseConfig";
 
 export function UserInfo() {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [photoURL, setPhotoURL] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -40,12 +43,21 @@ export function UserInfo() {
     fetchUserData();
   }, [user?.uid]);
 
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      setIsOpen(false);
+      router.replace("/login");
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
+  };
+
   const USER = {
     name: user?.displayName,
     email: user?.email,
     img: photoURL || "/images/user/image.png",
   };
-
 
   return (
     <Dropdown isOpen={isOpen} setIsOpen={setIsOpen}>
@@ -132,7 +144,7 @@ export function UserInfo() {
         <div className="p-2 text-base text-[#4B5563] dark:text-dark-6">
           <button
             className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-[9px] hover:bg-gray-2 hover:text-dark dark:hover:bg-dark-3 dark:hover:text-white"
-            onClick={() => setIsOpen(false)}
+            onClick={handleLogout}
           >
             <LogOutIcon />
 
