@@ -1,18 +1,17 @@
 "use client";
 import { EmailIcon, PasswordIcon } from "@/assets/icons";
-import Link from "next/link";
-import React, { useState } from "react";
 import InputGroup from "../FormElements/InputGroup";
 import { Checkbox } from "../FormElements/checkbox";
+import { auth } from "@/lib/firebaseConfig";
+import { useRouter } from "next/navigation";
+import React, { useState } from "react";
+import Link from "next/link";
 import {
   browserLocalPersistence,
   browserSessionPersistence,
   setPersistence,
   signInWithEmailAndPassword,
 } from "firebase/auth";
-import { auth, db } from "@/lib/firebaseConfig";
-import { useRouter } from "next/navigation";
-import { doc, getDoc } from "firebase/firestore";
 
 export default function SigninWithPassword() {
   const router = useRouter();
@@ -33,24 +32,19 @@ export default function SigninWithPassword() {
         auth,
         remember ? browserLocalPersistence : browserSessionPersistence
       );
+
       const userCredential = await signInWithEmailAndPassword(
         auth,
         email,
         password
       );
-      const uid = userCredential.user.uid;
 
-      const userDoc = await getDoc(doc(db, "users", uid));
+      const user = userCredential.user;
 
-      if (!userDoc.exists()) {
-        router.replace("/verification");
+      if (user.emailVerified) {
+        router.replace("/dashboard");
       } else {
-        const userData = userDoc.data();
-        if (!userData.role) {
-          router.replace("/verification");
-        } else {
-          router.replace("/dashboard");
-        }
+        router.replace("/verify-email");
       }
 
       clear();
