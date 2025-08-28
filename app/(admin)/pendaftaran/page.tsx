@@ -83,7 +83,6 @@ export default function Dashboard() {
 
     const fetchUserPreview = async () => {
       try {
-        setIsLoading(true);
         const docRef = doc(db, "users", user.uid);
         const docSnap = await getDoc(docRef);
         if (!cancelled && docSnap.exists()) {
