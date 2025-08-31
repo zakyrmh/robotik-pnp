@@ -18,7 +18,9 @@ export default function Dashboard() {
 
   return (
     <>
-      <p>Welcome, {user?.displayName}</p>
+      <div>
+        <p>Welcome, {user?.displayName}</p>
+      </div>
     </>
   );
 }
