@@ -2,6 +2,9 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@import "uploadthing/tw/v4";
+@source "../node_modules/@uploadthing/react/dist"; /** <-- depends on your project structure */
+
 @theme {
   --color-gray-dark: rgb(18 32 49);
   --color-dark: rgb(17 25 40);
