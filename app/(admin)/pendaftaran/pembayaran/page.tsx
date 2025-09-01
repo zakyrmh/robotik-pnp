@@ -73,7 +73,7 @@ export default function DataPribadi() {
       const filePath = `upload/${user.uid}_${Date.now()}_${file.name}`;
 
       // Upload ke Supabase
-      const { data, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from("pendaftaran")
         .upload(filePath, file, {
           cacheControl: "3600",
@@ -106,7 +106,7 @@ export default function DataPribadi() {
       );
 
       setSuccess("Data berhasil disimpan");
-      router.push("/pendaftaran");
+      router.push("/dashboard");
     } catch (err) {
       console.error("Error saat submit:", err);
       setError("Terjadi kesalahan saat menyimpan data");
@@ -120,14 +120,14 @@ export default function DataPribadi() {
       <ShowcaseSection title="Formulir Pendaftaran CAANG" className="!p-6.5">
         <form onSubmit={handleSubmit}>
           <h3 className="mb-4.5 text-xl font-semibold">Pembayaran</h3>
-          <div className="bg-gray-100 p-3 rounded-md mb-3">
+          <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-md mb-3">
             <p className="font-semibold">Bank BSI</p>
             <p>
               No. Rekening: <span className="font-mono">7324452887</span>
             </p>
             <p>a.n. Dewinda Kurnia Oktari</p>
           </div>
-          <div className="bg-gray-100 p-3 rounded-md mb-3">
+          <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-md mb-3">
             <p className="font-semibold">Dana</p>
             <p>
               No. Rekening: <span className="font-mono">083181565767</span>
