@@ -189,7 +189,7 @@ export default function DataPribadi() {
 
         {error && (
           <p className="text-red-500 my-4">
-            <span className="font-semibold">Error:</span> {error}
+            <span className="font-semibold">Error:</span> {error}, silahkan coba lagi
           </p>
         )}
 
