@@ -120,6 +120,20 @@ export default function DataPribadi() {
       <ShowcaseSection title="Formulir Pendaftaran CAANG" className="!p-6.5">
         <form onSubmit={handleSubmit}>
           <h3 className="mb-4.5 text-xl font-semibold">Pembayaran</h3>
+          <div className="bg-gray-100 p-3 rounded-md mb-3">
+            <p className="font-semibold">Bank BSI</p>
+            <p>
+              No. Rekening: <span className="font-mono">7324452887</span>
+            </p>
+            <p>a.n. Dewinda Kurnia Oktari</p>
+          </div>
+          <div className="bg-gray-100 p-3 rounded-md mb-3">
+            <p className="font-semibold">Dana</p>
+            <p>
+              No. Rekening: <span className="font-mono">083181565767</span>
+            </p>
+            <p>a.n. Dewinda Kurnia Oktari</p>
+          </div>
           <div className="mb-4.5 flex flex-col gap-4.5">
             <div className="flex flex-col">
               <InputGroup

@@ -3,9 +3,12 @@
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebaseConfig";
 import { doc, getDoc } from "firebase/firestore";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Wallet, Phone, Users } from "lucide-react";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -33,23 +36,70 @@ export default function Dashboard() {
   }, [user, authLoading, router]);
 
   return (
-    <>
-      <div>
-        <p>Welcome, {user?.displayName}</p>
-      </div>
-      {pembayaran && (
-        <div>
-          <p>
-            Silahkan join WhatsApp group :{" "}
-            <Link
-              href="https://chat.whatsapp.com/J822tPx4E4kCMPaDD88RYv?mode=ems_copy_t"
-              className="text-primary"
-            >
-              Join
-            </Link>
+    <div className="container mx-auto max-w-2xl p-6">
+      <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
+
+      <Card className="mb-6 shadow-lg">
+        <CardHeader>
+          <CardTitle>Halo, {user?.displayName || "Peserta"}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-gray-600">
+            Selamat datang di halaman dashboard Robotik PNP.
           </p>
-        </div>
+        </CardContent>
+      </Card>
+
+      {!pembayaran && (
+        <Card className="mb-6 border-red-400 shadow-md">
+          <CardHeader className="flex items-center gap-2">
+            <Wallet className="text-red-500" />
+            <CardTitle>Pembayaran</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-2">Silakan lakukan pembayaran ke salah satu rekening berikut:</p>
+            <div className="bg-gray-100 p-3 rounded-md mb-3">
+              <p className="font-semibold">Bank BSI</p>
+              <p>No. Rekening: <span className="font-mono">7324452887</span></p>
+              <p>a.n. Dewinda Kurnia Oktari</p>
+            </div>
+            <div className="bg-gray-100 p-3 rounded-md mb-3">
+              <p className="font-semibold">Dana</p>
+              <p>No. Rekening: <span className="font-mono">083181565767</span></p>
+              <p>a.n. Dewinda Kurnia Oktari</p>
+            </div>
+            <p className="mb-2">Jika ada kendala, hubungi contact person:</p>
+            <div className="flex items-center gap-2 text-gray-700">
+              <Phone className="w-5 h-5" />
+              <Link href="https://wa.me/6285157875233" target="_blank">085157875233 (Naufal)</Link>
+            </div>
+            <div className="flex items-center gap-2 text-gray-700 mt-2">
+              <Phone className="w-5 h-5" />
+              <Link href="https://wa.me/6283181565767" target="_blank">083181565767 (Dinda)</Link>
+            </div>
+          </CardContent>
+        </Card>
       )}
-    </>
+
+      {pembayaran && (
+        <Card className="shadow-md">
+          <CardHeader className="flex items-center gap-2">
+            <Users className="text-green-600" />
+            <CardTitle>Gabung Grup WhatsApp</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-3">Pembayaran sudah terverifikasi ✅</p>
+            <Button asChild>
+              <Link
+                href="https://chat.whatsapp.com/J822tPx4E4kCMPaDD88RYv?mode=ems_copy_t"
+                target="_blank"
+              >
+                Join Grup
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }
