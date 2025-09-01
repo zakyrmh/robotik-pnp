@@ -1,28 +1,33 @@
 "use client";
 
-import { UploadButton } from "@/utils/uploadthing";
 import { ShowcaseSection } from "@/components/Layouts/showcase-section";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebaseConfig";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import InputGroup from "@/components/FormElements/InputGroup";
 import Link from "next/link";
 
 export default function DataPribadi() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const [formData, setFormData] = useState({
-    pasFoto: "",
-    followIgRobotik: "",
-    followIgMrc: "",
-    subscribeYoutube: "",
-  });
-  const [loading, setLoading] = useState(false); // ✅ default false
+
+  // State untuk tiap file
+  const [pasFoto, setPasFoto] = useState<File | null>(null);
+  const [igRobotik, setIgRobotik] = useState<File | null>(null);
+  const [igMrc, setIgMrc] = useState<File | null>(null);
+  const [youtube, setYoutube] = useState<File | null>(null);
+
+  // State umum
+  const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
 
-  // Redirect ke login jika belum autentikasi & cek pendaftaran
+  const isFormComplete = pasFoto && igRobotik && igMrc && youtube;
+
+  // Redirect login & cek registrasi
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
@@ -35,7 +40,6 @@ export default function DataPribadi() {
         const docRef = doc(db, "caang_registration", user.uid);
         const snap = await getDoc(docRef);
         if (snap.exists() && snap.data()?.followIgRobotik) {
-          // ✅ typo diperbaiki
           router.push("/pendaftaran");
         }
       } catch (err) {
@@ -46,49 +50,73 @@ export default function DataPribadi() {
     checkRegistration();
   }, [user, authLoading, router]);
 
+  // Helper: upload file ke Supabase & return public URL
+  const uploadFile = async (file: File, fieldName: string) => {
+    if (!["image/jpeg", "image/png"].includes(file.type)) {
+      throw new Error(`${fieldName} harus format .jpg atau .png`);
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      throw new Error(`${fieldName} maksimal 2MB`);
+    }
+
+    const filePath = `upload/${user?.uid}_${fieldName}_${Date.now()}_${file.name}`;
+    const { error: uploadError } = await supabase.storage
+      .from("pendaftaran")
+      .upload(filePath, file, {
+        cacheControl: "3600",
+        upsert: false,
+      });
+
+    if (uploadError) throw uploadError;
+
+    const { data: publicUrlData } = supabase.storage
+      .from("pendaftaran")
+      .getPublicUrl(filePath);
+
+    if (!publicUrlData?.publicUrl) {
+      throw new Error(`Gagal membuat URL publik untuk ${fieldName}`);
+    }
+
+    return publicUrlData.publicUrl;
+  };
+
+  // Handle submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setSuccess("");
     setError("");
+    setSuccess("");
 
     try {
-      if (user?.uid) {
-        await setDoc(
-          doc(db, "caang_registration", user?.uid),
-          {
-            ...formData,
-          },
-          { merge: true }
-        );
-      } else {
-        setError("Terjadi kesalahan");
-      }
+      if (!user?.uid) throw new Error("Autentikasi gagal");
+
+      // Upload semua file
+      const pasFotoUrl = await uploadFile(pasFoto!, "pasFoto");
+      const igRobotikUrl = await uploadFile(igRobotik!, "igRobotik");
+      const igMrcUrl = await uploadFile(igMrc!, "igMrc");
+      const youtubeUrl = await uploadFile(youtube!, "youtube");
+
+      // Simpan ke Firestore
+      await setDoc(
+        doc(db, "caang_registration", user.uid),
+        {
+          pasFoto: pasFotoUrl,
+          followIgRobotik: igRobotikUrl,
+          followIgMrc: igMrcUrl,
+          youtubeRobotik: youtubeUrl,
+        },
+        { merge: true }
+      );
+
       setSuccess("Data berhasil disimpan");
-      clear();
       router.push("/pendaftaran");
     } catch (err) {
       console.error(err);
-      setError("Terjadi kesalahan");
+      setError(err instanceof Error ? err.message : "Terjadi kesalahan");
     } finally {
       setLoading(false);
     }
   };
-
-  const clear = () => {
-    setFormData({
-      pasFoto: "",
-      followIgRobotik: "",
-      followIgMrc: "",
-      subscribeYoutube: "",
-    });
-  };
-
-  const isFormComplete =
-    formData.pasFoto &&
-    formData.followIgRobotik &&
-    formData.followIgMrc &&
-    formData.subscribeYoutube;
 
   return (
     <ShowcaseSection title="Formulir Pendaftaran CAANG" className="!p-6.5">
@@ -97,109 +125,58 @@ export default function DataPribadi() {
         <div className="mb-4.5 flex flex-col gap-4.5">
           {/* Baris 1 */}
           <div className="flex flex-col gap-4.5 xl:flex-row xl:gap-4 xl:justify-around xl:items-center">
-            {/* Pas Foto */}
-            <div className="xl:text-center">
-              <label className="text-body-sm font-medium text-dark dark:text-white">
-                Pas Foto
-              </label>
-              <UploadButton
-                endpoint="imageUploader"
-                onClientUploadComplete={(res) => {
-                  const firstFile = res[0];
-                  setFormData({
-                    ...formData,
-                    pasFoto: firstFile.url,
-                  });
-                }}
-                onUploadError={(error: Error) => {
-                  alert(`ERROR! ${error.message}`);
-                }}
+            <div className="flex flex-col">
+              <InputGroup
+                type="file"
+                fileStyleVariant="style1"
+                label="Pas Foto"
+                placeholder="Masukkan Pas Foto"
+                handleChange={(e) => setPasFoto(e.target.files?.[0] ?? null)}
+                required
               />
+              <p className="text-sm mt-1">Maksimal ukuran file 2MB</p>
             </div>
-            {/* IG Robotik */}
-            <div className="xl:text-center">
-              <label className="text-body-sm font-medium text-dark dark:text-white">
-                Bukti Follow Instagram{" "}
-                <Link
-                  href="https://instagram.com/robotikpnp"
-                  target="_blank"
-                  className="text-primary"
-                >
-                  @robotikpnp
-                </Link>
-              </label>
-              <UploadButton
-                endpoint="imageUploader"
-                onClientUploadComplete={(res) => {
-                  const firstFile = res[0];
-                  setFormData({
-                    ...formData,
-                    followIgRobotik: firstFile.url,
-                  });
-                  console.log("Files: ", res);
-                }}
-                onUploadError={(error: Error) => {
-                  alert(`ERROR! ${error.message}`);
-                }}
+
+            <div className="flex flex-col">
+              <InputGroup
+                type="file"
+                fileStyleVariant="style1"
+                label="Bukti Follow Instagram Robotik"
+                placeholder="Upload Bukti IG Robotik"
+                handleChange={(e) => setIgRobotik(e.target.files?.[0] ?? null)}
+                required
               />
+              <Link className="text-sm mt-2 text-primary" target="_blank" href="https://www.instagram.com/robotikpnp/">@robotikpnp</Link>
+              <p className="text-sm mt-1">Maksimal ukuran file 2MB</p>
             </div>
           </div>
 
           {/* Baris 2 */}
           <div className="flex flex-col gap-4.5 xl:flex-row xl:gap-4 xl:justify-around xl:items-center">
-            {/* IG MRC */}
-            <div className="xl:text-center">
-              <label className="text-body-sm font-medium text-dark dark:text-white">
-                Bukti Follow Instagram{" "}
-                <Link
-                  href="https://instagram.com/mrcpnp"
-                  target="_blank"
-                  className="text-primary"
-                >
-                  @mrcpnp
-                </Link>
-              </label>
-              <UploadButton
-                endpoint="imageUploader"
-                onClientUploadComplete={(res) => {
-                  const firstFile = res[0];
-                  setFormData({
-                    ...formData,
-                    followIgMrc: firstFile.url,
-                  });
-                  console.log("Files: ", res);
-                }}
-                onUploadError={(error: Error) => {
-                  alert(`ERROR! ${error.message}`);
-                }}
+            <div className="flex flex-col">
+              <InputGroup
+                type="file"
+                fileStyleVariant="style1"
+                label="Bukti Follow Instagram MRC"
+                placeholder="Upload Bukti IG MRC"
+                handleChange={(e) => setIgMrc(e.target.files?.[0] ?? null)}
+                required
               />
+              <Link className="text-sm mt-2 text-primary" target="_blank" href="https://www.instagram.com/mrcpnp/">@mrcpnp</Link>
+              <p className="text-sm mt-1">Maksimal ukuran file 2MB</p>
             </div>
-            {/* YouTube */}
-            <div className="xl:text-center">
-              <label className="text-body-sm font-medium text-dark dark:text-white">
-                Bukti Subscribe YouTube{" "}
-                <Link
-                  href="https://www.youtube.com/@ukmrobotikpnp2230"
-                  target="_blank"
-                  className="text-primary"
-                >
-                  UKM Robotik PNP
-                </Link>
-              </label>
-              <UploadButton
-                endpoint="imageUploader"
-                onClientUploadComplete={(res) => {
-                  const firstFile = res[0];
-                  setFormData({
-                    ...formData,
-                    subscribeYoutube: firstFile.url,
-                  });
-                  console.log("Files: ", res);
-                }}
-                onUploadError={(error: Error) => {
-                  alert(`ERROR! ${error.message}`);
-                }}
+
+            <div className="flex flex-col">
+              <InputGroup
+                type="file"
+                fileStyleVariant="style1"
+                label="Bukti Youtube Robotik"
+                placeholder="Upload Bukti Youtube Robotik"
+                handleChange={(e) => setYoutube(e.target.files?.[0] ?? null)}
+                required
               />
+              <Link className="text-sm mt-2 text-primary" target="_blank" href="https://www.youtube.com/@robotikpnp">UKM Robotik</Link>
+              <p className="text-sm mt-1">Maksimal ukuran file 2MB</p>
             </div>
           </div>
         </div>

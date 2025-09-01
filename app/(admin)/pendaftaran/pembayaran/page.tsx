@@ -1,19 +1,18 @@
 "use client";
 
-import { UploadButton } from "@/utils/uploadthing";
 import { ShowcaseSection } from "@/components/Layouts/showcase-section";
 import { useAuth } from "@/hooks/useAuth";
 import { db } from "@/lib/firebaseConfig";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
+import InputGroup from "@/components/FormElements/InputGroup";
 
 export default function DataPribadi() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const [formData, setFormData] = useState({
-    pembayaran: "",
-  });
+  const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
@@ -48,32 +47,72 @@ export default function DataPribadi() {
     setError("");
 
     try {
-      if (user?.uid) {
-        await setDoc(
-          doc(db, "caang_registration", user?.uid),
-          {
-            ...formData,
-          },
-          { merge: true }
-        );
-      } else {
-        setError("Terjadi kesalahan");
+      if (!user?.uid) {
+        setError("Terjadi kesalahan autentikasi");
+        return;
       }
+
+      if (!file) {
+        setError("File belum dipilih");
+        return;
+      }
+
+      // Validasi ukuran (maks 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        setError("Ukuran file maksimal 2MB");
+        return;
+      }
+
+      // Validasi tipe file
+      if (!["image/jpeg", "image/png"].includes(file.type)) {
+        setError("Format file harus .jpg atau .png");
+        return;
+      }
+
+      // Path unik biar tidak tabrakan
+      const filePath = `upload/${user.uid}_${Date.now()}_${file.name}`;
+
+      // Upload ke Supabase
+      const { data, error: uploadError } = await supabase.storage
+        .from("pendaftaran")
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (uploadError) {
+        console.error(uploadError);
+        throw uploadError;
+      }
+
+      // Ambil public URL
+      const { data: publicUrlData } = supabase.storage
+        .from("pendaftaran")
+        .getPublicUrl(filePath);
+
+      const publicUrl = publicUrlData?.publicUrl;
+
+      if (!publicUrl) {
+        throw new Error("Gagal membuat public URL");
+      }
+
+      // Simpan ke Firestore
+      await setDoc(
+        doc(db, "caang_registration", user.uid),
+        {
+          pembayaran: publicUrl,
+        },
+        { merge: true }
+      );
+
       setSuccess("Data berhasil disimpan");
-      clear();
       router.push("/pendaftaran");
     } catch (err) {
-      console.error(err);
-      setError("Terjadi kesalahan");
+      console.error("Error saat submit:", err);
+      setError("Terjadi kesalahan saat menyimpan data");
     } finally {
       setLoading(false);
     }
-  };
-
-  const clear = () => {
-    setFormData({
-      pembayaran: "",
-    });
   };
 
   return (
@@ -82,24 +121,17 @@ export default function DataPribadi() {
         <form onSubmit={handleSubmit}>
           <h3 className="mb-4.5 text-xl font-semibold">Pembayaran</h3>
           <div className="mb-4.5 flex flex-col gap-4.5">
-            <div className="xl:text-center">
-              <label className="text-body-sm font-medium text-dark dark:text-white">
-                Bukti Pembayaran
-              </label>
-              <UploadButton
-                endpoint="imageUploader"
-                onClientUploadComplete={(res) => {
-                  const firstFile = res[0];
-                  setFormData({
-                    ...formData,
-                    pembayaran: firstFile.url,
-                  });
-                  console.log("Files: ", res);
-                }}
-                onUploadError={(error: Error) => {
-                  alert(`ERROR! ${error.message}`);
-                }}
+            <div className="flex flex-col">
+              <InputGroup
+                type="file"
+                fileStyleVariant="style1"
+                label="Bukti Pembayaran"
+                placeholder="Masukkan Bukti Pembayaran"
+                handleChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                required
               />
+              <p className="text-sm mt-2">Jenis file: .jpg, .jpeg, .png</p>
+              <p className="text-sm mt-1">Maksimal ukuran file 2MB</p>
             </div>
           </div>
 
@@ -117,10 +149,14 @@ export default function DataPribadi() {
 
           <button
             type="submit"
-            disabled={loading || !formData.pembayaran}
+            disabled={loading || !file}
             className="mt-6 flex w-full justify-center rounded-lg bg-primary p-[13px] font-medium text-white hover:bg-opacity-90 disabled:opacity-60"
           >
-            {!formData.pembayaran ? "Pilih Bukti Pembayaran" : loading ? "Loading..." : "Simpan"}
+            {!file
+              ? "Pilih Bukti Pembayaran"
+              : loading
+              ? "Loading..."
+              : "Simpan"}
           </button>
         </form>
       </ShowcaseSection>
