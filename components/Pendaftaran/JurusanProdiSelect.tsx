@@ -92,8 +92,8 @@ export default function JurusanProdiSelect({
     const jur = data.jurusan.find((j) => j.nama === selectedJurusan);
     if (!jur) return [];
     return jur.program_studi.map((p) => ({
-      value: p.nama,
-      label: p.jenjang ? `${p.jenjang} - ${p.nama}` : p.nama,
+      value: `${p.jenjang} - ${p.nama}`,
+      label: `${p.jenjang} - ${p.nama}`
     }));
   }, [data, selectedJurusan]);
 

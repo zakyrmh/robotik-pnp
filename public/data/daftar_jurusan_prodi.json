@@ -41,10 +41,6 @@
                     "jenjang": "D4"
                 },
                 {
-                    "nama": "Rekayasa Perawatan dan Restorasi Jembatan",
-                    "jenjang": "S2 Terapan"
-                },
-                {
                     "nama": "Teknologi Sipil (Kab. Tanah Datar)",
                     "jenjang": "D3"
                 }
@@ -76,14 +72,6 @@
                 {
                     "nama": "Teknologi Rekayasa Instalasi Listrik",
                     "jenjang": "D4"
-                },
-                {
-                    "nama": "Teknik Listrik (Kab. Pelalawan)",
-                    "jenjang": "D2"
-                },
-                {
-                    "nama": "Instalasi dan Pemeliharaan Kabel Tegangan Rendah",
-                    "jenjang": "D2"
                 }
             ]
         },
@@ -124,10 +112,6 @@
                     "jenjang": "D4"
                 },
                 {
-                    "nama": "Sistem Informasi Akuntansi",
-                    "jenjang": "S2 Terapan"
-                },
-                {
                     "nama": "Akuntansi (Kab. Solok Selatan)",
                     "jenjang": "D3"
                 }
@@ -147,10 +131,6 @@
                 {
                     "nama": "Manajemen Informatika",
                     "jenjang": "D3"
-                },
-                {
-                    "nama": "Administrasi Jaringan Komputer",
-                    "jenjang": "D2"
                 },
                 {
                     "nama": "Teknologi Rekayasa Perangkat Lunak",
