@@ -1,4 +1,5 @@
 export type FormData = {
+  uid: string;
   namaLengkap: string;
   namaPanggilan: string;
   jenisKelamin: string;
@@ -19,11 +20,12 @@ export type FormData = {
   namaOrangTua: string;
   noHpOrangTua: string;
   pasFoto: string;
-  buktiPembayaran: string;
-  buktiFollowSosmed: string;
+  pembayaran: string;
+  followIgRobotik: string;
 };
 
 export const initialFormData: FormData = {
+  uid: "",
   namaLengkap: "",
   namaPanggilan: "",
   jenisKelamin: "",
@@ -44,6 +46,6 @@ export const initialFormData: FormData = {
   namaOrangTua: "",
   noHpOrangTua: "",
   pasFoto: "",
-  buktiPembayaran: "",
-  buktiFollowSosmed: "",
+  pembayaran: "",
+  followIgRobotik: "",
 };

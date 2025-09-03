@@ -29,6 +29,8 @@ import { Loader2, Users, BarChart3, FileText } from "lucide-react";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
+import { FormData } from "@/types/pendaftaran";
+import RegistrationDetailModal from "@/components/modal/RegistrationDetailModal";
 
 type Registration = {
   uid: string;
@@ -51,6 +53,9 @@ export default function AdminDashboard() {
 
   const [selectedUser, setSelectedUser] = useState<Registration | null>(null);
   const [open, setOpen] = useState(false);
+
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailData, setDetailData] = useState<FormData | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -283,7 +288,33 @@ export default function AdminDashboard() {
                   {registrations.map((r, i) => (
                     <TableRow key={r.uid}>
                       <TableCell>{i + 1}</TableCell>
-                      <TableCell>{r.namaLengkap}</TableCell>
+                      <TableCell>
+                        <Button
+                          variant="link"
+                          onClick={async () => {
+                            try {
+                              const regRef = doc(
+                                db,
+                                "caang_registration",
+                                r.uid
+                              );
+                              const regSnap = await getDoc(regRef);
+
+                              if (regSnap.exists()) {
+                                setDetailData(regSnap.data() as FormData);
+                              } else {
+                                setDetailData(null);
+                              }
+
+                              setDetailOpen(true);
+                            } catch (err) {
+                              console.error("Gagal ambil detail data:", err);
+                            }
+                          }}
+                        >
+                          {r.namaLengkap}
+                        </Button>
+                        </TableCell>
                       <TableCell>{r.email}</TableCell>
                       <TableCell>
                         <span
@@ -317,7 +348,15 @@ export default function AdminDashboard() {
                             Verifikasi
                           </Button>
                         ) : (
-                          getPaymentStatus(r)
+                        <span
+                          className={`${
+                            (getPaymentStatus(r) === "Sudah")
+                              ? "px-2 py-1 rounded text-xs bg-green-200 text-green-800"
+                              : ""
+                          }`}
+                        >
+                          {getPaymentStatus(r)}
+                        </span>
                         )}
                       </TableCell>
                     </TableRow>
@@ -373,6 +412,11 @@ export default function AdminDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <RegistrationDetailModal
+        open={detailOpen}
+        onOpenChange={setDetailOpen}
+        data={detailData}
+      />
     </div>
   );
 }
