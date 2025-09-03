@@ -13,6 +13,7 @@ export default function DashboardCaang() {
   const [user, setUser] = useState<User | null>(null);
   const [name, setName] = useState<string | null>(null);
   const [pembayaran, setPembayaran] = useState<boolean | null>(false);
+  const [buktiPembayaran, setBuktiPembayaran] = useState<string | null>(null);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (currentUser) => {
@@ -26,6 +27,7 @@ export default function DashboardCaang() {
           const data = userDoc.data();
           const dataCaang = caangDoc.data();
           setName(data.name || "Peserta");
+          setBuktiPembayaran(dataCaang?.pembayaran || null);
           setPembayaran(dataCaang?.payment_verification || null);
         }
       } else {
@@ -60,6 +62,8 @@ export default function DashboardCaang() {
             <CardTitle>Pembayaran</CardTitle>
           </CardHeader>
           <CardContent>
+            {!buktiPembayaran ? (
+              <>
             <p className="mb-2">
               Silakan lakukan pembayaran ke salah satu rekening berikut:
             </p>
@@ -77,6 +81,10 @@ export default function DashboardCaang() {
               </p>
               <p>a.n. Dewinda Kurnia Oktari</p>
             </div>
+              </>
+            ) : (
+              <p className="font-semibold mb-3">Silahkan tunggu konfirmasi pembayaran dari admin.</p>
+            )}
             <p className="mb-2">Jika ada kendala, hubungi contact person:</p>
             <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
               <Phone className="w-5 h-5" />
