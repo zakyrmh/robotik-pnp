@@ -12,7 +12,7 @@ import { doc, getDoc } from "firebase/firestore";
 export default function DashboardCaang() {
   const [user, setUser] = useState<User | null>(null);
   const [name, setName] = useState<string | null>(null);
-  const [pembayaran, setPembayaran] = useState<string | null>(null);
+  const [pembayaran, setPembayaran] = useState<boolean | null>(false);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (currentUser) => {
@@ -21,15 +21,17 @@ export default function DashboardCaang() {
 
         // ambil data user dari Firestore
         const userDoc = await getDoc(doc(db, "users", currentUser.uid));
+        const caangDoc = await getDoc(doc(db, "caang_registration", currentUser.uid));
         if (userDoc.exists()) {
           const data = userDoc.data();
+          const dataCaang = caangDoc.data();
           setName(data.name || "Peserta");
-          setPembayaran(data.pembayaran || null);
+          setPembayaran(dataCaang?.payment_verification || null);
         }
       } else {
         setUser(null);
         setName(null);
-        setPembayaran(null);
+        setPembayaran(false);
       }
     });
 
