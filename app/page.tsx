@@ -1,103 +1,166 @@
+"use client";
+
 import Image from "next/image";
+import { motion } from "framer-motion";
+import Link from "next/link";
+
+// Timeline Data
+const timeline = [
+  { step: 1, title: "Pendaftaran Dibuka", date: "September" },
+  { step: 2, title: "Demo Robot", date: "September" },
+  { step: 3, title: "Pelatihan", date: "September" },
+];
+
+// Tim KRI
+const teams = [
+  { name: "KRAI", desc: "Kontes Robot ABU Indonesia" },
+  { name: "KRSBI-B", desc: "Kontes Robot Sepak Bola Indonesia - Beroda" },
+  { name: "KRSBI-H", desc: "Kontes Robot Sepak Bola Indonesia - Humanoid" },
+  { name: "KRSRI", desc: "Kontes Robot SAR Indonesia" },
+  { name: "KRSTI", desc: "Kontes Robot Seni Tari Indonesia" },
+];
 
 export default function Home() {
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <main className="flex flex-col items-center">
+      {/* Hero Section */}
+      <section
+        id="home"
+        className="w-full min-h-screen flex flex-col justify-center items-center bg-slate-50 text-center px-4"
+      >
+        <motion.h1
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7 }}
+          className="text-4xl md:text-6xl font-bold text-slate-900 mb-6"
+        >
+          Selamat Datang di <span className="text-slate-600">UKM Robotik</span>
+        </motion.h1>
+        <p className="text-lg md:text-xl text-slate-700 max-w-2xl mb-6">
+          Wadah bagi mahasiswa Politeknik Negeri Padang untuk mengembangkan
+          minat, bakat, dan kreativitas di bidang robotika.
+        </p>
+        <Link
+          href="/caang/register"
+          className="bg-slate-800 text-white px-6 py-3 rounded-lg hover:bg-slate-700 transition"
+        >
+          Gabung Sekarang
+        </Link>
+      </section>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      {/* Ketua Umum */}
+      <section id="ketua" className="w-full py-20 bg-white px-6">
+        <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-10 items-center">
+          <Image
+            src="/images/ketua_umum.jpg"
+            alt="Ketua Umum UKM Robotik"
+            width={400}
+            height={400}
+            className="rounded-2xl object-contain shadow-md"
+          />
+          <div>
+            <h2 className="text-3xl font-bold mb-4 text-slate-900">
+              Ketua Umum
+            </h2>
+            <p className="text-lg text-slate-700 mb-2">
+              Nama: M. Fadhil Muzaffar Guci
+            </p>
+            <p className="text-lg text-slate-700 mb-2">
+              Prodi: D4 Teknik Elektronika &apos;23
+            </p>
+            {/* <p className="text-lg text-slate-700">
+              Visi: Membawa UKM Robotik menjadi pusat inovasi teknologi dan
+              juara kompetisi robotik nasional.
+            </p> */}
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+      </section>
+
+      {/* Video Perkenalan */}
+      <section id="video" className="w-full py-20 bg-slate-50 px-6 text-center">
+        <h2 className="text-3xl font-bold text-slate-900 mb-8">
+          Video Perkenalan
+        </h2>
+        <div className="max-w-3xl mx-auto aspect-video rounded-xl overflow-hidden shadow-md">
+          <iframe
+            width="100%"
+            height="100%"
+            src="https://www.youtube.com/embed/dQw4w9WgXc" // ganti link video ormawa
+            title="Video Perkenalan UKM Robotik"
+            allowFullScreen
+          ></iframe>
+        </div>
+      </section>
+
+      {/* Timeline Open Recruitment */}
+      <section
+        id="recruitment"
+        className="w-full py-20 bg-white px-6 text-center"
+      >
+        <h2 className="text-3xl font-bold text-slate-900 mb-12">
+          Timeline Open Recruitment
+        </h2>
+        <div className="max-w-4xl mx-auto grid md:grid-cols-3 gap-6">
+          {timeline.map((item) => (
+            <div
+              key={item.step}
+              className="bg-slate-50 p-6 rounded-xl shadow hover:shadow-lg transition"
+            >
+              <h3 className="text-xl font-semibold text-slate-800 mb-2">
+                {item.title}
+              </h3>
+              <p className="text-slate-600">{item.date}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Daftar Tim KRI */}
+      <section id="kri" className="w-full py-20 bg-slate-50 px-6 text-center">
+        <h2 className="text-3xl font-bold text-slate-900 mb-12">
+          Daftar Tim KRI
+        </h2>
+        <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+          {teams.map((team) => (
+            <div
+              key={team.name}
+              className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition"
+            >
+              <h3 className="text-xl font-semibold text-slate-800 mb-2">
+                {team.name}
+              </h3>
+              <p className="text-slate-600">{team.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Lokasi */}
+      <section id="lokasi" className="w-full py-20 bg-white px-6 text-center">
+        <h2 className="text-3xl font-bold text-slate-900 mb-8">Lokasi</h2>
+        <div className="max-w-4xl mx-auto rounded-xl overflow-hidden shadow-md">
+          <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d349.56666415621277!2d100.46807153132339!3d-0.9146811910768018!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2fd4b7bbfa1dfc99%3A0xf0984f8a51acdad!2s3FP9%2B47V%2C%20Limau%20Manis%2C%20Kec.%20Pauh%2C%20Kota%20Padang%2C%20Sumatera%20Barat%2025175!5e0!3m2!1sid!2sid!4v1756969691580!5m2!1sid!2sid"
+            width="100%"
+            height="450"
+            loading="lazy"
+            className="w-full"
+          ></iframe>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer
+        id="footer"
+        className="w-full bg-slate-800 text-white py-8 text-center"
+      >
+        <p className="mb-2 font-semibold">UKM Robotik</p>
+        <p>Email: ukm.robotik@example.com</p>
+        <p>Instagram: @ukm.robotik</p>
+        <p className="mt-4 text-slate-400 text-sm">
+          © {new Date().getFullYear()} UKM Robotik. All rights reserved.
+        </p>
       </footer>
-    </div>
+    </main>
   );
 }
