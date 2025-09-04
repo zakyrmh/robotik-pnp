@@ -11,42 +11,78 @@ import { doc, getDoc } from "firebase/firestore";
 
 export default function DashboardCaang() {
   const [user, setUser] = useState<User | null>(null);
-  const [name, setName] = useState<string | null>(null);
-  const [pembayaran, setPembayaran] = useState<boolean | null>(false);
+  const [name, setName] = useState<string>("Peserta");
+  const [pembayaran, setPembayaran] = useState<boolean>(false);
   const [buktiPembayaran, setBuktiPembayaran] = useState<string | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (currentUser) => {
       if (currentUser) {
         setUser(currentUser);
+        setLoading(true);
 
-        // ambil data user dari Firestore
-        const userDoc = await getDoc(doc(db, "users", currentUser.uid));
-        const caangDoc = await getDoc(doc(db, "caang_registration", currentUser.uid));
-        if (userDoc.exists()) {
-          const data = userDoc.data();
-          const dataCaang = caangDoc.data();
-          setName(data.name || "Peserta");
-          setBuktiPembayaran(dataCaang?.pembayaran || null);
-          setPembayaran(dataCaang?.payment_verification || null);
+        try {
+          // ambil dokumen users
+          const userDocRef = doc(db, "users", currentUser.uid);
+          const userDoc = await getDoc(userDocRef);
+
+          // ambil dokumen caang_registration
+          const caangDocRef = doc(db, "caang_registration", currentUser.uid);
+          const caangDoc = await getDoc(caangDocRef);
+
+          if (userDoc.exists()) {
+            const data = userDoc.data();
+            setName((data?.name as string) || "Peserta");
+          } else {
+            console.warn("⚠️ User document tidak ditemukan:", currentUser.uid);
+          }
+
+          if (caangDoc.exists()) {
+            const dataCaang = caangDoc.data();
+            console.log("📄 Data caang_registration:", dataCaang);
+
+            setBuktiPembayaran((dataCaang?.pembayaran as string) || null);
+            setPembayaran((dataCaang?.payment_verification as boolean) || false);
+          } else {
+            console.warn(
+              "⚠️ caang_registration document tidak ditemukan:",
+              currentUser.uid
+            );
+          }
+        } catch (err) {
+          console.error("🔥 Error ambil data Firestore:", err);
+        } finally {
+          setLoading(false);
         }
       } else {
         setUser(null);
-        setName(null);
+        setName("Peserta");
         setPembayaran(false);
+        setBuktiPembayaran(null);
+        setLoading(false);
       }
     });
 
     return () => unsub();
   }, []);
 
+  if (loading) {
+    return (
+      <div className="container mx-auto max-w-2xl p-6">
+        <p>Loading dashboard...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto max-w-2xl p-6">
       <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
 
+      {/* Card salam */}
       <Card className="mb-6 shadow-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
         <CardHeader>
-          <CardTitle>Halo, {user?.displayName || name || "Peserta"}</CardTitle>
+          <CardTitle>Halo, {user?.displayName || name}</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-gray-600 dark:text-gray-300">
@@ -55,6 +91,7 @@ export default function DashboardCaang() {
         </CardContent>
       </Card>
 
+      {/* Card pembayaran */}
       {!pembayaran && (
         <Card className="mb-6 border-red-400 shadow-md bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100">
           <CardHeader className="flex items-center gap-2">
@@ -64,26 +101,30 @@ export default function DashboardCaang() {
           <CardContent>
             {!buktiPembayaran ? (
               <>
-            <p className="mb-2">
-              Silakan lakukan pembayaran ke salah satu rekening berikut:
-            </p>
-            <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-md mb-3">
-              <p className="font-semibold">Bank BSI</p>
-              <p>
-                No. Rekening: <span className="font-mono">7324452887</span>
-              </p>
-              <p>a.n. Dewinda Kurnia Oktari</p>
-            </div>
-            <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-md mb-3">
-              <p className="font-semibold">Dana</p>
-              <p>
-                No. Rekening: <span className="font-mono">083181565767</span>
-              </p>
-              <p>a.n. Dewinda Kurnia Oktari</p>
-            </div>
+                <p className="mb-2">
+                  Silakan lakukan pembayaran ke salah satu rekening berikut:
+                </p>
+                <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-md mb-3">
+                  <p className="font-semibold">Bank BSI</p>
+                  <p>
+                    No. Rekening: <span className="font-mono">7324452887</span>
+                  </p>
+                  <p>a.n. Dewinda Kurnia Oktari</p>
+                </div>
+                <div className="bg-gray-100 dark:bg-gray-800 p-3 rounded-md mb-3">
+                  <p className="font-semibold">Dana</p>
+                  <p>
+                    No. Rekening:{" "}
+                    <span className="font-mono">083181565767</span>
+                  </p>
+                  <p>a.n. Dewinda Kurnia Oktari</p>
+                </div>
               </>
             ) : (
-              <p className="font-semibold mb-3">Silahkan tunggu konfirmasi pembayaran dari admin.</p>
+              <p className="font-semibold mb-3">
+                Bukti pembayaran sudah dikirim ✅ <br />
+                Silakan tunggu konfirmasi dari admin.
+              </p>
             )}
             <p className="mb-2">Jika ada kendala, hubungi contact person:</p>
             <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
@@ -102,6 +143,7 @@ export default function DashboardCaang() {
         </Card>
       )}
 
+      {/* Card join grup */}
       {pembayaran && (
         <Card className="shadow-md">
           <CardHeader className="flex items-center gap-2">
