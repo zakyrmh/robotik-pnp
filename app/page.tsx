@@ -155,10 +155,10 @@ export default function Home() {
         className="w-full bg-slate-800 text-white py-8 text-center"
       >
         <p className="mb-2 font-semibold">UKM Robotik</p>
-        <p>Email: ukm.robotik@example.com</p>
-        <p>Instagram: @ukm.robotik</p>
+        <p>Email: infokomrobotikpnp2024@gmail.com</p>
+        <p>Instagram: <Link href="https://www.instagram.com/robotikpnp/" target="_blank">@robotikpnp</Link></p>
         <p className="mt-4 text-slate-400 text-sm">
-          © {new Date().getFullYear()} UKM Robotik. All rights reserved.
+          © {new Date().getFullYear()} UKM Robotik PNP. All rights reserved.
         </p>
       </footer>
     </main>
