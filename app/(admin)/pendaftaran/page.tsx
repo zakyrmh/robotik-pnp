@@ -86,7 +86,7 @@ export default function Dashboard() {
       <div className="rounded-[10px] border border-stroke bg-white shadow-1 dark:border-dark-3 dark:bg-gray-dark dark:shadow-card">
         <div className="flex justify-between items-center px-6.5 py-4">
           <h3 className="font-medium text-dark dark:text-white">
-            Data Orang Tua
+            Data Orang Tua / Wali
           </h3>
           {dataOrangTua ? (
             <span className="text-body-sm font-medium text-green-500">

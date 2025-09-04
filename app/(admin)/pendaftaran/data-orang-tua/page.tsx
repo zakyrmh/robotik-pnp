@@ -88,12 +88,12 @@ export default function DataPribadi() {
     <>
       <ShowcaseSection title="Formulir Pendaftaran CAANG" className="!p-6.5">
         <form onSubmit={handleSubmit}>
-          <h3 className="mb-4.5 text-xl font-semibold">Data Pribadi</h3>
+          <h3 className="mb-4.5 text-xl font-semibold">Data Orang Tua / Wali</h3>
           <div className="mb-4.5 flex flex-col gap-4.5">
             <div className="flex flex-col gap-4.5 xl:flex-row xl:gap-4">
               <InputGroup
                 name="namaOrangTua"
-                label="Nama Orang Tua"
+                label="Nama Orang Tua / Wali"
                 type="text"
                 placeholder="Contoh: Budi Santoso"
                 value={formData.namaOrangTua}
@@ -103,7 +103,7 @@ export default function DataPribadi() {
               />
               <InputGroup
                 name="noHpOrangTua"
-                label="No Hp Orang Tua"
+                label="No Hp Orang Tua / Wali"
                 type="tel"
                 placeholder="08xx..."
                 className="w-full"
