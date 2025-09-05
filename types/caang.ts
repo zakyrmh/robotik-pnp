@@ -1,0 +1,26 @@
+export type FormDataCaang = {
+  uid?: string;
+  namaLengkap?: string;
+  namaPanggilan?: string;
+  jenisKelamin?: string;
+  agama?: string;
+  tempatLahir?: string;
+  tanggalLahir?: string;
+  noHp?: string;
+  instagram?: string;
+  alamatAsal?: string;
+  alamatDomisili?: string;
+  nim?: string;
+  prodi?: string;
+  jurusan?: string;
+  asalSekolah?: string;
+  riwayatOrganisasi?: string;
+  riwayatPrestasi?: string;
+  tujuanMasuk?: string;
+  namaOrangTua?: string;
+  noHpOrangTua?: string;
+  pasFoto?: string;
+  pembayaran?: string;
+  followIgRobotik?: string;
+  payment_verification?: boolean;
+};

@@ -36,10 +36,7 @@ export default function ForgotPasswordForm() {
     }
 
     try {
-      await sendPasswordResetEmail(auth, email, {
-        url: `${process.env.NEXT_PUBLIC_APP_URL}/reset-password`,
-        handleCodeInApp: true,
-      });
+      await sendPasswordResetEmail(auth, email);
       setSuccess("Email berhasil dikirim.");
       router.push("/login");
       clear();
