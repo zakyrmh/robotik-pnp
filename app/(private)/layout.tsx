@@ -16,7 +16,7 @@ export default function PrivateLayout({ children }: { children: React.ReactNode 
         <SidebarConsumer />
         <div className="flex flex-1 flex-col">
           <Header />
-          <main className="flex-1 overflow-y-auto p-6">{children}</main>
+          <main className="flex-1 overflow-y-auto p-6 w-screen lg:w-full">{children}</main>
         </div>
       </div>
     </SidebarProvider>

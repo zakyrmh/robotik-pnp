@@ -113,7 +113,7 @@ export default function AdminDashboard() {
             uid: userDoc.id,
             email: user.email,
             role: user.role,
-            namaLengkap: user.namaLengkap,
+            namaLengkap: user.name,
             caang: caangSnap.exists() ? (caangSnap.data() as FormDataCaang) : undefined,
           };
         });
@@ -359,7 +359,7 @@ export default function AdminDashboard() {
                 cx="50%"
                 cy="50%"
                 outerRadius={80}
-                label={({ name, percentage }) => `${name}: ${percentage}%`}
+                // label={({ name, percentage }) => `${name}: ${percentage}%`}
               >
                 {data.map((_, index) => (
                   <Cell
