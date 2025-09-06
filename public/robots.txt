@@ -1,0 +1,16 @@
+# *
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /pendaftaran
+Disallow: /action
+Disallow: /caang
+Disallow: /forgot-password
+Disallow: /login
+Disallow: /verify-email
+
+# Host
+Host: https://robotik-pnp.vercel.app
+
+# Sitemaps
+Sitemap: https://robotik-pnp.vercel.app/sitemap.xml
