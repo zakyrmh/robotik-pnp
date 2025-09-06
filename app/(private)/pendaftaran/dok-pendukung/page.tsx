@@ -10,7 +10,7 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { ShowcaseSection } from "@/components/Layouts/showcase-section";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Loader2, Upload } from "lucide-react";
+import { Loader2, Upload, AlertCircle } from "lucide-react";
 import { User } from "firebase/auth";
 
 export default function Pembayaran() {
@@ -28,6 +28,13 @@ export default function Pembayaran() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
+  const [debugInfo, setDebugInfo] = useState<string[]>([]);
+
+  // Debug helper
+  const addDebugInfo = (info: string) => {
+    console.log('DEBUG:', info);
+    setDebugInfo(prev => [...prev.slice(-10), `${new Date().toLocaleTimeString()}: ${info}`]);
+  };
 
   const isFormComplete = pasFoto && igRobotik && igMrc && youtube;
 
@@ -38,13 +45,17 @@ export default function Pembayaran() {
         return;
       }
       setUser(u);
+      addDebugInfo(`User authenticated: ${u.uid}`);
 
       try {
         const snap = await getDoc(doc(db, "caang_registration", u.uid));
+        addDebugInfo(`Firestore check completed`);
         if (snap.exists() && snap.data()?.pasFoto) {
+          addDebugInfo(`User already has pasFoto, redirecting`);
           router.push("/pendaftaran");
         }
       } catch (err) {
+        addDebugInfo(`Firestore error: ${err instanceof Error ? err.message : 'Unknown error'}`);
         console.error("Gagal load data pribadi:", err);
       } finally {
         setLoading(false);
@@ -54,77 +65,141 @@ export default function Pembayaran() {
     return () => unsubscribe();
   }, [router]);
 
-  // Helper: upload file ke Supabase & return public URL
+  // Helper: upload file dengan detailed logging
   const uploadFile = async (file: File, fieldName: string) => {
-    if (!["image/jpeg", "image/png"].includes(file.type)) {
-      throw new Error(`${fieldName} harus format .jpg atau .png`);
+    addDebugInfo(`Starting upload for ${fieldName}`);
+    addDebugInfo(`File: ${file.name}, Size: ${file.size}, Type: ${file.type}`);
+    
+    try {
+      // Validate file
+      if (!["image/jpeg", "image/jpg", "image/png", "image/webp"].includes(file.type)) {
+        throw new Error(`${fieldName} format tidak didukung: ${file.type}`);
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        throw new Error(`${fieldName} terlalu besar: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
+      }
+
+      const filePath = `upload/${user?.uid}_${fieldName}_${Date.now()}_${file.name}`;
+      addDebugInfo(`Upload path: ${filePath}`);
+
+      // Check Supabase connection
+      const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+      if (bucketsError) {
+        addDebugInfo(`Supabase connection error: ${bucketsError.message}`);
+        throw new Error(`Koneksi Supabase gagal: ${bucketsError.message}`);
+      }
+      addDebugInfo(`Supabase connected, buckets found: ${buckets?.length}`);
+
+      // Upload file
+      addDebugInfo(`Starting file upload...`);
+      const { error: uploadError, data: uploadData } = await supabase.storage
+        .from("pendaftaran")
+        .upload(filePath, file, {
+          cacheControl: "3600",
+          upsert: false,
+        });
+
+      if (uploadError) {
+        addDebugInfo(`Upload error: ${uploadError.message}`);
+        console.error("Upload error details:", uploadError);
+        throw new Error(`Upload ${fieldName} gagal: ${uploadError.message}`);
+      }
+
+      addDebugInfo(`Upload successful: ${uploadData?.path}`);
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from("pendaftaran")
+        .getPublicUrl(filePath);
+
+      if (!urlData?.publicUrl) {
+        addDebugInfo(`Failed to get public URL`);
+        throw new Error(`Gagal membuat URL publik untuk ${fieldName}`);
+      }
+
+      addDebugInfo(`Public URL created: ${urlData.publicUrl.substring(0, 50)}...`);
+      return urlData.publicUrl;
+
+    } catch (err) {
+      addDebugInfo(`Upload failed for ${fieldName}: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      throw err;
     }
-    if (file.size > 2 * 1024 * 1024) {
-      throw new Error(`${fieldName} maksimal 2MB`);
-    }
-
-    const filePath = `upload/${user?.uid}_${fieldName}_${Date.now()}_${
-      file.name
-    }`;
-    const { error: uploadError } = await supabase.storage
-      .from("pendaftaran")
-      .upload(filePath, file, {
-        cacheControl: "3600",
-        upsert: false,
-      });
-
-    if (uploadError) {
-      console.error("Upload gagal:", uploadError);
-      throw new Error(`Gagal upload ${fieldName}`);
-    }
-
-    const { data } = supabase.storage
-      .from("pendaftaran")
-      .getPublicUrl(filePath);
-
-    if (!data?.publicUrl) {
-      throw new Error(`Gagal membuat URL publik untuk ${fieldName}`);
-    }
-
-    return data.publicUrl;
   };
 
-  // Handle submit
+  // Handle submit dengan detailed error tracking
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user) {
+      setError("User tidak ditemukan");
+      return;
+    }
+    if (!isFormComplete) {
+      setError("Semua file harus diupload");
+      return;
+    }
+
     setSaving(true);
     setError("");
     setSuccess("");
+    setDebugInfo([]);
+    
+    addDebugInfo(`Starting form submission`);
+    addDebugInfo(`User: ${user.uid}`);
+    addDebugInfo(`Files: ${[pasFoto, igRobotik, igMrc, youtube].map(f => f ? `${f.name} (${f.size})` : 'null').join(', ')}`);
 
     try {
-      if (user?.uid) {
-        // Upload semua file
-        const pasFotoUrl = await uploadFile(pasFoto!, "pasFoto");
-        const igRobotikUrl = await uploadFile(igRobotik!, "igRobotik");
-        const igMrcUrl = await uploadFile(igMrc!, "igMrc");
-        const youtubeUrl = await uploadFile(youtube!, "youtube");
-
-        // Simpan ke Firestore
-        await setDoc(
-          doc(db, "caang_registration", user.uid),
-          {
-            pasFoto: pasFotoUrl,
-            followIgRobotik: igRobotikUrl,
-            followIgMrc: igMrcUrl,
-            youtubeRobotik: youtubeUrl,
-          },
-          { merge: true }
-        );
-
-        setSuccess("Data dokumen pendukung berhasil disimpan ✅");
-        router.push("/pendaftaran");
-      } else {
-        setError("User tidak ditemukan, silakan login ulang.");
+      // Check user authentication
+      if (!user.uid) {
+        throw new Error("User UID tidak ditemukan");
       }
+
+      // Upload files one by one
+      addDebugInfo(`Uploading pas foto...`);
+      const pasFotoUrl = await uploadFile(pasFoto!, "pasFoto");
+      setSuccess("✅ Pas foto berhasil diupload");
+
+      addDebugInfo(`Uploading IG Robotik...`);
+      const igRobotikUrl = await uploadFile(igRobotik!, "igRobotik");
+      setSuccess("✅ Follow IG Robotik berhasil diupload");
+
+      addDebugInfo(`Uploading IG MRC...`);
+      const igMrcUrl = await uploadFile(igMrc!, "igMrc");
+      setSuccess("✅ Follow IG MRC berhasil diupload");
+
+      addDebugInfo(`Uploading YouTube...`);
+      const youtubeUrl = await uploadFile(youtube!, "youtube");
+      setSuccess("✅ Subscribe YouTube berhasil diupload");
+
+      // Save to Firestore
+      addDebugInfo(`Saving to Firestore...`);
+      const docData = {
+        pasFoto: pasFotoUrl,
+        followIgRobotik: igRobotikUrl,
+        followIgMrc: igMrcUrl,
+        youtubeRobotik: youtubeUrl,
+      };
+      
+      await setDoc(
+        doc(db, "caang_registration", user.uid),
+        docData,
+        { merge: true }
+      );
+
+      addDebugInfo(`Firestore save successful`);
+      setSuccess("✅ Semua dokumen pendukung berhasil disimpan!");
+      
+      setTimeout(() => {
+        router.push("/pendaftaran");
+      }, 2000);
+
     } catch (err) {
-      console.error(err);
-      setError("Terjadi kesalahan saat menyimpan data.");
+      const errorMessage = err instanceof Error ? err.message : 'Kesalahan tidak diketahui';
+      addDebugInfo(`ERROR: ${errorMessage}`);
+      console.error("Submit error:", err);
+      
+      // Set specific error message
+      setError(errorMessage);
+      
     } finally {
       setSaving(false);
     }
@@ -141,94 +216,171 @@ export default function Pembayaran() {
 
   return (
     <ShowcaseSection title="Dokumen Pendukung" className="!p-6">
+      {/* Debug Panel - Only show if there are debug info */}
+      {debugInfo.length > 0 && (
+        <details className="mb-4 p-3 bg-gray-50 border rounded-lg text-xs">
+          <summary className="cursor-pointer font-medium text-gray-700">
+            🔍 Debug Info ({debugInfo.length} entries)
+          </summary>
+          <div className="mt-2 space-y-1 max-h-40 overflow-y-auto">
+            {debugInfo.map((info, idx) => (
+              <div key={idx} className="text-gray-600 font-mono">
+                {info}
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* PAS FOTO */}
         <div className="flex flex-col gap-2">
-          <label className="font-medium">Pas Foto</label>
+          <label className="font-medium">
+            Pas Foto <span className="text-red-500">*</span>
+          </label>
           <Input
             type="file"
-            accept="image/*"
-            onChange={(e) => setPasFoto(e.target.files?.[0] ?? null)}
+            accept="image/jpeg,image/jpg,image/png,image/webp"
+            onChange={(e) => {
+              const file = e.target.files?.[0] ?? null;
+              setPasFoto(file);
+              if (file) addDebugInfo(`Pas foto selected: ${file.name} (${file.size} bytes)`);
+            }}
             required
           />
-          <p className="text-sm text-muted-foreground">Maksimal 2MB</p>
+          <p className="text-sm text-muted-foreground">
+            Format: JPG, PNG, WebP • Maksimal 5MB
+          </p>
+          {pasFoto && (
+            <p className="text-xs text-green-600">
+              ✓ {pasFoto.name} ({(pasFoto.size / 1024 / 1024).toFixed(2)} MB)
+            </p>
+          )}
         </div>
 
         {/* IG ROBOTIK */}
         <div className="flex flex-col gap-2">
-          <label className="font-medium">Bukti Follow Instagram Robotik</label>
+          <label className="font-medium">
+            Bukti Follow Instagram Robotik <span className="text-red-500">*</span>
+          </label>
           <Input
             type="file"
-            accept="image/*"
-            onChange={(e) => setIgRobotik(e.target.files?.[0] ?? null)}
+            accept="image/jpeg,image/jpg,image/png,image/webp"
+            onChange={(e) => {
+              const file = e.target.files?.[0] ?? null;
+              setIgRobotik(file);
+              if (file) addDebugInfo(`IG Robotik selected: ${file.name} (${file.size} bytes)`);
+            }}
             required
           />
           <Link
             href="https://www.instagram.com/robotikpnp/"
             target="_blank"
-            className="text-primary text-sm"
+            className="text-primary text-sm hover:underline"
           >
             @robotikpnp
           </Link>
-          <p className="text-sm text-muted-foreground">Maksimal 2MB</p>
+          <p className="text-sm text-muted-foreground">
+            Format: JPG, PNG, WebP • Maksimal 5MB
+          </p>
+          {igRobotik && (
+            <p className="text-xs text-green-600">
+              ✓ {igRobotik.name} ({(igRobotik.size / 1024 / 1024).toFixed(2)} MB)
+            </p>
+          )}
         </div>
 
         {/* IG MRC */}
         <div className="flex flex-col gap-2">
-          <label className="font-medium">Bukti Follow Instagram MRC</label>
+          <label className="font-medium">
+            Bukti Follow Instagram MRC <span className="text-red-500">*</span>
+          </label>
           <Input
             type="file"
-            accept="image/*"
-            onChange={(e) => setIgMrc(e.target.files?.[0] ?? null)}
+            accept="image/jpeg,image/jpg,image/png,image/webp"
+            onChange={(e) => {
+              const file = e.target.files?.[0] ?? null;
+              setIgMrc(file);
+              if (file) addDebugInfo(`IG MRC selected: ${file.name} (${file.size} bytes)`);
+            }}
             required
           />
           <Link
             href="https://www.instagram.com/mrcpnp/"
             target="_blank"
-            className="text-primary text-sm"
+            className="text-primary text-sm hover:underline"
           >
             @mrcpnp
           </Link>
-          <p className="text-sm text-muted-foreground">Maksimal 2MB</p>
+          <p className="text-sm text-muted-foreground">
+            Format: JPG, PNG, WebP • Maksimal 5MB
+          </p>
+          {igMrc && (
+            <p className="text-xs text-green-600">
+              ✓ {igMrc.name} ({(igMrc.size / 1024 / 1024).toFixed(2)} MB)
+            </p>
+          )}
         </div>
 
         {/* YOUTUBE */}
         <div className="flex flex-col gap-2">
-          <label className="font-medium">Bukti Subscribe Youtube Robotik</label>
+          <label className="font-medium">
+            Bukti Subscribe Youtube Robotik <span className="text-red-500">*</span>
+          </label>
           <Input
             type="file"
-            accept="image/*"
-            onChange={(e) => setYoutube(e.target.files?.[0] ?? null)}
+            accept="image/jpeg,image/jpg,image/png,image/webp"
+            onChange={(e) => {
+              const file = e.target.files?.[0] ?? null;
+              setYoutube(file);
+              if (file) addDebugInfo(`YouTube selected: ${file.name} (${file.size} bytes)`);
+            }}
             required
           />
           <Link
             href="https://www.youtube.com/@robotikpnp"
             target="_blank"
-            className="text-primary text-sm"
+            className="text-primary text-sm hover:underline"
           >
             UKM Robotik
           </Link>
-          <p className="text-sm text-muted-foreground">Maksimal 2MB</p>
+          <p className="text-sm text-muted-foreground">
+            Format: JPG, PNG, WebP • Maksimal 5MB
+          </p>
+          {youtube && (
+            <p className="text-xs text-green-600">
+              ✓ {youtube.name} ({(youtube.size / 1024 / 1024).toFixed(2)} MB)
+            </p>
+          )}
         </div>
 
         {/* FEEDBACK */}
         {success && (
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-green-600"
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-3 bg-green-50 border border-green-200 rounded-lg"
           >
-            {success}
-          </motion.p>
+            <p className="text-green-700">{success}</p>
+          </motion.div>
         )}
         {error && (
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-red-600"
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-3 bg-red-50 border border-red-200 rounded-lg"
           >
-            {error}, silakan coba lagi.
-          </motion.p>
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-red-700 font-medium">Error:</p>
+                <p className="text-red-600 text-sm">{error}</p>
+                <p className="text-red-500 text-xs mt-1">
+                  Periksa debug info di atas untuk detail lengkap
+                </p>
+              </div>
+            </div>
+          </motion.div>
         )}
 
         {/* SUBMIT */}
@@ -245,10 +397,16 @@ export default function Pembayaran() {
           ) : (
             <>
               <Upload className="mr-2 h-4 w-4" />
-              Simpan
+              Simpan Dokumen ({[pasFoto, igRobotik, igMrc, youtube].filter(Boolean).length}/4)
             </>
           )}
         </Button>
+        
+        {!isFormComplete && (
+          <p className="text-sm text-center text-muted-foreground">
+            Silakan pilih semua 4 file yang diperlukan
+          </p>
+        )}
       </form>
     </ShowcaseSection>
   );
