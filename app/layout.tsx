@@ -18,7 +18,38 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "UKM Robotik PNP",
   description: "Website resmi UKM Robotik PNP",
-};
+  keywords: ['robotik', 'robotik pnp', 'ukm robotik', 'ukm robotik pnp', 'pnp'],
+  authors: [{ name: 'Zaky Ramadhan' }],
+  creator: 'Zaky Ramadhan',
+  publisher: 'UKM Robotik PNP',
+  openGraph: {
+    type: 'website',
+    locale: 'id_ID',
+    url: 'https://robotik-pnp.vercel.app',
+    title: 'UKM Robotik PNP',
+    description: 'Website resmi UKM Robotik PNP',
+    siteName: 'UKM Robotik PNP',
+    images: [
+      {
+        url: 'https://robotik-pnp.vercel.app/images/logo.png',
+        width: 630,
+        height: 630,
+        alt: 'Website Description',
+      },
+    ],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+}
 
 export default function RootLayout({
   children,
