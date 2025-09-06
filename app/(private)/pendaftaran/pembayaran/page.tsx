@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Upload } from "lucide-react";
 import { User } from "firebase/auth";
 
-export default function DokumenPendukung() {
+export default function Pembayaran() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
 
@@ -115,7 +115,7 @@ export default function DokumenPendukung() {
           { merge: true }
         );
 
-        setSuccess("Data dokumen pendukung berhasil disimpan ✅");
+        setSuccess("Data pembayaran berhasil disimpan ✅");
         router.push("/pendaftaran");
       } else {
         setError("User tidak ditemukan, silakan login ulang.");
@@ -138,7 +138,7 @@ export default function DokumenPendukung() {
   }
 
   return (
-    <ShowcaseSection title="Dokumen Pendukung" className="!p-6">
+    <ShowcaseSection title="Pembayaran" className="!p-6">
       <div className="mt-4 p-4 rounded-lg bg-slate-100 dark:bg-slate-800">
         <p className="text-slate-700 font-medium dark:text-slate-300">
           Silakan lakukan pembayaran ke nomor rekening berikut:
