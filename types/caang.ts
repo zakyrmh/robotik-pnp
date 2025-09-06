@@ -1,3 +1,5 @@
+import { Timestamp } from "firebase/firestore";
+
 export type FormDataCaang = {
   uid?: string;
   namaLengkap?: string;
@@ -5,7 +7,7 @@ export type FormDataCaang = {
   jenisKelamin?: string;
   agama?: string;
   tempatLahir?: string;
-  tanggalLahir?: string;
+  tanggalLahir?: string | Timestamp;
   noHp?: string;
   instagram?: string;
   alamatAsal?: string;

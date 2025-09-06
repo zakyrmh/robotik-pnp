@@ -53,16 +53,10 @@ export function Sidebar({ isOpen, isMobile, onClose }: SidebarProps) {
               Dashboard
             </Link>
             <Link
-              href="/profile"
+              href="/pendaftaran"
               className="block rounded px-3 py-2 hover:bg-accent hover:text-accent-foreground"
             >
-              Profile
-            </Link>
-            <Link
-              href="/settings"
-              className="block rounded px-3 py-2 hover:bg-accent hover:text-accent-foreground"
-            >
-              Settings
+              Pendaftaran
             </Link>
           </nav>
         </motion.aside>
