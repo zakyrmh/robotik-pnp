@@ -11,6 +11,7 @@ import StatisticsSection from "@/components/Dashboard/StatisticsSection";
 import ChartsSection from "@/components/Dashboard/ChartsSection";
 import UsersTable from "@/components/Dashboard/UsersTable";
 import LoadingSkeleton from "@/components/Dashboard/LoadingSkeleton";
+import UserDetailModal from "@/components/Dashboard/UserDetailModal";
 
 interface UserData {
   uid: string;
@@ -31,29 +32,32 @@ const ANIMATION_VARIANTS = {
     show: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1
-      }
-    }
+        staggerChildren: 0.1,
+      },
+    },
   },
   item: {
     hidden: { opacity: 0, y: 20 },
-    show: { opacity: 1, y: 0 }
-  }
+    show: { opacity: 1, y: 0 },
+  },
 };
-
 export default function AdminDashboard() {
   const [users, setUsers] = useState<UserData[]>([]);
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
+  const [selectedUserDetail, setSelectedUserDetail] = useState<UserData | null>(
+    null
+  );
   const [loading, setLoading] = useState(false);
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
 
+  // Fetch data function
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const usersSnap = await getDocs(collection(db, "users"));
 
       const userPromises = usersSnap.docs
-        .filter(userDoc => userDoc.data().role !== "admin")
+        .filter((userDoc) => userDoc.data().role !== "admin")
         .map(async (userDoc) => {
           const user = userDoc.data();
           const caangSnap = await getDoc(
@@ -65,7 +69,9 @@ export default function AdminDashboard() {
             email: user.email,
             role: user.role,
             namaLengkap: user.name,
-            caang: caangSnap.exists() ? (caangSnap.data() as FormDataCaang) : undefined,
+            caang: caangSnap.exists()
+              ? (caangSnap.data() as FormDataCaang)
+              : undefined,
           };
         });
 
@@ -82,41 +88,52 @@ export default function AdminDashboard() {
     fetchData();
   }, [fetchData]);
 
+  // Function to update single user in the list (optimistic update)
   const updateUserInList = useCallback((updatedUser: UserData) => {
-    setUsers(prevUsers => 
-      prevUsers.map(user => 
+    setUsers((prevUsers) =>
+      prevUsers.map((user) =>
         user.uid === updatedUser.uid ? updatedUser : user
       )
     );
   }, []);
 
+  // Sorting functions
   const requestSort = useCallback((key: string) => {
-    setSortConfig(prevConfig => {
+    setSortConfig((prevConfig) => {
       let direction: "asc" | "desc" = "asc";
-      if (prevConfig && prevConfig.key === key && prevConfig.direction === "asc") {
+      if (
+        prevConfig &&
+        prevConfig.key === key &&
+        prevConfig.direction === "asc"
+      ) {
         direction = "desc";
       }
       return { key, direction };
     });
   }, []);
 
-  const getSortableValue = useCallback((user: UserData, key: string): string => {
-    if (key.startsWith("caang.")) {
-      const caangKey = key.split(".")[1] as keyof FormDataCaang;
-      const value = user.caang?.[caangKey];
-      
-      if (typeof value === "string") return value;
-      if (typeof value === "number") return value;
-      if (typeof value === "boolean") return value ? "true" : "false";
-      if (value && typeof value === "object" && "seconds" in value) {
-        return new Date(value.seconds * 1000).toISOString();
+  const getSortableValue = useCallback(
+    (user: UserData, key: string): string => {
+      if (key.startsWith("caang.")) {
+        const caangKey = key.split(".")[1] as keyof FormDataCaang;
+        const value = user.caang?.[caangKey];
+
+        // Handle different types safely
+        if (typeof value === "string") return value;
+        if (typeof value === "number") return value;
+        if (typeof value === "boolean") return value ? "true" : "false";
+        if (value && typeof value === "object" && "seconds" in value) {
+          // Handle Firestore Timestamp
+          return new Date(value.seconds * 1000).toISOString();
+        }
+        return "";
       }
-      return "";
-    }
-    
-    const value = user[key as keyof UserData];
-    return typeof value === "string" ? value : "";
-  }, []);
+
+      const value = user[key as keyof UserData];
+      return typeof value === "string" ? value : "";
+    },
+    []
+  );
 
   const sortedUsers = useMemo(() => {
     if (!sortConfig) return users;
@@ -131,6 +148,15 @@ export default function AdminDashboard() {
     });
   }, [users, sortConfig, getSortableValue]);
 
+  // Handler functions
+  const handleUserDetailClick = useCallback((user: UserData) => {
+    setSelectedUserDetail(user);
+  }, []);
+
+  const handlePaymentReviewClick = useCallback((user: UserData) => {
+    setSelectedUser(user);
+  }, []);
+
   if (loading) {
     return (
       <div className="p-6 space-y-8">
@@ -143,7 +169,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <motion.div 
+    <motion.div
       className="p-6 space-y-8"
       variants={ANIMATION_VARIANTS.container}
       initial="hidden"
@@ -168,15 +194,25 @@ export default function AdminDashboard() {
           users={sortedUsers}
           sortConfig={sortConfig}
           onSort={requestSort}
-          onUserSelect={setSelectedUser}
+          onUserSelect={handlePaymentReviewClick}
+          onUserDetailClick={handleUserDetailClick}
         />
       </motion.div>
 
+      {/* Payment Modal */}
       {selectedUser && (
         <PaymentModal
           user={selectedUser}
           onClose={() => setSelectedUser(null)}
           onUserUpdate={updateUserInList}
+        />
+      )}
+
+      {/* User Detail Modal */}
+      {selectedUserDetail && (
+        <UserDetailModal
+          user={selectedUserDetail}
+          onClose={() => setSelectedUserDetail(null)}
         />
       )}
     </motion.div>

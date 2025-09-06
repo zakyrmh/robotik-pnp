@@ -31,13 +31,15 @@ interface UsersTableProps {
   sortConfig: SortConfig | null;
   onSort: (key: string) => void;
   onUserSelect: (user: UserData) => void;
+  onUserDetailClick: (user: UserData) => void; // New prop for user detail
 }
 
-export default function UsersTable({
-  users,
-  sortConfig,
-  onSort,
+export default function UsersTable({ 
+  users, 
+  sortConfig, 
+  onSort, 
   onUserSelect,
+  onUserDetailClick
 }: UsersTableProps) {
   return (
     <Card>
@@ -55,45 +57,45 @@ export default function UsersTable({
           <TableHeader>
             <TableRow>
               <TableHead className="w-[60px]">No</TableHead>
-              <SortableHeader
-                label="Nama"
-                sortKey="namaLengkap"
+              <SortableHeader 
+                label="Nama" 
+                sortKey="namaLengkap" 
                 sortConfig={sortConfig}
                 onSort={onSort}
               />
-              <SortableHeader
-                label="Email"
-                sortKey="email"
+              <SortableHeader 
+                label="Email" 
+                sortKey="email" 
                 sortConfig={sortConfig}
                 onSort={onSort}
               />
-              <SortableHeader
-                label="Data Pribadi"
-                sortKey="caang.namaPanggilan"
+              <SortableHeader 
+                label="Data Pribadi" 
+                sortKey="caang.namaPanggilan" 
                 sortConfig={sortConfig}
                 onSort={onSort}
               />
-              <SortableHeader
-                label="Pendidikan"
-                sortKey="caang.nim"
+              <SortableHeader 
+                label="Pendidikan" 
+                sortKey="caang.nim" 
                 sortConfig={sortConfig}
                 onSort={onSort}
               />
-              <SortableHeader
-                label="Orang Tua/Wali"
-                sortKey="caang.namaOrangTua"
+              <SortableHeader 
+                label="Orang Tua/Wali" 
+                sortKey="caang.namaOrangTua" 
                 sortConfig={sortConfig}
                 onSort={onSort}
               />
-              <SortableHeader
-                label="Dokumen"
-                sortKey="caang.pasFoto"
+              <SortableHeader 
+                label="Dokumen" 
+                sortKey="caang.pasFoto" 
                 sortConfig={sortConfig}
                 onSort={onSort}
               />
-              <SortableHeader
-                label="Pembayaran"
-                sortKey="caang.pembayaran"
+              <SortableHeader 
+                label="Pembayaran" 
+                sortKey="caang.pembayaran" 
                 sortConfig={sortConfig}
                 onSort={onSort}
               />
@@ -104,11 +106,16 @@ export default function UsersTable({
               <TableRow key={user.uid} className="hover:bg-muted/50">
                 <TableCell className="font-medium">{idx + 1}</TableCell>
                 <TableCell className="font-medium">
-                  {user.namaLengkap || (
-                    <span className="text-muted-foreground italic">
-                      Belum diisi
-                    </span>
-                  )}
+                  <button
+                    onClick={() => onUserDetailClick(user)}
+                    className="text-left hover:text-blue-600 hover:underline transition-colors"
+                  >
+                    {user.namaLengkap || (
+                      <span className="text-muted-foreground italic">
+                        Belum diisi
+                      </span>
+                    )}
+                  </button>
                 </TableCell>
                 <TableCell className="font-mono text-sm">
                   {user.email}
@@ -126,7 +133,10 @@ export default function UsersTable({
                   <StatusBadge value={user.caang?.pasFoto} />
                 </TableCell>
                 <TableCell>
-                  <PaymentStatus user={user} onReviewClick={onUserSelect} />
+                  <PaymentStatus 
+                    user={user} 
+                    onReviewClick={onUserSelect}
+                  />
                 </TableCell>
               </TableRow>
             ))}
