@@ -25,4 +25,5 @@ export type FormDataCaang = {
   pembayaran?: string;
   followIgRobotik?: string;
   payment_verification?: boolean;
+  payment_message?: string;
 };
