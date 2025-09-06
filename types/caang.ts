@@ -21,9 +21,11 @@ export type FormDataCaang = {
   tujuanMasuk?: string;
   namaOrangTua?: string;
   noHpOrangTua?: string;
-  pasFoto?: string;
-  pembayaran?: string;
-  followIgRobotik?: string;
+  pasFoto?: string; // image url
+  followIgRobotik?: string; // image url
+  followIgMrc?: string; // image url
+  youtubeRobotik?: string; // image url
+  pembayaran?: string; // image url
   payment_verification?: boolean;
   payment_message?: string;
 };

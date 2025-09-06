@@ -107,6 +107,14 @@ export default function DokumenPendukung() {
           { merge: true }
         );
 
+        await setDoc(
+          doc(db, "caang_registration", user.uid),
+          {
+            payment_message: null,
+          },
+          { merge: true }
+        );
+
         setSuccess("Data dokumen pendukung berhasil disimpan ✅");
         router.push("/pendaftaran");
       } else {

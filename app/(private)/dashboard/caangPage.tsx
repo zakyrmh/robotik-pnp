@@ -78,20 +78,18 @@ export default function CaangDashboard() {
         </CardContent>
       </Card>
 
-      <Card className="shadow-md border">
-        <CardHeader>
-          <CardTitle className="text-lg font-bold">
-            Notification
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-slate-600 dark:text-slate-400">
-            {registration.payment_message}
-          </p>
-        </CardContent>
-      </Card>
-
-
+      {registration.payment_message && (
+        <Card className="shadow-md border">
+          <CardHeader>
+            <CardTitle className="text-lg font-bold">Notification</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-slate-600 dark:text-slate-400">
+              {registration.payment_message}
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Status Pendaftaran */}
       <Card className="shadow-md border">
