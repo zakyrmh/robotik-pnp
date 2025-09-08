@@ -63,12 +63,12 @@ export default function UsersTable({
                 sortConfig={sortConfig}
                 onSort={onSort}
               />
-              <SortableHeader 
+              {/* <SortableHeader 
                 label="Email" 
                 sortKey="email" 
                 sortConfig={sortConfig}
                 onSort={onSort}
-              />
+              /> */}
               <SortableHeader 
                 label="Data Pribadi" 
                 sortKey="caang.namaPanggilan" 
@@ -115,11 +115,12 @@ export default function UsersTable({
                         Belum diisi
                       </span>
                     )}
+                    <span className="block font-normal text-xs">{user.email}</span>
                   </button>
                 </TableCell>
-                <TableCell className="font-mono text-sm">
+                {/* <TableCell className="font-mono text-sm">
                   {user.email}
-                </TableCell>
+                </TableCell> */}
                 <TableCell>
                   <StatusBadge value={user.caang?.namaPanggilan} />
                 </TableCell>
