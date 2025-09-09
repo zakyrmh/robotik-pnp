@@ -85,7 +85,7 @@ export default function Home() {
           <iframe
             width="100%"
             height="100%"
-            src="https://www.youtube.com/embed/dQw4w9WgXc" // ganti link video ormawa
+            src="https://www.youtube.com/embed/Jnej-7H-1Q4?si=zMyFxG7bsL90UMb-"
             title="Video Perkenalan UKM Robotik"
             allowFullScreen
           ></iframe>
