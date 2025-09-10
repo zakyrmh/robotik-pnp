@@ -1,30 +1,18 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
 import { motion } from "framer-motion";
-import { db } from "@/lib/firebaseConfig";
-import { collection, getDocs, doc, getDoc } from "firebase/firestore";
-import { FormDataCaang } from "@/types/caang";
-import PaymentModal from "@/components/Dashboard/PaymentModal";
-
-import StatisticsSection from "@/components/Dashboard/StatisticsSection";
-import ChartsSection from "@/components/Dashboard/ChartsSection";
 import UsersTable from "@/components/Dashboard/UsersTable";
 import LoadingSkeleton from "@/components/Dashboard/LoadingSkeleton";
+import { useEffect, useState } from "react";
+import { CaangRegistration, UserAccount, UserWithCaang } from "@/types/caang";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebaseConfig";
+import { exportToCSV } from "@/utils/exportToCSV";
+import PaymentModal from "@/components/Dashboard/PaymentModal";
+import StatisticsSection from "@/components/Dashboard/StatisticsSection";
+import ChartsSection from "@/components/Dashboard/ChartsSection";
 import UserDetailModal from "@/components/Dashboard/UserDetailModal";
-
-interface UserData {
-  uid: string;
-  email: string;
-  role: string;
-  namaLengkap?: string;
-  caang?: FormDataCaang;
-}
-
-interface SortConfig {
-  key: keyof UserData | string;
-  direction: "asc" | "desc";
-}
+import formatDate from "@/utils/formatDate";
 
 const ANIMATION_VARIANTS = {
   container: {
@@ -41,121 +29,143 @@ const ANIMATION_VARIANTS = {
     show: { opacity: 1, y: 0 },
   },
 };
+
+interface SortConfig {
+  key: string;
+  direction: "asc" | "desc";
+}
+
 export default function AdminDashboard() {
-  const [users, setUsers] = useState<UserData[]>([]);
-  const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
-  const [selectedUserDetail, setSelectedUserDetail] = useState<UserData | null>(
-    null
-  );
-  const [loading, setLoading] = useState(false);
+  const [users, setUsers] = useState<UserWithCaang[]>([]);
+  const [loading, setLoading] = useState(true);
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
-
-  // Fetch data function
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const usersSnap = await getDocs(collection(db, "users"));
-
-      const userPromises = usersSnap.docs
-        .filter((userDoc) => userDoc.data().role !== "admin")
-        .map(async (userDoc) => {
-          const user = userDoc.data();
-          const caangSnap = await getDoc(
-            doc(db, "caang_registration", userDoc.id)
-          );
-
-          return {
-            uid: userDoc.id,
-            email: user.email,
-            role: user.role,
-            namaLengkap: user.name,
-            caang: caangSnap.exists()
-              ? (caangSnap.data() as FormDataCaang)
-              : undefined,
-          };
-        });
-
-      const resolvedData = await Promise.all(userPromises);
-      setUsers(resolvedData);
-    } catch (err) {
-      console.error("Gagal ambil data:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const [selectedUser, setSelectedUser] = useState<UserWithCaang | null>(null);
+  const [selectedUserDetail, setSelectedUserDetail] =
+    useState<UserWithCaang | null>(null);
 
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const usersSnapshot = await getDocs(collection(db, "users"));
+        const usersData: UserAccount[] = usersSnapshot.docs.map((doc) => ({
+          uid: doc.id,
+          ...(doc.data() as Omit<UserAccount, "uid">),
+        }));
+
+        const caangSnapshot = await getDocs(
+          collection(db, "caang_registration")
+        );
+        const caangData: CaangRegistration[] = caangSnapshot.docs.map(
+          (doc) => ({
+            uid: doc.id,
+            ...(doc.data() as Omit<CaangRegistration, "uid">),
+          })
+        );
+
+        const merged: UserWithCaang[] = usersData.map((u) => {
+          const registration = caangData.find((c) => c.uid === u.uid);
+          return { user: u, registration };
+        });
+
+        setUsers(merged);
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchData();
-  }, [fetchData]);
+  }, []);
 
-  // Function to update single user in the list (optimistic update)
-  const updateUserInList = useCallback((updatedUser: UserData) => {
-    setUsers((prevUsers) =>
-      prevUsers.map((user) =>
-        user.uid === updatedUser.uid ? updatedUser : user
-      )
+  const handleSort = (key: string) => {
+    let direction: "asc" | "desc" = "asc";
+    if (
+      sortConfig &&
+      sortConfig.key === key &&
+      sortConfig.direction === "asc"
+    ) {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+
+    setUsers((prev) =>
+      [...prev].sort((a, b) => {
+        const aVal = getValueByKey(a, key);
+        const bVal = getValueByKey(b, key);
+
+        if (aVal < bVal) return direction === "asc" ? -1 : 1;
+        if (aVal > bVal) return direction === "asc" ? 1 : -1;
+        return 0;
+      })
     );
-  }, []);
+  };
 
-  // Sorting functions
-  const requestSort = useCallback((key: string) => {
-    setSortConfig((prevConfig) => {
-      let direction: "asc" | "desc" = "asc";
-      if (
-        prevConfig &&
-        prevConfig.key === key &&
-        prevConfig.direction === "asc"
-      ) {
-        direction = "desc";
-      }
-      return { key, direction };
-    });
-  }, []);
-
-  const getSortableValue = useCallback(
-    (user: UserData, key: string): string => {
-      if (key.startsWith("caang.")) {
-        const caangKey = key.split(".")[1] as keyof FormDataCaang;
-        const value = user.caang?.[caangKey];
-
-        // Handle different types safely
-        if (typeof value === "string") return value;
-        if (typeof value === "number") return value;
-        if (typeof value === "boolean") return value ? "true" : "false";
-        if (value && typeof value === "object" && "seconds" in value) {
-          // Handle Firestore Timestamp
-          return new Date(value.seconds * 1000).toISOString();
-        }
+  const getValueByKey = (user: UserWithCaang, key: string): string => {
+    switch (key) {
+      case "user.name":
+        return user.user?.name || "";
+      case "user.email":
+        return user.user?.email || "";
+      case "registration.namaLengkap":
+        return user.registration?.namaLengkap || "";
+      case "registration.namaPanggilan":
+        return user.registration?.namaPanggilan || "";
+      case "registration.nim":
+        return user.registration?.nim || "";
+      case "registration.namaOrangTua":
+        return user.registration?.namaOrangTua || "";
+      case "registration.pasFoto":
+        return user.registration?.pasFoto || "";
+      case "registration.pembayaran":
+        return user.registration?.pembayaran || "";
+      default:
         return "";
-      }
+    }
+  };
 
-      const value = user[key as keyof UserData];
-      return typeof value === "string" ? value : "";
-    },
-    []
-  );
-
-  const sortedUsers = useMemo(() => {
-    if (!sortConfig) return users;
-
-    return [...users].sort((a, b) => {
-      const aValue = getSortableValue(a, sortConfig.key);
-      const bValue = getSortableValue(b, sortConfig.key);
-
-      if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
-      if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
-      return 0;
-    });
-  }, [users, sortConfig, getSortableValue]);
-
-  // Handler functions
-  const handleUserDetailClick = useCallback((user: UserData) => {
-    setSelectedUserDetail(user);
-  }, []);
-
-  const handlePaymentReviewClick = useCallback((user: UserData) => {
+  const handleUserSelect = (user: UserWithCaang) => {
     setSelectedUser(user);
-  }, []);
+  };
+
+  const handleUserDetailClick = (user: UserWithCaang) => {
+    setSelectedUserDetail(user);
+  };
+
+  const handleExport = () => {
+    exportToCSV(
+      users.map((u) => ({
+        no: users.indexOf(u) + 1,
+        uid: u.user?.uid || "",
+        email: u.user?.email || "",
+        namaLengkap: u.user?.name || "",
+        namaPanggilan: u.registration?.namaPanggilan || "",
+        jenisKelamin: u.registration?.jenisKelamin || "",
+        agama: u.registration?.agama || "",
+        tempatLahir: u.registration?.tempatLahir || "",
+        tanggalLahir: formatDate(u.registration?.tanggalLahir),
+        noHp: u.registration?.noHp || "",
+        instagram: u.registration?.instagram || "",
+        alamatAsal: u.registration?.alamatAsal || "",
+        alamatDomisili: u.registration?.alamatDomisili || "",
+        asalSekolah: u.registration?.asalSekolah || "",
+        nim: u.registration?.nim || "",
+        jurusan: u.registration?.jurusan || "",
+        prodi: u.registration?.prodi || "",
+        riwayatOrganisasi: u.registration?.riwayatOrganisasi || "",
+        riwayatPrestasi: u.registration?.riwayatPrestasi || "",
+        tujuanMasuk: u.registration?.tujuanMasuk || "",
+        namaOrangTua: u.registration?.namaOrangTua || "",
+        noHpOrangTua: u.registration?.noHpOrangTua || "",
+        pasFoto: u.registration?.pasFoto || "",
+        followIgRobotik: u.registration?.followIgRobotik || "",
+        followIgMrc: u.registration?.followIgMrc || "",
+        youtubeRobotik: u.registration?.youtubeRobotik || "",
+        pembayaran: u.registration?.pembayaran || "",
+      })),
+      "caang_registration_21"
+    );
+  };
 
   if (loading) {
     return (
@@ -182,33 +192,35 @@ export default function AdminDashboard() {
         </p>
       </motion.div>
 
-      {/* Statistics Cards */}
       <StatisticsSection users={users} />
 
-      {/* Charts */}
       <ChartsSection users={users} />
 
-      {/* Table */}
       <motion.div variants={ANIMATION_VARIANTS.item}>
         <UsersTable
-          users={sortedUsers}
+          users={users}
           sortConfig={sortConfig}
-          onSort={requestSort}
-          onUserSelect={handlePaymentReviewClick}
+          onSort={handleSort}
+          onUserSelect={handleUserSelect}
           onUserDetailClick={handleUserDetailClick}
+          handleExport={handleExport}
         />
       </motion.div>
 
-      {/* Payment Modal */}
       {selectedUser && (
         <PaymentModal
           user={selectedUser}
           onClose={() => setSelectedUser(null)}
-          onUserUpdate={updateUserInList}
+          onUserUpdate={(updatedUser) => {
+            setUsers((prev) =>
+              prev.map((u) =>
+                u.user?.uid === updatedUser.user?.uid ? updatedUser : u
+              )
+            );
+          }}
         />
       )}
 
-      {/* User Detail Modal */}
       {selectedUserDetail && (
         <UserDetailModal
           user={selectedUserDetail}

@@ -9,17 +9,10 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { GraduationCap } from "lucide-react";
-import { FormDataCaang } from "@/types/caang";
+import { UserWithCaang } from "@/types/caang";
 import SortableHeader from "./SortableHeader";
 import { StatusBadge, PaymentStatus } from "./StatusBadge";
-
-interface UserData {
-  uid: string;
-  email: string;
-  role: string;
-  namaLengkap?: string;
-  caang?: FormDataCaang;
-}
+import { Button } from "../ui/button";
 
 interface SortConfig {
   key: string;
@@ -27,26 +20,33 @@ interface SortConfig {
 }
 
 interface UsersTableProps {
-  users: UserData[];
+  users: UserWithCaang[];
   sortConfig: SortConfig | null;
   onSort: (key: string) => void;
-  onUserSelect: (user: UserData) => void;
-  onUserDetailClick: (user: UserData) => void; // New prop for user detail
+  onUserSelect: (user: UserWithCaang) => void;
+  onUserDetailClick: (user: UserWithCaang) => void;
+  handleExport: () => void;
 }
 
-export default function UsersTable({ 
-  users, 
-  sortConfig, 
-  onSort, 
+export default function UsersTable({
+  users,
+  sortConfig,
+  onSort,
   onUserSelect,
-  onUserDetailClick
+  onUserDetailClick,
+  handleExport,
 }: UsersTableProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <GraduationCap className="w-5 h-5" />
-          Data Calon Anggota
+        <CardTitle className="flex justify-between items-center">
+          <div className="flex items-center gap-2">
+            <GraduationCap className="w-5 h-5" />
+            Data Calon Anggota
+          </div>
+          <div>
+            <Button onClick={handleExport}>Export CSV</Button>
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -57,45 +57,39 @@ export default function UsersTable({
           <TableHeader>
             <TableRow>
               <TableHead className="w-[60px]">No</TableHead>
-              <SortableHeader 
-                label="Nama" 
-                sortKey="namaLengkap" 
+              <SortableHeader
+                label="Nama"
+                sortKey="registration.namaLengkap"
                 sortConfig={sortConfig}
                 onSort={onSort}
               />
-              {/* <SortableHeader 
-                label="Email" 
-                sortKey="email" 
-                sortConfig={sortConfig}
-                onSort={onSort}
-              /> */}
-              <SortableHeader 
-                label="Data Pribadi" 
-                sortKey="caang.namaPanggilan" 
+              <SortableHeader
+                label="Data Pribadi"
+                sortKey="registration.namaPanggilan"
                 sortConfig={sortConfig}
                 onSort={onSort}
               />
-              <SortableHeader 
-                label="Pendidikan" 
-                sortKey="caang.nim" 
+              <SortableHeader
+                label="Pendidikan"
+                sortKey="registration.nim"
                 sortConfig={sortConfig}
                 onSort={onSort}
               />
-              <SortableHeader 
-                label="Orang Tua/Wali" 
-                sortKey="caang.namaOrangTua" 
+              <SortableHeader
+                label="Orang Tua/Wali"
+                sortKey="registration.namaOrangTua"
                 sortConfig={sortConfig}
                 onSort={onSort}
               />
-              <SortableHeader 
-                label="Dokumen" 
-                sortKey="caang.pasFoto" 
+              <SortableHeader
+                label="Dokumen"
+                sortKey="registration.pasFoto"
                 sortConfig={sortConfig}
                 onSort={onSort}
               />
-              <SortableHeader 
-                label="Pembayaran" 
-                sortKey="caang.pembayaran" 
+              <SortableHeader
+                label="Pembayaran"
+                sortKey="registration.pembayaran"
                 sortConfig={sortConfig}
                 onSort={onSort}
               />
@@ -103,41 +97,48 @@ export default function UsersTable({
           </TableHeader>
           <TableBody>
             {users.map((user, idx) => (
-              <TableRow key={user.uid} className="hover:bg-muted/50">
+              <TableRow key={user.user?.uid} className="hover:bg-muted/50">
                 <TableCell className="font-medium">{idx + 1}</TableCell>
+
                 <TableCell className="font-medium">
                   <button
                     onClick={() => onUserDetailClick(user)}
                     className="text-left hover:text-blue-600 hover:underline transition-colors"
                   >
-                    {user.namaLengkap || (
+                    {user.registration?.namaLengkap || (
                       <span className="text-muted-foreground italic">
                         Belum diisi
                       </span>
                     )}
-                    <span className="block font-normal text-xs">{user.email}</span>
+                    <span className="block font-normal text-xs">
+                      {user.user?.email}
+                    </span>
                   </button>
                 </TableCell>
-                {/* <TableCell className="font-mono text-sm">
-                  {user.email}
-                </TableCell> */}
+
+                {/* Data Pribadi */}
                 <TableCell>
-                  <StatusBadge value={user.caang?.namaPanggilan} />
+                  <StatusBadge value={user.registration?.namaPanggilan} />
                 </TableCell>
+
+                {/* Pendidikan */}
                 <TableCell>
-                  <StatusBadge value={user.caang?.nim} />
+                  <StatusBadge value={user.registration?.nim} />
                 </TableCell>
+
+                {/* Orang Tua */}
                 <TableCell>
-                  <StatusBadge value={user.caang?.namaOrangTua} />
+                  <StatusBadge value={user.registration?.namaOrangTua} />
                 </TableCell>
+
+                {/* Dokumen */}
                 <TableCell>
-                  <StatusBadge value={user.caang?.pasFoto} />
+                  <StatusBadge value={user.registration?.pasFoto} />
                 </TableCell>
+
+                {/* Pembayaran */}
                 <TableCell>
-                  <PaymentStatus 
-                    user={user} 
-                    onReviewClick={onUserSelect}
-                  />
+                  <PaymentStatus user={user} onReviewClick={onUserSelect} />
                 </TableCell>
               </TableRow>
             ))}

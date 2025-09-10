@@ -1,19 +1,7 @@
 import { motion } from "framer-motion";
 import { Users, UserCheck, CheckCircle, AlertCircle } from "lucide-react";
-import { FormDataCaang } from "@/types/caang";
-import StatCard from "./StatCard";
-
-interface UserData {
-  uid: string;
-  email: string;
-  role: string;
-  namaLengkap?: string;
-  caang?: FormDataCaang;
-}
-
-interface StatisticsSectionProps {
-  users: UserData[];
-}
+import { UserWithCaang } from "@/types/caang";
+import StatCard from "@/components/Dashboard/StatCard";
 
 interface Statistics {
   totalUsers: number;
@@ -30,17 +18,26 @@ const ANIMATION_VARIANTS = {
   },
 };
 
-export default function StatisticsSection({ users }: StatisticsSectionProps) {
-  const calculateStatistics = (users: UserData[]): Statistics => {
+export default function StatisticsSection({ users }: { users: UserWithCaang[] }) {
+  const calculateStatistics = (users: UserWithCaang[]): Statistics => {
     const totalUsers = users.length;
+
+    // Registrasi dianggap lengkap kalau field dasar sudah ada
     const completedRegistrations = users.filter(
-      (u) => u.caang?.namaPanggilan && u.caang?.nim && u.caang?.namaOrangTua
+      (u) =>
+        u.registration?.namaPanggilan &&
+        u.registration?.nim &&
+        u.registration?.namaOrangTua
     ).length;
+
+    // Pembayaran sudah diverifikasi
     const verifiedPayments = users.filter(
-      (u) => u.caang?.pembayaran && u.caang?.payment_verification
+      (u) => u.registration?.pembayaran && u.registration?.payment_verification
     ).length;
+
+    // Pembayaran sudah ada, tapi belum diverifikasi
     const pendingPayments = users.filter(
-      (u) => u.caang?.pembayaran && !u.caang?.payment_verification
+      (u) => u.registration?.pembayaran && !u.registration?.payment_verification
     ).length;
 
     return {

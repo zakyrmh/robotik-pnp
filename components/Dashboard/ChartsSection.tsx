@@ -1,19 +1,7 @@
 import { motion } from "framer-motion";
 import { useCallback, useMemo } from "react";
-import { FormDataCaang } from "@/types/caang";
+import { UserWithCaang, CaangRegistration } from "@/types/caang";
 import ChartCard from "./ChartCard";
-
-interface UserData {
-  uid: string;
-  email: string;
-  role: string;
-  namaLengkap?: string;
-  caang?: FormDataCaang;
-}
-
-interface ChartsSectionProps {
-  users: UserData[];
-}
 
 interface ChartDataItem {
   name: string;
@@ -28,22 +16,26 @@ const ANIMATION_VARIANTS = {
   },
 };
 
-export default function ChartsSection({ users }: ChartsSectionProps) {
+export default function ChartsSection({ users }: { users: UserWithCaang[] }) {
   const countByField = useCallback(
-    (field: keyof FormDataCaang): ChartDataItem[] => {
+    (field: keyof CaangRegistration): ChartDataItem[] => {
       const counts: Record<string, number> = {};
       const total = users.length;
 
       users.forEach((user) => {
-        const value = user.caang?.[field];
+        const value = user.registration?.[field];
         let stringValue: string;
 
         if (typeof value === "string") {
-          stringValue = value || "Tidak diisi";
+          stringValue = value.trim() || "Tidak diisi";
         } else if (typeof value === "number") {
           stringValue = value;
-        } else if (value && typeof value === "object" && "seconds" in value) {
-          stringValue = new Date(value.seconds * 1000).toLocaleDateString();
+        } else if (
+          value &&
+          typeof value === "object" &&
+          "seconds" in value
+        ) {
+          stringValue = new Date(value * 1000).toLocaleDateString();
         } else {
           stringValue = "Tidak diisi";
         }
@@ -54,7 +46,7 @@ export default function ChartsSection({ users }: ChartsSectionProps) {
       return Object.entries(counts).map(([name, value]) => ({
         name,
         value,
-        percentage: Math.round((value / total) * 100),
+        percentage: total > 0 ? Math.round((value / total) * 100) : 0,
       }));
     },
     [users]

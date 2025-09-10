@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebaseConfig";
-import { FormDataCaang } from "@/types/caang";
+import { CaangRegistration } from "@/types/caang";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ export default function DataPribadiPage() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
-  const [formData, setFormData] = useState<FormDataCaang>({
+  const [formData, setFormData] = useState<CaangRegistration>({
     namaOrangTua: "",
     noHpOrangTua: "",
   });
@@ -36,7 +36,7 @@ export default function DataPribadiPage() {
       try {
         const snap = await getDoc(doc(db, "caang_registration", u.uid));
         if (snap.exists()) {
-          const data = snap.data() as FormDataCaang;
+          const data = snap.data() as CaangRegistration;
           setFormData((prev) => ({
             ...prev,
             namaOrangTua: data.namaOrangTua ?? "",

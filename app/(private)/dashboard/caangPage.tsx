@@ -7,12 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
-import { FormDataCaang } from "@/types/caang";
+import { CaangRegistration } from "@/types/caang";
 import Link from "next/link";
 
 export default function CaangDashboard() {
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<FormDataCaang | null>(null);
+  const [data, setData] = useState<CaangRegistration | null>(null);
 
   const user = auth.currentUser;
 

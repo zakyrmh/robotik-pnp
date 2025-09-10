@@ -1,7 +1,6 @@
 // components/admin/UserDetailModal.tsx
 "use client";
 
-import { FormDataCaang } from "@/types/caang";
 import {
   Dialog,
   DialogContent,
@@ -28,38 +27,25 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { Timestamp } from "firebase/firestore";
-
-interface UserData {
-  uid: string;
-  email: string;
-  role: string;
-  namaLengkap?: string;
-  caang?: FormDataCaang;
-}
+import { UserWithCaang } from "@/types/caang";
 
 interface UserDetailModalProps {
-  user: UserData;
+  user: UserWithCaang;
   onClose: () => void;
 }
 
-export default function UserDetailModal({
-  user,
-  onClose,
-}: UserDetailModalProps) {
+export default function UserDetailModal({ user, onClose }: UserDetailModalProps) {
   const formatDate = (date?: string | Timestamp) => {
     if (!date) return "Tidak diisi";
 
     try {
-      // Handle Firestore Timestamp
-      if (typeof date === "object" && date.seconds) {
+      if (typeof date === "object" && "seconds" in date) {
         return new Date(date.seconds * 1000).toLocaleDateString("id-ID", {
           day: "2-digit",
           month: "long",
           year: "numeric",
         });
       }
-
-      // Handle string date
       if (typeof date === "string") {
         return new Date(date).toLocaleDateString("id-ID", {
           day: "2-digit",
@@ -67,10 +53,8 @@ export default function UserDetailModal({
           year: "numeric",
         });
       }
-
       return "Format tanggal tidak valid";
-    } catch (error) {
-      console.error("Error parsing date:", error);
+    } catch {
       return "Tidak diisi";
     }
   };
@@ -86,8 +70,8 @@ export default function UserDetailModal({
   };
 
   const getPaymentStatus = () => {
-    const pembayaran = user.caang?.pembayaran;
-    const verified = user.caang?.payment_verification;
+    const pembayaran = user.registration?.pembayaran;
+    const verified = user.registration?.payment_verification;
 
     if (!pembayaran) {
       return {
@@ -176,7 +160,7 @@ export default function UserDetailModal({
           <DialogDescription>
             Informasi lengkap untuk{" "}
             <span className="font-semibold">
-              {user.namaLengkap || user.email}
+              {user.registration?.namaLengkap || user.user?.email}
             </span>
           </DialogDescription>
         </DialogHeader>
@@ -195,37 +179,37 @@ export default function UserDetailModal({
                 <label className="text-sm font-medium text-muted-foreground">
                   Email:
                 </label>
-                <p className="font-mono text-sm text-wrap">{user.email}</p>
+                <p className="font-mono text-sm text-wrap">{user.user?.email}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-muted-foreground">
                   Nama Lengkap:
                 </label>
-                <p>{formatValue(user.caang?.namaLengkap)}</p>
+                <p>{formatValue(user.registration?.namaLengkap)}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-muted-foreground">
                   Nama Panggilan:
                 </label>
-                <p>{formatValue(user.caang?.namaPanggilan)}</p>
+                <p>{formatValue(user.registration?.namaPanggilan)}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-muted-foreground">
                   Jenis Kelamin:
                 </label>
-                <p>{formatValue(user.caang?.jenisKelamin)}</p>
+                <p>{formatValue(user.registration?.jenisKelamin)}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-muted-foreground">
                   Agama:
                 </label>
-                <p>{formatValue(user.caang?.agama)}</p>
+                <p>{formatValue(user.registration?.agama)}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-muted-foreground">
                   Tempat Lahir:
                 </label>
-                <p>{formatValue(user.caang?.tempatLahir)}</p>
+                <p>{formatValue(user.registration?.tempatLahir)}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-muted-foreground">
@@ -233,7 +217,7 @@ export default function UserDetailModal({
                 </label>
                 <p className="flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
-                  {formatDate(user.caang?.tanggalLahir)}
+                  {formatDate(user.registration?.tanggalLahir)}
                 </p>
               </div>
             </CardContent>
@@ -252,7 +236,7 @@ export default function UserDetailModal({
                 <label className="text-sm font-medium text-muted-foreground">
                   No. HP:
                 </label>
-                <p className="font-mono">{formatValue(user.caang?.noHp)}</p>
+                <p className="font-mono">{formatValue(user.registration?.noHp)}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-muted-foreground">
@@ -260,7 +244,7 @@ export default function UserDetailModal({
                 </label>
                 <p className="flex items-center gap-1">
                   <Instagram className="w-3 h-3" />
-                  {formatValue(user.caang?.instagram)}
+                  {formatValue(user.registration?.instagram)}
                 </p>
               </div>
               <div>
@@ -269,7 +253,7 @@ export default function UserDetailModal({
                 </label>
                 <p className="flex items-start gap-1">
                   <MapPin className="w-3 h-3 mt-1 flex-shrink-0" />
-                  <span>{formatValue(user.caang?.alamatAsal)}</span>
+                  <span>{formatValue(user.registration?.alamatAsal)}</span>
                 </p>
               </div>
               <div>
@@ -278,7 +262,7 @@ export default function UserDetailModal({
                 </label>
                 <p className="flex items-start gap-1">
                   <MapPin className="w-3 h-3 mt-1 flex-shrink-0" />
-                  <span>{formatValue(user.caang?.alamatDomisili)}</span>
+                  <span>{formatValue(user.registration?.alamatDomisili)}</span>
                 </p>
               </div>
             </CardContent>
@@ -297,25 +281,25 @@ export default function UserDetailModal({
                 <label className="text-sm font-medium text-muted-foreground">
                   NIM:
                 </label>
-                <p className="font-mono">{formatValue(user.caang?.nim)}</p>
+                <p className="font-mono">{formatValue(user.registration?.nim)}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-muted-foreground">
                   Program Studi:
                 </label>
-                <p>{formatValue(user.caang?.prodi)}</p>
+                <p>{formatValue(user.registration?.prodi)}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-muted-foreground">
                   Jurusan:
                 </label>
-                <p>{formatValue(user.caang?.jurusan)}</p>
+                <p>{formatValue(user.registration?.jurusan)}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-muted-foreground">
                   Asal Sekolah:
                 </label>
-                <p>{formatValue(user.caang?.asalSekolah)}</p>
+                <p>{formatValue(user.registration?.asalSekolah)}</p>
               </div>
             </CardContent>
           </Card>
@@ -333,14 +317,14 @@ export default function UserDetailModal({
                 <label className="text-sm font-medium text-muted-foreground">
                   Nama Orang Tua:
                 </label>
-                <p>{formatValue(user.caang?.namaOrangTua)}</p>
+                <p>{formatValue(user.registration?.namaOrangTua)}</p>
               </div>
               <div>
                 <label className="text-sm font-medium text-muted-foreground">
                   No. HP Orang Tua:
                 </label>
                 <p className="font-mono">
-                  {formatValue(user.caang?.noHpOrangTua)}
+                  {formatValue(user.registration?.noHpOrangTua)}
                 </p>
               </div>
             </CardContent>
@@ -360,7 +344,7 @@ export default function UserDetailModal({
                   Riwayat Organisasi:
                 </label>
                 <p className="text-sm bg-muted/20 p-3 rounded-md mt-1">
-                  {formatValue(user.caang?.riwayatOrganisasi)}
+                  {formatValue(user.registration?.riwayatOrganisasi)}
                 </p>
               </div>
               <div>
@@ -368,7 +352,7 @@ export default function UserDetailModal({
                   Riwayat Prestasi:
                 </label>
                 <p className="text-sm bg-muted/20 p-3 rounded-md mt-1">
-                  {formatValue(user.caang?.riwayatPrestasi)}
+                  {formatValue(user.registration?.riwayatPrestasi)}
                 </p>
               </div>
               <div>
@@ -376,7 +360,7 @@ export default function UserDetailModal({
                   Tujuan Masuk UKM:
                 </label>
                 <p className="text-sm bg-muted/20 p-3 rounded-md mt-1">
-                  {formatValue(user.caang?.tujuanMasuk)}
+                  {formatValue(user.registration?.tujuanMasuk)}
                 </p>
               </div>
             </CardContent>
@@ -392,22 +376,22 @@ export default function UserDetailModal({
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <ImagePreview
-                src={user.caang?.pasFoto}
+                src={user.registration?.pasFoto}
                 alt="Pas foto"
                 title="Pas Foto"
               />
               <ImagePreview
-                src={user.caang?.followIgRobotik}
+                src={user.registration?.followIgRobotik}
                 alt="Screenshot follow IG Robotik"
                 title="Follow IG Robotik"
               />
               <ImagePreview
-                src={user.caang?.followIgMrc}
+                src={user.registration?.followIgMrc}
                 alt="Screenshot follow IG MRC"
                 title="Follow IG MRC"
               />
               <ImagePreview
-                src={user.caang?.youtubeRobotik}
+                src={user.registration?.youtubeRobotik}
                 alt="Screenshot subscribe YouTube"
                 title="Subscribe YouTube"
               />
@@ -448,20 +432,20 @@ export default function UserDetailModal({
                 </div>
               </div>
 
-              {user.caang?.payment_message && (
+              {user.registration?.payment_message && (
                 <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
                   <p className="text-sm text-yellow-800">
-                    {user.caang.payment_message}
+                    {user.registration.payment_message}
                   </p>
                 </div>
               )}
 
-              {user.caang?.pembayaran ? (
+              {user.registration?.pembayaran ? (
                 <div className="space-y-2">
                   <p className="text-sm font-medium">Bukti Pembayaran:</p>
                   <div className="border rounded-md p-4 bg-muted/20">
                     <Image
-                      src={user.caang.pembayaran}
+                      src={user.registration.pembayaran}
                       alt="Bukti pembayaran"
                       width={300}
                       height={200}

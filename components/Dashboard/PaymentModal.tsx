@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { FormDataCaang } from "@/types/caang";
+import { UserWithCaang } from "@/types/caang";
 import { db } from "@/lib/firebaseConfig";
 import { doc, updateDoc } from "firebase/firestore";
 import {
@@ -16,96 +16,91 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import Image from "next/image";
 
-type UserData = {
-  uid: string;
-  email: string;
-  namaLengkap?: string;
-  caang?: FormDataCaang;
-  role: string; 
-};
+interface PaymentModalProps {
+  user: UserWithCaang;
+  onClose: () => void;
+  onUserUpdate?: (updatedUser: UserWithCaang) => void;
+}
 
 export default function PaymentModal({
   user,
   onClose,
-  onUserUpdate
-}: {
-  user: UserData;
-  onClose: () => void;
-  onUserUpdate?: (updatedUser: UserData) => void;
-}) {
-  const [loading, setLoading] = useState<'verify' | 'reject' | null>(null);
+  onUserUpdate,
+}: PaymentModalProps) {
+  const [loading, setLoading] = useState<"verify" | "reject" | null>(null);
 
   const handleVerify = async () => {
-    if (!user.uid || loading) return;
-    
+    if (!user.user?.uid || loading) return;
+
     try {
-      setLoading('verify');
-      
-      // Optimistic update - update UI immediately
-      const updatedUser: UserData = {
+      setLoading("verify");
+
+      // Optimistic update
+      const updatedUser: UserWithCaang = {
         ...user,
-        caang: {
-          ...user.caang!,
-          payment_verification: true
-        }
+        registration: user.registration
+          ? {
+              ...user.registration,
+              payment_verification: true,
+              payment_message: undefined,
+            }
+          : undefined,
       };
-      
-      // Update UI first
+
       if (onUserUpdate) {
         onUserUpdate(updatedUser);
       }
-      
-      // Then update database
-      await updateDoc(doc(db, "caang_registration", user.uid), {
+
+      // Update Firestore
+      await updateDoc(doc(db, "caang_registration", user.user.uid), {
         payment_verification: true,
-        payment_message: null
+        payment_message: null,
       });
-      
+
       onClose();
     } catch (error) {
       console.error("Error verifying payment:", error);
-      // Revert optimistic update on error
       if (onUserUpdate) {
-        onUserUpdate(user);
+        onUserUpdate(user); // revert
       }
     } finally {
       setLoading(null);
     }
   };
 
-  const handleWrong = async () => {
-    if (!user.uid || loading) return;
-    
+  const handleReject = async () => {
+    if (!user.user?.uid || loading) return;
+
     try {
-      setLoading('reject');
-      
-      // Optimistic update - update UI immediately
-      const updatedUser: UserData = {
+      setLoading("reject");
+
+      const updatedUser: UserWithCaang = {
         ...user,
-        caang: {
-          ...user.caang!,
-          payment_verification: false,
-          pembayaran: undefined, // Remove payment proof
-          payment_message: "⚠️ Bukti pembayaran tidak valid. Silakan upload ulang bukti pembayaran yang benar."
-        }
+        registration: user.registration
+          ? {
+              ...user.registration,
+              payment_verification: false,
+              pembayaran: undefined,
+              payment_message:
+                "⚠️ Bukti pembayaran tidak valid. Silakan upload ulang bukti pembayaran yang benar.",
+            }
+          : undefined,
       };
-      
-      // Update UI first
+
       if (onUserUpdate) {
         onUserUpdate(updatedUser);
       }
-      
-      // Then update database
-      await updateDoc(doc(db, "caang_registration", user.uid), {
+
+      await updateDoc(doc(db, "caang_registration", user.user.uid), {
         payment_verification: false,
         pembayaran: null,
-        payment_message: "⚠️ Bukti pembayaran tidak valid. Silakan upload ulang bukti pembayaran yang benar.",
+        payment_message:
+          "⚠️ Bukti pembayaran tidak valid. Silakan upload ulang bukti pembayaran yang benar.",
       });
-      
+
       onClose();
     } catch (error) {
       console.error("Error rejecting payment:", error);
-      // Revert optimistic update on error
       if (onUserUpdate) {
         onUserUpdate(user);
       }
@@ -121,14 +116,17 @@ export default function PaymentModal({
           <DialogTitle>Verifikasi Pembayaran</DialogTitle>
           <DialogDescription>
             Periksa bukti pembayaran calon anggota{" "}
-            <span className="font-semibold">{user.namaLengkap}</span>.
+            <span className="font-semibold">
+              {user.registration?.namaLengkap ?? "Tanpa Nama"}
+            </span>
+            .
           </DialogDescription>
         </DialogHeader>
 
-        {user.caang?.pembayaran ? (
+        {user.registration?.pembayaran ? (
           <div className="flex justify-center my-4">
             <Image
-              src={user.caang.pembayaran}
+              src={user.registration.pembayaran}
               alt="Bukti pembayaran"
               width={200}
               height={200}
@@ -140,13 +138,13 @@ export default function PaymentModal({
         )}
 
         <DialogFooter className="flex justify-between gap-2">
-          <Button 
-            variant="destructive" 
-            onClick={handleWrong} 
+          <Button
+            variant="destructive"
+            onClick={handleReject}
             className="w-1/2"
             disabled={loading !== null}
           >
-            {loading === 'reject' ? (
+            {loading === "reject" ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 Loading...
@@ -155,12 +153,12 @@ export default function PaymentModal({
               "Pembayaran Salah"
             )}
           </Button>
-          <Button 
-            onClick={handleVerify} 
+          <Button
+            onClick={handleVerify}
             className="w-1/2"
             disabled={loading !== null}
           >
-            {loading === 'verify' ? (
+            {loading === "verify" ? (
               <>
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 Loading...

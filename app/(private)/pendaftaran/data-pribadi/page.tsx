@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { doc, getDoc, setDoc, Timestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebaseConfig";
-import { FormDataCaang } from "@/types/caang";
+import { CaangRegistration } from "@/types/caang";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -21,7 +21,7 @@ export default function DataPribadiPage() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
-  const [formData, setFormData] = useState<FormDataCaang>({
+  const [formData, setFormData] = useState<CaangRegistration>({
     namaLengkap: "",
     namaPanggilan: "",
     jenisKelamin: "",
@@ -45,7 +45,7 @@ export default function DataPribadiPage() {
       try {
         const snap = await getDoc(doc(db, "caang_registration", u.uid));
         if (snap.exists()) {
-          const data = snap.data() as FormDataCaang;
+          const data = snap.data() as CaangRegistration;
           setFormData((prev) => ({
             ...prev,
             namaLengkap: data.namaLengkap ?? "",
@@ -54,8 +54,11 @@ export default function DataPribadiPage() {
             agama: data.agama ?? "",
             tempatLahir: data.tempatLahir ?? "",
             tanggalLahir:
-              data.tanggalLahir instanceof Timestamp
-                ? data.tanggalLahir.toDate().toISOString().split("T")[0]
+              (data.tanggalLahir as unknown as Timestamp) instanceof Timestamp
+                ? (data.tanggalLahir as unknown as Timestamp)
+                    .toDate()
+                    .toISOString()
+                    .split("T")[0]
                 : data.tanggalLahir ?? "",
             noHp: data.noHp ?? "",
             instagram: data.instagram ?? "",
@@ -96,7 +99,7 @@ export default function DataPribadiPage() {
             ? Timestamp.fromDate(
                 typeof formData.tanggalLahir === "string"
                   ? new Date(formData.tanggalLahir)
-                  : formData.tanggalLahir.toDate()
+                  : formData.tanggalLahir
               )
             : null,
           createdAt: Timestamp.now(),
@@ -227,8 +230,10 @@ export default function DataPribadiPage() {
                   type="date"
                   name="tanggalLahir"
                   value={
-                    formData.tanggalLahir instanceof Timestamp
-                      ? formData.tanggalLahir
+                    typeof formData.tanggalLahir === "object" &&
+                    (formData.tanggalLahir as Timestamp | string) instanceof
+                      Timestamp
+                      ? (formData.tanggalLahir as Timestamp)
                           .toDate()
                           .toISOString()
                           .split("T")[0]

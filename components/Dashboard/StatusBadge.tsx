@@ -1,16 +1,7 @@
-// components/admin/StatusBadge.tsx (Fixed)
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, XCircle, Clock } from "lucide-react";
-import { FormDataCaang } from "@/types/caang";
-
-interface UserData {
-  uid: string;
-  email: string;
-  role: string;
-  namaLengkap?: string;
-  caang?: FormDataCaang;
-}
+import { UserWithCaang } from "@/types/caang";
 
 type PaymentStatus = "not_paid" | "pending" | "verified";
 
@@ -19,13 +10,14 @@ interface StatusBadgeProps {
 }
 
 interface PaymentStatusProps {
-  user: UserData;
-  onReviewClick: (user: UserData) => void;
+  user: UserWithCaang;
+  onReviewClick: (user: UserWithCaang) => void;
 }
 
 export function StatusBadge({ value }: StatusBadgeProps) {
-  const hasValue = value !== undefined && value !== null && value !== "" && value !== false;
-  
+  const hasValue =
+    value !== undefined && value !== null && value !== "" && value !== false;
+
   return hasValue ? (
     <Badge variant="outline" className="text-green-600 border-green-600">
       <CheckCircle className="w-3 h-3 mr-1" />
@@ -40,9 +32,9 @@ export function StatusBadge({ value }: StatusBadgeProps) {
 }
 
 export function PaymentStatus({ user, onReviewClick }: PaymentStatusProps) {
-  const getPaymentStatus = (user: UserData): PaymentStatus => {
-    const pembayaran = user.caang?.pembayaran;
-    const verified = user.caang?.payment_verification;
+  const getPaymentStatus = (user: UserWithCaang): PaymentStatus => {
+    const pembayaran = user.registration?.pembayaran;
+    const verified = user.registration?.payment_verification;
 
     if (!pembayaran) return "not_paid";
     if (pembayaran && verified === undefined) return "pending";

@@ -1,31 +1,44 @@
-import { Timestamp } from "firebase/firestore";
+export interface UserAccount {
+  uid?: string;
+  name?: string;
+  email?: string;
+  role?: "root" | "admin" | "member" | "caang";
+  createdAt?: string;
+}
 
-export type FormDataCaang = {
+export interface CaangRegistration {
   uid?: string;
   namaLengkap?: string;
   namaPanggilan?: string;
   jenisKelamin?: string;
   agama?: string;
   tempatLahir?: string;
-  tanggalLahir?: string | Timestamp;
+  tanggalLahir?: string;
   noHp?: string;
   instagram?: string;
   alamatAsal?: string;
   alamatDomisili?: string;
-  nim?: string;
-  prodi?: string;
-  jurusan?: string;
   asalSekolah?: string;
+  nim?: string;
+  jurusan?: string;
+  prodi?: string;
   riwayatOrganisasi?: string;
   riwayatPrestasi?: string;
   tujuanMasuk?: string;
   namaOrangTua?: string;
   noHpOrangTua?: string;
-  pasFoto?: string; // image url
-  followIgRobotik?: string; // image url
-  followIgMrc?: string; // image url
-  youtubeRobotik?: string; // image url
-  pembayaran?: string; // image url
+  pasFoto?: string;
+  followIgRobotik?: string;
+  followIgMrc?: string;
+  youtubeRobotik?: string;
+  pembayaran?: string;
   payment_verification?: boolean;
   payment_message?: string;
-};
+  createdAt?: string;
+}
+
+// Digabung untuk table
+export interface UserWithCaang {
+  user?: UserAccount;
+  registration?: CaangRegistration;
+}

@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebaseConfig";
 import { auth } from "@/lib/firebaseConfig";
-import { FormDataCaang } from "@/types/caang";
+import { CaangRegistration } from "@/types/caang";
 import JurusanProdiSelect from "@/app/(private)/pendaftaran/data-pendidikan/JurusanProdiSelect";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,7 +23,7 @@ export default function DataPendidikanPage() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
-  const [formData, setFormData] = useState<FormDataCaang>({
+  const [formData, setFormData] = useState<CaangRegistration>({
     asalSekolah: "",
     nim: "",
     jurusan: "",
@@ -44,7 +44,7 @@ export default function DataPendidikanPage() {
       try {
         const snap = await getDoc(doc(db, "caang_registration", u.uid));
         if (snap.exists()) {
-          const data = snap.data() as FormDataCaang;
+          const data = snap.data() as CaangRegistration;
           setFormData((prev) => ({
             ...prev,
             asalSekolah: data.asalSekolah ?? "",
