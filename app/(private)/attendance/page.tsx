@@ -55,20 +55,20 @@ export default function AdminAttendancePage() {
         return;
       }
 
-      const { userId, activityId, timestamp, signature } = parsed as {
+      const { userId, activityId, timestamp, hash } = parsed as {
         userId?: string;
         activityId?: string;
         timestamp?: string;
-        signature?: string;
+        hash?: string;
       };
 
-      if (!userId || !activityId || !timestamp || !signature) {
+      if (!userId || !activityId || !timestamp || !hash) {
         toast.error("QR tidak lengkap");
         return;
       }
 
       // cooldown
-      const key = signature;
+      const key = hash;
       const now = Date.now();
       if (scanCooldownRef.current[key] && scanCooldownRef.current[key] > now) {
         return;
@@ -80,7 +80,12 @@ export default function AdminAttendancePage() {
         const res = await fetch("/api/validate-scan", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId, activityId, timestamp, signature }),
+          body: JSON.stringify({
+            userId,
+            activityId,
+            timestamp,
+            signature: hash,
+          }),
         });
         const body = await res.json();
 
@@ -234,7 +239,9 @@ export default function AdminAttendancePage() {
                       <th className="px-4 py-3 text-left font-medium">Nama</th>
                       <th className="px-4 py-3 text-left font-medium">NIM</th>
                       <th className="px-4 py-3 text-left font-medium">Prodi</th>
-                      <th className="px-4 py-3 text-left font-medium">Status</th>
+                      <th className="px-4 py-3 text-left font-medium">
+                        Status
+                      </th>
                       <th className="px-4 py-3 text-left font-medium">
                         Waktu Update
                       </th>
@@ -247,7 +254,8 @@ export default function AdminAttendancePage() {
                         className="border-t border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50"
                       >
                         <td className="px-4 py-3">
-                          {(att.userId as CaangRegistration)?.namaLengkap || "—"}
+                          {(att.userId as CaangRegistration)?.namaLengkap ||
+                            "—"}
                         </td>
                         <td className="px-4 py-3 font-mono">
                           {(att.userId as CaangRegistration)?.nim || "—"}

@@ -31,7 +31,7 @@ import Image from "next/image";
 
 interface QRData {
   userId: string;
-  activityId?: string;
+  activityId: string;
   timestamp: string;
   hash: string;
 }
