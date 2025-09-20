@@ -20,14 +20,15 @@ import {
   Timestamp,
   where,
 } from "firebase/firestore";
-import { db } from "@/lib/firebaseConfig";
+import { auth, db } from "@/lib/firebaseConfig";
 import { useAuth } from "@/hooks/useAuth";
 import { Activity } from "@/types/activity";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import QRCode from "react-qr-code";
 import { CaangRegistration, UserAccount, UserWithCaang } from "@/types/caang";
 import ActivityInfoCard from "@/components/Activity/ActivityInfoCard";
 import Image from "next/image";
+import { onAuthStateChanged } from "firebase/auth";
 
 interface QRData {
   userId: string;
@@ -37,6 +38,23 @@ interface QRData {
 }
 
 export default function ActivityDetailPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [router]);
+
+
+
   const { user } = useAuth();
   const [currentUserData, setCurrentUserData] = useState<UserWithCaang | null>(
     null
@@ -199,6 +217,15 @@ export default function ActivityDetailPage() {
       alert("Link telah disalin ke clipboard!");
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen -mt-20">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <span className="ml-3 text-lg font-medium">Memuat dashboard...</span>
+      </div>
+    );
+  }
 
   if (userDataLoading) {
     return (

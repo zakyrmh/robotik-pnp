@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Image from "next/image";
 
 export default function RegisterForm() {
   const router = useRouter();
@@ -108,90 +109,111 @@ export default function RegisterForm() {
   };
 
   return (
-    <Card className="flex-1 shadow-md border border-slate-200 max-w-lg dark:border-slate-800 flex flex-col">
-      <CardHeader>
-        <CardTitle className="text-2xl font-bold text-slate-800 dark:text-slate-100">
-          Buat Akun
-        </CardTitle>
-        <p className="text-sm text-slate-600 dark:text-slate-400">
-          Isi data diri Anda untuk memulai.
-        </p>
-      </CardHeader>
+    <div className="flex w-full max-w-5xl gap-6 lg:flex-row flex-col items-stretch">
+      <Card className="flex-1 shadow-md border border-slate-200 max-w-lg dark:border-slate-800 flex flex-col">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold text-slate-800 dark:text-slate-100">
+            Buat Akun
+          </CardTitle>
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            Isi data diri Anda untuk memulai.
+          </p>
+        </CardHeader>
 
-      <CardContent className="flex-1 flex flex-col justify-between">
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label className="mb-2" htmlFor="name">
-              Nama Lengkap
-            </Label>
-            <Input
-              id="name"
-              type="text"
-              placeholder="Masukkan nama lengkap"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-          </div>
+        <CardContent className="flex-1 flex flex-col justify-between">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Label className="mb-2" htmlFor="name">
+                Nama Lengkap
+              </Label>
+              <Input
+                id="name"
+                type="text"
+                placeholder="Masukkan nama lengkap"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
 
-          <div>
-            <Label className="mb-2" htmlFor="email">
-              Email
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="Masukkan email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
+            <div>
+              <Label className="mb-2" htmlFor="email">
+                Email
+              </Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Masukkan email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
 
-          <div>
-            <Label className="mb-2" htmlFor="password">
-              Password
-            </Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Masukkan password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
+            <div>
+              <Label className="mb-2" htmlFor="password">
+                Password
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Masukkan password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
 
-          <div>
-            <Label className="mb-2" htmlFor="repassword">
-              Ulangi Password
-            </Label>
-            <Input
-              id="repassword"
-              type="password"
-              placeholder="Ulangi masukkan password"
-              value={repassword}
-              onChange={(e) => setRepassword(e.target.value)}
-            />
-          </div>
+            <div>
+              <Label className="mb-2" htmlFor="repassword">
+                Ulangi Password
+              </Label>
+              <Input
+                id="repassword"
+                type="password"
+                placeholder="Ulangi masukkan password"
+                value={repassword}
+                onChange={(e) => setRepassword(e.target.value)}
+              />
+            </div>
 
-          {error && <p className="text-sm text-red-500">{error}</p>}
+            {error && <p className="text-sm text-red-500">{error}</p>}
 
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Membuat Akun...
-              </>
-            ) : (
-              "Daftar"
-            )}
-          </Button>
-        </form>
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Membuat
+                  Akun...
+                </>
+              ) : (
+                "Daftar"
+              )}
+            </Button>
+          </form>
 
-        <p className="mt-6 text-center text-sm text-slate-600 dark:text-slate-400">
-          Sudah punya akun?{" "}
-          <Link href="/login" className="text-primary font-medium">
-            Login
+          <p className="mt-6 text-center text-sm text-slate-600 dark:text-slate-400">
+            Sudah punya akun?{" "}
+            <Link href="/login" className="text-primary font-medium">
+              Login
+            </Link>
+          </p>
+        </CardContent>
+      </Card>
+      <Card className="flex-1 shadow-md border border-slate-200 dark:border-slate-800 lg:flex flex-col hidden">
+        <CardContent className="flex-1 flex flex-col justify-start">
+          <Link href="/" className="flex items-center gap-2 mb-8">
+            <Image src="/images/logo.png" alt="Logo" width={30} height={30} />
+            <span className="font-semibold text-xl text-slate-800 dark:text-slate-100">
+              Robotik PNP
+            </span>
           </Link>
-        </p>
-      </CardContent>
-    </Card>
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-4">
+            Welcome to Robotik PNP
+          </h2>
+          <p className="max-w-md text-slate-600 dark:text-slate-400">
+            Join our organization to access exclusive features and content. It
+            only takes a minute!
+          </p>
+          <Image src="/images/grid.svg" alt="grid" width={405} height={325} />
+        </CardContent>
+      </Card>
+    </div>
   );
 }

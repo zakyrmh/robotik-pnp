@@ -3,18 +3,51 @@
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { collection, getDocs, query } from "firebase/firestore";
-import { db } from "@/lib/firebaseConfig";
+import { collection, doc, getDoc, getDocs, query } from "firebase/firestore";
+import { auth, db } from "@/lib/firebaseConfig";
 import { Attendance } from "@/types/attendance";
 import { CaangRegistration } from "@/types/caang";
 import { Html5QrcodeScanner } from "html5-qrcode";
 
 // ganti toast -> sonner
 import { Toaster, toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { onAuthStateChanged } from "firebase/auth";
 
 export default function AdminAttendancePage() {
-  const [attendances, setAttendances] = useState<Attendance[]>([]);
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        router.push("/login");
+        return;
+      }
+
+      try {
+        const snap = await getDoc(doc(db, "users", user.uid));
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data.role !== "admin") {
+            router.push("/dashboard");
+          }
+        } else {
+          console.log("User data not found");
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    return () => unsubscribe();
+  }, [router]);
+
+
+
+  const [attendances, setAttendances] = useState<Attendance[]>([]);
   const [scanning, setScanning] = useState(false);
   const [updating, setUpdating] = useState(false);
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
