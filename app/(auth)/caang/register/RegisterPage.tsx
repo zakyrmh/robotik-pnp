@@ -9,7 +9,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 // Deadline: 20 September 2025, 23:59 WIB (UTC+7)
-const DEADLINE = new Date("2025-09-24T12:00:00+07:00");
+const DEADLINE = new Date("2025-09-24T11:59:00+07:00");
 
 export default function RegisterPage() {
   const [timeRemaining, setTimeRemaining] = useState("");
