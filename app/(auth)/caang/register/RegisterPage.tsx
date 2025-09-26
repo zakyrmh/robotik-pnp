@@ -7,6 +7,7 @@ import { Clock, CheckCircle } from "lucide-react";
 import RegisterForm from "@/app/(auth)/caang/register/RegisterForm";
 import ThemeToggle from "@/components/ThemeToggle";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
 
 // Deadline: 20 September 2025, 23:59 WIB (UTC+7)
 const DEADLINE = new Date("2025-09-25T23:59:00+07:00");
@@ -14,12 +15,11 @@ const DEADLINE = new Date("2025-09-25T23:59:00+07:00");
 export default function RegisterPage() {
   const [timeRemaining, setTimeRemaining] = useState("");
   const [mounted, setMounted] = useState(false);
-  
-const isDeadlinePassed = useMemo(() => {
-  if (!mounted) return false;
-  return new Date() > DEADLINE;
-}, [mounted]);
 
+  const isDeadlinePassed = useMemo(() => {
+    if (!mounted) return false;
+    return new Date() > DEADLINE;
+  }, [mounted]);
 
   useEffect(() => {
     setMounted(true);
@@ -30,7 +30,7 @@ const isDeadlinePassed = useMemo(() => {
 
     const updateCountdown = () => {
       const now = new Date();
-      
+
       if (now > DEADLINE) {
         setTimeRemaining("expired");
         return;
@@ -38,7 +38,9 @@ const isDeadlinePassed = useMemo(() => {
 
       const diff = DEADLINE.getTime() - now.getTime();
       const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const hours = Math.floor(
+        (diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+      );
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
@@ -101,13 +103,21 @@ const isDeadlinePassed = useMemo(() => {
               <p className="font-mono text-sm text-gray-600 dark:text-gray-400">
                 20 September 2025
               </p>
-              <p className="font-mono text-lg font-semibold">
-                23:59 WIB
-              </p>
+              <p className="font-mono text-lg font-semibold">23:59 WIB</p>
+            </div>
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <Link
+                href="/login"
+                className="bg-slate-800 dark:bg-slate-700 text-white px-4 py-2 rounded-lg hover:bg-slate-700 dark:hover:bg-slate-600 transition-colors"
+              >
+                Login
+              </Link>
             </div>
             <div className="flex items-center justify-center gap-2 text-green-600 dark:text-green-400">
               <CheckCircle className="w-5 h-5" />
-              <span className="text-sm">Terima kasih atas antusiasme Anda!</span>
+              <span className="text-sm">
+                Terima kasih atas antusiasme Anda!
+              </span>
             </div>
           </div>
         </CardContent>
@@ -128,14 +138,16 @@ const isDeadlinePassed = useMemo(() => {
               </span>
             </div>
             <p className="font-mono text-lg font-bold text-orange-600 dark:text-orange-400">
-              {timeRemaining && timeRemaining !== "expired" ? timeRemaining : "Memuat..."}
+              {timeRemaining && timeRemaining !== "expired"
+                ? timeRemaining
+                : "Memuat..."}
             </p>
           </CardContent>
         </Card>
       </div>
 
       {/* Registration Form */}
-        <RegisterForm />
+      <RegisterForm />
     </div>
   );
 

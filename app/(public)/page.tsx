@@ -40,12 +40,6 @@ export default function Home() {
           Wadah bagi mahasiswa Politeknik Negeri Padang untuk mengembangkan
           minat, bakat, dan kreativitas di bidang robotika.
         </p>
-        <Link
-          href="/caang/register"
-          className="bg-slate-800 dark:bg-slate-700 text-white px-6 py-3 rounded-lg hover:bg-slate-700 dark:hover:bg-slate-600 transition-colors"
-        >
-          Gabung Sekarang
-        </Link>
       </section>
 
       {/* Ketua Umum */}
