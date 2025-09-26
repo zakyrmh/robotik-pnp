@@ -30,6 +30,19 @@ import ActivityInfoCard from "@/components/Activity/ActivityInfoCard";
 import Image from "next/image";
 import { onAuthStateChanged } from "firebase/auth";
 
+// Add the Attendance types
+export type AttendanceStatus = "present" | "late" | "invalid";
+
+export interface Attendance {
+  uid: string;
+  userId: string;
+  activityId: string;
+  timestamp: Date;
+  status: AttendanceStatus;
+  verifiedBy?: string;
+  updatedAt?: Date;
+}
+
 interface QRData {
   userId: string;
   activityId: string;
@@ -53,8 +66,6 @@ export default function ActivityDetailPage() {
     return () => unsubscribe();
   }, [router]);
 
-
-
   const { user } = useAuth();
   const [currentUserData, setCurrentUserData] = useState<UserWithCaang | null>(
     null
@@ -62,6 +73,10 @@ export default function ActivityDetailPage() {
   const [userDataLoading, setUserDataLoading] = useState(true);
   const [activity, setActivity] = useState<Activity | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  
+  // Add attendance state
+  const [attendanceRecord, setAttendanceRecord] = useState<Attendance | null>(null);
+  const [attendanceLoading, setAttendanceLoading] = useState(false);
 
   const params = useParams();
   const slug = params?.slug as string;
@@ -72,6 +87,54 @@ export default function ActivityDetailPage() {
   >("none");
   const [showQR, setShowQR] = useState(false);
   const [countdown, setCountdown] = useState(0);
+
+  // Function to check attendance status
+  const checkAttendanceStatus = async (userId: string, activityId: string) => {
+    try {
+      setAttendanceLoading(true);
+      const attendanceQuery = query(
+        collection(db, "attendance"),
+        where("userId", "==", userId),
+        where("activityId", "==", activityId)
+      );
+      
+      const attendanceSnapshot = await getDocs(attendanceQuery);
+      
+      if (!attendanceSnapshot.empty) {
+        const attendanceDoc = attendanceSnapshot.docs[0];
+        const attendanceData = attendanceDoc.data();
+        
+        // Convert timestamp to Date if it's a Firestore Timestamp
+        const timestamp = attendanceData.timestamp instanceof Timestamp 
+          ? attendanceData.timestamp.toDate() 
+          : attendanceData.timestamp;
+          
+        const updatedAt = attendanceData.updatedAt instanceof Timestamp 
+          ? attendanceData.updatedAt.toDate() 
+          : attendanceData.updatedAt;
+
+        const attendance: Attendance = {
+          uid: attendanceDoc.id,
+          userId: attendanceData.userId,
+          activityId: attendanceData.activityId,
+          timestamp: timestamp,
+          status: attendanceData.status,
+          verifiedBy: attendanceData.verifiedBy,
+          updatedAt: updatedAt,
+        };
+        
+        setAttendanceRecord(attendance);
+        setAttendanceStatus("confirmed");
+      } else {
+        setAttendanceRecord(null);
+        setAttendanceStatus("none");
+      }
+    } catch (error) {
+      console.error("Error checking attendance:", error);
+    } finally {
+      setAttendanceLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -114,6 +177,9 @@ export default function ActivityDetailPage() {
             date: dateValue,
             icon: null,
           };
+          
+          // Check attendance status for this activity
+          await checkAttendanceStatus(user.uid, docSnap.id);
         }
 
         setCurrentUserData(userData);
@@ -159,13 +225,13 @@ export default function ActivityDetailPage() {
         userId: payload.userId,
         activityId: payload.activityId,
         timestamp: payload.timestamp,
-        hash: payload.signature, // gunakan signature sebagai hash/ID
+        hash: payload.signature,
       };
 
       setQrData(qrData);
       setShowQR(true);
       setAttendanceStatus("pending");
-      setCountdown(300); // atau bisa diganti dengan process.env.QR_VALIDITY_SECONDS via fetch jika perlu
+      setCountdown(300);
     } catch (err) {
       console.error(err);
       alert("Terjadi kesalahan saat generate QR");
@@ -196,12 +262,12 @@ export default function ActivityDetailPage() {
   };
 
   const canTakeAttendance = (): boolean => {
-    if (!activity) {
+    if (!activity || attendanceRecord) {
       return false;
     }
     const now = new Date();
     const activityDate = activity.date;
-    const timeDiff = (now.getTime() - activityDate.getTime()) / (1000 * 60); // difference in minutes
+    const timeDiff = (now.getTime() - activityDate.getTime()) / (1000 * 60);
     return timeDiff >= -30 && timeDiff <= 60 && activity.status !== "completed";
   };
 
@@ -218,6 +284,43 @@ export default function ActivityDetailPage() {
     }
   };
 
+  const getStatusColor = (status: AttendanceStatus) => {
+    switch (status) {
+      case "present":
+        return "text-green-600 dark:text-green-400";
+      case "late":
+        return "text-yellow-600 dark:text-yellow-400";
+      case "invalid":
+        return "text-red-600 dark:text-red-400";
+      default:
+        return "text-slate-600 dark:text-slate-400";
+    }
+  };
+
+  const getStatusText = (status: AttendanceStatus) => {
+    switch (status) {
+      case "present":
+        return "Hadir";
+      case "late":
+        return "Terlambat";
+      case "invalid":
+        return "Tidak Valid";
+      default:
+        return "Tidak Diketahui";
+    }
+  };
+
+  const formatDate = (date: Date): string => {
+    return date.toLocaleString("id-ID", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      timeZone: "Asia/Jakarta",
+    });
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen -mt-20">
@@ -227,7 +330,7 @@ export default function ActivityDetailPage() {
     );
   }
 
-  if (userDataLoading) {
+  if (userDataLoading || attendanceLoading) {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
         <div className="text-center">
@@ -298,9 +401,45 @@ export default function ActivityDetailPage() {
             Absensi Kehadiran
           </h3>
 
+          {/* Show attendance record if exists */}
+          {attendanceRecord && (
+            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-6">
+              <div className="flex items-start space-x-3">
+                <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h4 className="font-medium text-green-800 dark:text-green-200 mb-2">
+                    Anda Sudah Terabsensi!
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <span className="text-green-600 dark:text-green-300 font-medium">Status:</span>
+                      <span className={`ml-2 font-semibold ${getStatusColor(attendanceRecord.status)}`}>
+                        {getStatusText(attendanceRecord.status)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-green-600 dark:text-green-300 font-medium">Waktu:</span>
+                      <span className="ml-2 text-green-700 dark:text-green-200">
+                        {formatDate(attendanceRecord.timestamp)}
+                      </span>
+                    </div>
+                    {attendanceRecord.verifiedBy && (
+                      <div className="sm:col-span-2">
+                        <span className="text-green-600 dark:text-green-300 font-medium">Diverifikasi oleh:</span>
+                        <span className="ml-2 text-green-700 dark:text-green-200">
+                          {attendanceRecord.verifiedBy}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {!showQR ? (
             <div className="text-center py-8">
-              {attendanceStatus === "none" && (
+              {attendanceStatus === "none" && !attendanceRecord && (
                 <>
                   <QrCode className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
                   <p className="text-slate-600 dark:text-slate-400 mb-4">
@@ -323,15 +462,26 @@ export default function ActivityDetailPage() {
                 </>
               )}
 
-              {attendanceStatus === "confirmed" && (
+              {attendanceStatus === "confirmed" && !attendanceRecord && (
                 <>
                   <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
                   <p className="text-green-600 dark:text-green-400 font-medium mb-2">
                     Absensi Berhasil!
                   </p>
-                  <p className="text-slate-600 dark:text-slate-400">
+                  <p className="text-slate-600 dark:text-slate-400 mb-4">
                     Kehadiran Anda telah tercatat pada sistem
                   </p>
+                  <button
+                    onClick={() => {
+                      if (user?.uid && activity?.uid) {
+                        checkAttendanceStatus(user.uid, activity.uid);
+                      }
+                    }}
+                    className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    <span>Refresh Status</span>
+                  </button>
                 </>
               )}
 
@@ -354,6 +504,18 @@ export default function ActivityDetailPage() {
                     <RefreshCw className="w-4 h-4" />
                     <span>Coba Lagi</span>
                   </button>
+                </>
+              )}
+
+              {attendanceRecord && (
+                <>
+                  <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                  <p className="text-green-600 dark:text-green-400 font-medium mb-2">
+                    Sudah Terabsensi
+                  </p>
+                  <p className="text-slate-600 dark:text-slate-400">
+                    Anda sudah melakukan absensi untuk aktivitas ini
+                  </p>
                 </>
               )}
             </div>
