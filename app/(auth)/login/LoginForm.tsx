@@ -27,7 +27,6 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    toast.error("");
 
     if (!formData.email || !formData.password) {
       toast.error("Harap isi semua kolom.");

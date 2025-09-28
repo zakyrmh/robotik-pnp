@@ -19,8 +19,6 @@ export default function ForgotPasswordForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    toast.error("");
-    toast.success("");
 
     if (!formData.email) {
       toast.error("Harap isi kolom email.");
