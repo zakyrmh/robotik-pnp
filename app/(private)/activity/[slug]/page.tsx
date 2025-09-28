@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   ArrowLeft,
   CheckCircle,
@@ -73,10 +73,16 @@ export default function ActivityDetailPage() {
   const [userDataLoading, setUserDataLoading] = useState(true);
   const [activity, setActivity] = useState<Activity | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
-  
+
   // Add attendance state
-  const [attendanceRecord, setAttendanceRecord] = useState<Attendance | null>(null);
+  const [attendanceRecord, setAttendanceRecord] = useState<Attendance | null>(
+    null
+  );
   const [attendanceLoading, setAttendanceLoading] = useState(false);
+
+  // Scroll position states
+  const hasMounted = useRef(false);
+  const isRestoring = useRef(false);
 
   const params = useParams();
   const slug = params?.slug as string;
@@ -88,84 +94,142 @@ export default function ActivityDetailPage() {
   const [showQR, setShowQR] = useState(false);
   const [countdown, setCountdown] = useState(0);
 
-  // Function to check attendance status
-  const checkAttendanceStatus = async (userId: string, activityId: string) => {
-    try {
-      setAttendanceLoading(true);
-      const attendanceQuery = query(
-        collection(db, "attendance"),
-        where("userId", "==", userId),
-        where("activityId", "==", activityId)
-      );
-      
-      const attendanceSnapshot = await getDocs(attendanceQuery);
-      
-      if (!attendanceSnapshot.empty) {
-        const attendanceDoc = attendanceSnapshot.docs[0];
-        const attendanceData = attendanceDoc.data();
-        
-        // Convert timestamp to Date if it's a Firestore Timestamp
-        const timestamp = attendanceData.timestamp instanceof Timestamp 
-          ? attendanceData.timestamp.toDate() 
-          : attendanceData.timestamp;
-          
-        const updatedAt = attendanceData.updatedAt instanceof Timestamp 
-          ? attendanceData.updatedAt.toDate() 
-          : attendanceData.updatedAt;
+  // Function to check attendance status - using useCallback to fix dependency warning
+  const checkAttendanceStatus = useCallback(
+    async (userId: string, activityId: string) => {
+      try {
+        setAttendanceLoading(true);
+        const attendanceQuery = query(
+          collection(db, "attendance"),
+          where("userId", "==", userId),
+          where("activityId", "==", activityId)
+        );
 
-        const attendance: Attendance = {
-          uid: attendanceDoc.id,
-          userId: attendanceData.userId,
-          activityId: attendanceData.activityId,
-          timestamp: timestamp,
-          status: attendanceData.status,
-          verifiedBy: attendanceData.verifiedBy,
-          updatedAt: updatedAt,
-        };
-        
-        setAttendanceRecord(attendance);
-        setAttendanceStatus("confirmed");
-        
-        // Hide QR if it's still showing
-        if (showQR) {
-          setShowQR(false);
-          setQrData(null);
-          setCountdown(0);
+        const attendanceSnapshot = await getDocs(attendanceQuery);
+
+        if (!attendanceSnapshot.empty) {
+          const attendanceDoc = attendanceSnapshot.docs[0];
+          const attendanceData = attendanceDoc.data();
+
+          // Convert timestamp to Date if it's a Firestore Timestamp
+          const timestamp =
+            attendanceData.timestamp instanceof Timestamp
+              ? attendanceData.timestamp.toDate()
+              : attendanceData.timestamp;
+
+          const updatedAt =
+            attendanceData.updatedAt instanceof Timestamp
+              ? attendanceData.updatedAt.toDate()
+              : attendanceData.updatedAt;
+
+          const attendance: Attendance = {
+            uid: attendanceDoc.id,
+            userId: attendanceData.userId,
+            activityId: attendanceData.activityId,
+            timestamp: timestamp,
+            status: attendanceData.status,
+            verifiedBy: attendanceData.verifiedBy,
+            updatedAt: updatedAt,
+          };
+
+          setAttendanceRecord(attendance);
+          setAttendanceStatus("confirmed");
+
+          // Hide QR if it's still showing
+          if (showQR) {
+            setShowQR(false);
+            setQrData(null);
+            setCountdown(0);
+          }
+
+          return true; // Return true if attendance found
+        } else {
+          setAttendanceRecord(null);
+          // Only set to "none" if not currently pending
+          if (attendanceStatus !== "pending") {
+            setAttendanceStatus("none");
+          }
+          return false; // Return false if no attendance found
         }
-        
-        return true; // Return true if attendance found
-      } else {
-        setAttendanceRecord(null);
-        // Only set to "none" if not currently pending
-        if (attendanceStatus !== "pending") {
-          setAttendanceStatus("none");
-        }
-        return false; // Return false if no attendance found
+      } catch (error) {
+        console.error("Error checking attendance:", error);
+        return false;
+      } finally {
+        setAttendanceLoading(false);
       }
-    } catch (error) {
-      console.error("Error checking attendance:", error);
-      return false;
-    } finally {
-      setAttendanceLoading(false);
-    }
-  };
+    },
+    [showQR, attendanceStatus]
+  );
 
-  // Auto-refresh attendance status when QR is pending
+  // Improved scroll tracking
+  useEffect(() => {
+    const handleScroll = () => {
+      // Don't track scroll when restoring position
+      if (!isRestoring.current) {
+        sessionStorage.setItem(`scroll-${slug}`, window.pageYOffset.toString());
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [slug]);
+
+  // Better session storage management
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      sessionStorage.setItem(`scroll-${slug}`, window.pageYOffset.toString());
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        sessionStorage.setItem(`scroll-${slug}`, window.pageYOffset.toString());
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      // Save on component unmount
+      sessionStorage.setItem(`scroll-${slug}`, window.pageYOffset.toString());
+    };
+  }, [slug]);
+
+  // Auto-refresh with scroll preservation
   useEffect(() => {
     if (attendanceStatus === "pending" && user?.uid && activity?.uid) {
       const pollInterval = setInterval(async () => {
-        const hasAttendance = await checkAttendanceStatus(user.uid, activity.uid);
+        // Save scroll position before checking
+        const currentScroll = window.pageYOffset;
+        sessionStorage.setItem(`scroll-${slug}`, currentScroll.toString());
+
+        const hasAttendance = await checkAttendanceStatus(
+          user.uid,
+          activity.uid
+        );
         if (hasAttendance) {
-          // Clear the interval when attendance is found
           clearInterval(pollInterval);
         }
-      }, 3000); // Check every 3 seconds
 
-      // Cleanup interval
+        // Restore scroll position after check
+        setTimeout(() => {
+          window.scrollTo({
+            top: currentScroll,
+            behavior: "auto",
+          });
+        }, 50);
+      }, 5000);
+
       return () => clearInterval(pollInterval);
     }
-  }, [attendanceStatus, user?.uid, activity?.uid]);
+  }, [attendanceStatus, user?.uid, activity?.uid, slug, checkAttendanceStatus]);
 
+  // Main data fetching effect
   useEffect(() => {
     const fetchData = async () => {
       if (!user?.uid) return;
@@ -207,7 +271,7 @@ export default function ActivityDetailPage() {
             date: dateValue,
             icon: null,
           };
-          
+
           // Check attendance status for this activity
           await checkAttendanceStatus(user.uid, docSnap.id);
         }
@@ -223,7 +287,31 @@ export default function ActivityDetailPage() {
     };
 
     fetchData();
-  }, [slug, user]);
+  }, [slug, user, checkAttendanceStatus]);
+
+  // Scroll restoration effect
+  useEffect(() => {
+    if (!userDataLoading && !attendanceLoading && !hasMounted.current) {
+      hasMounted.current = true;
+
+      setTimeout(() => {
+        const savedScrollPosition = sessionStorage.getItem(`scroll-${slug}`);
+        if (savedScrollPosition && !isRestoring.current) {
+          isRestoring.current = true;
+
+          window.scrollTo({
+            top: parseInt(savedScrollPosition),
+            behavior: "auto",
+          });
+
+          setTimeout(() => {
+            isRestoring.current = false;
+            sessionStorage.removeItem(`scroll-${slug}`);
+          }, 300);
+        }
+      }, 100);
+    }
+  }, [userDataLoading, attendanceLoading, slug]);
 
   const generateQRCode = async () => {
     if (!user?.uid || !activity?.uid) return;
@@ -357,12 +445,12 @@ export default function ActivityDetailPage() {
     if (attendanceRecord) {
       return "already_attended";
     }
-    
+
     // If QR is showing, show QR
     if (showQR) {
       return "showing_qr";
     }
-    
+
     // Based on attendance status
     switch (attendanceStatus) {
       case "confirmed":
@@ -448,9 +536,6 @@ export default function ActivityDetailPage() {
       </div>
 
       <div className="max-w-4xl mx-auto p-4 lg:p-8 space-y-6">
-        {/* Activity Info Card */}
-        <ActivityInfoCard />
-
         {/* Attendance Card */}
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
           <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-4 flex items-center">
@@ -469,20 +554,30 @@ export default function ActivityDetailPage() {
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                     <div>
-                      <span className="text-green-600 dark:text-green-300 font-medium">Status:</span>
-                      <span className={`ml-2 font-semibold ${getStatusColor(attendanceRecord.status)}`}>
+                      <span className="text-green-600 dark:text-green-300 font-medium">
+                        Status:
+                      </span>
+                      <span
+                        className={`ml-2 font-semibold ${getStatusColor(
+                          attendanceRecord.status
+                        )}`}
+                      >
                         {getStatusText(attendanceRecord.status)}
                       </span>
                     </div>
                     <div>
-                      <span className="text-green-600 dark:text-green-300 font-medium">Waktu:</span>
+                      <span className="text-green-600 dark:text-green-300 font-medium">
+                        Waktu:
+                      </span>
                       <span className="ml-2 text-green-700 dark:text-green-200">
                         {formatDate(attendanceRecord.timestamp)}
                       </span>
                     </div>
                     {attendanceRecord.verifiedBy && (
                       <div className="sm:col-span-2">
-                        <span className="text-green-600 dark:text-green-300 font-medium">Diverifikasi oleh:</span>
+                        <span className="text-green-600 dark:text-green-300 font-medium">
+                          Diverifikasi oleh:
+                        </span>
                         <span className="ml-2 text-green-700 dark:text-green-200">
                           {attendanceRecord.verifiedBy}
                         </span>
@@ -670,6 +765,8 @@ export default function ActivityDetailPage() {
             </div>
           )}
         </div>
+        {/* Activity Info Card */}
+        <ActivityInfoCard />
       </div>
     </div>
   );
