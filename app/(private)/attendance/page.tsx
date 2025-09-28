@@ -1,5 +1,3 @@
-// app/(private)/attendance/page.tsx
-
 "use client";
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
@@ -13,6 +11,11 @@ import { Html5QrcodeScanner } from "html5-qrcode";
 import { Toaster, toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
+
+// Extended Attendance type dengan user data
+interface AttendanceWithUser extends Attendance {
+  userData?: CaangRegistration;
+}
 
 export default function AdminAttendancePage() {
   const router = useRouter();
@@ -45,27 +48,55 @@ export default function AdminAttendancePage() {
     return () => unsubscribe();
   }, [router]);
 
-
-
-  const [attendances, setAttendances] = useState<Attendance[]>([]);
+  const [attendances, setAttendances] = useState<AttendanceWithUser[]>([]);
   const [scanning, setScanning] = useState(false);
   const [updating, setUpdating] = useState(false);
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
   const scannerDivRef = useRef<HTMLDivElement>(null);
 
-  // Fetch attendance data
+  // Fetch attendance data with user information
   const fetchAttendances = useCallback(async () => {
     try {
       setLoading(true);
       const q = query(collection(db, "attendance"));
       const snapshot = await getDocs(q);
 
-      const data: Attendance[] = snapshot.docs.map((docSnap) => ({
+      const attendanceData: Attendance[] = snapshot.docs.map((docSnap) => ({
         ...(docSnap.data() as Attendance),
         id: docSnap.id,
       }));
 
-      setAttendances(data);
+      // Fetch user data untuk setiap attendance record
+      const attendancesWithUserData: AttendanceWithUser[] = await Promise.all(
+        attendanceData.map(async (attendance) => {
+          try {
+            // Ambil data user dari koleksi caang_registration
+            const userDoc = await getDoc(doc(db, "caang_registration", attendance.userId));
+            
+            if (userDoc.exists()) {
+              const userData = userDoc.data() as CaangRegistration;
+              return {
+                ...attendance,
+                userData: userData
+              };
+            } else {
+              console.warn(`User data not found for userId: ${attendance.userId}`);
+              return {
+                ...attendance,
+                userData: undefined
+              };
+            }
+          } catch (error) {
+            console.error(`Error fetching user data for ${attendance.userId}:`, error);
+            return {
+              ...attendance,
+              userData: undefined
+            };
+          }
+        })
+      );
+
+      setAttendances(attendancesWithUserData);
     } catch (error) {
       console.error("Error fetching attendance:", error);
       toast.error("Gagal memuat data absensi");
@@ -283,18 +314,17 @@ export default function AdminAttendancePage() {
                   <tbody>
                     {attendances.map((att) => (
                       <tr
-                        key={att.uid}
+                        key={att.uid || att.uid}
                         className="border-t border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50"
                       >
                         <td className="px-4 py-3">
-                          {(att.userId as CaangRegistration)?.namaLengkap ||
-                            "—"}
+                          {att.userData?.namaLengkap || "Data tidak ditemukan"}
                         </td>
                         <td className="px-4 py-3 font-mono">
-                          {(att.userId as CaangRegistration)?.nim || "—"}
+                          {att.userData?.nim || "—"}
                         </td>
                         <td className="px-4 py-3">
-                          {(att.userId as CaangRegistration)?.prodi || "—"}
+                          {att.userData?.prodi || "—"}
                         </td>
                         <td className="px-4 py-3">
                           <span
