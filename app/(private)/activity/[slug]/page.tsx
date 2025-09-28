@@ -125,16 +125,46 @@ export default function ActivityDetailPage() {
         
         setAttendanceRecord(attendance);
         setAttendanceStatus("confirmed");
+        
+        // Hide QR if it's still showing
+        if (showQR) {
+          setShowQR(false);
+          setQrData(null);
+          setCountdown(0);
+        }
+        
+        return true; // Return true if attendance found
       } else {
         setAttendanceRecord(null);
-        setAttendanceStatus("none");
+        // Only set to "none" if not currently pending
+        if (attendanceStatus !== "pending") {
+          setAttendanceStatus("none");
+        }
+        return false; // Return false if no attendance found
       }
     } catch (error) {
       console.error("Error checking attendance:", error);
+      return false;
     } finally {
       setAttendanceLoading(false);
     }
   };
+
+  // Auto-refresh attendance status when QR is pending
+  useEffect(() => {
+    if (attendanceStatus === "pending" && user?.uid && activity?.uid) {
+      const pollInterval = setInterval(async () => {
+        const hasAttendance = await checkAttendanceStatus(user.uid, activity.uid);
+        if (hasAttendance) {
+          // Clear the interval when attendance is found
+          clearInterval(pollInterval);
+        }
+      }, 3000); // Check every 3 seconds
+
+      // Cleanup interval
+      return () => clearInterval(pollInterval);
+    }
+  }, [attendanceStatus, user?.uid, activity?.uid]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -247,12 +277,12 @@ export default function ActivityDetailPage() {
         setCountdown(countdown - 1);
       }, 1000);
       return () => clearTimeout(timer);
-    } else if (countdown === 0 && showQR) {
+    } else if (countdown === 0 && showQR && attendanceStatus === "pending") {
       setShowQR(false);
       setAttendanceStatus("failed");
       setQrData(null);
     }
-  }, [countdown, showQR]);
+  }, [countdown, showQR, attendanceStatus]);
 
   // Format countdown
   const formatCountdown = (seconds: number): string => {
@@ -321,6 +351,31 @@ export default function ActivityDetailPage() {
     });
   };
 
+  // Helper function to determine what to show
+  const getAttendanceDisplayState = () => {
+    // If user has attendance record, always show "already attended"
+    if (attendanceRecord) {
+      return "already_attended";
+    }
+    
+    // If QR is showing, show QR
+    if (showQR) {
+      return "showing_qr";
+    }
+    
+    // Based on attendance status
+    switch (attendanceStatus) {
+      case "confirmed":
+        return "confirmed_waiting_refresh";
+      case "failed":
+        return "failed";
+      case "pending":
+        return "pending_no_qr"; // This shouldn't happen, but just in case
+      default:
+        return "initial";
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen -mt-20">
@@ -365,6 +420,8 @@ export default function ActivityDetailPage() {
     );
   }
 
+  const displayState = getAttendanceDisplayState();
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       {/* Header */}
@@ -401,8 +458,8 @@ export default function ActivityDetailPage() {
             Absensi Kehadiran
           </h3>
 
-          {/* Show attendance record if exists */}
-          {attendanceRecord && (
+          {/* Show attendance record if exists - this should be the primary condition */}
+          {displayState === "already_attended" && attendanceRecord && (
             <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-6">
               <div className="flex items-start space-x-3">
                 <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0 mt-0.5" />
@@ -437,89 +494,8 @@ export default function ActivityDetailPage() {
             </div>
           )}
 
-          {!showQR ? (
-            <div className="text-center py-8">
-              {attendanceStatus === "none" && !attendanceRecord && (
-                <>
-                  <QrCode className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-                  <p className="text-slate-600 dark:text-slate-400 mb-4">
-                    {canTakeAttendance()
-                      ? "Klik tombol di bawah untuk generate QR code absensi"
-                      : "Absensi hanya dapat dilakukan 30 menit sebelum hingga 60 menit setelah aktivitas dimulai"}
-                  </p>
-                  <button
-                    onClick={generateQRCode}
-                    disabled={!canTakeAttendance()}
-                    className={`inline-flex items-center space-x-2 px-6 py-3 rounded-lg font-medium transition-colors ${
-                      canTakeAttendance()
-                        ? "bg-blue-600 hover:bg-blue-700 text-white"
-                        : "bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed"
-                    }`}
-                  >
-                    <QrCode className="w-5 h-5" />
-                    <span>Generate QR Absensi</span>
-                  </button>
-                </>
-              )}
-
-              {attendanceStatus === "confirmed" && !attendanceRecord && (
-                <>
-                  <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                  <p className="text-green-600 dark:text-green-400 font-medium mb-2">
-                    Absensi Berhasil!
-                  </p>
-                  <p className="text-slate-600 dark:text-slate-400 mb-4">
-                    Kehadiran Anda telah tercatat pada sistem
-                  </p>
-                  <button
-                    onClick={() => {
-                      if (user?.uid && activity?.uid) {
-                        checkAttendanceStatus(user.uid, activity.uid);
-                      }
-                    }}
-                    className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                    <span>Refresh Status</span>
-                  </button>
-                </>
-              )}
-
-              {attendanceStatus === "failed" && (
-                <>
-                  <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-                  <p className="text-red-600 dark:text-red-400 font-medium mb-2">
-                    QR Code Expired
-                  </p>
-                  <p className="text-slate-600 dark:text-slate-400 mb-4">
-                    QR code telah kedaluwarsa. Silakan generate ulang.
-                  </p>
-                  <button
-                    onClick={() => {
-                      setAttendanceStatus("none");
-                      setQrData(null);
-                    }}
-                    className="inline-flex items-center space-x-2 px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
-                  >
-                    <RefreshCw className="w-4 h-4" />
-                    <span>Coba Lagi</span>
-                  </button>
-                </>
-              )}
-
-              {attendanceRecord && (
-                <>
-                  <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                  <p className="text-green-600 dark:text-green-400 font-medium mb-2">
-                    Sudah Terabsensi
-                  </p>
-                  <p className="text-slate-600 dark:text-slate-400">
-                    Anda sudah melakukan absensi untuk aktivitas ini
-                  </p>
-                </>
-              )}
-            </div>
-          ) : (
+          {/* QR Code Display */}
+          {displayState === "showing_qr" && (
             <div className="text-center">
               <div className="mb-6">
                 <p className="text-slate-600 dark:text-slate-400 mb-2">
@@ -618,6 +594,79 @@ export default function ActivityDetailPage() {
                   <span>Batalkan</span>
                 </button>
               </div>
+            </div>
+          )}
+
+          {/* Other states */}
+          {!attendanceRecord && !showQR && (
+            <div className="text-center py-8">
+              {displayState === "initial" && (
+                <>
+                  <QrCode className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+                  <p className="text-slate-600 dark:text-slate-400 mb-4">
+                    {canTakeAttendance()
+                      ? "Klik tombol di bawah untuk generate QR code absensi"
+                      : "Absensi hanya dapat dilakukan 30 menit sebelum hingga 60 menit setelah aktivitas dimulai"}
+                  </p>
+                  <button
+                    onClick={generateQRCode}
+                    disabled={!canTakeAttendance()}
+                    className={`inline-flex items-center space-x-2 px-6 py-3 rounded-lg font-medium transition-colors ${
+                      canTakeAttendance()
+                        ? "bg-blue-600 hover:bg-blue-700 text-white"
+                        : "bg-slate-200 dark:bg-slate-700 text-slate-400 dark:text-slate-500 cursor-not-allowed"
+                    }`}
+                  >
+                    <QrCode className="w-5 h-5" />
+                    <span>Generate QR Absensi</span>
+                  </button>
+                </>
+              )}
+
+              {displayState === "confirmed_waiting_refresh" && (
+                <>
+                  <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                  <p className="text-green-600 dark:text-green-400 font-medium mb-2">
+                    Absensi Berhasil!
+                  </p>
+                  <p className="text-slate-600 dark:text-slate-400 mb-4">
+                    Kehadiran Anda telah tercatat pada sistem
+                  </p>
+                  <button
+                    onClick={() => {
+                      if (user?.uid && activity?.uid) {
+                        checkAttendanceStatus(user.uid, activity.uid);
+                      }
+                    }}
+                    className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    <span>Refresh Status</span>
+                  </button>
+                </>
+              )}
+
+              {displayState === "failed" && (
+                <>
+                  <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                  <p className="text-red-600 dark:text-red-400 font-medium mb-2">
+                    QR Code Expired
+                  </p>
+                  <p className="text-slate-600 dark:text-slate-400 mb-4">
+                    QR code telah kedaluwarsa. Silakan generate ulang.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setAttendanceStatus("none");
+                      setQrData(null);
+                    }}
+                    className="inline-flex items-center space-x-2 px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    <span>Coba Lagi</span>
+                  </button>
+                </>
+              )}
             </div>
           )}
         </div>
