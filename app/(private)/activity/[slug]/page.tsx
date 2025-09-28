@@ -297,7 +297,7 @@ export default function ActivityDetailPage() {
     }
     const now = new Date();
     const activityDate = activity.date;
-    const timeDiff = (now.getTime() - activityDate.getTime()) / (1000 * 60);
+    const timeDiff = (now.getTime() - activityDate.getTime()) / (1000 * 60 * 5);
     return timeDiff >= -30 && timeDiff <= 60 && activity.status !== "completed";
   };
 
