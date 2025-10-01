@@ -16,22 +16,22 @@ import {
   doc,
   getDoc,
   getDocs,
+  onSnapshot,
   query,
   Timestamp,
   where,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebaseConfig";
 import { useAuth } from "@/hooks/useAuth";
-import { Activity } from "@/types/activity";
+import { Activities } from "@/types/activities";
+import { AttendanceStatus } from "@/types/attendance";
 import { useParams, useRouter } from "next/navigation";
 import QRCode from "react-qr-code";
-import { CaangRegistration, UserAccount, UserWithCaang } from "@/types/caang";
+import { CaangRegistration, UserWithCaang } from "@/types/caang";
+import { UserAccount } from "@/types/users";
 import ActivityInfoCard from "@/components/Activity/ActivityInfoCard";
 import Image from "next/image";
 import { onAuthStateChanged } from "firebase/auth";
-
-// Add the Attendance types
-export type AttendanceStatus = "present" | "late" | "invalid";
 
 export interface Attendance {
   uid: string;
@@ -71,7 +71,7 @@ export default function ActivityDetailPage() {
     null
   );
   const [userDataLoading, setUserDataLoading] = useState(true);
-  const [activity, setActivity] = useState<Activity | null>(null);
+  const [activity, setActivity] = useState<Activities | null>(null);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
   // Add attendance state
@@ -94,24 +94,24 @@ export default function ActivityDetailPage() {
   const [showQR, setShowQR] = useState(false);
   const [countdown, setCountdown] = useState(0);
 
-  // Function to check attendance status - using useCallback to fix dependency warning
-  const checkAttendanceStatus = useCallback(
-    async (userId: string, activityId: string) => {
-      try {
-        setAttendanceLoading(true);
-        const attendanceQuery = query(
-          collection(db, "attendance"),
-          where("userId", "==", userId),
-          where("activityId", "==", activityId)
-        );
+  // ✅ TAMBAHKAN: Real-time listener untuk attendance
+  useEffect(() => {
+    if (!user?.uid || !activity?._id) return;
 
-        const attendanceSnapshot = await getDocs(attendanceQuery);
+    const attendanceQuery = query(
+      collection(db, "attendance"),
+      where("userId", "==", user.uid),
+      where("activityId", "==", activity._id)
+    );
 
-        if (!attendanceSnapshot.empty) {
-          const attendanceDoc = attendanceSnapshot.docs[0];
+    // Real-time listener - tidak perlu polling manual
+    const unsubscribe = onSnapshot(
+      attendanceQuery,
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const attendanceDoc = snapshot.docs[0];
           const attendanceData = attendanceDoc.data();
 
-          // Convert timestamp to Date if it's a Firestore Timestamp
           const timestamp =
             attendanceData.timestamp instanceof Timestamp
               ? attendanceData.timestamp.toDate()
@@ -135,31 +135,26 @@ export default function ActivityDetailPage() {
           setAttendanceRecord(attendance);
           setAttendanceStatus("confirmed");
 
-          // Hide QR if it's still showing
+          // Hide QR jika masih showing
           if (showQR) {
             setShowQR(false);
             setQrData(null);
             setCountdown(0);
           }
-
-          return true; // Return true if attendance found
         } else {
-          setAttendanceRecord(null);
-          // Only set to "none" if not currently pending
+          // Hanya set null jika bukan pending
           if (attendanceStatus !== "pending") {
-            setAttendanceStatus("none");
+            setAttendanceRecord(null);
           }
-          return false; // Return false if no attendance found
         }
-      } catch (error) {
-        console.error("Error checking attendance:", error);
-        return false;
-      } finally {
-        setAttendanceLoading(false);
+      },
+      (error) => {
+        console.error("Error listening to attendance:", error);
       }
-    },
-    [showQR, attendanceStatus]
-  );
+    );
+
+    return () => unsubscribe();
+  }, [user?.uid, activity?._id, showQR, attendanceStatus]);
 
   // Improved scroll tracking
   useEffect(() => {
@@ -200,34 +195,121 @@ export default function ActivityDetailPage() {
     };
   }, [slug]);
 
-  // Auto-refresh with scroll preservation
+  // ✅ TAMBAHKAN: Real-time listener untuk attendance
   useEffect(() => {
-    if (attendanceStatus === "pending" && user?.uid && activity?.uid) {
-      const pollInterval = setInterval(async () => {
-        // Save scroll position before checking
-        const currentScroll = window.pageYOffset;
-        sessionStorage.setItem(`scroll-${slug}`, currentScroll.toString());
+    if (!user?.uid || !activity?._id) return;
 
-        const hasAttendance = await checkAttendanceStatus(
-          user.uid,
-          activity.uid
-        );
-        if (hasAttendance) {
-          clearInterval(pollInterval);
+    const attendanceQuery = query(
+      collection(db, "attendance"),
+      where("userId", "==", user.uid),
+      where("activityId", "==", activity._id)
+    );
+
+    // Real-time listener - tidak perlu polling manual
+    const unsubscribe = onSnapshot(
+      attendanceQuery,
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const attendanceDoc = snapshot.docs[0];
+          const attendanceData = attendanceDoc.data();
+
+          const timestamp =
+            attendanceData.timestamp instanceof Timestamp
+              ? attendanceData.timestamp.toDate()
+              : attendanceData.timestamp;
+
+          const updatedAt =
+            attendanceData.updatedAt instanceof Timestamp
+              ? attendanceData.updatedAt.toDate()
+              : attendanceData.updatedAt;
+
+          const attendance: Attendance = {
+            uid: attendanceDoc.id,
+            userId: attendanceData.userId,
+            activityId: attendanceData.activityId,
+            timestamp: timestamp,
+            status: attendanceData.status,
+            verifiedBy: attendanceData.verifiedBy,
+            updatedAt: updatedAt,
+          };
+
+          setAttendanceRecord(attendance);
+          setAttendanceStatus("confirmed");
+
+          // Hide QR jika masih showing
+          if (showQR) {
+            setShowQR(false);
+            setQrData(null);
+            setCountdown(0);
+          }
+        } else {
+          // Hanya set null jika bukan pending
+          if (attendanceStatus !== "pending") {
+            setAttendanceRecord(null);
+          }
         }
+      },
+      (error) => {
+        console.error("Error listening to attendance:", error);
+      }
+    );
 
-        // Restore scroll position after check
-        setTimeout(() => {
-          window.scrollTo({
-            top: currentScroll,
-            behavior: "auto",
-          });
-        }, 50);
-      }, 5000);
+    return () => unsubscribe();
+  }, [user?.uid, activity?._id, showQR, attendanceStatus]);
 
-      return () => clearInterval(pollInterval);
-    }
-  }, [attendanceStatus, user?.uid, activity?.uid, slug, checkAttendanceStatus]);
+  // Simplified - hanya untuk initial check
+  const checkAttendanceStatus = useCallback(
+    async (userId: string, activityId: string) => {
+      try {
+        setAttendanceLoading(true);
+        const attendanceQuery = query(
+          collection(db, "attendance"),
+          where("userId", "==", userId),
+          where("activityId", "==", activityId)
+        );
+
+        const attendanceSnapshot = await getDocs(attendanceQuery);
+
+        if (!attendanceSnapshot.empty) {
+          const attendanceDoc = attendanceSnapshot.docs[0];
+          const attendanceData = attendanceDoc.data();
+
+          const timestamp =
+            attendanceData.timestamp instanceof Timestamp
+              ? attendanceData.timestamp.toDate()
+              : attendanceData.timestamp;
+
+          const updatedAt =
+            attendanceData.updatedAt instanceof Timestamp
+              ? attendanceData.updatedAt.toDate()
+              : attendanceData.updatedAt;
+
+          const attendance: Attendance = {
+            uid: attendanceDoc.id,
+            userId: attendanceData.userId,
+            activityId: attendanceData.activityId,
+            timestamp: timestamp,
+            status: attendanceData.status,
+            verifiedBy: attendanceData.verifiedBy,
+            updatedAt: updatedAt,
+          };
+
+          setAttendanceRecord(attendance);
+          setAttendanceStatus("confirmed");
+          return true;
+        } else {
+          setAttendanceRecord(null);
+          return false;
+        }
+      } catch (error) {
+        console.error("Error checking attendance:", error);
+        return false;
+      } finally {
+        setAttendanceLoading(false);
+      }
+    },
+    [] // Tidak perlu dependency karena hanya untuk initial check
+  );
 
   // Main data fetching effect
   useEffect(() => {
@@ -256,10 +338,10 @@ export default function ActivityDetailPage() {
             : undefined,
         };
 
-        let activityData: Activity | null = null;
+        let activityData: Activities | null = null;
         if (!querySnapshot.empty) {
           const docSnap = querySnapshot.docs[0];
-          const data = docSnap.data() as Activity;
+          const data = docSnap.data() as Activities;
 
           const rawDate = data.date;
           const dateValue =
@@ -267,9 +349,9 @@ export default function ActivityDetailPage() {
 
           activityData = {
             ...data,
-            uid: docSnap.id,
+            _id: docSnap.id,
             date: dateValue,
-            icon: null,
+            icon: "",
           };
 
           // Check attendance status for this activity
@@ -314,7 +396,7 @@ export default function ActivityDetailPage() {
   }, [userDataLoading, attendanceLoading, slug]);
 
   const generateQRCode = async () => {
-    if (!user?.uid || !activity?.uid) return;
+    if (!user?.uid || !activity?._id) return;
 
     try {
       setUserDataLoading(true);
@@ -322,7 +404,7 @@ export default function ActivityDetailPage() {
       const res = await fetch("/api/sign-qr", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.uid, activityId: activity.uid }),
+        body: JSON.stringify({ userId: user.uid, activityId: activity._id }),
       });
 
       const data = await res.json();
@@ -383,10 +465,27 @@ export default function ActivityDetailPage() {
     if (!activity || attendanceRecord) {
       return false;
     }
+
     const now = new Date();
     const activityDate = activity.date;
-    const timeDiff = (now.getTime() - activityDate.getTime()) / (1000 * 60 * 5);
-    return timeDiff >= -30 && timeDiff <= 60 && activity.status !== "completed";
+
+    // Parse start time
+    const [hours, minutes] = activity.startTime.split(":").map(Number);
+    const activityStartTime = new Date(activityDate);
+    activityStartTime.setHours(hours, minutes, 0, 0);
+
+    const timeDiffMinutes =
+      (now.getTime() - activityStartTime.getTime()) / (1000 * 60);
+
+    const openBefore = activity.attendanceWindow?.openBefore || 15;
+    const closeAfter = activity.attendanceWindow?.closeAfter || 30;
+
+    // ✅ Perbaiki logic: bisa absen jika dalam window time
+    return (
+      timeDiffMinutes >= -openBefore &&
+      timeDiffMinutes <= closeAfter &&
+      activity.status !== "completed"
+    );
   };
 
   const shareActivity = () => {
@@ -462,6 +561,10 @@ export default function ActivityDetailPage() {
       default:
         return "initial";
     }
+  };
+
+  const short = (text: string): string => {
+    return text.length > 10 ? text.substring(0, 8) + "..." : text;
   };
 
   if (loading) {
@@ -647,7 +750,7 @@ export default function ActivityDetailPage() {
                   <div>
                     <p className="text-slate-500 dark:text-slate-400">ID</p>
                     <p className="font-medium text-slate-900 dark:text-slate-100 font-mono">
-                      {qrData?.hash}
+                      {short(qrData?.userId || "")}
                     </p>
                   </div>
                 </div>
@@ -701,7 +804,7 @@ export default function ActivityDetailPage() {
                   <p className="text-slate-600 dark:text-slate-400 mb-4">
                     {canTakeAttendance()
                       ? "Klik tombol di bawah untuk generate QR code absensi"
-                      : "Absensi hanya dapat dilakukan 30 menit sebelum hingga 60 menit setelah aktivitas dimulai"}
+                      : `Absensi hanya dapat dilakukan ${activity?.attendanceWindow?.openBefore} menit sebelum hingga ${activity?.attendanceWindow?.closeAfter} menit setelah aktivitas dimulai`}
                   </p>
                   <button
                     onClick={generateQRCode}
@@ -729,8 +832,8 @@ export default function ActivityDetailPage() {
                   </p>
                   <button
                     onClick={() => {
-                      if (user?.uid && activity?.uid) {
-                        checkAttendanceStatus(user.uid, activity.uid);
+                      if (user?.uid && activity?._id) {
+                        checkAttendanceStatus(user.uid, activity._id);
                       }
                     }}
                     className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"

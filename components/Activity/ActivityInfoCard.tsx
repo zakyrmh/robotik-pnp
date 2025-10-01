@@ -1,4 +1,4 @@
-import { Activity } from "@/types/activity";
+import { Activities } from "@/types/activities";
 import {
   Calendar,
   CheckCircle,
@@ -6,7 +6,6 @@ import {
   MapPin,
   Settings,
   Trophy,
-  User,
   Users,
   Wrench,
 } from "lucide-react";
@@ -22,7 +21,7 @@ async function fetchHTMLFromDatabase(activityId: string): Promise<string> {
     const activityDoc = await getDoc(activityDocRef);
     
     if (activityDoc.exists()) {
-      const data = activityDoc.data() as Activity;
+      const data = activityDoc.data() as Activities;
       return data.description || "<p>Tidak ada deskripsi tersedia</p>";
     }
     return "<p>Data tidak ditemukan</p>";
@@ -33,7 +32,7 @@ async function fetchHTMLFromDatabase(activityId: string): Promise<string> {
 }
 
 export default function ActivityInfoCard() {
-  const [activity, setActivity] = useState<Activity | null>(null);
+  const [activity, setActivity] = useState<Activities | null>(null);
   const [htmlContent, setHtmlContent] = useState<string>("");
 
   const params = useParams();
@@ -46,10 +45,10 @@ export default function ActivityInfoCard() {
         const q = query(activitiesRef, where("slug", "==", slug));
         const querySnapshot = await getDocs(q);
 
-        let activityData: Activity | null = null;
+        let activityData: Activities | null = null;
         if (!querySnapshot.empty) {
           const docSnap = querySnapshot.docs[0];
-          const data = docSnap.data() as Activity;
+          const data = docSnap.data() as Activities;
 
           const rawDate = data.date;
           const dateValue =
@@ -57,9 +56,9 @@ export default function ActivityInfoCard() {
 
           activityData = {
             ...data,
-            uid: docSnap.id,
+            _id: docSnap.id,
             date: dateValue,
-            icon: null,
+            icon: "",
           };
 
           // Fetch HTML description
@@ -205,19 +204,6 @@ export default function ActivityInfoCard() {
               </p>
             </div>
           </div>
-          {activity?.instructor && (
-            <div className="flex items-center space-x-3">
-              <User className="w-5 h-5 text-slate-400" />
-              <div>
-                <p className="text-sm text-slate-500 dark:text-slate-400">
-                  Instruktur
-                </p>
-                <p className="font-medium text-slate-900 dark:text-slate-100">
-                  {activity.instructor}
-                </p>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 

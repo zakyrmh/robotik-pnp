@@ -20,6 +20,7 @@ const caangMenu = [
 
 const adminMenu = [
   { href: "/dashboard", label: "Dashboard" },
+  { href: "/management-activity", label: "Aktivitas" },
   { href: "/attendance", label: "Presensi" },
 ];
 

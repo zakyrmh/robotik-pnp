@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import UsersTable from "@/components/Dashboard/UsersTable";
 import LoadingSkeleton from "@/components/Dashboard/LoadingSkeleton";
 import { useEffect, useState } from "react";
-import { CaangRegistration, UserAccount, UserWithCaang } from "@/types/caang";
+import { CaangRegistration, UserWithCaang } from "@/types/caang";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebaseConfig";
 import { exportToCSV } from "@/utils/exportToCSV";
@@ -13,6 +13,7 @@ import StatisticsSection from "@/components/Dashboard/StatisticsSection";
 import ChartsSection from "@/components/Dashboard/ChartsSection";
 import UserDetailModal from "@/components/Dashboard/UserDetailModal";
 import formatDate from "@/utils/formatDate";
+import { UserAccount } from "@/types/users";
 
 const ANIMATION_VARIANTS = {
   container: {
@@ -63,7 +64,7 @@ export default function AdminDashboard() {
         );
 
         const merged: UserWithCaang[] = usersData.map((u) => {
-          const registration = caangData.find((c) => c.uid === u.uid);
+          const registration = caangData.find((c) => c.uid === u._id);
           return { user: u, registration };
         });
 
@@ -136,7 +137,7 @@ export default function AdminDashboard() {
     exportToCSV(
       users.map((u) => ({
         no: users.indexOf(u) + 1,
-        uid: u.user?.uid || "",
+        uid: u.user?._id || "",
         email: u.user?.email || "",
         namaLengkap: u.user?.name || "",
         namaPanggilan: u.registration?.namaPanggilan || "",
@@ -214,7 +215,7 @@ export default function AdminDashboard() {
           onUserUpdate={(updatedUser) => {
             setUsers((prev) =>
               prev.map((u) =>
-                u.user?.uid === updatedUser.user?.uid ? updatedUser : u
+                u.user?._id === updatedUser.user?._id ? updatedUser : u
               )
             );
           }}

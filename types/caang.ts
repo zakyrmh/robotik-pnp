@@ -1,10 +1,4 @@
-export interface UserAccount {
-  uid?: string;
-  name?: string;
-  email?: string;
-  role?: "root" | "admin" | "member" | "caang";
-  createdAt?: string;
-}
+import { UserAccount } from "@/types/users";
 
 export interface CaangRegistration {
   uid?: string;

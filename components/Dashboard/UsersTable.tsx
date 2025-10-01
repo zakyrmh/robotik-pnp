@@ -97,7 +97,7 @@ export default function UsersTable({
           </TableHeader>
           <TableBody>
             {users.map((user, idx) => (
-              <TableRow key={user.user?.uid} className="hover:bg-muted/50">
+              <TableRow key={user.user?._id} className="hover:bg-muted/50">
                 <TableCell className="font-medium">{idx + 1}</TableCell>
 
                 <TableCell className="font-medium">

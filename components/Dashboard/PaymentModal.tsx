@@ -30,7 +30,7 @@ export default function PaymentModal({
   const [loading, setLoading] = useState<"verify" | "reject" | null>(null);
 
   const handleVerify = async () => {
-    if (!user.user?.uid || loading) return;
+    if (!user.user?._id || loading) return;
 
     try {
       setLoading("verify");
@@ -52,7 +52,7 @@ export default function PaymentModal({
       }
 
       // Update Firestore
-      await updateDoc(doc(db, "caang_registration", user.user.uid), {
+      await updateDoc(doc(db, "caang_registration", user.user._id), {
         payment_verification: true,
         payment_message: null,
       });
@@ -69,7 +69,7 @@ export default function PaymentModal({
   };
 
   const handleReject = async () => {
-    if (!user.user?.uid || loading) return;
+    if (!user.user?._id || loading) return;
 
     try {
       setLoading("reject");
@@ -91,7 +91,7 @@ export default function PaymentModal({
         onUserUpdate(updatedUser);
       }
 
-      await updateDoc(doc(db, "caang_registration", user.user.uid), {
+      await updateDoc(doc(db, "caang_registration", user.user._id), {
         payment_verification: false,
         pembayaran: null,
         payment_message:

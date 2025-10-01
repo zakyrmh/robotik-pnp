@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { collection, doc, getDoc, getDocs, query } from "firebase/firestore";
 import { auth, db } from "@/lib/firebaseConfig";
-import { Attendance } from "@/types/attendance";
+import { Attendances } from "@/types/attendance";
 import { CaangRegistration } from "@/types/caang";
 import { Html5QrcodeScanner } from "html5-qrcode";
 
@@ -13,7 +13,7 @@ import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 
 // Extended Attendance type dengan user data
-interface AttendanceWithUser extends Attendance {
+interface AttendanceWithUser extends Attendances {
   userData?: CaangRegistration;
 }
 
@@ -54,6 +54,15 @@ export default function AdminAttendancePage() {
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
   const scannerDivRef = useRef<HTMLDivElement>(null);
 
+  const [activities, setActivities] = useState<
+    Array<{ id: string; name: string }>
+  >([]);
+  const [selectedActivity, setSelectedActivity] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [filteredAttendances, setFilteredAttendances] = useState<
+    AttendanceWithUser[]
+  >([]);
+
   // Fetch attendance data with user information
   const fetchAttendances = useCallback(async () => {
     try {
@@ -61,8 +70,8 @@ export default function AdminAttendancePage() {
       const q = query(collection(db, "attendance"));
       const snapshot = await getDocs(q);
 
-      const attendanceData: Attendance[] = snapshot.docs.map((docSnap) => ({
-        ...(docSnap.data() as Attendance),
+      const attendanceData: Attendances[] = snapshot.docs.map((docSnap) => ({
+        ...(docSnap.data() as Attendances),
         id: docSnap.id,
       }));
 
@@ -71,26 +80,33 @@ export default function AdminAttendancePage() {
         attendanceData.map(async (attendance) => {
           try {
             // Ambil data user dari koleksi caang_registration
-            const userDoc = await getDoc(doc(db, "caang_registration", attendance.userId));
-            
+            const userDoc = await getDoc(
+              doc(db, "caang_registration", attendance.userId.toString())
+            );
+
             if (userDoc.exists()) {
               const userData = userDoc.data() as CaangRegistration;
               return {
                 ...attendance,
-                userData: userData
+                userData: userData,
               };
             } else {
-              console.warn(`User data not found for userId: ${attendance.userId}`);
+              console.warn(
+                `User data not found for userId: ${attendance.userId}`
+              );
               return {
                 ...attendance,
-                userData: undefined
+                userData: undefined,
               };
             }
           } catch (error) {
-            console.error(`Error fetching user data for ${attendance.userId}:`, error);
+            console.error(
+              `Error fetching user data for ${attendance.userId}:`,
+              error
+            );
             return {
               ...attendance,
-              userData: undefined
+              userData: undefined,
             };
           }
         })
@@ -104,6 +120,59 @@ export default function AdminAttendancePage() {
       setLoading(false);
     }
   }, []);
+
+  // Fetch daftar activities
+  const fetchActivities = useCallback(async () => {
+    try {
+      const q = query(collection(db, "activities")); // Sesuaikan nama collection
+      const snapshot = await getDocs(q);
+
+      const activitiesData = snapshot.docs.map((docSnap) => ({
+        id: docSnap.id,
+        name: docSnap.data().name || docSnap.data().title || docSnap.id, // Sesuaikan field name
+      }));
+
+      setActivities(activitiesData);
+    } catch (error) {
+      console.error("Error fetching activities:", error);
+      toast.error("Gagal memuat daftar aktivitas");
+    }
+  }, []);
+
+  // Filter dan search logic
+  useEffect(() => {
+    let result = [...attendances];
+
+    // Filter by activity
+    if (selectedActivity !== "all") {
+      result = result.filter((att) => att.activityId.toString() === selectedActivity);
+    }
+
+    // Search functionality
+    if (searchQuery.trim() !== "") {
+      const query = searchQuery.toLowerCase();
+      result = result.filter((att) => {
+        const nama = att.userData?.namaLengkap?.toLowerCase() || "";
+        const nim = att.userData?.nim?.toLowerCase() || "";
+        const prodi = att.userData?.prodi?.toLowerCase() || "";
+        const status = att.status?.toLowerCase() || "";
+
+        return (
+          nama.includes(query) ||
+          nim.includes(query) ||
+          prodi.includes(query) ||
+          status.includes(query)
+        );
+      });
+    }
+
+    setFilteredAttendances(result);
+  }, [attendances, selectedActivity, searchQuery]);
+
+  // Fetch activities saat component mount
+  useEffect(() => {
+    fetchActivities();
+  }, [fetchActivities]);
 
   // cooldown map untuk cegah spam QR
   const scanCooldownRef = useRef<Record<string, number>>({});
@@ -270,6 +339,7 @@ export default function AdminAttendancePage() {
           </div>
 
           {/* Attendance Table */}
+          {/* Attendance Table */}
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
@@ -284,6 +354,70 @@ export default function AdminAttendancePage() {
               </button>
             </div>
 
+            {/* Filter dan Search Section */}
+            <div className="mb-6 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Activity Filter */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    Filter Aktivitas
+                  </label>
+                  <select
+                    value={selectedActivity}
+                    onChange={(e) => setSelectedActivity(e.target.value)}
+                    className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="all">Semua Aktivitas</option>
+                    {activities.map((activity) => (
+                      <option key={activity.id} value={activity.id}>
+                        {activity.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Search Input */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                    Cari Data
+                  </label>
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Cari nama, NIM, prodi, atau status..."
+                    className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+              </div>
+
+              {/* Info Filter Aktif */}
+              {(selectedActivity !== "all" || searchQuery.trim() !== "") && (
+                <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                  <span>Filter aktif:</span>
+                  {selectedActivity !== "all" && (
+                    <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 rounded">
+                      {activities.find((a) => a.id === selectedActivity)?.name}
+                    </span>
+                  )}
+                  {searchQuery.trim() !== "" && (
+                    <span className="px-2 py-1 bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400 rounded">
+                      Pencarian: &quot;{searchQuery}&quot;
+                    </span>
+                  )}
+                  <button
+                    onClick={() => {
+                      setSelectedActivity("all");
+                      setSearchQuery("");
+                    }}
+                    className="ml-2 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                  >
+                    Reset Filter
+                  </button>
+                </div>
+              )}
+            </div>
+
             {loading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
@@ -291,9 +425,11 @@ export default function AdminAttendancePage() {
                   Memuat data...
                 </p>
               </div>
-            ) : attendances.length === 0 ? (
+            ) : filteredAttendances.length === 0 ? (
               <div className="text-center py-8 text-slate-500 dark:text-slate-400">
-                Tidak ada data absensi
+                {searchQuery.trim() !== "" || selectedActivity !== "all"
+                  ? "Tidak ada data yang sesuai dengan filter"
+                  : "Tidak ada data absensi"}
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -312,9 +448,9 @@ export default function AdminAttendancePage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {attendances.map((att) => (
+                    {filteredAttendances.map((att) => (
                       <tr
-                        key={att.uid || att.uid}
+                        key={String(att._id)}
                         className="border-t border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50"
                       >
                         <td className="px-4 py-3">
@@ -338,8 +474,8 @@ export default function AdminAttendancePage() {
                           </span>
                         </td>
                         <td className="px-4 py-3 text-xs text-slate-500 dark:text-slate-400">
-                          {att.updatedAt
-                            ? new Date(att.updatedAt).toLocaleString("id-ID")
+                          {att.createdAt
+                            ? new Date(att.createdAt).toLocaleString("id-ID")
                             : "—"}
                         </td>
                       </tr>
@@ -348,10 +484,17 @@ export default function AdminAttendancePage() {
                 </table>
 
                 <div className="mt-4 text-sm text-slate-600 dark:text-slate-400">
-                  Total: {attendances.length} | Hadir:{" "}
-                  {attendances.filter((a) => a.status === "present").length} |
-                  Belum:{" "}
-                  {attendances.filter((a) => a.status !== "present").length}
+                  Menampilkan: {filteredAttendances.length} dari{" "}
+                  {attendances.length} data | Hadir:{" "}
+                  {
+                    filteredAttendances.filter((a) => a.status === "present")
+                      .length
+                  }{" "}
+                  | Belum:{" "}
+                  {
+                    filteredAttendances.filter((a) => a.status !== "present")
+                      .length
+                  }
                 </div>
               </div>
             )}

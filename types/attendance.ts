@@ -1,11 +1,19 @@
+import { ObjectId } from "mongodb";
+
 export type AttendanceStatus = "present" | "late" | "invalid";
 
-export interface Attendance {
-  uid: string;
-  userId: string;
-  activityId: string;
-  timestamp: Date;
+export interface Attendances {
+  _id: ObjectId;
+  activityId: ObjectId;
+  userId: ObjectId;
+  tokenId: ObjectId;
   status: AttendanceStatus;
-  verifiedBy?: string;
-  updatedAt?: Date;
+  checkInTime: Date;
+  checkInBy: ObjectId;
+  checkInLocation?: {          // ⭐ Buat optional (?)
+    latitude: number;          // ⭐ Ubah Number → number (lowercase)
+    longitude: number;         // ⭐ Ubah Number → number (lowercase)
+  };
+  notes?: string;              // ⭐ TAMBAH: Catatan admin jika ada masalah
+  createdAt: Date;
 }
