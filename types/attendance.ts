@@ -10,10 +10,10 @@ export interface Attendances {
   status: AttendanceStatus;
   checkInTime: Date;
   checkInBy: ObjectId;
-  checkInLocation?: {          // ⭐ Buat optional (?)
-    latitude: number;          // ⭐ Ubah Number → number (lowercase)
-    longitude: number;         // ⭐ Ubah Number → number (lowercase)
+  checkInLocation?: {
+    latitude: number;
+    longitude: number;
   };
-  notes?: string;              // ⭐ TAMBAH: Catatan admin jika ada masalah
+  notes?: string;
   createdAt: Date;
 }
