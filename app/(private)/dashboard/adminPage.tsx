@@ -64,7 +64,7 @@ export default function AdminDashboard() {
         );
 
         const merged: UserWithCaang[] = usersData.map((u) => {
-          const registration = caangData.find((c) => c.uid === u._id);
+          const registration = caangData.find((c) => c.uid === u.uid);
           return { user: u, registration };
         });
 
@@ -137,7 +137,7 @@ export default function AdminDashboard() {
     exportToCSV(
       users.map((u) => ({
         no: users.indexOf(u) + 1,
-        uid: u.user?._id || "",
+        uid: u.user?.uid || "",
         email: u.user?.email || "",
         namaLengkap: u.user?.name || "",
         namaPanggilan: u.registration?.namaPanggilan || "",
@@ -215,7 +215,7 @@ export default function AdminDashboard() {
           onUserUpdate={(updatedUser) => {
             setUsers((prev) =>
               prev.map((u) =>
-                u.user?._id === updatedUser.user?._id ? updatedUser : u
+                u.user?.uid === updatedUser.user?.uid ? updatedUser : u
               )
             );
           }}

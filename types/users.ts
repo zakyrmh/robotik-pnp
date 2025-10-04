@@ -1,5 +1,5 @@
 export interface UserAccount {
-  _id: string;
+  uid: string;
   name: string;
   email: string;
   role?: "root" | "admin" | "member" | "caang";
