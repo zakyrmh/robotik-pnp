@@ -1,4 +1,3 @@
-
 export type ProgramStudi = {
   jenjang: string;
   nama: string;

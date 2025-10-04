@@ -1,15 +1,13 @@
-import { ObjectId } from "mongodb";
-
 export interface Attendance_tokens {
-  _id: ObjectId,
+  _id: string,
   token: string,
-  userId: ObjectId,
-  activityId: ObjectId,
+  userId: string,
+  activityId: string,
   generatedAt: Date,
   expiresAt: Date,
   isUsed: boolean,
   usedAt: Date,
-  usedBy: ObjectId,
+  usedBy: string,
   ipAddress: string,
   userAgent: string
 }

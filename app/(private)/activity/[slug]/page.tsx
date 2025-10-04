@@ -527,7 +527,11 @@ export default function ActivityDetailPage() {
     }
   };
 
-  const formatDate = (date: Date): string => {
+  const formatDate = (date?: Date | null): string => {
+    if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+      return "Tanggal tidak tersedia";
+    }
+
     return date.toLocaleString("id-ID", {
       day: "2-digit",
       month: "long",
