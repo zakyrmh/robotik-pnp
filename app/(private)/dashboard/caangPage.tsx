@@ -8,6 +8,7 @@ import ActivitiesList from "@/components/Dashboard/Caang/ActivitiesList";
 import Notifications from "@/components/Dashboard/Caang/Notifications";
 import Calendar from "@/components/Dashboard/Caang/Calendar";
 import WhatsAppGroup from "@/components/Dashboard/Caang/WhatsAppGroup";
+import EventList from "@/components/Dashboard/Caang/EventsList";
 
 export default function CaangDashboard() {
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
@@ -67,6 +68,9 @@ export default function CaangDashboard() {
 
             {/* Activities List */}
             <ActivitiesList />
+
+            {/* Event List */}
+            <EventList />
           </div>
 
           {/* Right Column - Calendar & Notifications */}
