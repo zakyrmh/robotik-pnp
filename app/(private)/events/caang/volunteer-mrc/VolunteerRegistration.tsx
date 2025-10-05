@@ -15,7 +15,6 @@ import { collection, addDoc, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebaseConfig";
 import { auth } from "@/lib/firebaseConfig";
 
-
 interface FormData {
   userId: string;
   tugas: string;
