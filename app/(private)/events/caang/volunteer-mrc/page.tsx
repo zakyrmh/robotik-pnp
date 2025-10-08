@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebaseConfig";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,9 +10,21 @@ import AlreadyRegistered from "@/app/(private)/events/caang/volunteer-mrc/Alread
 import { ArrowLeft, Loader2, Share2 } from "lucide-react";
 import { VolunteerData } from "@/types/volunteer-mrc";
 import { toast, Toaster } from "sonner";
+import { useRouter } from "next/navigation";
+
+const REGISTRATION_START = new Date("2025-10-05T00:00:00+07:00");
+const REGISTRATION_END = new Date("2025-10-20T23:59:59+07:00");
+
+type FirestoreDateValue =
+  | string
+  | Date
+  | { toDate: () => Date }
+  | null
+  | undefined;
 
 export default function VolunteerPage() {
   const { user } = useAuth();
+  const router = useRouter();
   const [registrationStatus, setRegistrationStatus] = useState<
     "not-started" | "open" | "closed"
   >("not-started");
@@ -21,16 +33,6 @@ export default function VolunteerPage() {
     null
   );
   const [loading, setLoading] = useState<boolean>(true);
-
-  // Tanggal pendaftaran
-  const REGISTRATION_START = useMemo(
-    () => new Date("2025-10-05T00:00:00+07:00"),
-    []
-  );
-  const REGISTRATION_END = useMemo(
-    () => new Date("2025-10-20T23:59:59+07:00"),
-    []
-  );
 
   useEffect(() => {
     const checkRegistrationStatus = () => {
@@ -48,11 +50,31 @@ export default function VolunteerPage() {
     checkRegistrationStatus();
     const interval = setInterval(checkRegistrationStatus, 60000);
 
+    const handleVisibility = () => {
+      if (document.hidden) return;
+      checkRegistrationStatus();
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () =>
+      document.removeEventListener("visibilitychange", handleVisibility);
+
     return () => clearInterval(interval);
-  }, [REGISTRATION_END, REGISTRATION_START]);
+  }, []);
+
+  const toISOStringSafe = (value: FirestoreDateValue): string => {
+    if (!value) return new Date().toISOString();
+
+    if (typeof value === "string") return value;
+    if (value instanceof Date) return value.toISOString();
+    if (typeof (value as { toDate: () => Date }).toDate === "function") {
+      return (value as { toDate: () => Date }).toDate().toISOString();
+    }
+
+    return new Date().toISOString();
+  };
 
   // Function to fetch user registration data
-  const fetchUserRegistration = async (userId: string) => {
+  const fetchUserRegistration = useCallback(async (userId: string) => {
     try {
       const volunteerRef = collection(db, "volunteer_mrc_ix");
       const q = query(volunteerRef, where("userId", "==", userId));
@@ -62,39 +84,16 @@ export default function VolunteerPage() {
         const doc = querySnapshot.docs[0];
         const data = doc.data();
 
-        // Convert Firestore Timestamp to string
-        let createdAtString: string;
-        if (data.createdAt?.toDate) {
-          createdAtString = data.createdAt.toDate().toISOString();
-        } else if (typeof data.createdAt === "string") {
-          createdAtString = data.createdAt;
-        } else {
-          createdAtString = new Date().toISOString();
-        }
-
-        let timestampString: string;
-        if (data.timestamp) {
-          if (typeof data.timestamp === "string") {
-            timestampString = data.timestamp;
-          } else if (data.timestamp?.toDate) {
-            timestampString = data.timestamp.toDate().toISOString();
-          } else {
-            timestampString = new Date().toISOString();
-          }
-        } else {
-          timestampString = new Date().toISOString();
-        }
-
         const volunteerDataObj: VolunteerData = {
           userId: data.userId || userId,
           pilihanPertama: data.pilihanPertama || "",
           pilihanKedua: data.pilihanKedua || "",
           bidangDitempatkan: data.bidangDitempatkan || null,
-          hari: data.hari || "",
-          alasan: data.alasan || null,
-          timestamp: timestampString,
-          createdAt: createdAtString,
-          commitmentDocUrl: null
+          alasanPilihanPertama: data.alasanPertama || null,
+          alasanPilihanKedua: data.alasanKedua || null,
+          timestamp: toISOStringSafe(data.timestamp),
+          createdAt: toISOStringSafe(data.createdAt),
+          commitmentDocUrl: null,
         };
 
         return volunteerDataObj;
@@ -105,7 +104,7 @@ export default function VolunteerPage() {
       console.error("Error fetching registration:", error);
       throw error;
     }
-  };
+  }, []);
 
   // Check initial registration status
   useEffect(() => {
@@ -136,7 +135,7 @@ export default function VolunteerPage() {
     };
 
     checkUserRegistration();
-  }, [user]);
+  }, [user, fetchUserRegistration]);
 
   // Callback untuk handle success registration
   const handleRegistrationSuccess = async () => {
@@ -182,11 +181,14 @@ export default function VolunteerPage() {
         url: window.location.href,
       });
     } else {
-      navigator.clipboard.writeText(window.location.href);
-      toast.success("Link Disalin", {
-        description: "Link telah disalin ke clipboard!",
-        duration: 2000,
-      });
+      navigator.clipboard
+        .writeText(window.location.href)
+        .then(() =>
+          toast.success("Link Disalin", {
+            description: "Link telah disalin ke clipboard!",
+          })
+        )
+        .catch(() => toast.error("Gagal menyalin link"));
     }
   };
 
@@ -204,7 +206,7 @@ export default function VolunteerPage() {
       <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-4 py-4 lg:px-8">
         <div className="max-w-4xl mx-auto flex items-center space-x-4">
           <button
-            onClick={() => window.history.back()}
+            onClick={() => router.back()}
             className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
           >
             <ArrowLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />

@@ -1,13 +1,13 @@
 // types/volunteer-mrc.ts
 
 export interface VolunteerData {
-  commitmentDocUrl: null;
+  commitmentDocUrl: string | null;
   userId: string;
   pilihanPertama: string;
   pilihanKedua: string;
   bidangDitempatkan: string | null;
-  hari: string;
-  alasan: string | null;
+  alasanPilihanPertama: string | null;
+  alasanPilihanKedua: string | null;
   timestamp: string;
   createdAt: string;
 }

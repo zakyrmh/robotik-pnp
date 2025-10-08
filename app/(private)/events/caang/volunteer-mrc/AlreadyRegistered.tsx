@@ -10,9 +10,15 @@ import {
   Briefcase,
   Loader2,
   Clock,
-  Users,
 } from "lucide-react";
-import { doc, updateDoc, query, where, getDocs, collection } from "firebase/firestore";
+import {
+  doc,
+  updateDoc,
+  query,
+  where,
+  getDocs,
+  collection,
+} from "firebase/firestore";
 import { db } from "@/lib/firebaseConfig";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/lib/supabase";
@@ -30,11 +36,11 @@ const BIDANG_LABELS: Record<string, string> = {
   Admin: "Admin",
 };
 
-const HARI_LABELS: Record<string, string> = {
-  both: "Sabtu (25) dan Minggu (26) Oktober 2025",
-  sabtu: "Sabtu (25) Oktober 2025",
-  minggu: "Minggu (26) Oktober 2025",
-};
+// Fungsi bantu untuk menentukan apakah sudah lewat tanggal pengumuman
+const ANNOUNCEMENT_DATE = new Date(Date.UTC(2025, 9, 13, 8, 0, 0)); // 13 Okt 2025 15:00 WIB
+const isAfterAnnouncement = (): boolean =>
+  Date.now() >= ANNOUNCEMENT_DATE.getTime();
+
 
 export default function AlreadyRegistered({ data }: AlreadyRegisteredProps) {
   const { user } = useAuth();
@@ -55,7 +61,6 @@ export default function AlreadyRegistered({ data }: AlreadyRegisteredProps) {
     });
   };
 
-  // Get document ID from Firestore
   const getDocumentId = async (): Promise<string | null> => {
     if (documentId) return documentId;
 
@@ -78,20 +83,17 @@ export default function AlreadyRegistered({ data }: AlreadyRegisteredProps) {
     return null;
   };
 
-  // Download template dokumen komitmen
   const handleDownloadTemplate = () => {
     const templateUrl = "/doc/Surat-Komitmen-MRC.docx";
     window.open(templateUrl, "_blank");
   };
 
-  // Upload dokumen komitmen yang sudah ditandatangani
   const handleUploadCommitment = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = event.target.files?.[0];
     if (!file || !user?.uid) return;
 
-    // Validasi file type
     const allowedTypes = [
       "application/pdf",
       "image/jpeg",
@@ -105,7 +107,6 @@ export default function AlreadyRegistered({ data }: AlreadyRegisteredProps) {
       return;
     }
 
-    // Validasi file size (max 5MB)
     const maxSize = 5 * 1024 * 1024; // 5MB
     if (file.size > maxSize) {
       toast.error("Ukuran file terlalu besar", {
@@ -116,14 +117,11 @@ export default function AlreadyRegistered({ data }: AlreadyRegisteredProps) {
 
     try {
       setUploading(true);
-
-      // Generate unique filename
       const timestamp = Date.now();
       const fileExt = file.name.split(".").pop();
       const fileName = `${user.uid}_${timestamp}.${fileExt}`;
       const filePath = `commitments/${fileName}`;
 
-      // Upload ke Supabase Storage
       const { error: uploadError } = await supabase.storage
         .from("mrcix")
         .upload(filePath, file, {
@@ -133,20 +131,15 @@ export default function AlreadyRegistered({ data }: AlreadyRegisteredProps) {
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
       const { data: urlData } = supabase.storage
-        .from("volunteer-mrc")
+        .from("mrcix")
         .getPublicUrl(filePath);
 
       if (!urlData.publicUrl) throw new Error("Failed to get public URL");
 
-      // Get document ID
       const docId = await getDocumentId();
-      if (!docId) {
-        throw new Error("Document ID not found");
-      }
+      if (!docId) throw new Error("Document ID not found");
 
-      // Update Firestore dengan URL dokumen
       const volunteerRef = doc(db, "volunteer_mrc_ix", docId);
       await updateDoc(volunteerRef, {
         commitmentDocUrl: urlData.publicUrl,
@@ -166,6 +159,8 @@ export default function AlreadyRegistered({ data }: AlreadyRegisteredProps) {
       setUploading(false);
     }
   };
+
+  const showBidang = isAfterAnnouncement();
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 py-6 px-4 sm:px-6 lg:px-8">
@@ -208,7 +203,7 @@ export default function AlreadyRegistered({ data }: AlreadyRegisteredProps) {
 
             {/* Pilihan Bidang Kedua */}
             <div className="flex items-start gap-3 p-3 bg-slate-50 dark:bg-slate-900 rounded-lg">
-              <Users className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+              <Briefcase className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
               <div className="flex-1">
                 <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
                   Pilihan Bidang Kedua
@@ -219,8 +214,8 @@ export default function AlreadyRegistered({ data }: AlreadyRegisteredProps) {
               </div>
             </div>
 
-            {/* Bidang Ditempatkan (if available) */}
-            {data.bidangDitempatkan && (
+            {/* Bidang Ditempatkan — hanya tampil setelah 13 Oktober 2025, 15:00 WIB */}
+            {showBidang && data.bidangDitempatkan && (
               <div className="flex items-start gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
                 <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
@@ -235,33 +230,24 @@ export default function AlreadyRegistered({ data }: AlreadyRegisteredProps) {
               </div>
             )}
 
-            {/* Hari Tugas */}
-            <div className="flex items-start gap-3 p-3 bg-slate-50 dark:bg-slate-900 rounded-lg">
-              <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                  Hari Tugas
-                </p>
-                <p className="text-base font-semibold text-slate-900 dark:text-slate-100">
-                  {HARI_LABELS[data.hari] || data.hari}
-                </p>
-              </div>
-            </div>
-
-            {/* Alasan (if provided) */}
-            {data.alasan && (
-              <div className="flex items-start gap-3 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                <FileText className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+            {/* Info pengumuman jika belum waktunya */}
+            {!showBidang && (
+              <div className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-amber-700 dark:text-amber-300">
-                    Alasan
+                  <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                    Pengumuman Penempatan Bidang
                   </p>
-                  <p className="text-sm text-amber-900 dark:text-amber-100 mt-1 whitespace-pre-wrap">
-                    {data.alasan}
+                  <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
+                    Hasil penempatan bidang akan diumumkan pada{" "}
+                    <strong>13 Oktober 2025 pukul 15.00 WIB</strong>
                   </p>
                 </div>
               </div>
             )}
+
+            {/* Alasan disembunyikan — tidak ditampilkan */}
+            {/* (hapus bagian alasan dari tampilan) */}
 
             {/* Tanggal Pendaftaran */}
             <div className="flex items-start gap-3 p-3 bg-slate-50 dark:bg-slate-900 rounded-lg">
@@ -278,25 +264,7 @@ export default function AlreadyRegistered({ data }: AlreadyRegisteredProps) {
           </div>
         </div>
 
-        {/* Info Pengumuman */}
-        {!data.bidangDitempatkan && (
-          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
-            <div className="flex items-start gap-3">
-              <Calendar className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                  Pengumuman Penempatan Bidang
-                </p>
-                <p className="text-sm text-blue-700 dark:text-blue-300 mt-1">
-                  Hasil penempatan bidang akan diumumkan pada{" "}
-                  <strong>13 Oktober 2025 pukul 15.00 WIB</strong>
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Download Template */}
+        {/* Dokumen Komitmen */}
         <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 p-6 mb-4">
           <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2">
             Dokumen Komitmen
@@ -360,7 +328,6 @@ export default function AlreadyRegistered({ data }: AlreadyRegisteredProps) {
             </p>
           </div>
 
-          {/* View Uploaded Document */}
           {uploadedUrl && (
             <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
               <div className="flex items-center justify-between">

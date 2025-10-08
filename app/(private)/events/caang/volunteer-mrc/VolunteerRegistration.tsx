@@ -1,12 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Loader2,
-  Calendar,
-  Users,
-} from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Loader2, Calendar, Users } from "lucide-react";
+import { motion } from "framer-motion";
 import { collection, addDoc, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebaseConfig";
 import { auth } from "@/lib/firebaseConfig";
@@ -15,8 +11,8 @@ interface FormData {
   userId: string;
   pilihanPertama: string;
   pilihanKedua: string;
-  hari: string;
-  alasan: string;
+  alasanPertama: string;
+  alasanKedua: string;
 }
 
 interface VolunteerRegistrationProps {
@@ -29,16 +25,6 @@ const BIDANG_OPTIONS = [
   { value: "PDD", label: "Publikasi, Desain, dan Dokumentasi (PDD)" },
   { value: "Keamanan", label: "Keamanan" },
   { value: "Admin", label: "Admin" },
-];
-
-const HARI_OPTIONS = [
-  {
-    value: "both",
-    label: "Sabtu (25) dan Minggu (26) Oktober 2025",
-    requireReason: false,
-  },
-  { value: "sabtu", label: "Sabtu (25) Oktober 2025", requireReason: true },
-  { value: "minggu", label: "Minggu (26) Oktober 2025", requireReason: true },
 ];
 
 // Kuota maksimal per bidang (tidak ditampilkan ke user)
@@ -57,18 +43,15 @@ export default function VolunteerRegistration({
     userId: "",
     pilihanPertama: "",
     pilihanKedua: "",
-    hari: "",
-    alasan: "",
+    alasanPertama: "",
+    alasanKedua: "",
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [wordCount, setWordCount] = useState(0);
+  const [wordCount1, setWordCount1] = useState(0);
+  const [wordCount2, setWordCount2] = useState(0);
 
   const user = auth.currentUser;
-
-  const needsReason = HARI_OPTIONS.find(
-    (opt) => opt.value === formData.hari
-  )?.requireReason;
 
   const handleChange = (
     e: React.ChangeEvent<HTMLSelectElement | HTMLTextAreaElement>
@@ -76,9 +59,13 @@ export default function VolunteerRegistration({
     const { name, value } = e.target;
 
     // Count words for alasan field
-    if (name === "alasan") {
-      const words = value.trim().split(/\s+/).filter((word) => word.length > 0);
-      setWordCount(words.length);
+    if (name === "alasanPertama" || name === "alasanKedua") {
+      const words = value
+        .trim()
+        .split(/\s+/)
+        .filter((w) => w.length > 0);
+      if (name === "alasanPertama") setWordCount1(words.length);
+      else setWordCount2(words.length);
     }
 
     setFormData((prev) => ({
@@ -127,12 +114,12 @@ export default function VolunteerRegistration({
     const counts = await getQuotaCounts();
 
     // Cek pilihan pertama
-    if (pilihan1 === "LO" || counts[pilihan1] < MAX_QUOTA[pilihan1]) {
+    if ((counts[pilihan1] ?? 0) < MAX_QUOTA[pilihan1] || pilihan1 === "LO") {
       return pilihan1;
     }
 
     // Cek pilihan kedua
-    if (pilihan2 === "LO" || counts[pilihan2] < MAX_QUOTA[pilihan2]) {
+    if ((counts[pilihan2] ?? 0) < MAX_QUOTA[pilihan2] || pilihan2 === "LO") {
       return pilihan2;
     }
 
@@ -147,8 +134,8 @@ export default function VolunteerRegistration({
         pilihanPertama: data.pilihanPertama,
         pilihanKedua: data.pilihanKedua,
         bidangDitempatkan: bidangDitempatkan,
-        hari: data.hari,
-        alasan: data.alasan || null,
+        alasanPilihanPertama: data.alasanPertama || null,
+        alasanPilihanKedua: data.alasanKedua || null,
         timestamp: new Date().toISOString(),
         createdAt: new Date(),
       });
@@ -160,11 +147,7 @@ export default function VolunteerRegistration({
   };
 
   const validateForm = () => {
-    if (
-      !formData.pilihanPertama ||
-      !formData.pilihanKedua ||
-      !formData.hari
-    ) {
+    if (!formData.pilihanPertama || !formData.pilihanKedua) {
       return { valid: false, message: "Semua field wajib diisi." };
     }
 
@@ -175,22 +158,8 @@ export default function VolunteerRegistration({
       };
     }
 
-    // Validate alasan if needed
-    if (needsReason) {
-      if (!formData.alasan.trim()) {
-        return {
-          valid: false,
-          message: "Alasan wajib diisi jika memilih hanya satu hari tugas.",
-        };
-      }
-
-      const words = formData.alasan
-        .trim()
-        .split(/\s+/)
-        .filter((word) => word.length > 0);
-      if (words.length > 200) {
-        return { valid: false, message: "Alasan maksimal 200 kata." };
-      }
+    if (!formData.alasanPertama.trim() || !formData.alasanKedua.trim()) {
+      return { valid: false, message: "Semua alasan wajib diisi." };
     }
 
     return { valid: true, message: "" };
@@ -213,30 +182,17 @@ export default function VolunteerRegistration({
     setIsSubmitting(true);
 
     try {
-      const isDuplicate = await checkDuplicate(user.uid);
-      if (isDuplicate) {
-        onRegistrationError?.("Anda sudah terdaftar sebagai volunteer.");
-        setIsSubmitting(false);
-        return;
+      if (await checkDuplicate(user.uid)) {
+        return onRegistrationError?.("Anda sudah terdaftar sebagai volunteer.");
       }
-
-      // Alokasi bidang otomatis
       const bidangDitempatkan = await allocateBidang(
         formData.pilihanPertama,
         formData.pilihanKedua
       );
-
       await saveToFirebase(
-        {
-          userId: user.uid,
-          pilihanPertama: formData.pilihanPertama,
-          pilihanKedua: formData.pilihanKedua,
-          hari: formData.hari,
-          alasan: formData.alasan,
-        },
+        { ...formData, userId: user.uid },
         bidangDitempatkan
       );
-
       onRegistrationSuccess?.();
     } catch (error) {
       console.error("Error saving data:", error);
@@ -314,6 +270,39 @@ export default function VolunteerRegistration({
               ))}
             </select>
           </div>
+          <div>
+            <label
+              htmlFor="alasanPertama"
+              className="block text-sm font-medium text-gray-900 mb-2 dark:text-white"
+            >
+              Alasan Memilih Bidang Diatas
+              <span className="text-red-500"> *</span>
+            </label>
+            <textarea
+              id="alasanPertama"
+              name="alasanPertama"
+              required
+              value={formData.alasanPertama}
+              onChange={handleChange}
+              rows={4}
+              placeholder="Jelaskan alasan Anda memilih bidang ini..."
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition bg-white dark:bg-slate-900 dark:border-slate-600 dark:text-white resize-none"
+            />
+            <div className="flex justify-between items-center mt-1.5">
+              <p className="text-xs text-gray-500 dark:text-slate-400">
+                Wajib diisi!!
+              </p>
+              <p
+                className={`text-xs ${
+                  wordCount1 > 200
+                    ? "text-red-600 dark:text-red-400"
+                    : "text-gray-500 dark:text-slate-400"
+                }`}
+              >
+                {wordCount1}/200 kata
+              </p>
+            </div>
+          </div>
 
           {/* Pilihan Kedua */}
           <div>
@@ -342,79 +331,44 @@ export default function VolunteerRegistration({
               Pilih bidang yang berbeda dari pilihan pertama
             </p>
           </div>
-
-          {/* Jadwal */}
           <div>
             <label
-              htmlFor="hari"
+              htmlFor="alasanKedua"
               className="block text-sm font-medium text-gray-900 mb-2 dark:text-white"
             >
-              Pilihan Hari Tugas <span className="text-red-500">*</span>
+              Alasan Memilih Bidang Diatas{" "}
+              <span className="text-red-500">*</span>
             </label>
-            <select
-              id="hari"
-              name="hari"
+            <textarea
+              id="alasanKedua"
+              name="alasanKedua"
               required
-              value={formData.hari}
+              value={formData.alasanKedua}
               onChange={handleChange}
-              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition bg-white dark:bg-slate-900 dark:border-slate-600 dark:text-white"
-            >
-              <option value="">Pilih Hari</option>
-              {HARI_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Alasan - Conditional */}
-          <AnimatePresence>
-            {needsReason && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.2 }}
+              rows={4}
+              placeholder="Jelaskan alasan Anda tidak bisa hadir di kedua hari..."
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition bg-white dark:bg-slate-900 dark:border-slate-600 dark:text-white resize-none"
+            />
+            <div className="flex justify-between items-center mt-1.5">
+              <p className="text-xs text-gray-500 dark:text-slate-400">
+                Wajib diisi!!
+              </p>
+              <p
+                className={`text-xs ${
+                  wordCount2 > 200
+                    ? "text-red-600 dark:text-red-400"
+                    : "text-gray-500 dark:text-slate-400"
+                }`}
               >
-                <label
-                  htmlFor="alasan"
-                  className="block text-sm font-medium text-gray-900 mb-2 dark:text-white"
-                >
-                  Alasan <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  id="alasan"
-                  name="alasan"
-                  required={needsReason}
-                  value={formData.alasan}
-                  onChange={handleChange}
-                  rows={4}
-                  placeholder="Jelaskan alasan Anda tidak bisa hadir di kedua hari..."
-                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-transparent outline-none transition bg-white dark:bg-slate-900 dark:border-slate-600 dark:text-white resize-none"
-                />
-                <div className="flex justify-between items-center mt-1.5">
-                  <p className="text-xs text-gray-500 dark:text-slate-400">
-                    Wajib diisi untuk pilihan satu hari
-                  </p>
-                  <p
-                    className={`text-xs ${
-                      wordCount > 200
-                        ? "text-red-600 dark:text-red-400"
-                        : "text-gray-500 dark:text-slate-400"
-                    }`}
-                  >
-                    {wordCount}/200 kata
-                  </p>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                {wordCount2}/200 kata
+              </p>
+            </div>
+          </div>
 
           {/* Submit Button */}
           <div className="flex items-center justify-between pt-4">
             <button
-              type="button"
+              type="submit"
               onClick={handleSubmit}
               disabled={isSubmitting}
               className="px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 dark:bg-blue-700 dark:hover:bg-blue-800 font-medium"
