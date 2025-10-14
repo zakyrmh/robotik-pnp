@@ -10,9 +10,41 @@ import {
   signInWithEmailAndPassword,
 } from "firebase/auth";
 import { auth } from "@/lib/firebaseConfig";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast, Toaster } from "sonner";
 import Link from "next/link";
+
+function validateRedirectUrl(url: string | null): string {
+  const DEFAULT_REDIRECT = "/dashboard";
+
+  if (!url) return DEFAULT_REDIRECT;
+
+  // Hanya izinkan internal path (dimulai dengan /)
+  if (!url.startsWith("/")) return DEFAULT_REDIRECT;
+
+  // Blacklist URLs - tidak boleh redirect ke login/register
+  const blacklist = ["/login", "/register", "/forgot-password"];
+  if (blacklist.some((path) => url.startsWith(path))) {
+    return DEFAULT_REDIRECT;
+  }
+
+  // Tidak boleh mengandung protocol (mencegah open redirect attack)
+  if (url.includes("://") || url.includes("//")) {
+    return DEFAULT_REDIRECT;
+  }
+
+  // Decode URL untuk mencegah encoded attack
+  try {
+    const decoded = decodeURIComponent(url);
+    if (decoded.includes("://") || decoded.includes("//")) {
+      return DEFAULT_REDIRECT;
+    }
+  } catch {
+    return DEFAULT_REDIRECT;
+  }
+
+  return url;
+}
 
 export default function LoginPage() {
   const [formData, setFormData] = useState({
@@ -23,6 +55,10 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Ambil redirect URL dari query parameter
+  const redirectUrl = validateRedirectUrl(searchParams.get("redirect"));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,6 +71,7 @@ export default function LoginPage() {
     }
 
     try {
+      // Set persistence berdasarkan remember me
       await setPersistence(
         auth,
         formData.rememberMe
@@ -42,6 +79,7 @@ export default function LoginPage() {
           : browserSessionPersistence
       );
 
+      // Sign in dengan Firebase
       const userCredential = await signInWithEmailAndPassword(
         auth,
         formData.email,
@@ -50,13 +88,21 @@ export default function LoginPage() {
 
       const user = userCredential.user;
 
+      // Cek email verification
       if (!user.emailVerified) {
         toast.error("Email Anda belum diverifikasi. Silakan cek inbox Anda.");
         setIsLoading(false);
         return;
       }
 
-      router.push("/dashboard");
+      // Tampilkan toast sukses
+      toast.success("Login berhasil! Mengalihkan...");
+
+      // Tunggu sebentar untuk toast terlihat, lalu redirect
+      setTimeout(() => {
+        // REDIRECT KE URL YANG DIMINTA atau dashboard
+        router.push(redirectUrl);
+      }, 500);
     } catch (err: unknown) {
       let message = "Terjadi kesalahan. Silakan coba lagi.";
 
