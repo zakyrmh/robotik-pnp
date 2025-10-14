@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Mail, Lock, Eye, EyeOff, User, ArrowRight } from "lucide-react";
 import {
@@ -10,10 +10,10 @@ import {
   signInWithEmailAndPassword,
 } from "firebase/auth";
 import { auth } from "@/lib/firebaseConfig";
-import { useRouter, useSearchParams } from "next/navigation";
 import { toast, Toaster } from "sonner";
 import Link from "next/link";
 
+// Utility function untuk validasi redirect URL
 function validateRedirectUrl(url: string | null): string {
   const DEFAULT_REDIRECT = "/dashboard";
 
@@ -54,11 +54,19 @@ export default function LoginPage() {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const [redirectUrl, setRedirectUrl] = useState("/dashboard");
 
-  // Ambil redirect URL dari query parameter
-  const redirectUrl = validateRedirectUrl(searchParams.get("redirect"));
+  // 🔥 FIX: Ambil redirect dari URL saat component mount
+  useEffect(() => {
+    // PENTING: Gunakan window.location.search langsung, bukan useSearchParams()
+    // Karena Next.js middleware redirect kadang kehilangan searchParams di SSR
+    const urlParams = new URLSearchParams(window.location.search);
+    const redirectParam = urlParams.get("redirect");
+
+    const validated = validateRedirectUrl(redirectParam);
+
+    setRedirectUrl(validated);
+  }, []); // Empty dependency - hanya jalankan sekali saat mount!
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,6 +96,9 @@ export default function LoginPage() {
 
       const user = userCredential.user;
 
+      // Ambil ID token dari Firebase
+      const idToken = await user.getIdToken();
+
       // Cek email verification
       if (!user.emailVerified) {
         toast.error("Email Anda belum diverifikasi. Silakan cek inbox Anda.");
@@ -95,13 +106,35 @@ export default function LoginPage() {
         return;
       }
 
+      // Kirim token ke API untuk set cookie
+      const response = await fetch("/api/auth/set-cookie", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token: idToken,
+          remember: formData.rememberMe,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error("Gagal set cookie:", await response.text());
+      }
+
+      // ✅ LEBIH BAIK: Hapus localStorage atau gunakan untuk data non-sensitif saja
+      if (formData.rememberMe) {
+        // Hanya simpan preference, bukan data user
+        localStorage.setItem("rememberMe", "true");
+      }
+
       // Tampilkan toast sukses
       toast.success("Login berhasil! Mengalihkan...");
 
-      // Tunggu sebentar untuk toast terlihat, lalu redirect
+      // Debug: Log sebelum redirect
+
+      // PENTING: Gunakan window.location.href untuk hard redirect
+      // Ini memastikan middleware akan cek cookie yang baru di-set
       setTimeout(() => {
-        // REDIRECT KE URL YANG DIMINTA atau dashboard
-        router.push(redirectUrl);
+        window.location.href = redirectUrl;
       }, 500);
     } catch (err: unknown) {
       let message = "Terjadi kesalahan. Silakan coba lagi.";
@@ -167,6 +200,21 @@ export default function LoginPage() {
           <p className="text-gray-300 dark:text-gray-400 text-sm">
             Masuk ke dashboard
           </p>
+
+          {/* Tampilkan info redirect jika ada */}
+          {redirectUrl !== "/dashboard" && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3 }}
+              className="mt-3 px-4 py-2 bg-blue-500/20 dark:bg-blue-600/20 border border-blue-400/30 dark:border-blue-500/30 rounded-lg"
+            >
+              <p className="text-xs text-blue-200 dark:text-blue-300">
+                📍 Anda akan diarahkan ke:{" "}
+                <span className="font-semibold font-mono">{redirectUrl}</span>
+              </p>
+            </motion.div>
+          )}
         </motion.div>
 
         {/* Form Container */}
