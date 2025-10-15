@@ -21,7 +21,7 @@ export default function DashboardPage() {
       }
 
       try {
-        const snap = await getDoc(doc(db, "users", user.uid));
+        const snap = await getDoc(doc(db, "users_new", user.uid));
         if (snap.exists()) {
           const data = snap.data();
           setRole(data.role);
