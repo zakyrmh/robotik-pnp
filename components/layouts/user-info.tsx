@@ -26,10 +26,10 @@ export function UserInfo() {
     if (!user?.uid) return;
     const fetchUserData = async () => {
       try {
-        const ref = doc(db, "caang_registration", user.uid);
+        const ref = doc(db, "users_new", user.uid);
         const snap = await getDoc(ref);
         if (snap.exists()) {
-          setPhotoURL(snap.data().pasFoto ?? null);
+          setPhotoURL(snap.data().profile.photoUrl ?? null);
         }
       } catch (error) {
         console.error("Gagal mengambil foto user:", error);
