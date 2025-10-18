@@ -39,7 +39,7 @@ export default function CaangDashboard() {
         }
 
         // Ambil data registration menggunakan user.uid sebagai document ID
-        const caangRef = doc(db, "registrations", "d4jAAy6g4Thyq3nZ9wCliMRMQmB3");
+        const caangRef = doc(db, "registrations", user.uid);
         const caangSnap = await getDoc(caangRef);
 
         if (caangSnap.exists()) {

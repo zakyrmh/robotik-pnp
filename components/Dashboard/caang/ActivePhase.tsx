@@ -100,7 +100,7 @@ export default function ActivePhase() {
         // === NEW: ambil attendance hanya untuk activityId di fase aktif ===
         // 2️⃣ Ambil semua attendance milik user untuk activity yang ada di fase aktif
         const attendanceRef = collection(db, "attendance_new");
-        const TEST_USER_ID = "d4jAAy6g4Thyq3nZ9wCliMRMQmB3"; // tetap hardcoded untuk testing sesuai permintaan
+        // const TEST_USER_ID = "d4jAAy6g4Thyq3nZ9wCliMRMQmB3"; // tetap hardcoded untuk testing sesuai permintaan
 
         const activityIds = activities.map((a) => a.id).filter(Boolean);
 
@@ -117,7 +117,7 @@ export default function ActivePhase() {
 
           const q = query(
             attendanceRef,
-            where("userId", "==", TEST_USER_ID),
+            where("userId", "==", user.uid),
             where("activityId", "in", chunk)
           );
           const snap = await getDocs(q);
