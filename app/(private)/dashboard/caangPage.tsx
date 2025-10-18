@@ -27,39 +27,36 @@ export default function CaangDashboard() {
 
     const fetchData = async () => {
       try {
-        // Ambil data user
+        // Ambil data user dari users_new menggunakan user.uid
         const userRef = doc(db, "users_new", user.uid);
         const userSnap = await getDoc(userRef);
 
         if (userSnap.exists()) {
           const userData = userSnap.data() as User;
           setUser(userData);
-
-          // Pastikan registrationId ada sebelum ambil data registration
-          if (userData.registrationId) {
-            const caangRef = doc(db, "registrations", userData.registrationId);
-            const caangSnap = await getDoc(caangRef);
-
-            if (caangSnap.exists()) {
-              setCaang(caangSnap.data() as Registration);
-            } else {
-              console.warn("Dokumen registration tidak ditemukan!");
-            }
-          } else {
-            console.warn("User belum memiliki registrationId!");
-          }
         } else {
           console.warn("Dokumen users tidak ditemukan!");
         }
+
+        // Ambil data registration menggunakan user.uid sebagai document ID
+        const caangRef = doc(db, "registrations", "d4jAAy6g4Thyq3nZ9wCliMRMQmB3");
+        const caangSnap = await getDoc(caangRef);
+
+        if (caangSnap.exists()) {
+          setCaang(caangSnap.data() as Registration);
+        } else {
+          console.warn("Dokumen registration tidak ditemukan untuk user ini!");
+        }
       } catch (err) {
-        console.error("Error fetching registration:", err);
+        console.error("Error fetching data:", err);
       }
     };
+
 
     fetchData();
   }, [user]);
 
-  if (!caang?.verification?.verified) {
+  if (!caang?.status.includes("verified")) {
     return (
       <div className="min-h-screen lg:p-8">
         <div className="max-w-7xl mx-auto">

@@ -1,83 +1,96 @@
-import { Division, PaymentMethod, RegistrationStatus } from "@/types/enum";
+import { PaymentMethod, RegistrationStatus } from "@/types/enum";
 import { Timestamp } from "firebase/firestore";
 
 export interface Registration {
+  // Samakan dengan uid document lama
   id: string;
-  userId: string;
-  
-  // OR Info
-  orPeriod: string; // e.g., "OR 21"
-  orYear: string; // e.g., "2025-2026"
-  batch: number; // Gelombang 1, 2, dst
-  
-  // Registration ID
-  registrationNumber: number; // Auto-increment per OR period
-  registrationId: string; // e.g., "CAANG-OR21-0042"
-  
-  // Status
+  // Isi semua document dengan "OR 21"
+  orPeriod: string;
+  // Isi semuam document dengn "2025/2026"
+  orYear: string;
+  // Isi dengan format "CAANG-OR21-xxxx" (xxxx buat nomor urut)
+  registrationId: string;
+  // Isi "verified" jika field "payment_verification" di document lama bernilai true, selain itu "rejected"
   status: RegistrationStatus;
-  
-  // Documents
+
   documents: RegistrationDocuments;
   
-  // Payment
   payment: PaymentData;
   
-  // Verification
   verification?: VerificationData;
   
-  // Motivation & Experience
+  // Isi dengan field tujuanMasuk di document lama
   motivation: string;
+  // Isi dengan field riwayatOrganisasi di document lama
   experience?: string;
-  preferredDivision?: Division;
+  // Isi dengan field riwayatPrestasi di document lama
+  achievement?: string;
   
-  // Editable
-  canEdit: boolean; // Bisa edit atau sudah locked
+  // Isi semua dengan nilai false
+  canEdit: boolean;
   
-  // Timestamps
+  // Kosongkan
   submittedAt?: Timestamp;
+  // Isi dengan field createdAt di document lama
   createdAt: Timestamp;
+  // Isi dengan field createdAt di document lama
   updatedAt: Timestamp;
 }
 
 export interface RegistrationDocuments {
-  photoUrl?: string; // Pas foto
-  ktmUrl?: string; // KTM
-  igRobotikFollowUrl?: string; // Screenshot follow IG Robotik
-  igMrcFollowUrl?: string; // Screenshot follow IG MRC
-  youtubeSubscribeUrl?: string; // Screenshot subscribe YouTube
+  // Ambil dari field pasFoto di document lama
+  photoUrl?: string;
+  // Kosongkan semuanya
+  ktmUrl?: string;
+  // Ambil dari field followIgRobotik di document lama
+  igRobotikFollowUrl?: string;
+  // Ambil dari field followIgMrc di document lama
+  igMrcFollowUrl?: string;
+  // Ambil dari field youtubeRobotik di document lama
+  youtubeSubscribeUrl?: string;
+  // Kosongkan
   uploadedAt?: Timestamp;
+  // true jika semua dokumen sudah diupload, false jika belum
   allUploaded: boolean;
 }
 
 export interface PaymentData {
-  amount: number; // e.g., 10000
+  // Isi semua dengan "e_wallet"
   method: PaymentMethod;
   
-  // Bank Transfer
+  // Kosongkan
   bankName?: string;
   accountNumber?: string;
   accountName?: string;
   
-  // E-Wallet
-  ewalletProvider?: string; // GoPay, OVO, Dana, dll
+  // Kosongkan
+  ewalletProvider?: string;
   ewalletNumber?: string;
   
-  // Proof
-  proofUrl?: string; // Bukti pembayaran
+  // Ambil dari field pembayaran di document lama
+  proofUrl?: string;
+  // Kosongkan
   proofUploadedAt?: Timestamp;
   
-  // Verification
+  // Isi true jika field payment_verification di document lama bernilai true
   verified: boolean;
-  verifiedBy?: string; // Admin user ID
+  // Isi semua dengan "l3aKAeBnV6VcJK3yCY7DXzO018Z2"
+  verifiedBy?: string;
+  // Kosongkan
   verifiedAt?: Timestamp;
+  // Kosongkan
   rejectionReason?: string;
 }
 
 export interface VerificationData {
+  // Isi true jika field payment_verification di document lama bernilai true, selain itu false
   verified: boolean;
-  verifiedBy: string; // Admin user ID
+  // Isi semua dengan "l3aKAeBnV6VcJK3yCY7DXzO018Z2"
+  verifiedBy: string;
+  // Isi dengan tanggal 20 September 2025 00:00:00 GMT+7
   verifiedAt: Timestamp;
+  // Kosongkan
   notes?: string;
+  // Kosongkans
   rejectionReason?: string;
 }

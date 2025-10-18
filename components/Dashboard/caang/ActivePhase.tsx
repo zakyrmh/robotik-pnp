@@ -4,13 +4,35 @@ import { useEffect, useState } from "react";
 import { Calendar, Clock, GraduationCap } from "lucide-react";
 import { getActivities } from "@/lib/firebase/activities";
 import { db } from "@/lib/firebaseConfig";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  doc,
+  getDoc,
+} from "firebase/firestore";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { Activity } from "@/types/activities";
 import { OrPhase, TrainingCategory } from "@/types/enum";
 import { Attendance } from "@/types/attendances";
+
+/**
+ * Tipe dokumen di Firestore yang disimpan admin
+ * Collection: "settings" docId: "activePhase"
+ *
+ * Contoh dokumen:
+ * {
+ *   phase: "PKTOS",
+ *   showCategoryProgress: true
+ * }
+ */
+export interface ActivePhaseSetting {
+  phase: OrPhase;
+  showCategoryProgress?: boolean;
+}
 
 interface CategoryProgress {
   category: TrainingCategory;
@@ -31,6 +53,7 @@ interface PhaseData {
   startDate: Date | null;
   endDate: Date | null;
   categories: CategoryProgress[];
+  showCategoryProgress: boolean;
 }
 
 export default function ActivePhase() {
@@ -42,36 +65,89 @@ export default function ActivePhase() {
     const loadPhaseData = async () => {
       setLoading(true);
       try {
-        // 1️⃣ Ambil semua kegiatan fase pelatihan
-        const activities = await getActivities({ phase: OrPhase.PELATIHAN });
+        // 0️⃣ Ambil setting fase aktif dari Firestore (admin akan menyet ini)
+        const settingsRef = doc(db, "settings", "activePhase");
+        const settingsSnap = await getDoc(settingsRef);
 
+        if (!settingsSnap.exists()) {
+          // Tidak ada fase aktif yang diset oleh admin
+          setPhaseData(null);
+          setLoading(false);
+          return;
+        }
+
+        const settings = settingsSnap.data() as Partial<ActivePhaseSetting>;
+        if (!settings.phase) {
+          setPhaseData(null);
+          setLoading(false);
+          return;
+        }
+
+        const activePhaseSetting: ActivePhaseSetting = {
+          phase: settings.phase,
+          showCategoryProgress: settings.showCategoryProgress ?? true,
+        };
+
+        // 1️⃣ Ambil semua kegiatan untuk fase aktif
+        const activities = await getActivities({ phase: activePhaseSetting.phase });
+
+        // jika tidak ada activities -> anggap tidak ada fase aktif yang berjalan
         if (!user || activities.length === 0) {
           setPhaseData(null);
           return;
         }
 
-        // 2️⃣ Ambil semua attendance milik user dari Firestore
+        // === NEW: ambil attendance hanya untuk activityId di fase aktif ===
+        // 2️⃣ Ambil semua attendance milik user untuk activity yang ada di fase aktif
         const attendanceRef = collection(db, "attendance_new");
-        const q = query(attendanceRef, where("userId", "==", user.uid));
-        const snapshot = await getDocs(q);
-        const attendanceData: Attendance[] = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...(doc.data() as Omit<Attendance, "id">),
-        }));
+        const TEST_USER_ID = "d4jAAy6g4Thyq3nZ9wCliMRMQmB3"; // tetap hardcoded untuk testing sesuai permintaan
 
-        // 3️⃣ Hitung completed sessions (present + late)
+        const activityIds = activities.map((a) => a.id).filter(Boolean);
+
+        // const attendanceDocs: FirebaseFirestore.QueryDocumentSnapshot[] = []; // placeholder type - will not be used directly
+        // because we can't reference that type here, we'll gather docs via snapshots
+
+        // Firestore 'in' query supports max 10 values. Batch if needed.
+        const chunkSize = 10;
+        const attendanceResults: Attendance[] = [];
+
+        for (let i = 0; i < activityIds.length; i += chunkSize) {
+          const chunk = activityIds.slice(i, i + chunkSize);
+          if (chunk.length === 0) continue;
+
+          const q = query(
+            attendanceRef,
+            where("userId", "==", TEST_USER_ID),
+            where("activityId", "in", chunk)
+          );
+          const snap = await getDocs(q);
+          snap.docs.forEach((d) => {
+            attendanceResults.push({
+              id: d.id,
+              ...(d.data() as Omit<Attendance, "id">),
+            });
+          });
+        }
+
+        // attendanceResults now contains attendance only for the user AND activities in the active phase
+        const attendanceData: Attendance[] = attendanceResults;
+
+        // 3️⃣ Hitung completed sessions (present + late) — berdasarkan attendance yang sudah difilter
         const completedSessions = attendanceData.filter((a) =>
-          ["present", "late"].includes(a.status)
+          ["present", "late"].includes(a.status as unknown as string)
         ).length;
 
         // 4️⃣ Total semua sesi dari daftar activity
         const totalSessions = activities.reduce(
-          (sum, act) => sum + (act.totalSessions || 1),
+          (sum, act) => sum + (act.totalSessions ?? 1),
           0
         );
 
-        // 5️⃣ Hitung tanggal mulai & akhir
-        const dates = activities.map((a) => a.scheduledDate.toDate());
+        // 5️⃣ Hitung tanggal mulai & akhir (safely convert Timestamp -> Date)
+        const dates: Date[] = activities
+          .map((a) => (a.scheduledDate ? a.scheduledDate.toDate() : null))
+          .filter((d): d is Date => d !== null);
+
         const startDate =
           dates.length > 0
             ? new Date(Math.min(...dates.map((d) => d.getTime())))
@@ -82,26 +158,32 @@ export default function ActivePhase() {
             : null;
 
         // 6️⃣ Kelompokkan progress per kategori
+        // IMPORTANT: jika activity.category tidak ada, kita *tidak* masukkan ke categoryMap
         const categoryMap = new Map<
           TrainingCategory,
           { completed: number; total: number; activities: Activity[] }
         >();
 
         activities.forEach((activity) => {
-          const cat = activity.category || TrainingCategory.PEMROGRAMAN;
+          const cat = activity.category;
+          if (!cat) {
+            // skip activity tanpa kategori — karena progress per kategori bersifat opsional
+            return;
+          }
+
           const existing = categoryMap.get(cat) || {
             completed: 0,
             total: 0,
             activities: [],
           };
 
-          existing.total += activity.totalSessions || 1;
+          existing.total += activity.totalSessions ?? 1;
 
-          // Hitung jumlah sesi hadir per kategori
+          // Hitung jumlah sesi hadir per kategori (berdasarkan attendanceData yang sudah difilter)
           const completedForActivity = attendanceData.filter(
             (att) =>
               att.activityId === activity.id &&
-              ["present", "late"].includes(att.status)
+              ["present", "late"].includes(att.status as unknown as string)
           ).length;
 
           existing.completed += completedForActivity;
@@ -110,60 +192,59 @@ export default function ActivePhase() {
         });
 
         // 7️⃣ Format kategori jadi tampilan progress bar
-        const categories: CategoryProgress[] = Array.from(
-          categoryMap.entries()
-        ).map(([category, data]) => {
-          const percentage =
-            data.total > 0 ? (data.completed / data.total) * 100 : 0;
+        const categories: CategoryProgress[] = Array.from(categoryMap.entries()).map(
+          ([category, data]) => {
+            const percentage = data.total > 0 ? (data.completed / data.total) * 100 : 0;
 
-          let label = "";
-          let color = "";
-          let bgColor = "";
+            let label = "";
+            let color = "";
+            let bgColor = "";
 
-          switch (category) {
-            case TrainingCategory.ELEKTRONIKA:
-              label = "Elektronika";
-              color = "bg-yellow-400";
-              bgColor = "bg-yellow-400 text-yellow-900";
-              break;
-            case TrainingCategory.MEKANIK:
-              label = "Mekanik";
-              color = "bg-gray-300";
-              bgColor = "bg-gray-300 text-gray-700";
-              break;
-            case TrainingCategory.PEMROGRAMAN:
-              label = "Pemrograman";
-              color = "bg-green-400";
-              bgColor = "bg-green-400 text-green-900";
-              break;
-            default:
-              label = category;
-              color = "bg-blue-400";
-              bgColor = "bg-blue-400 text-blue-900";
+            switch (category) {
+              case TrainingCategory.ELEKTRONIKA:
+                label = "Elektronika";
+                color = "bg-yellow-400";
+                bgColor = "bg-yellow-400 text-yellow-900";
+                break;
+              case TrainingCategory.MEKANIK:
+                label = "Mekanik";
+                color = "bg-gray-300";
+                bgColor = "bg-gray-300 text-gray-700";
+                break;
+              case TrainingCategory.PEMROGRAMAN:
+                label = "Pemrograman";
+                color = "bg-green-400";
+                bgColor = "bg-green-400 text-green-900";
+                break;
+              default:
+                label = String(category);
+                color = "bg-blue-400";
+                bgColor = "bg-blue-400 text-blue-900";
+            }
+
+            return {
+              category,
+              label,
+              color,
+              bgColor,
+              completed: data.completed,
+              total: data.total,
+              percentage,
+            };
           }
-
-          return {
-            category,
-            label,
-            color,
-            bgColor,
-            completed: data.completed,
-            total: data.total,
-            percentage,
-          };
-        });
+        );
 
         // 8️⃣ Set hasil akhir
         setPhaseData({
-          phase: OrPhase.PELATIHAN,
+          phase: activePhaseSetting.phase,
           activities,
           completed: completedSessions,
           total: totalSessions,
-          percentage:
-            totalSessions > 0 ? (completedSessions / totalSessions) * 100 : 0,
+          percentage: totalSessions > 0 ? (completedSessions / totalSessions) * 100 : 0,
           startDate,
           endDate,
           categories: categories.sort((a, b) => a.label.localeCompare(b.label)),
+          showCategoryProgress: activePhaseSetting.showCategoryProgress ?? true,
         });
       } catch (error) {
         console.error("Error loading phase data:", error);
@@ -196,14 +277,14 @@ export default function ActivePhase() {
             Belum Ada Fase Aktif
           </h3>
           <p className="text-gray-600 dark:text-gray-400">
-            Saat ini belum ada fase pelatihan yang sedang berlangsung.
+            Saat ini belum ada fase pelatihan yang sedang berlangsung atau belum ada kegiatan di fase yang diset.
           </p>
         </div>
       </div>
     );
   }
 
-  const { completed, total, percentage, startDate, endDate, categories } =
+  const { completed, total, percentage, startDate, endDate, categories, showCategoryProgress } =
     phaseData;
 
   // 🎨 Tampilan utama
@@ -234,7 +315,7 @@ export default function ActivePhase() {
                 <GraduationCap className="h-12 w-12 text-white dark:text-blue-200" />
               </div>
               <div>
-                <h4 className="text-2xl font-bold">Pelatihan</h4>
+                <h4 className="text-2xl font-bold uppercase">{phaseData.phase}</h4>
                 <p className="text-blue-100 dark:text-blue-200/80">
                   {categories.map((c) => c.label).join(" • ")}
                 </p>
@@ -242,7 +323,7 @@ export default function ActivePhase() {
             </div>
 
             <p className="text-blue-100 dark:text-blue-200 mb-4">
-              Anda sedang dalam fase pelatihan. Pastikan mengikuti semua sesi
+              Anda sedang dalam fase <span className="uppercase">{phaseData.phase}</span>. Pastikan mengikuti semua sesi
               tepat waktu.
             </p>
 
@@ -278,7 +359,7 @@ export default function ActivePhase() {
         </div>
 
         {/* Progress per kategori */}
-        {categories.length > 0 && (
+        {showCategoryProgress && categories.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {categories.map((cat) => (
               <div

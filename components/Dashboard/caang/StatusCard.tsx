@@ -44,7 +44,7 @@ export default function StatusCard({ caang }: StatusCardProps) {
         <div className="flex flex-wrap gap-4 items-center text-white/90 dark:text-gray-200">
           <div className="flex items-center space-x-2">
             <IdCard className="w-5 h-5 text-white dark:text-emerald-300" />
-            <span>ID: {caang?.id}</span>
+            <span>ID: {caang?.registrationId}</span>
           </div>
           <div className="flex items-center space-x-2">
             <CalendarCheck className="w-5 h-5 text-white dark:text-emerald-300" />

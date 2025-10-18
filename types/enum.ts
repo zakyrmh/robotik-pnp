@@ -27,6 +27,7 @@ export enum OrPhase {
   DEMO_ROBOT = 'demo_robot',
   WAWANCARA_1 = 'wawancara_1',
   PELATIHAN = 'pelatihan',
+  PKTOS='pktos',
   MRC = 'mrc',
   FAMILY_GATHERING = 'family_gathering',
   PROJECT_LINE_FOLLOWER = 'project_line_follower',

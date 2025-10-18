@@ -50,6 +50,7 @@ import {
 import { createActivity, updateActivity } from "@/lib/firebase/activities";
 import { Timestamp } from "firebase/firestore";
 import { toast } from "sonner";
+import slugify from "slugify";
 
 const activitySchema = z.object({
   title: z.string().min(5, "Judul minimal 5 karakter"),
@@ -165,6 +166,7 @@ export default function ActivityDialog({
       // Build base activity data with required fields
       const activityData: Omit<Activity, "id" | "createdAt" | "updatedAt"> = {
         title: data.title,
+        slug: slugify(data.title, { lower: true }),
         description: data.description,
         type: data.type,
         phase: data.phase,
@@ -459,12 +461,13 @@ export default function ActivityDialog({
               <h3 className="text-lg font-semibold">Jadwal</h3>
 
               <div className="grid grid-cols-2 gap-4">
+                {/* Input Tanggal */}
                 <FormField
                   control={form.control}
                   name="scheduledDate"
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
-                      <FormLabel>Tanggal Mulai*</FormLabel>
+                      <FormLabel>Tanggal*</FormLabel>
                       <Popover>
                         <PopoverTrigger asChild>
                           <FormControl>
@@ -483,7 +486,16 @@ export default function ActivityDialog({
                           <Calendar
                             mode="single"
                             selected={field.value}
-                            onSelect={field.onChange}
+                            onSelect={(date) => {
+                              const current = field.value ?? new Date();
+                              const newDate = new Date(date ?? current);
+                              // pertahankan jam & menit sebelumnya
+                              newDate.setHours(
+                                current.getHours(),
+                                current.getMinutes()
+                              );
+                              field.onChange(newDate);
+                            }}
                             initialFocus
                           />
                         </PopoverContent>
@@ -493,6 +505,59 @@ export default function ActivityDialog({
                   )}
                 />
 
+                {/* Input Waktu */}
+                <FormField
+                  control={form.control}
+                  name="scheduledDate"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Waktu*</FormLabel>
+                      <div className="flex gap-2">
+                        <Input
+                          type="number"
+                          min={0}
+                          max={23}
+                          className="w-20"
+                          value={
+                            field.value ? new Date(field.value).getHours() : ""
+                          }
+                          onChange={(e) => {
+                            const date = field.value
+                              ? new Date(field.value)
+                              : new Date();
+                            date.setHours(Number(e.target.value));
+                            field.onChange(date);
+                          }}
+                          placeholder="Jam"
+                        />
+                        <span className="text-lg mt-1">:</span>
+                        <Input
+                          type="number"
+                          min={0}
+                          max={59}
+                          className="w-20"
+                          value={
+                            field.value
+                              ? new Date(field.value).getMinutes()
+                              : ""
+                          }
+                          onChange={(e) => {
+                            const date = field.value
+                              ? new Date(field.value)
+                              : new Date();
+                            date.setMinutes(Number(e.target.value));
+                            field.onChange(date);
+                          }}
+                          placeholder="Menit"
+                        />
+                      </div>
+                      <FormDescription>Gunakan format 24 jam</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Durasi */}
                 <FormField
                   control={form.control}
                   name="duration"

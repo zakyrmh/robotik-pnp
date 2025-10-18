@@ -126,9 +126,7 @@ export default function NearbyActivities() {
           const isToday = schedDate !== null && isSameDay(schedDate, today);
           const isCompleted = activity.status === "completed";
           const isOngoing = activity.status === "ongoing";
-
-          console.log(schedDate, today, isToday);
-
+          
           let cardStyle =
             "bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5 border-l-4 transition-colors";
           if (isToday) {

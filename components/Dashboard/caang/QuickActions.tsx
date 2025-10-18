@@ -1,4 +1,4 @@
-import { Book, PartyPopper, Phone } from "lucide-react";
+import { Book, PartyPopper, Phone, Tickets } from "lucide-react";
 import Link from "next/link";
 
 export default function QuickActions() {
@@ -36,6 +36,26 @@ export default function QuickActions() {
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 PDF, Video, Code
+              </p>
+            </div>
+            {/* <span className="ml-auto px-2 py-1 bg-red-500 text-white text-xs rounded-full font-bold">
+              3
+            </span> */}
+          </div>
+        </button>
+
+        {/* PKTOS */}
+        <button className="w-full bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm hover:shadow-md transition border-2 border-transparent hover:border-orange-500 dark:hover:border-orange-400 group">
+          <div className="flex items-center space-x-3">
+            <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/40 rounded-lg flex items-center justify-center group-hover:bg-orange-500 transition">
+              <Tickets className="text-orange-600 dark:text-orange-400 h-6 w-6 group-hover:text-white" />
+            </div>
+            <div className="text-left">
+              <p className="font-semibold text-gray-800 dark:text-gray-100">
+                PKTOS
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Absensi PKTOS
               </p>
             </div>
             {/* <span className="ml-auto px-2 py-1 bg-red-500 text-white text-xs rounded-full font-bold">

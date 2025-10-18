@@ -3,6 +3,7 @@ import { Timestamp } from "firebase/firestore";
 
 export interface Activity {
   id: string;
+  slug: string;
   
   // Basic Info
   title: string;
