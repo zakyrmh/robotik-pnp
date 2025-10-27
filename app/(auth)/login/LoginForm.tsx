@@ -1,186 +1,127 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Mail, Lock, Eye, EyeOff, User, ArrowRight } from "lucide-react";
-import {
-  browserLocalPersistence,
-  browserSessionPersistence,
-  setPersistence,
-  signInWithEmailAndPassword,
-} from "firebase/auth";
-import { auth } from "@/lib/firebaseConfig";
 import { toast, Toaster } from "sonner";
 import Link from "next/link";
-
-// Utility function untuk validasi redirect URL
-function validateRedirectUrl(url: string | null): string {
-  const DEFAULT_REDIRECT = "/dashboard";
-
-  if (!url) return DEFAULT_REDIRECT;
-
-  // Hanya izinkan internal path (dimulai dengan /)
-  if (!url.startsWith("/")) return DEFAULT_REDIRECT;
-
-  // Blacklist URLs - tidak boleh redirect ke login/register
-  const blacklist = ["/login", "/register", "/forgot-password"];
-  if (blacklist.some((path) => url.startsWith(path))) {
-    return DEFAULT_REDIRECT;
-  }
-
-  // Tidak boleh mengandung protocol (mencegah open redirect attack)
-  if (url.includes("://") || url.includes("//")) {
-    return DEFAULT_REDIRECT;
-  }
-
-  // Decode URL untuk mencegah encoded attack
-  try {
-    const decoded = decodeURIComponent(url);
-    if (decoded.includes("://") || decoded.includes("//")) {
-      return DEFAULT_REDIRECT;
-    }
-  } catch {
-    return DEFAULT_REDIRECT;
-  }
-
-  return url;
-}
+import { useRouter, useSearchParams } from "next/navigation";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebaseConfig";
+import { FirebaseError } from "firebase/app";
 
 export default function LoginPage() {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    rememberMe: false,
-  });
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get("redirect");
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [redirectUrl, setRedirectUrl] = useState("/dashboard");
 
-  // 🔥 FIX: Ambil redirect dari URL saat component mount
+  // Load saved email jika remember me aktif
   useEffect(() => {
-    // PENTING: Gunakan window.location.search langsung, bukan useSearchParams()
-    // Karena Next.js middleware redirect kadang kehilangan searchParams di SSR
-    const urlParams = new URLSearchParams(window.location.search);
-    const redirectParam = urlParams.get("redirect");
+    const savedEmail = localStorage.getItem("rememberedEmail");
+    const wasRemembered = localStorage.getItem("rememberMe") === "true";
 
-    const validated = validateRedirectUrl(redirectParam);
-
-    setRedirectUrl(validated);
-  }, []); // Empty dependency - hanya jalankan sekali saat mount!
+    if (savedEmail && wasRemembered) {
+      setEmail(savedEmail);
+      setRememberMe(true);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    if (!formData.email || !formData.password) {
-      toast.error("Harap isi semua kolom.");
-      setIsLoading(false);
-      return;
-    }
-
     try {
-      // Set persistence berdasarkan remember me
-      await setPersistence(
-        auth,
-        formData.rememberMe
-          ? browserLocalPersistence
-          : browserSessionPersistence
-      );
-
-      // Sign in dengan Firebase
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        formData.email,
-        formData.password
-      );
-
-      const user = userCredential.user;
-
-      // Ambil ID token dari Firebase
-      const idToken = await user.getIdToken();
-
-      // Cek email verification
-      if (!user.emailVerified) {
-        toast.error("Email Anda belum diverifikasi. Silakan cek inbox Anda.");
+      // Validasi input
+      if (!email || !password) {
+        toast.error("Email dan password harus diisi!");
         setIsLoading(false);
         return;
       }
 
-      // Kirim token ke API untuk set cookie
-      const response = await fetch("/api/auth/set-cookie", {
+      // Sign in dengan Firebase Auth
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+
+      // Dapatkan ID Token
+      const idToken = await userCredential.user.getIdToken();
+
+      // Kirim ID Token ke server untuk create session cookie
+      const response = await fetch("/api/auth/session", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          token: idToken,
-          remember: formData.rememberMe,
-        }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ idToken }),
       });
 
       if (!response.ok) {
-        console.error("Gagal set cookie:", await response.text());
+        throw new Error("Failed to create session");
       }
 
-      // ✅ LEBIH BAIK: Hapus localStorage atau gunakan untuk data non-sensitif saja
-      if (formData.rememberMe) {
-        // Hanya simpan preference, bukan data user
+      // Handle remember me
+      if (rememberMe) {
+        localStorage.setItem("rememberedEmail", email);
         localStorage.setItem("rememberMe", "true");
+      } else {
+        localStorage.removeItem("rememberedEmail");
+        localStorage.removeItem("rememberMe");
       }
 
-      // Tampilkan toast sukses
-      toast.success("Login berhasil! Mengalihkan...");
+      toast.success("Login berhasil!");
 
-      // Debug: Log sebelum redirect
-
-      // PENTING: Gunakan window.location.href untuk hard redirect
-      // Ini memastikan middleware akan cek cookie yang baru di-set
+      // Redirect ke halaman tujuan atau dashboard
       setTimeout(() => {
-        window.location.href = redirectUrl;
+        router.push(redirectTo || "/dashboard");
+        router.refresh();
       }, 500);
-    } catch (err: unknown) {
-      let message = "Terjadi kesalahan. Silakan coba lagi.";
+    } catch (error) {
+      if (error instanceof FirebaseError) {
+        console.error("Login error:", error);
 
-      if (err && typeof err === "object" && "code" in err) {
-        const errorCode = (err as { code: string; message: string }).code;
+        // Handle Firebase Auth errors
+        let errorMessage = "Terjadi kesalahan saat login";
 
-        switch (errorCode) {
-          case "auth/invalid-credential":
-            message = "Email atau kata sandi salah. Coba lagi.";
-            break;
+        switch (error.code) {
           case "auth/user-not-found":
-            message = "Email tidak ditemukan. Silakan daftar terlebih dahulu.";
+            errorMessage = "Email tidak terdaftar";
             break;
           case "auth/wrong-password":
-            message = "Kata sandi salah. Coba lagi.";
+            errorMessage = "Password salah";
             break;
           case "auth/invalid-email":
-            message = "Format email tidak valid.";
+            errorMessage = "Format email tidak valid";
+            break;
+          case "auth/user-disabled":
+            errorMessage = "Akun Anda telah dinonaktifkan";
             break;
           case "auth/too-many-requests":
-            message =
-              "Terlalu banyak percobaan gagal. Silakan coba beberapa saat lagi.";
+            errorMessage = "Terlalu banyak percobaan login. Coba lagi nanti";
             break;
           case "auth/network-request-failed":
-            message = "Koneksi internet bermasalah. Silakan coba lagi.";
+            errorMessage = "Koneksi internet bermasalah";
+            break;
+          case "auth/invalid-credential":
+            errorMessage = "Email atau password salah";
             break;
           default:
-            message = (err as unknown as { message: string }).message;
+            errorMessage = error.message || "Terjadi kesalahan saat login";
         }
-      }
 
-      toast.error(message);
+        toast.error(errorMessage);
+      }
     } finally {
       setIsLoading(false);
     }
   };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-slate-900 to-blue-800 dark:from-gray-900 dark:via-slate-900 dark:to-gray-800 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -200,21 +141,6 @@ export default function LoginPage() {
           <p className="text-gray-300 dark:text-gray-400 text-sm">
             Masuk ke dashboard
           </p>
-
-          {/* Tampilkan info redirect jika ada */}
-          {redirectUrl !== "/dashboard" && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3 }}
-              className="mt-3 px-4 py-2 bg-blue-500/20 dark:bg-blue-600/20 border border-blue-400/30 dark:border-blue-500/30 rounded-lg"
-            >
-              <p className="text-xs text-blue-200 dark:text-blue-300">
-                📍 Anda akan diarahkan ke:{" "}
-                <span className="font-semibold font-mono">{redirectUrl}</span>
-              </p>
-            </motion.div>
-          )}
         </motion.div>
 
         {/* Form Container */}
@@ -239,8 +165,8 @@ export default function LoginPage() {
                   type="email"
                   id="email"
                   name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                   placeholder="nama@email.com"
                   className="w-full pl-10 pr-4 py-3 bg-white/5 dark:bg-gray-700/30 border border-white/20 dark:border-gray-600/50 rounded-lg text-white dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-all duration-200"
@@ -262,8 +188,8 @@ export default function LoginPage() {
                   type={showPassword ? "text" : "password"}
                   id="password"
                   name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                   placeholder="Masukkan password"
                   className="w-full pl-10 pr-12 py-3 bg-white/5 dark:bg-gray-700/30 border border-white/20 dark:border-gray-600/50 rounded-lg text-white dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-all duration-200"
@@ -288,8 +214,8 @@ export default function LoginPage() {
                 type="checkbox"
                 id="rememberMe"
                 name="rememberMe"
-                checked={formData.rememberMe}
-                onChange={handleInputChange}
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
                 className="w-4 h-4 text-blue-600 dark:text-blue-500 bg-white/10 dark:bg-gray-600/50 border-white/30 dark:border-gray-500/50 rounded focus:ring-blue-500 dark:focus:ring-blue-400 focus:ring-2"
               />
               <label

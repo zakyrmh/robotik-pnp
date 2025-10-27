@@ -13,11 +13,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { auth } from "@/lib/firebaseConfig";
-import {
-  onAuthStateChanged,
-  signOut,
-  User as FirebaseUser,
-} from "firebase/auth";
+import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
+import { useAuth } from "@/hooks/useAuth";
 
 const navItems = [
   { label: "Home", href: "#home" },
@@ -42,26 +39,18 @@ function scrollToSection(id: string) {
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState<FirebaseUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const { logout, loading } = useAuth();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
-      setLoading(false);
+      setIsLoading(false);
     });
 
     return () => unsubscribe();
   }, []);
-
-  const handleSignOut = async () => {
-    try {
-      await signOut(auth);
-      router.push("/");
-    } catch (error) {
-      console.error("Error signing out:", error);
-    }
-  };
 
   const handleLogin = () => {
     router.push("/login");
@@ -97,7 +86,7 @@ export default function Navbar() {
             ))}
 
             {/* Auth Button/Dropdown */}
-            {loading ? (
+            {isLoading ? (
               <div className="w-20 h-9 bg-slate-200 dark:bg-slate-700 animate-pulse rounded-md">
                 <span className="sr-only">Memuat status login...</span>
               </div>
@@ -121,11 +110,11 @@ export default function Navbar() {
                     Dashboard
                   </DropdownMenuItem>
                   <DropdownMenuItem
-                    onClick={handleSignOut}
+                    onClick={logout}
                     className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                   >
                     <LogOut className="w-4 h-4 mr-2" />
-                    Keluar
+                    {loading ? "Loading..." : "Keluar"}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -175,10 +164,10 @@ export default function Navbar() {
 
             {/* Mobile Auth Button */}
             <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
-              {loading ? (
-              <div className="w-20 h-9 bg-slate-200 dark:bg-slate-700 animate-pulse rounded-md">
-                <span className="sr-only">Memuat status login...</span>
-              </div>
+              {isLoading ? (
+                <div className="w-20 h-9 bg-slate-200 dark:bg-slate-700 animate-pulse rounded-md">
+                  <span className="sr-only">Memuat status login...</span>
+                </div>
               ) : user ? (
                 <>
                   <button
@@ -193,13 +182,13 @@ export default function Navbar() {
                   </button>
                   <button
                     onClick={() => {
-                      handleSignOut();
+                      logout();
                       setIsOpen(false);
                     }}
                     className="w-full text-left text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 px-3 py-2 rounded-md transition-colors flex items-center"
                   >
                     <LogOut className="w-4 h-4 mr-2" />
-                    Keluar
+                    {loading ? "Loading..." : "Keluar"}
                   </button>
                 </>
               ) : (

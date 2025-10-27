@@ -2,9 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { signOut } from "firebase/auth";
 import { doc, getDoc } from "firebase/firestore";
-import { auth, db } from "@/lib/firebaseConfig";
+import { db } from "@/lib/firebaseConfig";
 import { useAuth } from "@/hooks/useAuth";
 import Image from "next/image";
 import {
@@ -18,7 +17,7 @@ import {
 import { ChevronDown, LogOut, Settings } from "lucide-react";
 
 export function UserInfo() {
-  const { user } = useAuth();
+  const { user, logout, loading } = useAuth();
   const [photoURL, setPhotoURL] = useState<string | null>(null);
   const router = useRouter();
 
@@ -37,15 +36,6 @@ export function UserInfo() {
     };
     fetchUserData();
   }, [user?.uid]);
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      router.replace("/login");
-    } catch (err) {
-      console.error("Logout error:", err);
-    }
-  };
 
   const USER = {
     name: user?.displayName || "User",
@@ -95,10 +85,10 @@ export function UserInfo() {
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          onClick={handleLogout}
+          onClick={logout}
           className="cursor-pointer text-red-600"
         >
-          <LogOut className="mr-2 h-4 w-4" /> Logout
+          <LogOut className="mr-2 h-4 w-4" /> {loading ? "Loading..." : "Logout"}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
