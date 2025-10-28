@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Clock, MapPin, QrCode, UserCog } from "lucide-react";
+import { Clock, MapPin, QrCode } from "lucide-react";
 import { collection, getDocs, orderBy, query } from "firebase/firestore";
 import { db } from "@/lib/firebaseConfig";
 import { Activity } from "@/types/activities";
@@ -19,7 +19,7 @@ export default function NearbyActivities() {
       try {
         const q = query(
           collection(db, "activities"),
-          orderBy("scheduledDate", "desc")
+          orderBy("startDateTime", "desc")
         );
         const snapshot = await getDocs(q);
         const data = snapshot.docs.map((doc) => ({
@@ -40,15 +40,15 @@ export default function NearbyActivities() {
         // Sort masing-masing grup
         // ongoing & upcoming: terdekat di atas (ascending)
         ongoing.sort(
-          (a, b) => a.scheduledDate.seconds - b.scheduledDate.seconds
+          (a, b) => a.startDateTime.seconds - b.startDateTime.seconds
         );
         upcoming.sort(
-          (a, b) => a.scheduledDate.seconds - b.scheduledDate.seconds
+          (a, b) => a.startDateTime.seconds - b.startDateTime.seconds
         );
 
         // completed: terbaru di atas (descending), ambil 2 teratas
         completedActivities.sort(
-          (a, b) => b.scheduledDate.seconds - a.scheduledDate.seconds
+          (a, b) => b.startDateTime.seconds - a.startDateTime.seconds
         );
         const topCompleted = completedActivities.slice(0, 2);
 
@@ -118,10 +118,10 @@ export default function NearbyActivities() {
 
       <div className="space-y-4">
         {activities.map((activity) => {
-          const { day, month } = formatDate(activity.scheduledDate);
+          const { day, month } = formatDate(activity.startDateTime);
 
           // Check apakah hari ini (hanya tanggal, abaikan jam)
-          const schedDate = toJSDate(activity.scheduledDate);
+          const schedDate = toJSDate(activity.startDateTime);
           const today = new Date();
           const isToday = schedDate !== null && isSameDay(schedDate, today);
           const isCompleted = activity.status === "completed";
@@ -189,7 +189,7 @@ export default function NearbyActivities() {
                     >
                       <p className="flex items-center">
                         <Clock className="mr-2 h-4 w-4" />
-                        {format(activity.scheduledDate.toDate(), "hh:mm")} {" "}
+                        {format(activity.startDateTime.toDate(), "hh:mm")} {" "}
                         <span>WIB</span>
                       </p>
                       {activity.location && (
@@ -198,12 +198,6 @@ export default function NearbyActivities() {
                           {activity.location}
                         </p>
                       )}
-                      {activity.mentorNames?.length ? (
-                        <p className="flex items-center">
-                          <UserCog className="mr-2 h-4 w-4" />
-                          Mentor: {activity.mentorNames.join(", ")}
-                        </p>
-                      ) : null}
                     </div>
                   </div>
                 </div>
@@ -219,7 +213,7 @@ export default function NearbyActivities() {
                 {/* Label hari tersisa (tampil untuk semua kecuali hari ini) */}
                 {!isToday && (
                   <span className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg text-sm font-medium">
-                    {daysLeft(activity.scheduledDate)}
+                    {daysLeft(activity.startDateTime)}
                   </span>
                 )}
               </div>

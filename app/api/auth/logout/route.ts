@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
     const cookieStore = await cookies()
     
     // Hapus session cookie
     cookieStore.delete('session')
-    
-    return NextResponse.json({ success: true })
+
+    // Redirect ke halaman login    
+    return NextResponse.redirect(new URL('/login', request.url))
   } catch (error) {
     console.error('Error during logout:', error)
     return NextResponse.json(

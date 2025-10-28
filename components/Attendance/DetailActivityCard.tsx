@@ -13,12 +13,8 @@ import { motion } from "framer-motion";
 import {
   Calendar,
   MapPin,
-  FileText,
   CheckCircle2,
   Link as LinkIcon,
-  Download,
-  ClipboardList,
-  AlertCircle,
   EyeOff,
   Trash2,
 } from "lucide-react";
@@ -163,10 +159,10 @@ export default function DetailActivityCard({
             <CardContent className="space-y-2">
               <div>
                 <p className="font-medium">
-                  {formatDate(activity.scheduledDate)}
+                  {formatDate(activity.startDateTime)}
                 </p>
                 <p className="text-sm text-blue-600 dark:text-blue-400">
-                  {formatTime(activity.scheduledDate)} WIB
+                  {formatTime(activity.startDateTime)} WIB
                 </p>
               </div>
             </CardContent>
@@ -208,93 +204,6 @@ export default function DetailActivityCard({
           </Card>
         </motion.div>
       </div>
-
-      {/* Materi & Tugas */}
-      {(activity.materialsUrls && activity.materialsUrls.length > 0) ||
-      activity.hasTask ? (
-        <motion.div variants={itemVariants}>
-          <Card className="gap-0">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Materi & Tugas
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {activity.materialsUrls && activity.materialsUrls.length > 0 && (
-                <div>
-                  <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-                    <Download className="h-4 w-4" />
-                    Materi
-                  </h4>
-                  <div className="space-y-2">
-                    {activity.materialsUrls.map((url, index) => (
-                      <a
-                        key={index}
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:underline text-sm"
-                      >
-                        <LinkIcon className="h-3 w-3" />
-                        Materi {index + 1}
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {activity.hasTask && (
-                <div>
-                  <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
-                    <ClipboardList className="h-4 w-4" />
-                    Tugas
-                  </h4>
-                  <div className="flex items-center gap-2 text-sm">
-                    <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    <span>Aktivitas ini memiliki tugas</span>
-                  </div>
-                  {activity.taskIds && activity.taskIds.length > 0 && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {activity.taskIds.length} tugas tersedia
-                    </p>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </motion.div>
-      ) : null}
-
-      {/* Prerequisites */}
-      {activity.requiredPhases && activity.requiredPhases.length > 0 && (
-        <motion.div variants={itemVariants}>
-          <Card className="border-orange-200 dark:border-orange-800">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-orange-600 dark:text-orange-400">
-                <AlertCircle className="h-5 w-5" />
-                Prasyarat
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-2">
-                Fase yang harus diselesaikan terlebih dahulu:
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {activity.requiredPhases.map((phase, index) => (
-                  <Badge
-                    key={index}
-                    variant="outline"
-                    className="border-orange-500"
-                  >
-                    {phase}
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      )}
     </motion.div>
   );
 }
