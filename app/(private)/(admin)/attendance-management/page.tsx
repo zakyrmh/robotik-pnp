@@ -18,6 +18,7 @@ import {
   FileText,
   Heart,
   XCircle,
+  ScanQrCode,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,6 +58,7 @@ import AttendanceEditDialog from "@/components/attendances/admin/attendance-edit
 import DeleteAttendanceDialog from "@/components/attendances/admin/delete-attendance-dialog";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { app } from "@/lib/firebaseConfig";
+import Link from "next/link";
 
 type SortField = "userName" | "activityName" | "status" | "createdAt";
 type SortOrder = "asc" | "desc";
@@ -104,11 +106,8 @@ export default function AttendanceManagementPage() {
     setLoading(true);
     try {
       // Load all data in parallel
-      const [attendancesData, activitiesData, usersResponse] = await Promise.all([
-        getAttendances(),
-        getActivities(),
-        getUsers(),
-      ]);
+      const [attendancesData, activitiesData, usersResponse] =
+        await Promise.all([getAttendances(), getActivities(), getUsers()]);
 
       setActivities(activitiesData);
 
@@ -123,23 +122,27 @@ export default function AttendanceManagementPage() {
           attendancesData.map((attendance) => ({
             ...attendance,
             user: usersResponse.data?.find((u) => u.id === attendance.userId),
-            activity: activitiesData.find((a) => a.id === attendance.activityId),
+            activity: activitiesData.find(
+              (a) => a.id === attendance.activityId
+            ),
             isAbsent: false,
           }));
 
         // Add absent users for each activity
-        const allAttendances: AttendanceWithRelations[] = [...attendancesWithRelations];
-        
+        const allAttendances: AttendanceWithRelations[] = [
+          ...attendancesWithRelations,
+        ];
+
         // For each activity, find users without attendance and add them as absent
         activitiesData.forEach((activity) => {
           const attendedUserIds = attendancesData
             .filter((a) => a.activityId === activity.id)
             .map((a) => a.userId);
-          
+
           const absentUsers = caangUsers.filter(
             (user) => !attendedUserIds.includes(user.id)
           );
-          
+
           // Create virtual attendance records for absent users
           absentUsers.forEach((user) => {
             allAttendances.push({
@@ -195,7 +198,9 @@ export default function AttendanceManagementPage() {
       const searchLower = searchQuery.toLowerCase();
       const matchesSearch =
         !searchQuery ||
-        attendance.user?.profile?.fullName.toLowerCase().includes(searchLower) ||
+        attendance.user?.profile?.fullName
+          .toLowerCase()
+          .includes(searchLower) ||
         attendance.user?.profile?.nim.toLowerCase().includes(searchLower);
 
       // Activity filter
@@ -219,7 +224,9 @@ export default function AttendanceManagementPage() {
         }
       }
 
-      return matchesSearch && matchesActivity && matchesStatus && matchesOrPeriod;
+      return (
+        matchesSearch && matchesActivity && matchesStatus && matchesOrPeriod
+      );
     })
     .sort((a, b) => {
       let comparison = 0;
@@ -239,8 +246,7 @@ export default function AttendanceManagementPage() {
           comparison = a.status.localeCompare(b.status);
           break;
         case "createdAt":
-          comparison =
-            a.createdAt.toMillis() - b.createdAt.toMillis();
+          comparison = a.createdAt.toMillis() - b.createdAt.toMillis();
           break;
       }
 
@@ -351,12 +357,24 @@ export default function AttendanceManagementPage() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Manajemen Absensi
-          </h1>
-          <p className="text-gray-600">
-            Kelola absensi calon anggota pada berbagai aktivitas
-          </p>
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">
+                Manajemen Absensi
+              </h1>
+              <p className="text-gray-600">
+                Kelola absensi calon anggota pada berbagai aktivitas
+              </p>
+            </div>
+            <div>
+              <Link href="/attendance-management/scan-qr">
+                <Button className="gap-2">
+                  <ScanQrCode className="w-5 h-5" />
+                  Scan QR
+                </Button>
+              </Link>
+            </div>
+          </div>
         </motion.div>
 
         {/* Filters */}
@@ -440,7 +458,9 @@ export default function AttendanceManagementPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600 mb-1">Total</p>
+                  <p className="text-sm font-medium text-gray-600 mb-1">
+                    Total
+                  </p>
                   <p className="text-2xl font-bold text-gray-900">
                     {statistics.total}
                   </p>
@@ -457,7 +477,9 @@ export default function AttendanceManagementPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-green-700 mb-1">Hadir</p>
+                  <p className="text-sm font-medium text-green-700 mb-1">
+                    Hadir
+                  </p>
                   <p className="text-2xl font-bold text-green-900">
                     {statistics.present}
                   </p>
@@ -474,7 +496,9 @@ export default function AttendanceManagementPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-yellow-700 mb-1">Terlambat</p>
+                  <p className="text-sm font-medium text-yellow-700 mb-1">
+                    Terlambat
+                  </p>
                   <p className="text-2xl font-bold text-yellow-900">
                     {statistics.late}
                   </p>
@@ -508,7 +532,9 @@ export default function AttendanceManagementPage() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-purple-700 mb-1">Sakit</p>
+                  <p className="text-sm font-medium text-purple-700 mb-1">
+                    Sakit
+                  </p>
                   <p className="text-2xl font-bold text-purple-900">
                     {statistics.sick}
                   </p>
@@ -606,7 +632,10 @@ export default function AttendanceManagementPage() {
                     <TableRow>
                       <TableCell colSpan={5} className="text-center py-8">
                         <p className="text-gray-500">
-                          {searchQuery || filterActivity !== "all" || filterStatus !== "all" || filterOrPeriod !== "all"
+                          {searchQuery ||
+                          filterActivity !== "all" ||
+                          filterStatus !== "all" ||
+                          filterOrPeriod !== "all"
                             ? "Tidak ada data absensi yang sesuai dengan filter"
                             : "Belum ada data absensi"}
                         </p>
@@ -642,7 +671,8 @@ export default function AttendanceManagementPage() {
                         <TableCell>
                           <div className="flex items-center gap-2">
                             {getStatusBadge(attendance.status)}
-                            {attendance.status === AttendanceStatus.PENDING_APPROVAL &&
+                            {attendance.status ===
+                              AttendanceStatus.PENDING_APPROVAL &&
                               attendance.needsApproval && (
                                 <span className="text-xs text-orange-600 font-medium">
                                   (Belum Disetujui)
