@@ -5,6 +5,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -16,6 +17,9 @@ import { User } from "@/types/users";
 import { AttendanceStatus, AttendanceMethod } from "@/types/enum";
 import { getActivityById } from "@/lib/firebase/activities";
 import { getUserById } from "@/lib/firebase/users";
+import { updateAttendance, calculatePoints } from "@/lib/firebase/attendances";
+import { Timestamp } from "firebase/firestore";
+import { toast } from "sonner";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import {
@@ -26,24 +30,34 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
+  ThumbsUp,
+  ThumbsDown,
+  Loader2,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface AttendanceDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   attendance: Attendance;
+  onSuccess?: () => void;
+  currentUserId?: string | null;
 }
 
 export default function AttendanceDetailDialog({
   open,
   onOpenChange,
   attendance,
+  onSuccess,
+  currentUserId,
 }: AttendanceDetailDialogProps) {
   const [activity, setActivity] = useState<Activity | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [checkedInByUser, setCheckedInByUser] = useState<User | null>(null);
   const [approvedByUser, setApprovedByUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [approving, setApproving] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
 
   useEffect(() => {
     const loadData = async () => {
@@ -355,7 +369,110 @@ export default function AttendanceDetailDialog({
             </>
           )}
         </div>
+
+        {/* Approval Actions for PENDING_APPROVAL */}
+        {attendance.status === AttendanceStatus.PENDING_APPROVAL &&
+          attendance.needsApproval && (
+            <DialogFooter className="mt-6">
+              <div className="flex gap-2 w-full justify-end">
+                <Button
+                  variant="outline"
+                  onClick={handleReject}
+                  disabled={approving || rejecting}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  {rejecting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  <ThumbsDown className="mr-2 h-4 w-4" />
+                  Tolak
+                </Button>
+                <Button
+                  onClick={handleApprove}
+                  disabled={approving || rejecting}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {approving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  <ThumbsUp className="mr-2 h-4 w-4" />
+                  Setujui
+                </Button>
+              </div>
+            </DialogFooter>
+          )}
       </DialogContent>
     </Dialog>
   );
+
+  async function handleApprove() {
+    if (!currentUserId) {
+      toast.error("User tidak terautentikasi");
+      return;
+    }
+
+    setApproving(true);
+    try {
+      // Determine the original status from userNotes or default to SICK
+      let approvedStatus = AttendanceStatus.SICK;
+      
+      // Check userNotes to determine if it's SICK or EXCUSED
+      if (attendance.userNotes) {
+        const notesLower = attendance.userNotes.toLowerCase();
+        if (notesLower.includes("izin") || notesLower.includes("excused")) {
+          approvedStatus = AttendanceStatus.EXCUSED;
+        }
+      }
+      
+      // If status is already set to one of these, use it
+      if (attendance.status === AttendanceStatus.SICK) {
+        approvedStatus = AttendanceStatus.SICK;
+      } else if (attendance.status === AttendanceStatus.EXCUSED) {
+        approvedStatus = AttendanceStatus.EXCUSED;
+      }
+
+      const updateData: Partial<Attendance> = {
+        status: approvedStatus,
+        needsApproval: false,
+        approvedBy: currentUserId,
+        approvedAt: Timestamp.now(),
+        points: calculatePoints(approvedStatus),
+      };
+
+      await updateAttendance(attendance.id, updateData);
+      
+      toast.success(`Absensi ${approvedStatus === AttendanceStatus.SICK ? 'sakit' : 'izin'} berhasil disetujui`);
+      onSuccess?.();
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Error approving attendance:", error);
+      toast.error("Gagal menyetujui absensi");
+    } finally {
+      setApproving(false);
+    }
+  }
+
+  async function handleReject() {
+    if (!currentUserId) {
+      toast.error("User tidak terautentikasi");
+      return;
+    }
+
+    setRejecting(true);
+    try {
+      const updateData: Partial<Attendance> = {
+        status: AttendanceStatus.ABSENT,
+        needsApproval: false,
+        rejectionReason: "Ditolak oleh admin",
+        points: calculatePoints(AttendanceStatus.ABSENT),
+      };
+
+      await updateAttendance(attendance.id, updateData);
+      
+      toast.success("Absensi berhasil ditolak, status diubah menjadi Alfa");
+      onSuccess?.();
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Error rejecting attendance:", error);
+      toast.error("Gagal menolak absensi");
+    } finally {
+      setRejecting(false);
+    }
+  }
 }

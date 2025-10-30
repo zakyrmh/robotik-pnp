@@ -45,7 +45,7 @@ import { getUsers } from "@/lib/firebase/users";
 import { Attendance } from "@/types/attendances";
 import { Activity } from "@/types/activities";
 import { User } from "@/types/users";
-import { AttendanceStatus } from "@/types/enum";
+import { AttendanceMethod, AttendanceStatus } from "@/types/enum";
 import AttendanceDetailDialog from "@/components/attendances/admin/attendance-detail-dialog";
 import AttendanceEditDialog from "@/components/attendances/admin/attendance-edit-dialog";
 import DeleteAttendanceDialog from "@/components/attendances/admin/delete-attendance-dialog";
@@ -58,6 +58,7 @@ type SortOrder = "asc" | "desc";
 interface AttendanceWithRelations extends Attendance {
   user?: User;
   activity?: Activity;
+  isAbsent?: boolean; // Flag untuk user yang belum absen
 }
 
 export default function AttendanceManagementPage() {
@@ -106,15 +107,55 @@ export default function AttendanceManagementPage() {
       setActivities(activitiesData);
 
       if (usersResponse.success && usersResponse.data) {
+        // Filter only caang users
+        const caangUsers = usersResponse.data.filter(
+          (user) => user.role === "caang" && !user.deletedAt
+        );
+
         // Map attendances with related data
         const attendancesWithRelations: AttendanceWithRelations[] =
           attendancesData.map((attendance) => ({
             ...attendance,
             user: usersResponse.data?.find((u) => u.id === attendance.userId),
             activity: activitiesData.find((a) => a.id === attendance.activityId),
+            isAbsent: false,
           }));
 
-        setAttendances(attendancesWithRelations);
+        // Add absent users for each activity
+        const allAttendances: AttendanceWithRelations[] = [...attendancesWithRelations];
+        
+        // For each activity, find users without attendance and add them as absent
+        activitiesData.forEach((activity) => {
+          const attendedUserIds = attendancesData
+            .filter((a) => a.activityId === activity.id)
+            .map((a) => a.userId);
+          
+          const absentUsers = caangUsers.filter(
+            (user) => !attendedUserIds.includes(user.id)
+          );
+          
+          // Create virtual attendance records for absent users
+          absentUsers.forEach((user) => {
+            allAttendances.push({
+              id: `absent_${activity.id}_${user.id}`, // Virtual ID
+              activityId: activity.id,
+              userId: user.id,
+              orPeriod: activity.orPeriod,
+              status: AttendanceStatus.ABSENT,
+              checkedInBy: "",
+              method: "manual" as AttendanceMethod,
+              needsApproval: false,
+              points: 0,
+              createdAt: activity.createdAt,
+              updatedAt: activity.updatedAt,
+              user: user,
+              activity: activity,
+              isAbsent: true, // Mark as virtual absent record
+            });
+          });
+        });
+
+        setAttendances(allAttendances);
       }
     } catch (error) {
       console.error("Error loading data:", error);
@@ -162,6 +203,15 @@ export default function AttendanceManagementPage() {
       // OR Period filter
       const matchesOrPeriod =
         filterOrPeriod === "all" || attendance.orPeriod === filterOrPeriod;
+
+      // Hide absent users if:
+      // 1. Filter activity is "all"
+      // 2. Filter OR Period is not "all"
+      if (attendance.isAbsent) {
+        if (filterActivity === "all" || filterOrPeriod !== "all") {
+          return false;
+        }
+      }
 
       return matchesSearch && matchesActivity && matchesStatus && matchesOrPeriod;
     })
@@ -451,7 +501,17 @@ export default function AttendanceManagementPage() {
                             </p>
                           </div>
                         </TableCell>
-                        <TableCell>{getStatusBadge(attendance.status)}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {getStatusBadge(attendance.status)}
+                            {attendance.status === AttendanceStatus.PENDING_APPROVAL &&
+                              attendance.needsApproval && (
+                                <span className="text-xs text-orange-600 font-medium">
+                                  (Belum Disetujui)
+                                </span>
+                              )}
+                          </div>
+                        </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
                             <Button
@@ -476,18 +536,20 @@ export default function AttendanceManagementPage() {
                             >
                               <Edit className="w-4 h-4" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedAttendance(attendance);
-                                setIsDeleteOpen(true);
-                              }}
-                              className="text-red-600 hover:text-red-700"
-                              title="Hapus"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                            {!attendance.isAbsent && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedAttendance(attendance);
+                                  setIsDeleteOpen(true);
+                                }}
+                                className="text-red-600 hover:text-red-700"
+                                title="Hapus"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -546,6 +608,8 @@ export default function AttendanceManagementPage() {
             open={isDetailOpen}
             onOpenChange={setIsDetailOpen}
             attendance={selectedAttendance}
+            onSuccess={loadData}
+            currentUserId={currentUserId}
           />
 
           <AttendanceEditDialog
