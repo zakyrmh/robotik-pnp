@@ -31,8 +31,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Attendance } from "@/types/attendances";
 import { Activity } from "@/types/activities";
 import { User } from "@/types/users";
-import { AttendanceStatus } from "@/types/enum";
-import { updateAttendance, calculatePoints } from "@/lib/firebase/attendances";
+import { AttendanceStatus, AttendanceMethod } from "@/types/enum";
+import { updateAttendance, calculatePoints, createAttendance } from "@/lib/firebase/attendances";
 import { getActivities } from "@/lib/firebase/activities";
 import { getUsers } from "@/lib/firebase/users";
 import { toast } from "sonner";
@@ -42,7 +42,7 @@ import { Loader2 } from "lucide-react";
 interface AttendanceEditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  attendance: Attendance;
+  attendance: Attendance & { isAbsent?: boolean };
   onSuccess: () => void;
   currentUserId: string | null;
 }
@@ -50,6 +50,7 @@ interface AttendanceEditDialogProps {
 interface FormValues {
   activityId: string;
   userId: string;
+  orPeriod: string;
   status: AttendanceStatus;
   adminNotes: string;
   rejectionReason: string;
@@ -72,6 +73,7 @@ export default function AttendanceEditDialog({
     defaultValues: {
       activityId: attendance.activityId,
       userId: attendance.userId,
+      orPeriod: attendance.orPeriod || "",
       status: attendance.status,
       adminNotes: attendance.adminNotes || "",
       rejectionReason: attendance.rejectionReason || "",
@@ -110,6 +112,7 @@ export default function AttendanceEditDialog({
       form.reset({
         activityId: attendance.activityId,
         userId: attendance.userId,
+        orPeriod: attendance.orPeriod || "",
         status: attendance.status,
         adminNotes: attendance.adminNotes || "",
         rejectionReason: attendance.rejectionReason || "",
@@ -132,43 +135,73 @@ export default function AttendanceEditDialog({
 
     setLoading(true);
     try {
-      const updateData: Partial<Attendance> = {
-        activityId: data.activityId,
-        userId: data.userId,
-        status: data.status,
-        adminNotes: data.adminNotes,
-        rejectionReason: data.rejectionReason,
-        points: data.points,
-      };
+      // Check if this is a new attendance (isAbsent flag)
+      if (attendance.isAbsent) {
+        // Create new attendance
+        const newAttendanceData: Omit<Attendance, 'id' | 'createdAt' | 'updatedAt'> = {
+          activityId: data.activityId,
+          userId: data.userId,
+          orPeriod: data.orPeriod,
+          status: data.status,
+          checkedInBy: currentUserId,
+          method: AttendanceMethod.MANUAL,
+          needsApproval: false,
+          points: data.points,
+          adminNotes: data.adminNotes,
+        };
 
-      // If status is EXCUSED or SICK, auto-approve
-      if (
-        data.status === AttendanceStatus.EXCUSED ||
-        data.status === AttendanceStatus.SICK
-      ) {
-        updateData.needsApproval = false;
-        updateData.approvedBy = currentUserId;
-        updateData.approvedAt = Timestamp.now();
-      } else {
-        // Reset approval fields if status changed from EXCUSED/SICK
+        // If status is EXCUSED or SICK, set approval info
         if (
-          attendance.status === AttendanceStatus.EXCUSED ||
-          attendance.status === AttendanceStatus.SICK
+          data.status === AttendanceStatus.EXCUSED ||
+          data.status === AttendanceStatus.SICK
+        ) {
+          newAttendanceData.approvedBy = currentUserId;
+          newAttendanceData.approvedAt = Timestamp.now();
+        }
+
+        await createAttendance(newAttendanceData);
+        toast.success("Absensi berhasil dibuat");
+      } else {
+        // Update existing attendance
+        const updateData: Partial<Attendance> = {
+          activityId: data.activityId,
+          userId: data.userId,
+          orPeriod: data.orPeriod,
+          status: data.status,
+          adminNotes: data.adminNotes,
+          rejectionReason: data.rejectionReason,
+          points: data.points,
+        };
+
+        // If status is EXCUSED or SICK, auto-approve
+        if (
+          data.status === AttendanceStatus.EXCUSED ||
+          data.status === AttendanceStatus.SICK
         ) {
           updateData.needsApproval = false;
-          updateData.approvedBy = undefined;
-          updateData.approvedAt = undefined;
+          updateData.approvedBy = currentUserId;
+          updateData.approvedAt = Timestamp.now();
+        } else {
+          // Reset approval fields if status changed from EXCUSED/SICK
+          if (
+            attendance.status === AttendanceStatus.EXCUSED ||
+            attendance.status === AttendanceStatus.SICK
+          ) {
+            updateData.needsApproval = false;
+            updateData.approvedBy = undefined;
+            updateData.approvedAt = undefined;
+          }
         }
-      }
 
-      await updateAttendance(attendance.id, updateData);
+        await updateAttendance(attendance.id, updateData);
+        toast.success("Absensi berhasil diperbarui");
+      }
       
-      toast.success("Absensi berhasil diperbarui");
       onSuccess();
       onOpenChange(false);
     } catch (error) {
-      console.error("Error updating attendance:", error);
-      toast.error("Gagal memperbarui absensi");
+      console.error("Error saving attendance:", error);
+      toast.error("Gagal menyimpan absensi");
     } finally {
       setLoading(false);
     }
@@ -249,6 +282,7 @@ export default function AttendanceEditDialog({
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
+                      disabled={!attendance.isAbsent}
                     >
                       <FormControl>
                         <SelectTrigger>
@@ -263,6 +297,24 @@ export default function AttendanceEditDialog({
                         ))}
                       </SelectContent>
                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* OR Period Input */}
+              <FormField
+                control={form.control}
+                name="orPeriod"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Periode OR</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Contoh: OR 21"
+                        {...field}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
