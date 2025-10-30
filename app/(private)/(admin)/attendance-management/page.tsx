@@ -367,7 +367,7 @@ export default function AttendanceManagementPage() {
               </p>
             </div>
             <div>
-              <Link href="/attendance-management/scan-qr">
+              <Link href="/activity-management/scan-qr">
                 <Button className="gap-2">
                   <ScanQrCode className="w-5 h-5" />
                   Scan QR
