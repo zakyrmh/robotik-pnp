@@ -7,9 +7,9 @@ import Link from "next/link";
 // Timeline Data
 const timeline = [
   { step: 1, title: "Pendaftaran", date: "1 - 10 September 2025s" },
-  { step: 2, title: "Demo Robot", date: "September 2025" },
-  { step: 3, title: "Wawancara 1", date: "Oktober 2025" },
-  { step: 4, title: "Pelatihan", date: "Oktober 2025" },
+  { step: 2, title: "Demo Robot", date: "28 September 2025" },
+  { step: 3, title: "Wawancara 1", date: "5 Oktober 2025" },
+  { step: 4, title: "Pelatihan", date: "19 Oktober - 21 Desember 2025" },
 ];
 
 // Tim KRI

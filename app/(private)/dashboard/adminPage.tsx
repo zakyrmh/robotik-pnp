@@ -1,55 +1,60 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import OverviewCard from "@/components/Dashboard/admin/OverviewCard";
+import { collection, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebaseConfig";
+import { Registration } from "@/types/registrations";
+import Loading from "@/components/Loading";
+import { Activity } from "@/types/activities";
 
 export default function AdminDashboard() {
-  // const [userAccount, setUser] = useState<User | null>(null);
-  // const [caang, setCaang] = useState<Registration | null>(null);
+  const registrationsRef = collection(db, "registrations");
+  const activitiesRef = collection(db, "activities");
+  const [registrations, setRegistrations] = useState<Registration[] | null>(null);
+  const [activities, setActivities] = useState<Activity[] | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
 
-  // const user = auth.currentUser;
+  useEffect(() => {
+    const unsubscribe = onSnapshot(registrationsRef, (querySnapshot) => {
+      const registrations: Registration[] = [];
+      querySnapshot.forEach((doc) => {
+        registrations.push({
+          id: doc.id,
+          ...doc.data(),
+        } as Registration);
+      });
+      setRegistrations(registrations);
+      setLoading(false);
+    });
+    return unsubscribe;
+  }, [registrationsRef]);
 
-  // useEffect(() => {
-  //   if (!user) return;
+  useEffect(() => {
+    const unsubscribe = onSnapshot(activitiesRef, (querySnapshot) => {
+      const activities: Activity[] = [];
+      querySnapshot.forEach((doc) => {
+        activities.push({
+          id: doc.id,
+          ...doc.data(),
+        } as Activity);
+      });
+      setActivities(activities);
+      setLoading(false);
+    });
+    return unsubscribe;
+  })
 
-  //   const fetchData = async () => {
-  //     try {
-  //       // Ambil data user
-  //       const userRef = doc(db, "users_new", user.uid);
-  //       const userSnap = await getDoc(userRef);
+  if (loading) {
+    return <Loading />;
+  }
 
-  //       if (userSnap.exists()) {
-  //         const userData = userSnap.data() as User;
-  //         setUser(userData);
-
-  //         if (userData.registrationId) {
-  //           const caangRef = doc(db, "registrations", userData.registrationId);
-  //           const caangSnap = await getDoc(caangRef);
-
-  //           if (caangSnap.exists()) {
-  //             setCaang(caangSnap.data() as Registration);
-  //           } else {
-  //             console.warn("Dokumen registration tidak ditemukan!");
-  //           }
-  //         } else {
-  //           console.warn("User belum memiliki registrationId!");
-  //         }
-  //       } else {
-  //         console.warn("Dokumen users tidak ditemukan!");
-  //       }
-  //     } catch (err) {
-  //       console.error("Error fetching registration:", err);
-  //     }
-  //   };
-
-  //   fetchData();
-  // }, [user]);
 
   return (
     <div className="min-h-screen lg:p-8">
       <div className="max-w-7xl mx-auto">
         <div className="space-y-6">
-          <OverviewCard />
+          {registrations && activities && <OverviewCard registrations={registrations} activities={activities}/>}
         </div>
       </div>
     </div>

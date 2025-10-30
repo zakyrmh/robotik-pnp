@@ -19,7 +19,6 @@ import {
   Users,
   CheckCircle,
   XCircle,
-  User,
 } from 'lucide-react';
 
 interface ActivityDetailDialogProps {
@@ -48,11 +47,26 @@ export default function ActivityDetailDialog({
     }
   };
 
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'upcoming':
+        return 'Akan Datang';
+      case 'ongoing':
+        return 'Berlangsung';
+      case 'completed':
+        return 'Selesai';
+      case 'cancelled':
+        return 'Dibatalkan';
+      default:
+        return status;
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-start justify-between">
+          <div className="flex items-center justify-between">
             <div>
               <DialogTitle className="text-2xl mb-2">
                 {activity.title}
@@ -60,7 +74,7 @@ export default function ActivityDetailDialog({
               <DialogDescription>{activity.description}</DialogDescription>
             </div>
             <Badge className={`${getStatusColor(activity.status)} text-white`}>
-              {activity.status}
+              {getStatusLabel(activity.status)}
             </Badge>
           </div>
         </DialogHeader>
@@ -69,23 +83,13 @@ export default function ActivityDetailDialog({
           {/* Basic Info */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-sm text-gray-500 mb-1">Tipe</p>
-              <p className="font-medium">{activity.type}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Fase</p>
-              <p className="font-medium">{activity.phase.replace(/_/g, ' ')}</p>
-            </div>
-            <div>
               <p className="text-sm text-gray-500 mb-1">OR Period</p>
               <p className="font-medium">{activity.orPeriod}</p>
             </div>
-            {activity.category && (
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Kategori</p>
-                <p className="font-medium capitalize">{activity.category}</p>
-              </div>
-            )}
+            <div>
+              <p className="text-sm text-gray-500 mb-1">Slug</p>
+              <p className="font-medium">{activity.slug}</p>
+            </div>
           </div>
 
           {/* Schedule */}
@@ -94,18 +98,34 @@ export default function ActivityDetailDialog({
             <div className="space-y-2">
               <div className="flex items-center gap-3">
                 <Calendar className="w-5 h-5 text-gray-400" />
-                <span>
-                  {format(activity.scheduledDate.toDate(), 'dd MMMM yyyy', {
-                    locale: localeId,
-                  })}
-                </span>
-              </div>
-              {activity.duration && (
-                <div className="flex items-center gap-3">
-                  <Clock className="w-5 h-5 text-gray-400" />
-                  <span>{activity.duration} menit</span>
+                <div>
+                  <p className="text-sm text-gray-500">Mulai</p>
+                  <span>
+                    {format(
+                      activity.startDateTime instanceof Date
+                        ? activity.startDateTime
+                        : activity.startDateTime.toDate(),
+                      'dd MMMM yyyy, HH:mm',
+                      { locale: localeId }
+                    )}
+                  </span>
                 </div>
-              )}
+              </div>
+              <div className="flex items-center gap-3">
+                <Clock className="w-5 h-5 text-gray-400" />
+                <div>
+                  <p className="text-sm text-gray-500">Selesai</p>
+                  <span>
+                    {format(
+                      activity.endDateTime instanceof Date
+                        ? activity.endDateTime
+                        : activity.endDateTime.toDate(),
+                      'dd MMMM yyyy, HH:mm',
+                      { locale: localeId }
+                    )}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -119,7 +139,9 @@ export default function ActivityDetailDialog({
                 ) : (
                   <MapPin className="w-5 h-5 text-gray-400" />
                 )}
-                <span className="capitalize">{activity.mode}</span>
+                <span className="capitalize">
+                  {activity.mode === 'online' ? 'Online' : 'Offline'}
+                </span>
               </div>
               {activity.mode === 'offline' && activity.location && (
                 <p className="text-gray-600 ml-8">{activity.location}</p>
@@ -134,15 +156,6 @@ export default function ActivityDetailDialog({
                   {activity.onlineLink}
                 </a>
               )}
-            </div>
-          </div>
-
-          {/* PIC */}
-          <div className="border-t pt-4">
-            <h3 className="font-semibold mb-3">Person in Charge</h3>
-            <div className="flex items-center gap-3">
-              <User className="w-5 h-5 text-gray-400" />
-              <span>{activity.picName}</span>
             </div>
           </div>
 
@@ -162,12 +175,37 @@ export default function ActivityDetailDialog({
               </div>
               {activity.attendanceEnabled && (
                 <>
-                  <p className="text-gray-600 ml-8">
-                    Metode: {activity.attendanceMethod === 'qr_code' ? 'QR Code' : 'Manual'}
-                  </p>
+                  {activity.attendanceOpenTime && (
+                    <div className="ml-8">
+                      <p className="text-sm text-gray-500">Waktu Buka</p>
+                      <p className="text-gray-600">
+                        {format(
+                          activity.attendanceOpenTime instanceof Date
+                            ? activity.attendanceOpenTime
+                            : activity.attendanceOpenTime.toDate(),
+                          'dd MMMM yyyy, HH:mm',
+                          { locale: localeId }
+                        )}
+                      </p>
+                    </div>
+                  )}
+                  {activity.attendanceCloseTime && (
+                    <div className="ml-8">
+                      <p className="text-sm text-gray-500">Waktu Tutup</p>
+                      <p className="text-gray-600">
+                        {format(
+                          activity.attendanceCloseTime instanceof Date
+                            ? activity.attendanceCloseTime
+                            : activity.attendanceCloseTime.toDate(),
+                          'dd MMMM yyyy, HH:mm',
+                          { locale: localeId }
+                        )}
+                      </p>
+                    </div>
+                  )}
                   {activity.lateTolerance && (
                     <p className="text-gray-600 ml-8">
-                      Toleransi: {activity.lateTolerance} menit
+                      Toleransi Keterlambatan: {activity.lateTolerance} menit
                     </p>
                   )}
                 </>
@@ -176,26 +214,65 @@ export default function ActivityDetailDialog({
           </div>
 
           {/* Participants */}
-          <div className="border-t pt-4">
-            <h3 className="font-semibold mb-3">Peserta</h3>
-            <div className="flex items-center gap-3">
-              <Users className="w-5 h-5 text-gray-400" />
-              <span>
-                {activity.attendedCount || 0} hadir dari{' '}
-                {activity.totalParticipants || 0} peserta
-              </span>
+          {activity.attendanceEnabled && (
+            <div className="border-t pt-4">
+              <h3 className="font-semibold mb-3">Statistik Peserta</h3>
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <Users className="w-5 h-5 text-gray-400" />
+                  <span>
+                    Total Peserta: {activity.totalParticipants || 0}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-5 h-5 text-green-500" />
+                  <span>Hadir: {activity.attendedCount || 0}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <XCircle className="w-5 h-5 text-red-500" />
+                  <span>Tidak Hadir: {activity.absentCount || 0}</span>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Status Flags */}
           <div className="border-t pt-4">
-            <h3 className="font-semibold mb-3">Status</h3>
-            <div className="flex gap-2">
-              {activity.isVisible && (
-                <Badge variant="secondary">Visible</Badge>
-              )}
-              {activity.isActive && <Badge variant="secondary">Active</Badge>}
-              {activity.hasTask && <Badge variant="secondary">Ada Tugas</Badge>}
+            <h3 className="font-semibold mb-3">Status Aktivitas</h3>
+            <div className="flex gap-2 flex-wrap">
+              <Badge variant={activity.isVisible ? 'default' : 'secondary'}>
+                {activity.isVisible ? 'Visible' : 'Hidden'}
+              </Badge>
+              <Badge variant={activity.isActive ? 'default' : 'secondary'}>
+                {activity.isActive ? 'Active' : 'Inactive'}
+              </Badge>
+            </div>
+          </div>
+
+          {/* Metadata */}
+          <div className="border-t pt-4">
+            <h3 className="font-semibold mb-3">Informasi Tambahan</h3>
+            <div className="space-y-2 text-sm text-gray-600">
+              <div>
+                <span className="text-gray-500">Dibuat: </span>
+                {format(
+                  activity.createdAt instanceof Date
+                    ? activity.createdAt
+                    : activity.createdAt.toDate(),
+                  'dd MMMM yyyy, HH:mm',
+                  { locale: localeId }
+                )}
+              </div>
+              <div>
+                <span className="text-gray-500">Terakhir Diperbarui: </span>
+                {format(
+                  activity.updatedAt instanceof Date
+                    ? activity.updatedAt
+                    : activity.updatedAt.toDate(),
+                  'dd MMMM yyyy, HH:mm',
+                  { locale: localeId }
+                )}
+              </div>
             </div>
           </div>
         </div>

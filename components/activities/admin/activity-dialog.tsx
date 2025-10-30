@@ -40,14 +40,8 @@ import {
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { Activity } from "@/types/activities";
-import {
-  ActivityType,
-  OrPhase,
-  ActivityMode,
-  TrainingCategory,
-  AttendanceMethod,
-} from "@/types/enum";
-import { createActivity, updateActivity } from "@/lib/firebase/activities";
+import { ActivityMode } from "@/types/enum";
+import { createActivity, getActivities, updateActivity } from "@/lib/firebase/activities";
 import { Timestamp } from "firebase/firestore";
 import { toast } from "sonner";
 import slugify from "slugify";
@@ -55,21 +49,15 @@ import slugify from "slugify";
 const activitySchema = z.object({
   title: z.string().min(5, "Judul minimal 5 karakter"),
   description: z.string().min(10, "Deskripsi minimal 10 karakter"),
-  type: z.nativeEnum(ActivityType),
-  phase: z.nativeEnum(OrPhase),
   orPeriod: z.string().min(1, "OR Period wajib diisi"),
-  category: z.nativeEnum(TrainingCategory).optional(),
-  sessionNumber: z.number().optional(),
-  totalSessions: z.number().optional(),
-  scheduledDate: z.date(),
-  endDate: z.date().optional(),
-  duration: z.number().min(15, "Durasi minimal 15 menit").optional(),
+  startDateTime: z.date(),
+  endDateTime: z.date(),
   mode: z.nativeEnum(ActivityMode),
   location: z.string().optional(),
   onlineLink: z.string().url("URL tidak valid").optional().or(z.literal("")),
-  picName: z.string().min(1, "PIC wajib diisi"),
   attendanceEnabled: z.boolean(),
-  attendanceMethod: z.nativeEnum(AttendanceMethod),
+  attendanceOpenTime: z.date().optional(),
+  attendanceCloseTime: z.date().optional(),
   lateTolerance: z.number().min(0).optional(),
   isVisible: z.boolean(),
   isActive: z.boolean(),
@@ -101,21 +89,15 @@ export default function ActivityDialog({
     defaultValues: {
       title: "",
       description: "",
-      type: ActivityType.TRAINING,
-      phase: OrPhase.PELATIHAN,
       orPeriod: "OR 21",
-      category: undefined,
-      sessionNumber: undefined,
-      totalSessions: undefined,
-      scheduledDate: new Date(),
-      endDate: undefined,
-      duration: undefined,
+      startDateTime: new Date(),
+      endDateTime: new Date(),
       mode: ActivityMode.OFFLINE,
       location: "",
       onlineLink: "",
-      picName: "",
       attendanceEnabled: true,
-      attendanceMethod: AttendanceMethod.QR_CODE,
+      attendanceOpenTime: undefined,
+      attendanceCloseTime: undefined,
       lateTolerance: 15,
       isVisible: true,
       isActive: true,
@@ -128,21 +110,15 @@ export default function ActivityDialog({
       form.reset({
         title: activity.title,
         description: activity.description,
-        type: activity.type,
-        phase: activity.phase,
         orPeriod: activity.orPeriod,
-        category: activity.category,
-        sessionNumber: activity.sessionNumber,
-        totalSessions: activity.totalSessions,
-        scheduledDate: activity.scheduledDate.toDate(),
-        endDate: activity.endDate?.toDate(),
-        duration: activity.duration,
+        startDateTime: activity.startDateTime.toDate(),
+        endDateTime: activity.endDateTime.toDate(),
         mode: activity.mode,
-        location: activity.location,
-        onlineLink: activity.onlineLink,
-        picName: activity.picName,
+        location: activity.location || "",
+        onlineLink: activity.onlineLink || "",
         attendanceEnabled: activity.attendanceEnabled,
-        attendanceMethod: activity.attendanceMethod,
+        attendanceOpenTime: activity.attendanceOpenTime?.toDate(),
+        attendanceCloseTime: activity.attendanceCloseTime?.toDate(),
         lateTolerance: activity.lateTolerance,
         isVisible: activity.isVisible,
         isActive: activity.isActive,
@@ -163,36 +139,48 @@ export default function ActivityDialog({
     try {
       console.log("Form data:", data);
 
+      let slug = slugify(data.title, {
+        lower: true,
+        strict: true,
+      });
+
+      const activities = await getActivities({ status: "all" });
+      const existingSlugs = activities.map((activity) => activity.slug);
+      const slugExists = existingSlugs.includes(slug);
+
+      if (slugExists) {
+        let counter = 1;
+        let newSlug = slug;
+        while (existingSlugs.includes(newSlug)) {
+          newSlug = `${slug}-${counter}`;
+          counter++;
+        }
+        slug = newSlug;
+      }
+
       // Build base activity data with required fields
       const activityData: Omit<Activity, "id" | "createdAt" | "updatedAt"> = {
         title: data.title,
-        slug: slugify(data.title, { lower: true }),
+        slug: slug,
         description: data.description,
-        type: data.type,
-        phase: data.phase,
         orPeriod: data.orPeriod,
-        scheduledDate: Timestamp.fromDate(data.scheduledDate),
+        startDateTime: Timestamp.fromDate(data.startDateTime),
+        endDateTime: Timestamp.fromDate(data.endDateTime),
         mode: data.mode,
-        picName: data.picName,
-        picId: currentUserId,
         attendanceEnabled: data.attendanceEnabled,
-        attendanceMethod: data.attendanceMethod,
         isVisible: data.isVisible,
         isActive: data.isActive,
         status: data.status,
-        hasTask: false,
-        totalParticipants: 0,
-        attendedCount: 0,
-        absentCount: 0,
         createdBy: currentUserId,
         // Optional fields - only add if they exist
-        ...(data.category && { category: data.category }),
-        ...(data.sessionNumber && { sessionNumber: data.sessionNumber }),
-        ...(data.totalSessions && { totalSessions: data.totalSessions }),
-        ...(data.endDate && { endDate: Timestamp.fromDate(data.endDate) }),
-        ...(data.duration && { duration: data.duration }),
         ...(data.location && { location: data.location }),
         ...(data.onlineLink && { onlineLink: data.onlineLink }),
+        ...(data.attendanceOpenTime && {
+          attendanceOpenTime: Timestamp.fromDate(data.attendanceOpenTime),
+        }),
+        ...(data.attendanceCloseTime && {
+          attendanceCloseTime: Timestamp.fromDate(data.attendanceCloseTime),
+        }),
         ...(data.lateTolerance !== undefined && {
           lateTolerance: data.lateTolerance,
         }),
@@ -224,7 +212,6 @@ export default function ActivityDialog({
     }
   };
 
-  const selectedType = form.watch("type");
   const selectedMode = form.watch("mode");
   const attendanceEnabled = form.watch("attendanceEnabled");
 
@@ -253,7 +240,9 @@ export default function ActivityDialog({
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Judul Aktivitas*</FormLabel>
+                    <FormLabel>
+                      Judul Aktivitas<span className="text-red-500"> *</span>
+                    </FormLabel>
                     <FormControl>
                       <Input
                         placeholder="Pelatihan Sensor Ultrasonik"
@@ -270,7 +259,9 @@ export default function ActivityDialog({
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Deskripsi*</FormLabel>
+                    <FormLabel>
+                      Deskripsi<span className="text-red-500"> *</span>
+                    </FormLabel>
                     <FormControl>
                       <Textarea
                         placeholder="Deskripsi aktivitas..."
@@ -283,70 +274,14 @@ export default function ActivityDialog({
                 )}
               />
 
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="type"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Tipe Aktivitas*</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {Object.values(ActivityType).map((type) => (
-                            <SelectItem key={type} value={type}>
-                              {type}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="phase"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Fase*</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {Object.values(OrPhase).map((phase) => (
-                            <SelectItem key={phase} value={phase}>
-                              {phase.replace(/_/g, " ")}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
               <FormField
                 control={form.control}
                 name="orPeriod"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>OR Period*</FormLabel>
+                    <FormLabel>
+                      OR Period<span className="text-red-500"> *</span>
+                    </FormLabel>
                     <FormControl>
                       <Input placeholder="OR 21" {...field} />
                     </FormControl>
@@ -357,103 +292,6 @@ export default function ActivityDialog({
                   </FormItem>
                 )}
               />
-
-              <FormField
-                control={form.control}
-                name="picName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nama PIC*</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Nama Penanggung Jawab" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              {/* Training Specific Fields */}
-              {selectedType === ActivityType.TRAINING && (
-                <>
-                  <FormField
-                    control={form.control}
-                    name="category"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Kategori Pelatihan</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Pilih kategori" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {Object.values(TrainingCategory).map((cat) => (
-                              <SelectItem key={cat} value={cat}>
-                                {cat.replace(/_/g, " ")}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="sessionNumber"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Sesi Ke-</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              placeholder="1"
-                              value={field.value ?? ""}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                field.onChange(
-                                  val === "" ? undefined : parseInt(val)
-                                );
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="totalSessions"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Total Sesi</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              placeholder="3"
-                              value={field.value ?? ""}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                field.onChange(
-                                  val === "" ? undefined : parseInt(val)
-                                );
-                              }}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                </>
-              )}
             </div>
 
             {/* Schedule */}
@@ -461,13 +299,16 @@ export default function ActivityDialog({
               <h3 className="text-lg font-semibold">Jadwal</h3>
 
               <div className="grid grid-cols-2 gap-4">
-                {/* Input Tanggal */}
+                {/* START DATETIME */}
                 <FormField
                   control={form.control}
-                  name="scheduledDate"
+                  name="startDateTime"
                   render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Tanggal*</FormLabel>
+                    <FormItem className="flex flex-col space-y-2">
+                      <FormLabel>
+                        Mulai
+                        <span className="text-red-500"> *</span>
+                      </FormLabel>
                       <Popover>
                         <PopoverTrigger asChild>
                           <FormControl>
@@ -477,26 +318,47 @@ export default function ActivityDialog({
                             >
                               <CalendarIcon className="mr-2 h-4 w-4" />
                               {field.value
-                                ? format(field.value, "PPP")
-                                : "Pilih tanggal"}
+                                ? format(field.value, "dd MMM yyyy, HH:mm")
+                                : "Pilih tanggal & waktu"}
                             </Button>
                           </FormControl>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
+                        <PopoverContent className="w-auto p-4 space-y-2">
                           <Calendar
                             mode="single"
-                            selected={field.value}
+                            selected={field.value ?? undefined}
                             onSelect={(date) => {
+                              if (!date) return;
                               const current = field.value ?? new Date();
-                              const newDate = new Date(date ?? current);
-                              // pertahankan jam & menit sebelumnya
-                              newDate.setHours(
+                              date.setHours(
                                 current.getHours(),
                                 current.getMinutes()
                               );
-                              field.onChange(newDate);
+                              field.onChange(date);
                             }}
                             initialFocus
+                          />
+                          <input
+                            type="time"
+                            className="border rounded-md p-2 w-full"
+                            value={
+                              field.value
+                                ? `${String(field.value.getHours()).padStart(
+                                    2,
+                                    "0"
+                                  )}:${String(
+                                    field.value.getMinutes()
+                                  ).padStart(2, "0")}`
+                                : ""
+                            }
+                            onChange={(e) => {
+                              const [hours, minutes] = e.target.value
+                                .split(":")
+                                .map(Number);
+                              const newDate = field.value ?? new Date();
+                              newDate.setHours(hours, minutes);
+                              field.onChange(newDate);
+                            }}
                           />
                         </PopoverContent>
                       </Popover>
@@ -505,79 +367,69 @@ export default function ActivityDialog({
                   )}
                 />
 
-                {/* Input Waktu */}
+                {/* END DATETIME */}
                 <FormField
                   control={form.control}
-                  name="scheduledDate"
+                  name="endDateTime"
                   render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Waktu*</FormLabel>
-                      <div className="flex gap-2">
-                        <Input
-                          type="number"
-                          min={0}
-                          max={23}
-                          className="w-20"
-                          value={
-                            field.value ? new Date(field.value).getHours() : ""
-                          }
-                          onChange={(e) => {
-                            const date = field.value
-                              ? new Date(field.value)
-                              : new Date();
-                            date.setHours(Number(e.target.value));
-                            field.onChange(date);
-                          }}
-                          placeholder="Jam"
-                        />
-                        <span className="text-lg mt-1">:</span>
-                        <Input
-                          type="number"
-                          min={0}
-                          max={59}
-                          className="w-20"
-                          value={
-                            field.value
-                              ? new Date(field.value).getMinutes()
-                              : ""
-                          }
-                          onChange={(e) => {
-                            const date = field.value
-                              ? new Date(field.value)
-                              : new Date();
-                            date.setMinutes(Number(e.target.value));
-                            field.onChange(date);
-                          }}
-                          placeholder="Menit"
-                        />
-                      </div>
-                      <FormDescription>Gunakan format 24 jam</FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Durasi */}
-                <FormField
-                  control={form.control}
-                  name="duration"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Durasi (menit)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="120"
-                          value={field.value ?? ""}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            field.onChange(
-                              val === "" ? undefined : parseInt(val)
-                            );
-                          }}
-                        />
-                      </FormControl>
-                      <FormDescription>Minimal 15 menit</FormDescription>
+                    <FormItem className="flex flex-col space-y-2">
+                      <FormLabel>
+                        Selesai
+                        <span className="text-red-500"> *</span>
+                      </FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              className="justify-start text-left font-normal"
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {field.value
+                                ? format(field.value, "dd MMM yyyy, HH:mm")
+                                : "Pilih tanggal & waktu"}
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-4 space-y-2">
+                          <Calendar
+                            mode="single"
+                            selected={field.value ?? undefined}
+                            onSelect={(date) => {
+                              if (!date) return;
+                              const current = field.value ?? new Date();
+                              date.setHours(
+                                current.getHours(),
+                                current.getMinutes()
+                              );
+                              field.onChange(date);
+                            }}
+                            initialFocus
+                          />
+                          <input
+                            type="time"
+                            className="border rounded-md p-2 w-full"
+                            value={
+                              field.value
+                                ? `${String(field.value.getHours()).padStart(
+                                    2,
+                                    "0"
+                                  )}:${String(
+                                    field.value.getMinutes()
+                                  ).padStart(2, "0")}`
+                                : ""
+                            }
+                            onChange={(e) => {
+                              const [hours, minutes] = e.target.value
+                                .split(":")
+                                .map(Number);
+                              const newDate = field.value ?? new Date();
+                              newDate.setHours(hours, minutes);
+                              field.onChange(newDate);
+                            }}
+                          />
+                        </PopoverContent>
+                      </Popover>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -589,65 +441,75 @@ export default function ActivityDialog({
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Mode & Lokasi</h3>
 
-              <FormField
-                control={form.control}
-                name="mode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Mode*</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {Object.values(ActivityMode).map((mode) => (
-                          <SelectItem key={mode} value={mode}>
-                            {mode}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
+              <div className="flex justify-between items-center">
+                <FormField
+                  control={form.control}
+                  name="mode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Mode<span className="text-red-500"> *</span>
+                      </FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {Object.values(ActivityMode).map((mode) => (
+                            <SelectItem key={mode} value={mode}>
+                              {mode}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {selectedMode === "offline" && (
+                  <FormField
+                    control={form.control}
+                    name="location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Lokasi</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Workshop UKM Robotik"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 )}
-              />
 
-              {selectedMode === "offline" && (
-                <FormField
-                  control={form.control}
-                  name="location"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Lokasi</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Workshop UKM Robotik" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-
-              {selectedMode === "online" && (
-                <FormField
-                  control={form.control}
-                  name="onlineLink"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Link Online</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="https://meet.google.com/..."
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
+                {selectedMode === "online" && (
+                  <FormField
+                    control={form.control}
+                    name="onlineLink"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Link Online</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="https://meet.google.com/..."
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+              </div>
             </div>
 
             {/* Attendance */}
@@ -679,30 +541,141 @@ export default function ActivityDialog({
 
               {attendanceEnabled && (
                 <>
-                  <FormField
-                    control={form.control}
-                    name="attendanceMethod"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Metode Absensi*</FormLabel>
-                        <Select
-                          onValueChange={field.onChange}
-                          value={field.value}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="qr_code">QR Code</SelectItem>
-                            <SelectItem value="manual">Manual</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* ATTENDANCE OPEN TIME */}
+                    <FormField
+                      control={form.control}
+                      name="attendanceOpenTime"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col space-y-2">
+                          <FormLabel>Buka Absensi</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant="outline"
+                                  className="justify-start text-left font-normal"
+                                >
+                                  <CalendarIcon className="mr-2 h-4 w-4" />
+                                  {field.value
+                                    ? format(field.value, "dd MMM yyyy, HH:mm")
+                                    : "Pilih tanggal & waktu"}
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-4 space-y-2">
+                              <Calendar
+                                mode="single"
+                                selected={field.value ?? undefined}
+                                onSelect={(date) => {
+                                  if (!date) return;
+                                  const current = field.value ?? new Date();
+                                  date.setHours(
+                                    current.getHours(),
+                                    current.getMinutes()
+                                  );
+                                  field.onChange(date);
+                                }}
+                                initialFocus
+                              />
+                              <input
+                                type="time"
+                                className="border rounded-md p-2 w-full"
+                                value={
+                                  field.value
+                                    ? `${String(
+                                        field.value.getHours()
+                                      ).padStart(2, "0")}:${String(
+                                        field.value.getMinutes()
+                                      ).padStart(2, "0")}`
+                                    : ""
+                                }
+                                onChange={(e) => {
+                                  const [hours, minutes] = e.target.value
+                                    .split(":")
+                                    .map(Number);
+                                  const newDate = field.value ?? new Date();
+                                  newDate.setHours(hours, minutes);
+                                  field.onChange(newDate);
+                                }}
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormDescription>
+                            Waktu mulai bisa absen
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* ATTENDANCE CLOSE TIME */}
+                    <FormField
+                      control={form.control}
+                      name="attendanceCloseTime"
+                      render={({ field }) => (
+                        <FormItem className="flex flex-col space-y-2">
+                          <FormLabel>Tutup Absensi</FormLabel>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant="outline"
+                                  className="justify-start text-left font-normal"
+                                >
+                                  <CalendarIcon className="mr-2 h-4 w-4" />
+                                  {field.value
+                                    ? format(field.value, "dd MMM yyyy, HH:mm")
+                                    : "Pilih tanggal & waktu"}
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-4 space-y-2">
+                              <Calendar
+                                mode="single"
+                                selected={field.value ?? undefined}
+                                onSelect={(date) => {
+                                  if (!date) return;
+                                  const current = field.value ?? new Date();
+                                  date.setHours(
+                                    current.getHours(),
+                                    current.getMinutes()
+                                  );
+                                  field.onChange(date);
+                                }}
+                                initialFocus
+                              />
+                              <input
+                                type="time"
+                                className="border rounded-md p-2 w-full"
+                                value={
+                                  field.value
+                                    ? `${String(
+                                        field.value.getHours()
+                                      ).padStart(2, "0")}:${String(
+                                        field.value.getMinutes()
+                                      ).padStart(2, "0")}`
+                                    : ""
+                                }
+                                onChange={(e) => {
+                                  const [hours, minutes] = e.target.value
+                                    .split(":")
+                                    .map(Number);
+                                  const newDate = field.value ?? new Date();
+                                  newDate.setHours(hours, minutes);
+                                  field.onChange(newDate);
+                                }}
+                              />
+                            </PopoverContent>
+                          </Popover>
+                          <FormDescription>
+                            Waktu absensi ditutup
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
                   <FormField
                     control={form.control}
@@ -743,7 +716,9 @@ export default function ActivityDialog({
                 name="status"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Status*</FormLabel>
+                    <FormLabel>
+                      Status<span className="text-red-500"> *</span>
+                    </FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>

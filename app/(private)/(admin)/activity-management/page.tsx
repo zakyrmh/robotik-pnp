@@ -40,7 +40,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { getActivities } from "@/lib/firebase/activities";
 import { Activity } from "@/types/activities";
-import { ActivityType, OrPhase } from "@/types/enum";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import ActivityDialog from "@/components/activities/admin/activity-dialog";
@@ -53,7 +52,6 @@ export default function AdminActivitiesPage() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterPhase, setFilterPhase] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
   // Dialog states
@@ -69,8 +67,7 @@ export default function AdminActivitiesPage() {
   const loadActivities = useCallback(async () => {
     setLoading(true);
     try {
-      const filters: { phase?: string; status?: string } = {};
-      if (filterPhase !== "all") filters.phase = filterPhase;
+      const filters: { status?: string } = {};
       if (filterStatus !== "all") filters.status = filterStatus;
 
       const data = await getActivities(filters);
@@ -80,7 +77,7 @@ export default function AdminActivitiesPage() {
     } finally {
       setLoading(false);
     }
-  }, [filterPhase, filterStatus]);
+  }, [filterStatus]);
 
   useEffect(() => {
     loadActivities();
@@ -134,23 +131,6 @@ export default function AdminActivitiesPage() {
     }
   };
 
-  const getTypeIcon = (type: ActivityType) => {
-    switch (type) {
-      case ActivityType.TRAINING:
-        return "📚";
-      case ActivityType.INTERVIEW:
-        return "💼";
-      case ActivityType.ORIENTATION:
-        return "🎯";
-      case ActivityType.EVENT:
-        return "🎉";
-      case ActivityType.PROJECT:
-        return "🤖";
-      default:
-        return "📅";
-    }
-  };
-
   return (
     <div className="min-h-screen p-8">
       <div className="max-w-7xl mx-auto">
@@ -185,21 +165,6 @@ export default function AdminActivitiesPage() {
               className="pl-10"
             />
           </div>
-
-          {/* Filter Phase */}
-          <Select value={filterPhase} onValueChange={setFilterPhase}>
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="Semua Fase" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Semua Fase</SelectItem>
-              {Object.values(OrPhase).map((phase) => (
-                <SelectItem key={phase} value={phase}>
-                  {phase.replace(/_/g, " ")}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
 
           {/* Filter Status */}
           <Select value={filterStatus} onValueChange={setFilterStatus}>
@@ -252,13 +217,13 @@ export default function AdminActivitiesPage() {
                   transition={{ delay: index * 0.05 }}
                   layout
                 >
-                  <Card className="hover:shadow-lg transition-shadow cursor-pointer group">
+                  <Card
+                    className="hover:shadow-lg transition-shadow group"
+                  >
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3 flex-1">
-                          <span className="text-3xl">
-                            {getTypeIcon(activity.type)}
-                          </span>
+                          <span className="text-3xl">📅</span>
                           <div className="flex-1">
                             <CardTitle className="text-lg mb-1 group-hover:text-blue-600 transition-colors">
                               {activity.title}
@@ -339,21 +304,34 @@ export default function AdminActivitiesPage() {
                         <div className="flex items-center gap-2 text-gray-600">
                           <Calendar className="w-4 h-4" />
                           <span>
-                            {format(
-                              activity.scheduledDate.toDate(),
-                              "dd MMMM yyyy",
-                              { locale: localeId }
-                            )}
+                            {activity.startDateTime
+                              ? format(
+                                  activity.startDateTime instanceof Date
+                                    ? activity.startDateTime
+                                    : activity.startDateTime.toDate(),
+                                  "dd MMMM yyyy, HH:mm",
+                                  { locale: localeId }
+                                )
+                              : "-"}
                           </span>
                         </div>
 
-                        {/* Duration */}
-                        {activity.duration && (
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <Clock className="w-4 h-4" />
-                            <span>{activity.duration} menit</span>
-                          </div>
-                        )}
+                        {/* End Time */}
+                        <div className="flex items-center gap-2 text-gray-600">
+                          <Clock className="w-4 h-4" />
+                          <span>
+                            Sampai{" "}
+                            {activity.endDateTime
+                              ? format(
+                                  activity.endDateTime instanceof Date
+                                    ? activity.endDateTime
+                                    : activity.endDateTime.toDate(),
+                                  "HH:mm",
+                                  { locale: localeId }
+                                )
+                              : "-"}
+                          </span>
+                        </div>
 
                         {/* Location/Link */}
                         {activity.mode === "offline" && activity.location && (
@@ -365,22 +343,28 @@ export default function AdminActivitiesPage() {
                           </div>
                         )}
 
-                        {/* Participants */}
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <Users className="w-4 h-4" />
-                          <span>
-                            {activity.attendedCount || 0} /{" "}
-                            {activity.totalParticipants || 0} peserta
-                          </span>
-                        </div>
-
-                        {/* Training Session */}
-                        {activity.sessionNumber && activity.totalSessions && (
-                          <Badge variant="secondary" className="mt-2">
-                            Sesi {activity.sessionNumber} dari{" "}
-                            {activity.totalSessions}
-                          </Badge>
+                        {activity.mode === "online" && activity.onlineLink && (
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <Video className="w-4 h-4" />
+                            <span className="truncate">Online Meeting</span>
+                          </div>
                         )}
+
+                        {/* Participants */}
+                        {activity.attendanceEnabled && (
+                          <div className="flex items-center gap-2 text-gray-600">
+                            <Users className="w-4 h-4" />
+                            <span>
+                              {activity.attendedCount || 0} /{" "}
+                              {activity.totalParticipants || 0} peserta
+                            </span>
+                          </div>
+                        )}
+
+                        {/* OR Period Badge */}
+                        <Badge variant="secondary" className="mt-2">
+                          {activity.orPeriod}
+                        </Badge>
                       </div>
                     </CardContent>
                   </Card>

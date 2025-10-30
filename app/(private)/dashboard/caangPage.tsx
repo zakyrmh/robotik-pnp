@@ -15,19 +15,21 @@ import NearbyActivities from "@/components/Dashboard/caang/NearbyActivities";
 import QuickActions from "@/components/Dashboard/caang/QuickActions";
 import RoadmapOR from "@/components/Dashboard/caang/RoadmapOR";
 import Notification from "@/components/Dashboard/caang/Notification";
+import Loading from "@/components/Loading";
 
 export default function CaangDashboard() {
   const [userAccount, setUser] = useState<User | null>(null);
   const [caang, setCaang] = useState<Registration | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const user = auth.currentUser;
 
   useEffect(() => {
+    setLoading(true);
     if (!user) return;
 
     const fetchData = async () => {
       try {
-        // Ambil data user dari users_new menggunakan user.uid
         const userRef = doc(db, "users_new", user.uid);
         const userSnap = await getDoc(userRef);
 
@@ -38,7 +40,6 @@ export default function CaangDashboard() {
           console.warn("Dokumen users tidak ditemukan!");
         }
 
-        // Ambil data registration menggunakan user.uid sebagai document ID
         const caangRef = doc(db, "registrations", user.uid);
         const caangSnap = await getDoc(caangRef);
 
@@ -47,14 +48,20 @@ export default function CaangDashboard() {
         } else {
           console.warn("Dokumen registration tidak ditemukan untuk user ini!");
         }
+
+        setLoading(false);
       } catch (err) {
         console.error("Error fetching data:", err);
       }
     };
-
-
     fetchData();
   }, [user]);
+
+  if (loading) {
+    return (
+      <Loading />
+    );
+  }
 
   if (!caang?.status.includes("verified")) {
     return (
