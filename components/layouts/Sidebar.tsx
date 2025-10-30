@@ -23,9 +23,9 @@ const caangMenu = [
 
 const adminMenu = [
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/volunteer-mrc-management", label: "Volunteer MRC IX" },
   { href: "/caang-management", label: "Manajemen Caang" },
   { href: "/activity-management", label: "Manajemen Aktivitas" },
+  { href: "/attendance-management", label: "Manajemen Absensi" },
   { href: "/task-grade-management", label: "Manajemen Tugas & Nilai" },
   { href: "/group-management", label: "Manajemen Kelompok" },
 ];
