@@ -12,6 +12,12 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
+  Users,
+  CheckCircle,
+  Clock,
+  FileText,
+  Heart,
+  XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -241,6 +247,28 @@ export default function AttendanceManagementPage() {
       return sortOrder === "asc" ? comparison : -comparison;
     });
 
+  // Calculate statistics (excluding PENDING_APPROVAL)
+  const statistics = {
+    total: filteredAndSortedAttendances.filter(
+      (a) => a.status !== AttendanceStatus.PENDING_APPROVAL
+    ).length,
+    present: filteredAndSortedAttendances.filter(
+      (a) => a.status === AttendanceStatus.PRESENT
+    ).length,
+    late: filteredAndSortedAttendances.filter(
+      (a) => a.status === AttendanceStatus.LATE
+    ).length,
+    excused: filteredAndSortedAttendances.filter(
+      (a) => a.status === AttendanceStatus.EXCUSED
+    ).length,
+    sick: filteredAndSortedAttendances.filter(
+      (a) => a.status === AttendanceStatus.SICK
+    ).length,
+    absent: filteredAndSortedAttendances.filter(
+      (a) => a.status === AttendanceStatus.ABSENT
+    ).length,
+  };
+
   // Pagination
   const totalPages = Math.ceil(
     filteredAndSortedAttendances.length / itemsPerPage
@@ -399,6 +427,116 @@ export default function AttendanceManagementPage() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Statistics */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6"
+        >
+          {/* Total */}
+          <Card className="border-gray-300 bg-gradient-to-br from-gray-50 to-gray-100">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-gray-600 mb-1">Total</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {statistics.total}
+                  </p>
+                </div>
+                <div className="p-3 bg-gray-200 rounded-full">
+                  <Users className="w-6 h-6 text-gray-700" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Hadir */}
+          <Card className="border-green-300 bg-gradient-to-br from-green-50 to-green-100">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-green-700 mb-1">Hadir</p>
+                  <p className="text-2xl font-bold text-green-900">
+                    {statistics.present}
+                  </p>
+                </div>
+                <div className="p-3 bg-green-200 rounded-full">
+                  <CheckCircle className="w-6 h-6 text-green-700" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Terlambat */}
+          <Card className="border-yellow-300 bg-gradient-to-br from-yellow-50 to-yellow-100">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-yellow-700 mb-1">Terlambat</p>
+                  <p className="text-2xl font-bold text-yellow-900">
+                    {statistics.late}
+                  </p>
+                </div>
+                <div className="p-3 bg-yellow-200 rounded-full">
+                  <Clock className="w-6 h-6 text-yellow-700" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Izin */}
+          <Card className="border-blue-300 bg-gradient-to-br from-blue-50 to-blue-100">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-blue-700 mb-1">Izin</p>
+                  <p className="text-2xl font-bold text-blue-900">
+                    {statistics.excused}
+                  </p>
+                </div>
+                <div className="p-3 bg-blue-200 rounded-full">
+                  <FileText className="w-6 h-6 text-blue-700" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Sakit */}
+          <Card className="border-purple-300 bg-gradient-to-br from-purple-50 to-purple-100">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-purple-700 mb-1">Sakit</p>
+                  <p className="text-2xl font-bold text-purple-900">
+                    {statistics.sick}
+                  </p>
+                </div>
+                <div className="p-3 bg-purple-200 rounded-full">
+                  <Heart className="w-6 h-6 text-purple-700" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Alfa */}
+          <Card className="border-red-300 bg-gradient-to-br from-red-50 to-red-100">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-red-700 mb-1">Alfa</p>
+                  <p className="text-2xl font-bold text-red-900">
+                    {statistics.absent}
+                  </p>
+                </div>
+                <div className="p-3 bg-red-200 rounded-full">
+                  <XCircle className="w-6 h-6 text-red-700" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
 
         {/* Table */}
         <Card>
