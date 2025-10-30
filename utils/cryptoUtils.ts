@@ -120,3 +120,24 @@ export async function validateQRCodeData(
     expiryTimestamp: parseInt(expiryTimestamp),
   };
 }
+
+/**
+ * Calculate attendance points based on status
+ */
+export function calculatePoints(status: string): number {
+  switch (status) {
+    case "present":
+      return 100;
+    case "late":
+      return 75;
+    case "excused":
+      return 50;
+    case "sick":
+      return 50;
+    case "absent":
+    case "pending_approval":
+      return 0;
+    default:
+      return 0;
+  }
+}

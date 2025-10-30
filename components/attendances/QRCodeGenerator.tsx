@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Activity } from '@/types/activities';
-import { QRCode as QRCodeType } from '@/types/qr_codes';
 import { Attendance } from '@/types/attendances';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,13 +20,11 @@ import {
 import { motion } from 'framer-motion';
 import { 
   doc, 
-  setDoc, 
   getDoc, 
   onSnapshot,
-  Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebaseConfig';
-import { generateQRCodeData, generateRandomString } from '@/utils/cryptoUtils';
+import { generateSHA256Hash } from '@/utils/cryptoUtils';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 
@@ -36,8 +33,13 @@ interface QRCodeGeneratorProps {
   userId: string;
 }
 
+interface QRData {
+  encryptedData: string;
+  expiresAt: Date;
+}
+
 export default function QRCodeGenerator({ activity, userId }: QRCodeGeneratorProps) {
-  const [qrCodeData, setQrCodeData] = useState<QRCodeType | null>(null);
+  const [qrCodeData, setQrCodeData] = useState<QRData | null>(null);
   const [attendance, setAttendance] = useState<Attendance | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -99,7 +101,7 @@ export default function QRCodeGenerator({ activity, userId }: QRCodeGeneratorPro
     return () => clearInterval(interval);
   }, [activity]);
 
-  // Load existing QR Code or Attendance
+  // Load existing Attendance and check localStorage for QR
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -107,7 +109,7 @@ export default function QRCodeGenerator({ activity, userId }: QRCodeGeneratorPro
         
         // Check attendance first
         const attendanceId = `${activity.id}_${userId}`;
-        const attendanceDoc = await getDoc(doc(db, 'attendance_new', attendanceId));
+        const attendanceDoc = await getDoc(doc(db, 'attendances', attendanceId));
         
         if (attendanceDoc.exists()) {
           setAttendance({ id: attendanceDoc.id, ...attendanceDoc.data() } as Attendance);
@@ -116,19 +118,21 @@ export default function QRCodeGenerator({ activity, userId }: QRCodeGeneratorPro
         }
         
         // Check active QR Code from localStorage
-        const storedQRId = localStorage.getItem(`qr_${activity.id}_${userId}`);
-        if (storedQRId) {
-          const qrDoc = await getDoc(doc(db, 'qr_codes', storedQRId));
-          if (qrDoc.exists()) {
-            const qrData = { id: qrDoc.id, ...qrDoc.data() } as QRCodeType;
+        const storedQR = localStorage.getItem(`qr_${activity.id}_${userId}`);
+        if (storedQR) {
+          try {
+            const qrData = JSON.parse(storedQR);
             const now = new Date();
-            const expiresAt = qrData.expiresAt.toDate();
+            const expiresAt = new Date(qrData.expiresAt);
             
-            if (now < expiresAt && !qrData.isUsed) {
+            if (now < expiresAt) {
               setQrCodeData(qrData);
             } else {
               localStorage.removeItem(`qr_${activity.id}_${userId}`);
             }
+          } catch (err) {
+            console.error('Error parsing QR data:', err);
+            localStorage.removeItem(`qr_${activity.id}_${userId}`);
           }
         }
         
@@ -147,7 +151,7 @@ export default function QRCodeGenerator({ activity, userId }: QRCodeGeneratorPro
   useEffect(() => {
     const attendanceId = `${activity.id}_${userId}`;
     const unsubscribe = onSnapshot(
-      doc(db, 'attendance_new', attendanceId),
+      doc(db, 'attendances', attendanceId),
       (doc) => {
         if (doc.exists()) {
           setAttendance({ id: doc.id, ...doc.data() } as Attendance);
@@ -167,7 +171,7 @@ export default function QRCodeGenerator({ activity, userId }: QRCodeGeneratorPro
 
     const calculateCountdown = () => {
       const now = new Date();
-      const expiresAt = qrCodeData.expiresAt.toDate();
+      const expiresAt = qrCodeData.expiresAt;
       const diff = Math.floor((expiresAt.getTime() - now.getTime()) / 1000);
       
       if (diff <= 0) {
@@ -184,8 +188,8 @@ export default function QRCodeGenerator({ activity, userId }: QRCodeGeneratorPro
     return () => clearInterval(interval);
   }, [qrCodeData, activity.id, userId]);
 
-  // Generate QR Code
-  const generateQRCode = async (retryCount = 0) => {
+  // Generate QR Code (without database)
+  const generateQRCode = async () => {
     if (!isAttendanceOpen()) {
       setError('Waktu absensi belum dibuka atau sudah ditutup');
       return;
@@ -195,48 +199,33 @@ export default function QRCodeGenerator({ activity, userId }: QRCodeGeneratorPro
       setGenerating(true);
       setError(null);
 
-      const qrId = generateRandomString(20);
       const now = new Date();
       const expiresAt = new Date(now.getTime() + 5 * 60 * 1000); // 5 minutes
       const expiryTimestamp = expiresAt.getTime();
 
-      // Generate encrypted data and hash
-      const { encryptedData, hash } = await generateQRCodeData(
-        userId,
-        activity.id,
-        expiryTimestamp
-      );
+      // Create QR data: userId_activityId_timestamp
+      const rawData = `${userId}_${activity.id}_${expiryTimestamp}`;
+      
+      // Generate hash for security
+      const hash = await generateSHA256Hash(rawData);
+      
+      // Encrypt data: combine rawData with hash
+      const encryptedData = btoa(`${rawData}_${hash}`); // Base64 encode
 
-      const newQRCode: QRCodeType = {
-        id: qrId,
-        userId,
-        activityId: activity.id,
-        hash,
-        data: encryptedData,
-        expiresAt: Timestamp.fromDate(expiresAt),
-        isUsed: false,
-        createdAt: Timestamp.now()
+      const newQRData: QRData = {
+        encryptedData,
+        expiresAt,
       };
 
-      // Save to Firestore with retry
-      await setDoc(doc(db, 'qr_codes', qrId), newQRCode);
+      // Save to localStorage only
+      localStorage.setItem(`qr_${activity.id}_${userId}`, JSON.stringify(newQRData));
 
-      // Save to localStorage
-      localStorage.setItem(`qr_${activity.id}_${userId}`, qrId);
-
-      setQrCodeData(newQRCode);
+      setQrCodeData(newQRData);
       setGenerating(false);
     } catch (err) {
       console.error('Error generating QR Code:', err);
-      
-      // Retry logic (max 3 retries)
-      if (retryCount < 3) {
-        console.log(`Retrying... Attempt ${retryCount + 1}`);
-        setTimeout(() => generateQRCode(retryCount + 1), 1000);
-      } else {
-        setError('Gagal membuat QR Code. Silakan coba lagi.');
-        setGenerating(false);
-      }
+      setError('Gagal membuat QR Code. Silakan coba lagi.');
+      setGenerating(false);
     }
   };
 
@@ -400,7 +389,7 @@ export default function QRCodeGenerator({ activity, userId }: QRCodeGeneratorPro
             {/* QR Code Display */}
             <div className="flex justify-center p-6 bg-white rounded-lg">
               <QRCode
-                value={qrCodeData.data}
+                value={qrCodeData.encryptedData}
                 size={256}
                 level="H"
               />
