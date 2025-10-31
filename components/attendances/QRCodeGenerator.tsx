@@ -15,7 +15,6 @@ import {
   AlertCircle,
   Loader2,
   RefreshCw,
-  MapPin
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { 
@@ -45,25 +44,7 @@ export default function QRCodeGenerator({ activity, userId }: QRCodeGeneratorPro
   const [generating, setGenerating] = useState(false);
   const [countdown, setCountdown] = useState<number>(0);
   const [windowCountdown, setWindowCountdown] = useState<{ type: 'open' | 'close', seconds: number } | null>(null);
-  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  // Get location
-  useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLocation({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
-          });
-        },
-        (error) => {
-          console.warn('Location permission denied:', error);
-        }
-      );
-    }
-  }, []);
 
   // Check if attendance window is open
   const isAttendanceOpen = useCallback(() => {
@@ -301,12 +282,6 @@ export default function QRCodeGenerator({ activity, userId }: QRCodeGeneratorPro
                 </p>
               </div>
             </div>
-            {location && (
-              <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                <MapPin className="h-4 w-4 mt-0.5" />
-                <span>Lokasi: {location.latitude.toFixed(6)}, {location.longitude.toFixed(6)}</span>
-              </div>
-            )}
           </CardContent>
         </Card>
       </motion.div>

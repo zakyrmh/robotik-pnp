@@ -119,7 +119,7 @@ export default function ActivityDetailPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-5xl">
-      <Link href="/activities">
+      <Link href="/dashboard">
         <Button variant="ghost" className="mb-6">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Kembali

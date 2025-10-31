@@ -8,6 +8,7 @@ import { Activity } from "@/types/activities";
 import { Timestamp } from "firebase/firestore";
 import { isSameDay, toJSDate } from "@/utils/helper";
 import { format } from "date-fns";
+import Link from "next/link";
 
 export default function NearbyActivities() {
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -126,7 +127,7 @@ export default function NearbyActivities() {
           const isToday = schedDate !== null && isSameDay(schedDate, today);
           const isCompleted = activity.status === "completed";
           const isOngoing = activity.status === "ongoing";
-          
+
           let cardStyle =
             "bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5 border-l-4 transition-colors";
           if (isToday) {
@@ -189,7 +190,7 @@ export default function NearbyActivities() {
                     >
                       <p className="flex items-center">
                         <Clock className="mr-2 h-4 w-4" />
-                        {format(activity.startDateTime.toDate(), "hh:mm")} {" "}
+                        {format(activity.startDateTime.toDate(), "hh:mm")}{" "}
                         <span>WIB</span>
                       </p>
                       {activity.location && (
@@ -204,10 +205,13 @@ export default function NearbyActivities() {
 
                 {/* Tombol Absen hanya muncul jika attendanceEnabled dan status ongoing */}
                 {activity.attendanceEnabled && isOngoing && (
-                  <button className="flex items-center px-5 py-3 bg-white text-red-600 rounded-xl font-bold hover:bg-red-50 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-gray-700 transition whitespace-nowrap">
+                  <Link
+                    href={`/activity/${activity.slug}`}
+                    className="flex items-center px-5 py-3 bg-white text-red-600 rounded-xl font-bold hover:bg-red-50 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-gray-700 transition whitespace-nowrap"
+                  >
                     <QrCode className="mr-2 h-5 w-5" />
                     Absen
-                  </button>
+                  </Link>
                 )}
 
                 {/* Label hari tersisa (tampil untuk semua kecuali hari ini) */}
