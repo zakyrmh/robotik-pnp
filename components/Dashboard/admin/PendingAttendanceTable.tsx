@@ -32,7 +32,7 @@ interface PendingAttendanceTableProps {
 
 interface AttendanceWithDetails extends Attendance {
   user?: User;
-  activity?: Activity;
+  activity?: Activity | null;
 }
 
 export default function PendingAttendanceTable({
@@ -45,16 +45,22 @@ export default function PendingAttendanceTable({
   const [loading, setLoading] = useState(false);
   const currentUser = auth.currentUser;
 
-  // Get pending approvals
-  const pendingAttendances = attendances.filter(
-    (attendance) => attendance.status === AttendanceStatus.PENDING_APPROVAL
-  );
-
   useEffect(() => {
     const fetchDetails = async () => {
+      // Get pending approvals
+      const pending = attendances.filter(
+        (attendance) => attendance.status === AttendanceStatus.PENDING_APPROVAL
+      );
+
+      if (pending.length === 0) {
+        setAttendancesWithDetails([]);
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       const attendancesWithData = await Promise.all(
-        pendingAttendances.map(async (attendance) => {
+        pending.map(async (attendance) => {
           const userResult = await getUserById(attendance.userId);
           const activity = await getActivityById(attendance.activityId);
 
@@ -70,9 +76,7 @@ export default function PendingAttendanceTable({
       setLoading(false);
     };
 
-    if (pendingAttendances.length > 0) {
-      fetchDetails();
-    }
+    fetchDetails();
   }, [attendances]);
 
   const handleApprove = async (attendanceId: string, userNotes?: string) => {
@@ -134,7 +138,7 @@ export default function PendingAttendanceTable({
           Attendance Perlu Approval
         </CardTitle>
         <p className="text-sm text-gray-500 dark:text-gray-400">
-          {pendingAttendances.length} izin/sakit menunggu approval
+          {attendancesWithDetails.length} izin/sakit menunggu approval
         </p>
       </CardHeader>
       <CardContent>
