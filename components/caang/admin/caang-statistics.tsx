@@ -1,14 +1,7 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  Legend,
-  Tooltip,
-} from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { Users, UserCheck } from "lucide-react";
 import { User } from "@/types/users";
 import { Registration } from "@/types/registrations";
@@ -86,7 +79,13 @@ export default function CaangStatistics({
     value,
   }));
 
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({
+    active,
+    payload,
+  }: {
+    active?: boolean;
+    payload?: Array<{ name: string; value: number }>;
+  }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-background border border-border rounded-lg shadow-lg p-3">
@@ -101,6 +100,16 @@ export default function CaangStatistics({
       );
     }
     return null;
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const renderPercentLabel = (props: any) => {
+    return `${(props.percent * 100).toFixed(0)}%`;
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const renderNamePercentLabel = (props: any) => {
+    return `${props.name}: ${(props.percent * 100).toFixed(0)}%`;
   };
 
   return (
@@ -155,9 +164,7 @@ export default function CaangStatistics({
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) =>
-                    `${(percent * 100).toFixed(0)}%`
-                  }
+                  label={renderPercentLabel}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
@@ -188,9 +195,7 @@ export default function CaangStatistics({
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) =>
-                    `${(percent * 100).toFixed(0)}%`
-                  }
+                  label={renderPercentLabel}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
@@ -221,9 +226,7 @@ export default function CaangStatistics({
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) =>
-                    `${name}: ${(percent * 100).toFixed(0)}%`
-                  }
+                  label={renderNamePercentLabel}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
