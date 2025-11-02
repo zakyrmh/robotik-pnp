@@ -14,7 +14,6 @@ export default function NearbyActivities() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // 🔥 Ambil data dari Firestore
   useEffect(() => {
     const fetchActivities = async () => {
       try {
