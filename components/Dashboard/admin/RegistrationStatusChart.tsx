@@ -33,6 +33,11 @@ const STATUS_LABELS: Record<string, string> = {
   draft: "Draft",
 };
 
+interface CustomLabelProps {
+  name: string;
+  percent: number;
+}
+
 export default function RegistrationStatusChart({
   registrations,
 }: RegistrationStatusChartProps) {
@@ -73,9 +78,10 @@ export default function RegistrationStatusChart({
               cx="50%"
               cy="50%"
               labelLine={false}
-              label={({ name, percent }) =>
-                `${name}: ${(percent * 100).toFixed(0)}%`
-              }
+              label={(props) => {
+                const { name, percent } = props as unknown as CustomLabelProps;
+                return `${name}: ${(percent * 100).toFixed(0)}%`;
+              }}
               outerRadius={100}
               fill="#8884d8"
               dataKey="value"
@@ -102,10 +108,7 @@ export default function RegistrationStatusChart({
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 {item.name}
               </p>
-              <p
-                className="text-lg font-bold"
-                style={{ color: item.color }}
-              >
+              <p className="text-lg font-bold" style={{ color: item.color }}>
                 {item.value}
               </p>
             </div>
