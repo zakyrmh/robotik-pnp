@@ -67,6 +67,7 @@ import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
+import { ImageCropDialog } from "@/components/ImageCropDialog";
 
 interface ProfileFormData {
   fullName: string;
@@ -109,6 +110,16 @@ export default function AccountSettingsPage() {
   const [ktmFile, setKtmFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>("");
   const [ktmPreview, setKtmPreview] = useState<string>("");
+
+  // Crop dialog states
+  const [showCropDialog, setShowCropDialog] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState<string>("");
+
+  // Upload progress states
+  const [photoUploadProgress, setPhotoUploadProgress] = useState<number>(0);
+  const [ktmUploadProgress, setKtmUploadProgress] = useState<number>(0);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [isUploadingKtm, setIsUploadingKtm] = useState(false);
 
   // Modal states
   const [showEmailModal, setShowEmailModal] = useState(false);
@@ -235,22 +246,47 @@ export default function AccountSettingsPage() {
       // Validate file size (max 2MB)
       if (file.size > 2 * 1024 * 1024) {
         toast.error("Ukuran file maksimal 2MB");
+        e.target.value = "";
         return;
       }
 
       // Validate file type
       if (!file.type.startsWith("image/")) {
         toast.error("File harus berupa gambar");
+        e.target.value = "";
         return;
       }
 
-      setPhotoFile(file);
+      // Show crop dialog
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPhotoPreview(reader.result as string);
+        setImageToCrop(reader.result as string);
+        setShowCropDialog(true);
       };
       reader.readAsDataURL(file);
     }
+    e.target.value = "";
+  };
+
+  // Handle crop complete
+  const handleCropComplete = (croppedBlob: Blob) => {
+    // Convert blob to file
+    const croppedFile = new File([croppedBlob], "profile-photo.jpg", {
+      type: "image/jpeg",
+    });
+
+    // Validate file size after crop (max 2MB)
+    if (croppedFile.size > 2 * 1024 * 1024) {
+      toast.error("Ukuran file setelah crop masih terlalu besar. Coba zoom out lebih banyak.");
+      return;
+    }
+
+    setPhotoFile(croppedFile);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setPhotoPreview(reader.result as string);
+    };
+    reader.readAsDataURL(croppedFile);
   };
 
   // Handle KTM upload
@@ -260,12 +296,14 @@ export default function AccountSettingsPage() {
       // Validate file size (max 2MB)
       if (file.size > 2 * 1024 * 1024) {
         toast.error("Ukuran file maksimal 2MB");
+        e.target.value = "";
         return;
       }
 
       // Validate file type
       if (!file.type.startsWith("image/")) {
         toast.error("File harus berupa gambar");
+        e.target.value = "";
         return;
       }
 
@@ -276,6 +314,7 @@ export default function AccountSettingsPage() {
       };
       reader.readAsDataURL(file);
     }
+    e.target.value = "";
   };
 
   // Handle profile update
@@ -294,12 +333,18 @@ export default function AccountSettingsPage() {
 
       // Upload photo if changed
       if (photoFile) {
+        setIsUploadingPhoto(true);
+        setPhotoUploadProgress(0);
+
         const uploadResult = await updateFileInSupabase(
           photoFile,
           "user-photos",
           `photo_${firebaseUser.uid}`,
-          profileData.photoUrl
+          profileData.photoUrl,
+          (progress) => setPhotoUploadProgress(progress)
         );
+
+        setIsUploadingPhoto(false);
 
         if (!uploadResult.success) {
           toast.error("Gagal upload foto profil");
@@ -312,12 +357,18 @@ export default function AccountSettingsPage() {
 
       // Upload KTM if changed
       if (ktmFile) {
+        setIsUploadingKtm(true);
+        setKtmUploadProgress(0);
+
         const uploadResult = await updateFileInSupabase(
           ktmFile,
           "user-ktm",
           `ktm_${firebaseUser.uid}`,
-          profileData.ktmUrl
+          profileData.ktmUrl,
+          (progress) => setKtmUploadProgress(progress)
         );
+
+        setIsUploadingKtm(false);
 
         if (!uploadResult.success) {
           toast.error("Gagal upload foto KTM");
@@ -563,15 +614,16 @@ export default function AccountSettingsPage() {
                       </div>
                     )}
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <Input
                       id="photo"
                       type="file"
                       accept="image/*"
                       onChange={handlePhotoChange}
                       className="hidden"
+                      disabled={isUploadingPhoto}
                     />
-                    <Label htmlFor="photo" className="cursor-pointer">
+                    <Label htmlFor="photo" className={cn("cursor-pointer", isUploadingPhoto && "opacity-50 cursor-not-allowed")}>
                       <div className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">
                         <Upload className="w-4 h-4" />
                         Upload Foto
@@ -580,6 +632,20 @@ export default function AccountSettingsPage() {
                     <p className="text-xs text-muted-foreground mt-2">
                       Maksimal 2MB, format JPG, PNG
                     </p>
+                    {isUploadingPhoto && (
+                      <div className="mt-2 space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <span>Uploading...</span>
+                          <span>{photoUploadProgress}%</span>
+                        </div>
+                        <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-primary transition-all duration-300"
+                            style={{ width: `${photoUploadProgress}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -603,15 +669,16 @@ export default function AccountSettingsPage() {
                       </div>
                     )}
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <Input
                       id="ktm"
                       type="file"
                       accept="image/*"
                       onChange={handleKtmChange}
                       className="hidden"
+                      disabled={isUploadingKtm}
                     />
-                    <Label htmlFor="ktm" className="cursor-pointer">
+                    <Label htmlFor="ktm" className={cn("cursor-pointer", isUploadingKtm && "opacity-50 cursor-not-allowed")}>
                       <div className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">
                         <Upload className="w-4 h-4" />
                         Upload KTM
@@ -620,6 +687,20 @@ export default function AccountSettingsPage() {
                     <p className="text-xs text-muted-foreground mt-2">
                       Maksimal 2MB, format JPG, PNG
                     </p>
+                    {isUploadingKtm && (
+                      <div className="mt-2 space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <span>Uploading...</span>
+                          <span>{ktmUploadProgress}%</span>
+                        </div>
+                        <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-primary transition-all duration-300"
+                            style={{ width: `${ktmUploadProgress}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -999,7 +1080,7 @@ export default function AccountSettingsPage() {
                 <Lock className="w-5 h-5 text-muted-foreground" />
                 <div>
                   <p className="font-medium">Password</p>
-                  <p className="text-sm text-muted-foreground">••••••••••••</p>
+                  <p className="text-sm text-muted-foreground">????????????</p>
                 </div>
               </div>
               <Button
@@ -1197,6 +1278,14 @@ export default function AccountSettingsPage() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Image Crop Dialog */}
+      <ImageCropDialog
+        open={showCropDialog}
+        imageUrl={imageToCrop}
+        onCropComplete={handleCropComplete}
+        onClose={() => setShowCropDialog(false)}
+      />
     </div>
   );
 }

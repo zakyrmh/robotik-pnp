@@ -5,12 +5,14 @@ import { supabase } from "./supabase";
  * @param file - File to upload
  * @param bucket - Storage bucket name
  * @param path - File path in bucket
+ * @param onProgress - Optional callback for upload progress (0-100)
  * @returns Promise with public URL or error
  */
 export const uploadFileToSupabase = async (
   file: File,
   bucket: string,
-  path: string
+  path: string,
+  onProgress?: (progress: number) => void
 ): Promise<{ success: boolean; url?: string; error?: string }> => {
   try {
     if (!file) {
@@ -24,8 +26,13 @@ export const uploadFileToSupabase = async (
     const fileExt = file.name.split(".").pop();
     const fileName = `${path}_${Date.now()}.${fileExt}`;
 
+    // Simulate progress for small files (Supabase doesn't provide native upload progress)
+    if (onProgress) {
+      onProgress(10);
+    }
+
     // Upload file
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from(bucket)
       .upload(fileName, file, {
         cacheControl: "3600",
@@ -40,10 +47,18 @@ export const uploadFileToSupabase = async (
       };
     }
 
+    if (onProgress) {
+      onProgress(80);
+    }
+
     // Get public URL
     const {
       data: { publicUrl },
     } = supabase.storage.from(bucket).getPublicUrl(fileName);
+
+    if (onProgress) {
+      onProgress(100);
+    }
 
     return {
       success: true,
@@ -104,13 +119,15 @@ export const deleteFileFromSupabase = async (
  * @param bucket - Storage bucket name
  * @param path - File path in bucket
  * @param oldFileUrl - Old file URL to delete (optional)
+ * @param onProgress - Optional callback for upload progress (0-100)
  * @returns Promise with public URL or error
  */
 export const updateFileInSupabase = async (
   file: File,
   bucket: string,
   path: string,
-  oldFileUrl?: string
+  oldFileUrl?: string,
+  onProgress?: (progress: number) => void
 ): Promise<{ success: boolean; url?: string; error?: string }> => {
   try {
     // Delete old file if exists
@@ -118,8 +135,8 @@ export const updateFileInSupabase = async (
       await deleteFileFromSupabase(bucket, oldFileUrl);
     }
 
-    // Upload new file
-    return await uploadFileToSupabase(file, bucket, path);
+    // Upload new file with progress tracking
+    return await uploadFileToSupabase(file, bucket, path, onProgress);
   } catch (error) {
     console.error("Error updating file:", error);
     return {
