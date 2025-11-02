@@ -572,14 +572,13 @@ export default function AccountSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen p-6 lg:p-8">
-      <div className="container mx-auto max-w-5xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold">Pengaturan Akun</h1>
-          <p className="text-muted-foreground mt-2">
-            Kelola informasi profil dan keamanan akun Anda
-          </p>
-        </div>
+    <div className="container mx-auto py-8 px-4 max-w-5xl">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold">Pengaturan Akun</h1>
+        <p className="text-muted-foreground mt-2">
+          Kelola informasi profil dan keamanan akun Anda
+        </p>
+      </div>
 
       <div className="space-y-6">
         {/* Profile Information */}
@@ -1286,7 +1285,6 @@ export default function AccountSettingsPage() {
         onCropComplete={handleCropComplete}
         onClose={() => setShowCropDialog(false)}
       />
-      </div>
     </div>
   );
 }
