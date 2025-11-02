@@ -33,3 +33,45 @@ export function isSameDay(a: Date, b: Date): boolean {
     a.getDate() === b.getDate()
   );
 }
+
+/**
+ * Extract OR Period dari registrationId
+ * Format registrationId: "CAANG-OR 21-0012"
+ * Output: "OR 21"
+ * 
+ * @param registrationId - Registration ID dengan format "CAANG-OR XX-XXXX"
+ * @returns OR Period atau null jika format tidak valid
+ */
+export function extractOrPeriod(registrationId: string | undefined | null): string | null {
+  if (!registrationId) return null;
+  
+  // Format: CAANG-OR 21-0012
+  // Split by "-" dan ambil bagian ke-2 dan ke-3
+  const parts = registrationId.split('-');
+  
+  if (parts.length >= 3) {
+    // Gabungkan "OR" dan "21" menjadi "OR 21"
+    return `${parts[1]} ${parts[2]}`;
+  }
+  
+  return null;
+}
+
+/**
+ * Hitung persentase kehadiran user
+ * 
+ * @param totalAttendances - Jumlah kehadiran user (PRESENT + LATE)
+ * @param totalActivities - Total aktivitas yang tersedia
+ * @returns Persentase kehadiran (0-100), atau 0 jika tidak ada aktivitas
+ */
+export function calculateAttendancePercentage(
+  totalAttendances: number,
+  totalActivities: number
+): number {
+  if (totalActivities === 0) return 0;
+  
+  const percentage = (totalAttendances / totalActivities) * 100;
+  
+  // Round to 1 decimal place
+  return Math.round(percentage * 10) / 10;
+}

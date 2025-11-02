@@ -1,8 +1,83 @@
 "use client";
 
 import { Calendar, Clock, GraduationCap } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { getUserById } from "@/lib/firebase/users";
+import { getActivities } from "@/lib/firebase/activities";
+import { getAttendances } from "@/lib/firebase/attendances";
+import { extractOrPeriod, calculateAttendancePercentage } from "@/utils/helper";
+import { AttendanceStatus } from "@/types/enum";
 
 export default function ActivePhase() {
+  const { user } = useAuth();
+  const [attendancePercentage, setAttendancePercentage] = useState<number>(0);
+  const [totalActivities, setTotalActivities] = useState<number>(0);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    async function fetchAttendanceData() {
+      if (!user?.uid) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        // 1. Fetch user data untuk mendapatkan registrationId
+        const userResponse = await getUserById(user.uid);
+        
+        if (!userResponse.success || !userResponse.data) {
+          console.error("Failed to fetch user data");
+          setLoading(false);
+          return;
+        }
+
+        const userData = userResponse.data;
+        const orPeriod = extractOrPeriod(userData.registrationId);
+
+        if (!orPeriod) {
+          console.error("Failed to extract OR Period from registrationId");
+          setLoading(false);
+          return;
+        }
+
+        // 2. Fetch activities dengan filter: orPeriod, isActive:true, tidak ada deletedAt
+        const allActivities = await getActivities();
+        const filteredActivities = allActivities.filter(
+          (activity) =>
+            activity.orPeriod === orPeriod &&
+            activity.isActive === true &&
+            !activity.deletedAt
+        );
+
+        setTotalActivities(filteredActivities.length);
+
+        // 3. Fetch attendances user dengan status PRESENT atau LATE
+        const allAttendances = await getAttendances({ userId: user.uid });
+        const validAttendances = allAttendances.filter(
+          (attendance) =>
+            (attendance.status === AttendanceStatus.PRESENT ||
+              attendance.status === AttendanceStatus.LATE) &&
+            !attendance.deletedAt
+        );
+
+        // 4. Hitung persentase kehadiran
+        const percentage = calculateAttendancePercentage(
+          validAttendances.length,
+          filteredActivities.length
+        );
+
+        setAttendancePercentage(percentage);
+      } catch (error) {
+        console.error("Error fetching attendance data:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchAttendanceData();
+  }, [user]);
+
   return (
     <div className="mb-8 transition-all duration-300">
       {/* Header */}
@@ -51,7 +126,7 @@ export default function ActivePhase() {
                 </div>
               <div className="flex items-center space-x-2">
                 <Clock className="text-blue-100 dark:text-blue-300 h-4 w-4" />
-                <span>Total: 4 sesi</span>
+                <span>Total: {totalActivities} sesi</span>
               </div>
             </div>
           </div>
@@ -62,7 +137,7 @@ export default function ActivePhase() {
               Kehadiran
             </p>
             <p className="text-5xl font-bold mb-1 text-white dark:text-blue-100">
-              999%
+              {loading ? "..." : `${attendancePercentage}%`}
             </p>
           </div>
         </div>
