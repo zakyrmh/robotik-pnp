@@ -515,7 +515,7 @@ export default function AccountSettingsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center h-full">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
@@ -999,7 +999,7 @@ export default function AccountSettingsPage() {
                 <Lock className="w-5 h-5 text-muted-foreground" />
                 <div>
                   <p className="font-medium">Password</p>
-                  <p className="text-sm text-muted-foreground">••••••••••••</p>
+                  <p className="text-sm text-muted-foreground">????????????</p>
                 </div>
               </div>
               <Button
