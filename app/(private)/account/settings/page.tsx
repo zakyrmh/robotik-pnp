@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import {
   User as FirebaseUser,
@@ -11,13 +10,14 @@ import {
   updateProfile,
   EmailAuthProvider,
   reauthenticateWithCredential,
+  AuthError,
 } from "firebase/auth";
 import { Timestamp } from "firebase/firestore";
 import { auth } from "@/lib/firebaseConfig";
 import { getUserById, updateUser } from "@/lib/firebase/users";
 import { getJurusanProdi } from "@/lib/firebase/jurusan-prodi";
-import { uploadFileToSupabase, updateFileInSupabase } from "@/lib/supabase-storage";
-import { User, UserProfile } from "@/types/users";
+import { updateFileInSupabase } from "@/lib/supabase-storage";
+import { User } from "@/types/users";
 import { Gender } from "@/types/enum";
 import { Jurusan } from "@/types/jurusan-prodi";
 import { Button } from "@/components/ui/button";
@@ -66,6 +66,7 @@ import {
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 
 interface ProfileFormData {
   fullName: string;
@@ -363,7 +364,7 @@ export default function AccountSettingsPage() {
       });
 
       toast.success("Profil berhasil diupdate");
-      
+
       // Refresh user data
       const response = await getUserById(firebaseUser.uid);
       if (response.success && response.data) {
@@ -412,18 +413,23 @@ export default function AccountSettingsPage() {
 
       // Refresh page
       router.refresh();
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error updating email:", error);
 
       let errorMessage = "Gagal mengupdate email";
-      if (error.code === "auth/wrong-password") {
-        errorMessage = "Password salah";
-      } else if (error.code === "auth/invalid-email") {
-        errorMessage = "Format email tidak valid";
-      } else if (error.code === "auth/email-already-in-use") {
-        errorMessage = "Email sudah digunakan";
-      } else if (error.code === "auth/requires-recent-login") {
-        errorMessage = "Silakan login ulang untuk mengubah email";
+
+      if (error && typeof error === "object" && "code" in error) {
+        const authError = error as AuthError;
+
+        if (authError.code === "auth/wrong-password") {
+          errorMessage = "Password salah";
+        } else if (authError.code === "auth/invalid-email") {
+          errorMessage = "Format email tidak valid";
+        } else if (authError.code === "auth/email-already-in-use") {
+          errorMessage = "Email sudah digunakan";
+        } else if (authError.code === "auth/requires-recent-login") {
+          errorMessage = "Silakan login ulang untuk mengubah email";
+        }
       }
 
       toast.error(errorMessage);
@@ -484,16 +490,21 @@ export default function AccountSettingsPage() {
         newPassword: "",
         confirmPassword: "",
       });
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error updating password:", error);
 
       let errorMessage = "Gagal mengupdate password";
-      if (error.code === "auth/wrong-password") {
-        errorMessage = "Password lama salah";
-      } else if (error.code === "auth/weak-password") {
-        errorMessage = "Password terlalu lemah";
-      } else if (error.code === "auth/requires-recent-login") {
-        errorMessage = "Silakan login ulang untuk mengubah password";
+
+      if (error && typeof error === "object" && "code" in error) {
+        const authError = error as AuthError;
+
+        if (authError.code === "auth/wrong-password") {
+          errorMessage = "Password lama salah";
+        } else if (authError.code === "auth/weak-password") {
+          errorMessage = "Password terlalu lemah";
+        } else if (authError.code === "auth/requires-recent-login") {
+          errorMessage = "Silakan login ulang untuk mengubah password";
+        }
       }
 
       toast.error(errorMessage);
@@ -539,10 +550,12 @@ export default function AccountSettingsPage() {
                 <div className="flex items-center gap-4">
                   <div className="w-24 h-24 rounded-full overflow-hidden bg-muted">
                     {photoPreview ? (
-                      <img
+                      <Image
                         src={photoPreview}
                         alt="Profile"
                         className="w-full h-full object-cover"
+                        width={100}
+                        height={100}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
@@ -577,10 +590,12 @@ export default function AccountSettingsPage() {
                 <div className="flex items-center gap-4">
                   <div className="w-32 h-20 rounded-md overflow-hidden bg-muted border">
                     {ktmPreview ? (
-                      <img
+                      <Image
                         src={ktmPreview}
                         alt="KTM"
                         className="w-full h-full object-cover"
+                        width={100}
+                        height={100}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
@@ -725,20 +740,90 @@ export default function AccountSettingsPage() {
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={profileData.birthDate}
-                        onSelect={(date) =>
-                          setProfileData((prev) => ({
-                            ...prev,
-                            birthDate: date || new Date(),
-                          }))
-                        }
-                        disabled={(date) =>
-                          date > new Date() || date < new Date("1900-01-01")
-                        }
-                        initialFocus
-                      />
+                      <div className="p-3 space-y-2">
+                        {/* Year and Month Selectors */}
+                        <div className="flex gap-2">
+                          <Select
+                            value={profileData.birthDate
+                              .getFullYear()
+                              .toString()}
+                            onValueChange={(value) => {
+                              const newDate = new Date(profileData.birthDate);
+                              newDate.setFullYear(parseInt(value));
+                              setProfileData((prev) => ({
+                                ...prev,
+                                birthDate: newDate,
+                              }));
+                            }}
+                          >
+                            <SelectTrigger className="w-[120px]">
+                              <SelectValue placeholder="Tahun" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Array.from({ length: 100 }, (_, i) => {
+                                const year = new Date().getFullYear() - i;
+                                return (
+                                  <SelectItem
+                                    key={year}
+                                    value={year.toString()}
+                                  >
+                                    {year}
+                                  </SelectItem>
+                                );
+                              })}
+                            </SelectContent>
+                          </Select>
+
+                          <Select
+                            value={profileData.birthDate.getMonth().toString()}
+                            onValueChange={(value) => {
+                              const newDate = new Date(profileData.birthDate);
+                              newDate.setMonth(parseInt(value));
+                              setProfileData((prev) => ({
+                                ...prev,
+                                birthDate: newDate,
+                              }));
+                            }}
+                          >
+                            <SelectTrigger className="w-[140px]">
+                              <SelectValue placeholder="Bulan" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {Array.from({ length: 12 }, (_, i) => {
+                                const date = new Date(2000, i, 1);
+                                return (
+                                  <SelectItem key={i} value={i.toString()}>
+                                    {format(date, "MMMM", { locale: localeId })}
+                                  </SelectItem>
+                                );
+                              })}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Calendar */}
+                        <Calendar
+                          mode="single"
+                          selected={profileData.birthDate}
+                          onSelect={(date) =>
+                            setProfileData((prev) => ({
+                              ...prev,
+                              birthDate: date || new Date(),
+                            }))
+                          }
+                          month={profileData.birthDate}
+                          onMonthChange={(date) =>
+                            setProfileData((prev) => ({
+                              ...prev,
+                              birthDate: date,
+                            }))
+                          }
+                          disabled={(date) =>
+                            date > new Date() || date < new Date("1900-01-01")
+                          }
+                          initialFocus
+                        />
+                      </div>
                     </PopoverContent>
                   </Popover>
                 </div>
@@ -852,10 +937,7 @@ export default function AccountSettingsPage() {
                     </SelectTrigger>
                     <SelectContent>
                       {selectedJurusan?.program_studi.map((prodi) => (
-                        <SelectItem
-                          key={prodi.nama}
-                          value={prodi.nama}
-                        >
+                        <SelectItem key={prodi.nama} value={prodi.nama}>
                           {prodi.jenjang} - {prodi.nama}
                         </SelectItem>
                       ))}
@@ -906,10 +988,7 @@ export default function AccountSettingsPage() {
                   </p>
                 </div>
               </div>
-              <Button
-                variant="outline"
-                onClick={() => setShowEmailModal(true)}
-              >
+              <Button variant="outline" onClick={() => setShowEmailModal(true)}>
                 Ubah Email
               </Button>
             </div>
@@ -920,9 +999,7 @@ export default function AccountSettingsPage() {
                 <Lock className="w-5 h-5 text-muted-foreground" />
                 <div>
                   <p className="font-medium">Password</p>
-                  <p className="text-sm text-muted-foreground">
-                    ????????????
-                  </p>
+                  <p className="text-sm text-muted-foreground">••••••••••••</p>
                 </div>
               </div>
               <Button
