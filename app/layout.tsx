@@ -5,6 +5,7 @@ import { Providers } from "@/components/Providers";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import ThemeToggle from "@/components/layouts/ThemeToggle"
+import {Toaster} from "@/components/ui/sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -66,6 +67,7 @@ export default function RootLayout({
         <SpeedInsights />
         <Providers>
           {children}
+          <Toaster />
           <ThemeToggle />
         </Providers>
       </body>

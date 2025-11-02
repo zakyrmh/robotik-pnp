@@ -78,9 +78,9 @@ export default function PrivateLayout({
     <SidebarProvider>
       <div className="flex h-screen w-full overflow-hidden bg-background">
         <SidebarConsumer role={role} />
-        <div className="flex flex-1 flex-col">
+        <div className="flex flex-1 flex-col overflow-hidden">
           <Header />
-          <main className="flex-1 overflow-y-auto p-6 w-screen lg:w-full">
+          <main className="flex-1 overflow-y-auto w-screen lg:w-full">
             {children}
           </main>
         </div>
