@@ -46,12 +46,12 @@ export function extractOrPeriod(registrationId: string | undefined | null): stri
   if (!registrationId) return null;
   
   // Format: CAANG-OR 21-0012
-  // Split by "-" dan ambil bagian ke-2 dan ke-3
+  // Split by "-" dan ambil bagian ke-2 (index 1)
   const parts = registrationId.split('-');
   
   if (parts.length >= 3) {
-    // Gabungkan "OR" dan "21" menjadi "OR 21"
-    return `${parts[1]} ${parts[2]}`;
+    // Ambil bagian "OR 21" yang sudah ada di parts[1]
+    return parts[1];
   }
   
   return null;

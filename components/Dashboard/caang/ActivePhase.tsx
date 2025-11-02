@@ -25,7 +25,7 @@ export default function ActivePhase() {
       try {
         // 1. Fetch user data untuk mendapatkan registrationId
         const userResponse = await getUserById(user.uid);
-        
+
         if (!userResponse.success || !userResponse.data) {
           console.error("Failed to fetch user data");
           setLoading(false);
@@ -34,6 +34,8 @@ export default function ActivePhase() {
 
         const userData = userResponse.data;
         const orPeriod = extractOrPeriod(userData.registrationId);
+
+        console.log("OR Period:", orPeriod);
 
         if (!orPeriod) {
           console.error("Failed to extract OR Period from registrationId");
