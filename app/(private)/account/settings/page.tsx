@@ -68,6 +68,7 @@ import { id as localeId } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { ImageCropDialog } from "@/components/ImageCropDialog";
+import Loading from "@/components/Loading";
 
 interface ProfileFormData {
   fullName: string;
@@ -566,9 +567,7 @@ export default function AccountSettingsPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
+      <Loading />
     );
   }
 

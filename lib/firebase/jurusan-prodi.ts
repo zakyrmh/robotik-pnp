@@ -1,6 +1,6 @@
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebaseConfig";
-import { DataJurusan, Jurusan } from "@/types/jurusan-prodi";
+import { Jurusan } from "@/types/jurusan-prodi";
 
 const JURUSAN_PRODI_COLLECTION = "jurusan-prodi";
 
