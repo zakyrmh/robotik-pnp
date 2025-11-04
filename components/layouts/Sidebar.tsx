@@ -64,7 +64,7 @@ export function Sidebar({ isOpen, isMobile, onClose, role }: SidebarProps) {
                   <Link
                     key={item.href}
                     href={item.href}
-                    onClick={onClose}
+                    onClick={isMobile ? onClose : undefined}
                     className="block rounded px-3 py-2 hover:bg-accent hover:text-accent-foreground"
                   >
                     {item.label}
@@ -74,7 +74,7 @@ export function Sidebar({ isOpen, isMobile, onClose, role }: SidebarProps) {
                   <Link
                     key={item.href}
                     href={item.href}
-                    onClick={onClose}
+                    onClick={isMobile ? onClose : undefined}
                     className="block rounded px-3 py-2 hover:bg-accent hover:text-accent-foreground"
                   >
                     {item.label}
