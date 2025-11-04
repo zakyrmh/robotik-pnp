@@ -12,71 +12,90 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Attendance } from "@/types/attendances";
+import { Activity } from "@/types/activities";
 import { AttendanceStatus } from "@/types/enum";
 import { format } from "date-fns";
 
 interface AttendanceTrendChartProps {
   attendances: Attendance[];
+  activities: Activity[];
+  totalCaangUsers: number;
 }
 
 export default function AttendanceTrendChart({
   attendances,
+  activities,
+  totalCaangUsers,
 }: AttendanceTrendChartProps) {
-  // Group attendances by date
-  const attendanceByDate = attendances.reduce((acc, attendance) => {
-    if (!attendance.checkedInAt) return acc;
+  // Create a map of activityId to Activity for quick lookup
+  const activityMap = new Map<string, Activity>();
+  activities.forEach((activity) => {
+    activityMap.set(activity.id, activity);
+  });
 
-    const date = format(
-      new Date(attendance.checkedInAt.seconds * 1000),
-      "dd MMM"
-    );
-
-    if (!acc[date]) {
-      acc[date] = {
-        date,
+  // Group attendances by activityId
+  const attendanceByActivity = attendances.reduce((acc, attendance) => {
+    const activityId = attendance.activityId;
+    
+    if (!acc[activityId]) {
+      acc[activityId] = {
+        activityId,
         present: 0,
         late: 0,
         excused: 0,
         sick: 0,
         absent: 0,
-        total: 0,
       };
     }
 
     // Count by status
     switch (attendance.status) {
       case AttendanceStatus.PRESENT:
-        acc[date].present++;
+        acc[activityId].present++;
         break;
       case AttendanceStatus.LATE:
-        acc[date].late++;
+        acc[activityId].late++;
         break;
       case AttendanceStatus.EXCUSED:
-        acc[date].excused++;
+        acc[activityId].excused++;
         break;
       case AttendanceStatus.SICK:
-        acc[date].sick++;
+        acc[activityId].sick++;
         break;
       case AttendanceStatus.ABSENT:
-        acc[date].absent++;
+        acc[activityId].absent++;
         break;
     }
 
-    acc[date].total++;
     return acc;
-  }, {} as Record<string, { date: string; present: number; late: number; excused: number; sick: number; absent: number; total: number }>);
+  }, {} as Record<string, { activityId: string; present: number; late: number; excused: number; sick: number; absent: number }>);
 
-  // Convert to array and sort by date
-  const chartData = Object.values(attendanceByDate).sort((a, b) => {
-    const dateA = new Date(a.date);
-    const dateB = new Date(b.date);
-    return dateA.getTime() - dateB.getTime();
-  });
+  // Convert to array with activity date and sort by date
+  const chartData = Object.values(attendanceByActivity)
+    .map((item) => {
+      const activity = activityMap.get(item.activityId);
+      if (!activity) return null;
 
-  // Calculate attendance rate
+      const activityDate = new Date(activity.startDateTime.seconds * 1000);
+      
+      return {
+        date: format(activityDate, "dd MMM"),
+        dateValue: activityDate.getTime(),
+        activityTitle: activity.title,
+        present: item.present,
+        late: item.late,
+        excused: item.excused,
+        sick: item.sick,
+        absent: item.absent,
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null)
+    .sort((a, b) => a.dateValue - b.dateValue);
+
+  // Calculate attendance rate based on total caang users
   const dataWithRate = chartData.map((item) => ({
     ...item,
-    rate: item.total > 0 ? ((item.present + item.late) / item.total) * 100 : 0,
+    rate: totalCaangUsers > 0 ? ((item.present + item.late) / totalCaangUsers) * 100 : 0,
   }));
 
   return (

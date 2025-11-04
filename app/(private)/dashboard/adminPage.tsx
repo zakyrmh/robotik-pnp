@@ -15,31 +15,40 @@ import PendingAttendanceTable from "@/components/Dashboard/admin/PendingAttendan
 import { getActivities } from "@/lib/firebase/activities";
 import { getAttendances } from "@/lib/firebase/attendances";
 import { getRegistrations } from "@/lib/firebase/registrations";
+import { getUsers } from "@/lib/firebase/users";
 import { Activity } from "@/types/activities";
 import { Attendance } from "@/types/attendances";
 import { Registration } from "@/types/registrations";
+import { User } from "@/types/users";
+import { UserRole } from "@/types/enum";
 
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [attendances, setAttendances] = useState<Attendance[]>([]);
   const [registrations, setRegistrations] = useState<Registration[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [filters, setFilters] = useState<DashboardFilters>({});
 
   // Fetch all data
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [activitiesData, attendancesData, registrationsData] =
+      const [activitiesData, attendancesData, registrationsData, usersResponse] =
         await Promise.all([
           getActivities(),
           getAttendances(),
           getRegistrations(),
+          getUsers(),
         ]);
 
       setActivities(activitiesData);
       setAttendances(attendancesData);
       setRegistrations(registrationsData);
+      
+      if (usersResponse.success && usersResponse.data) {
+        setUsers(usersResponse.data);
+      }
     } catch (error) {
       console.error("Error fetching dashboard data:", error);
     } finally {
@@ -143,6 +152,11 @@ export default function AdminDashboard() {
     return true;
   });
 
+  // Calculate total users with role "caang"
+  const totalCaangUsers = users.filter(
+    (user) => user.role === UserRole.CAANG && user.isActive && !user.deletedAt
+  ).length;
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -192,7 +206,11 @@ export default function AdminDashboard() {
           {/* Charts Section */}
           <motion.div variants={itemVariants}>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <AttendanceTrendChart attendances={filteredAttendances} />
+              <AttendanceTrendChart 
+                attendances={filteredAttendances}
+                activities={filteredActivities}
+                totalCaangUsers={totalCaangUsers}
+              />
               <ActivityStatsChart activities={filteredActivities} />
             </div>
           </motion.div>
