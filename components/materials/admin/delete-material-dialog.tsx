@@ -12,7 +12,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { deleteMaterial } from '@/lib/firebase/materials';
-import { deleteFileFromSupabase } from '@/lib/supabase-storage';
 import { Material } from '@/types/materials';
 import { toast } from 'sonner';
 

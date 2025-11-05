@@ -63,7 +63,7 @@ const materialSchema = z.object({
   requiredActivityId: z.string().optional(),
   file: z
     .any()
-    .refine((file) => {
+    .refine(() => {
       // If editing and no new file, skip validation
       return true;
     })

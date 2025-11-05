@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { incrementDownloadCount } from '@/lib/firebase/materials';
 import { toast } from 'sonner';
+import Image from 'next/image';
 
 interface MaterialDetailDialogProps {
   open: boolean;
@@ -187,10 +188,12 @@ export default function MaterialDetailDialog({
               )}
               {material.fileType.includes('image') && (
                 <div className="w-full flex justify-center bg-white rounded border p-4">
-                  <img
+                  <Image
                     src={material.fileUrl}
                     alt={material.fileName}
                     className="max-h-96 object-contain rounded"
+                    width={500}
+                    height={500}
                   />
                 </div>
               )}
@@ -239,10 +242,6 @@ export default function MaterialDetailDialog({
               <div>
                 <p className="text-sm text-gray-500 mb-1">OR Period</p>
                 <Badge variant="secondary">{material.orPeriod}</Badge>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 mb-1">Fase</p>
-                <p className="font-medium">{material.phase}</p>
               </div>
             </div>
           </div>

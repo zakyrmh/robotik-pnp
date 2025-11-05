@@ -28,7 +28,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { getGroupParents, deleteGroupParent } from "@/lib/firebase/groups";
+import { getGroupParents } from "@/lib/firebase/groups";
 import { GroupParent } from "@/types/groups";
 import { useRouter } from "next/navigation";
 import { getAuth, onAuthStateChanged } from "firebase/auth";

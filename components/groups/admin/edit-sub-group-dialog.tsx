@@ -14,7 +14,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { updateSubGroup, getCaangUsersWithAttendance } from "@/lib/firebase/groups";
+import {
+  updateSubGroup,
+  getCaangUsersWithAttendance,
+} from "@/lib/firebase/groups";
 import { GroupParent, SubGroup, GroupMember } from "@/types/groups";
 import { toast } from "sonner";
 import { Loader2, X, Plus, AlertCircle, Search } from "lucide-react";
@@ -59,38 +62,39 @@ export default function EditSubGroupDialog({
     setLeaderId(subGroup.leaderId || "");
   }, [subGroup]);
 
-  // Load available members
   useEffect(() => {
+    const loadAvailableMembers = async () => {
+      setLoadingMembers(true);
+      try {
+        const allCaangUsers = await getCaangUsersWithAttendance(
+          groupParent.orPeriod
+        );
+
+        // Filter out users that are already members
+        const currentMemberIds = currentMembers.map((m) => m.userId);
+        const available = allCaangUsers.filter(
+          (user) => !currentMemberIds.includes(user.userId)
+        );
+
+        setAvailableMembers(available);
+      } catch (error) {
+        console.error("Error loading available members:", error);
+        toast.error("Gagal memuat daftar caang");
+      } finally {
+        setLoadingMembers(false);
+      }
+    };
+
     if (open) {
       loadAvailableMembers();
     }
-  }, [open, groupParent.orPeriod]);
-
-  const loadAvailableMembers = async () => {
-    setLoadingMembers(true);
-    try {
-      const allCaangUsers = await getCaangUsersWithAttendance(
-        groupParent.orPeriod
-      );
-
-      // Filter out users that are already members
-      const currentMemberIds = currentMembers.map((m) => m.userId);
-      const available = allCaangUsers.filter(
-        (user) => !currentMemberIds.includes(user.userId)
-      );
-
-      setAvailableMembers(available);
-    } catch (error) {
-      console.error("Error loading available members:", error);
-      toast.error("Gagal memuat daftar caang");
-    } finally {
-      setLoadingMembers(false);
-    }
-  };
+  }, [open, groupParent.orPeriod, currentMembers, setAvailableMembers]);
 
   const addMember = (member: GroupMember) => {
     setCurrentMembers([...currentMembers, member]);
-    setAvailableMembers(availableMembers.filter((m) => m.userId !== member.userId));
+    setAvailableMembers(
+      availableMembers.filter((m) => m.userId !== member.userId)
+    );
   };
 
   const removeMember = (userId: string) => {
@@ -98,7 +102,7 @@ export default function EditSubGroupDialog({
     if (member) {
       setCurrentMembers(currentMembers.filter((m) => m.userId !== userId));
       setAvailableMembers([...availableMembers, member]);
-      
+
       // Remove as leader if they were the leader
       if (leaderId === userId) {
         setLeaderId("");
@@ -151,8 +155,14 @@ export default function EditSubGroupDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
-          <Tabs defaultValue="info" className="flex-1 flex flex-col overflow-hidden">
+        <form
+          onSubmit={handleSubmit}
+          className="flex flex-col flex-1 overflow-hidden"
+        >
+          <Tabs
+            defaultValue="info"
+            className="flex-1 flex flex-col overflow-hidden"
+          >
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="info">Informasi</TabsTrigger>
               <TabsTrigger value="members">
@@ -243,7 +253,9 @@ export default function EditSubGroupDialog({
                                 </Badge>
                               )}
                             </div>
-                            <p className="text-xs text-gray-500">{member.nim}</p>
+                            <p className="text-xs text-gray-500">
+                              {member.nim}
+                            </p>
                             <div className="flex items-center gap-2 mt-1">
                               <span
                                 className={`text-xs font-semibold ${
@@ -252,7 +264,8 @@ export default function EditSubGroupDialog({
                                     : "text-green-600"
                                 }`}
                               >
-                                Attendance: {member.attendancePercentage.toFixed(0)}%
+                                Attendance:{" "}
+                                {member.attendancePercentage.toFixed(0)}%
                               </span>
                               {member.isLowAttendance && (
                                 <span className="flex items-center gap-1 text-xs text-red-600">
@@ -279,7 +292,7 @@ export default function EditSubGroupDialog({
                 {/* Add Members */}
                 <div>
                   <Label className="mb-2 block">Tambah Anggota</Label>
-                  
+
                   {/* Search */}
                   <div className="relative mb-2">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -317,7 +330,9 @@ export default function EditSubGroupDialog({
                               <p className="font-medium text-sm truncate">
                                 {member.fullName}
                               </p>
-                              <p className="text-xs text-gray-500">{member.nim}</p>
+                              <p className="text-xs text-gray-500">
+                                {member.nim}
+                              </p>
                               <div className="flex items-center gap-2 mt-1">
                                 <span
                                   className={`text-xs font-semibold ${
@@ -326,7 +341,8 @@ export default function EditSubGroupDialog({
                                       : "text-green-600"
                                   }`}
                                 >
-                                  Attendance: {member.attendancePercentage.toFixed(0)}%
+                                  Attendance:{" "}
+                                  {member.attendancePercentage.toFixed(0)}%
                                 </span>
                                 {member.isLowAttendance && (
                                   <span className="flex items-center gap-1 text-xs text-red-600">
