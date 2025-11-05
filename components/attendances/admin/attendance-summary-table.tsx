@@ -135,8 +135,26 @@ export default function AttendanceSummaryTable() {
           };
         });
 
-        // Sort by name
-        summaries.sort((a, b) => a.fullName.localeCompare(b.fullName));
+        // Sort by highlight color (no highlight -> yellow -> red), then by name
+        summaries.sort((a, b) => {
+          // Determine highlight level: 0 = no highlight, 1 = yellow, 2 = red
+          const getHighlightLevel = (absentPercentage: number) => {
+            if (absentPercentage >= 75) return 2; // red
+            if (absentPercentage >= 50) return 1; // yellow
+            return 0; // no highlight
+          };
+          
+          const levelA = getHighlightLevel(a.absentPercentage);
+          const levelB = getHighlightLevel(b.absentPercentage);
+          
+          // First sort by highlight level (ascending: no highlight first, red last)
+          if (levelA !== levelB) {
+            return levelA - levelB;
+          }
+          
+          // Then sort by name within the same highlight level
+          return a.fullName.localeCompare(b.fullName);
+        });
         
         setUserSummaries(summaries);
       } catch (error) {
