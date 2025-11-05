@@ -1,11 +1,10 @@
-import { OrPhase, TrainingCategory } from "@/types/enum";
+import { TrainingCategory } from "@/types/enum";
 import { Timestamp } from "firebase/firestore";
 
 export interface Material {
   id: string;
   activityId?: string; // Bisa linked ke activity atau standalone
   orPeriod: string;
-  phase: OrPhase;
   
   // Info
   title: string;

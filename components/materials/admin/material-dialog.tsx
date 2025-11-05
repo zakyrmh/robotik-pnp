@@ -37,7 +37,6 @@ import { Activity } from "@/types/activities";
 import { TrainingCategory, OrPhase } from "@/types/enum";
 import { createMaterial, updateMaterial } from "@/lib/firebase/materials";
 import { uploadFileToSupabase, deleteFileFromSupabase } from "@/lib/supabase-storage";
-import { Timestamp } from "firebase/firestore";
 import { toast } from "sonner";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
@@ -116,7 +115,6 @@ export default function MaterialDialog({
         title: material.title,
         description: material.description || "",
         orPeriod: material.orPeriod,
-        phase: material.phase,
         category: material.category,
         activityId: material.activityId || "",
         isPublic: material.isPublic,
@@ -219,7 +217,6 @@ export default function MaterialDialog({
         title: data.title,
         description: data.description || "",
         orPeriod: data.orPeriod,
-        phase: data.phase,
         category: data.category,
         fileUrl,
         fileName,
