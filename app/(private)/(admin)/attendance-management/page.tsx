@@ -4,8 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Search,
-  ChevronLeft,
-  ChevronRight,
   Eye,
   Edit,
   Trash2,
@@ -85,9 +83,6 @@ export default function AttendanceManagementPage() {
   const [sortField, setSortField] = useState<SortField>("createdAt");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
 
-  // Pagination
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20;
 
   // Dialog states
   const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -191,6 +186,45 @@ export default function AttendanceManagementPage() {
     return () => unsubscribe();
   }, []);
 
+  // Calculate absence percentage per user
+  const calculateAbsencePercentage = (userId: string) => {
+    // Filter activities based on current OR period filter
+    const relevantActivities = filterOrPeriod === "all" 
+      ? activities 
+      : activities.filter(a => a.orPeriod === filterOrPeriod);
+
+    if (relevantActivities.length === 0) return 0;
+
+    // Count how many activities this user was absent
+    const absentCount = relevantActivities.filter(activity => {
+      const userAttendance = attendances.find(
+        a => a.userId === userId && a.activityId === activity.id
+      );
+      // Consider absent if: no attendance record OR status is ABSENT
+      return !userAttendance || userAttendance.status === AttendanceStatus.ABSENT;
+    }).length;
+
+    return (absentCount / relevantActivities.length) * 100;
+  };
+
+  // Get highlight class based on absence percentage
+  const getHighlightClass = (userId: string) => {
+    // Only apply highlight when showing all activities and all status
+    if (filterActivity !== "all" || filterStatus !== "all") {
+      return "";
+    }
+
+    const absencePercentage = calculateAbsencePercentage(userId);
+    
+    if (absencePercentage >= 75) {
+      return "bg-red-100 hover:bg-red-200";
+    } else if (absencePercentage >= 50) {
+      return "bg-yellow-100 hover:bg-yellow-200";
+    }
+    
+    return "";
+  };
+
   // Filter and sort attendances
   const filteredAndSortedAttendances = attendances
     .filter((attendance) => {
@@ -275,19 +309,6 @@ export default function AttendanceManagementPage() {
     ).length,
   };
 
-  // Pagination
-  const totalPages = Math.ceil(
-    filteredAndSortedAttendances.length / itemsPerPage
-  );
-  const paginatedAttendances = filteredAndSortedAttendances.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
-
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, filterActivity, filterStatus, filterOrPeriod]);
 
   // Handle sort
   const handleSort = (field: SortField) => {
@@ -627,7 +648,7 @@ export default function AttendanceManagementPage() {
                         </TableCell>
                       </TableRow>
                     ))
-                  ) : paginatedAttendances.length === 0 ? (
+                  ) : filteredAndSortedAttendances.length === 0 ? (
                     // Empty state
                     <TableRow>
                       <TableCell colSpan={5} className="text-center py-8">
@@ -643,10 +664,13 @@ export default function AttendanceManagementPage() {
                     </TableRow>
                   ) : (
                     // Data rows
-                    paginatedAttendances.map((attendance, idx) => (
-                      <TableRow key={attendance.id}>
+                    filteredAndSortedAttendances.map((attendance, idx) => (
+                      <TableRow 
+                        key={attendance.id}
+                        className={attendance.user?.id ? getHighlightClass(attendance.user.id) : ""}
+                      >
                         <TableCell>
-                          {(currentPage - 1) * itemsPerPage + idx + 1}
+                          {idx + 1}
                         </TableCell>
                         <TableCell>
                           <div>
@@ -726,45 +750,6 @@ export default function AttendanceManagementPage() {
                 </TableBody>
               </Table>
             </div>
-
-            {/* Pagination */}
-            {!loading && totalPages > 1 && (
-              <div className="flex items-center justify-between px-6 py-4 border-t">
-                <p className="text-sm text-gray-600">
-                  Menampilkan {(currentPage - 1) * itemsPerPage + 1} -{" "}
-                  {Math.min(
-                    currentPage * itemsPerPage,
-                    filteredAndSortedAttendances.length
-                  )}{" "}
-                  dari {filteredAndSortedAttendances.length} data
-                </p>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage === 1}
-                  >
-                    <ChevronLeft className="w-4 h-4" />
-                    Sebelumnya
-                  </Button>
-                  <span className="text-sm text-gray-600">
-                    Halaman {currentPage} dari {totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      setCurrentPage((p) => Math.min(totalPages, p + 1))
-                    }
-                    disabled={currentPage === totalPages}
-                  >
-                    Selanjutnya
-                    <ChevronRight className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>
