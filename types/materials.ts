@@ -29,4 +29,6 @@ export interface Material {
   uploadedBy: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  deletedAt?: Timestamp | null;
+  deletedBy?: string | null;
 }
