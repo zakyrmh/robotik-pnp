@@ -11,7 +11,9 @@ import {
   Edit,
   Trash2,
   AlertCircle,
+  Download,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -40,6 +42,19 @@ import EditSubGroupDialog from "@/components/groups/admin/edit-sub-group-dialog"
 import DeleteSubGroupDialog from "@/components/groups/admin/delete-sub-group-dialog";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { app } from "@/lib/firebaseConfig";
+
+interface ExcelDataItem {
+  "Nama Sub-Kelompok": string;
+  "Deskripsi Sub-Kelompok": string;
+  "Jumlah Anggota": number;
+  "Ketua Kelompok": string;
+  "Nama Anggota": string;
+  "NIM": string;
+  "Attendance (%)": string;
+  "Total Aktivitas": number;
+  "Aktivitas Hadir": number;
+  "Status Attendance": string;
+}
 
 export default function GroupDetailPage() {
   const router = useRouter();
@@ -104,6 +119,104 @@ export default function GroupDetailPage() {
     sg.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const handleExportToExcel = () => {
+    if (!groupParent || subGroups.length === 0) {
+      toast.error("Tidak ada data untuk di-export");
+      return;
+    }
+
+    try {
+      // Prepare data for Excel
+      const excelData: ExcelDataItem[] = [];
+
+      subGroups.forEach((subGroup) => {
+        if (subGroup.members.length === 0) {
+          // Add sub-group without members
+          excelData.push({
+            "Nama Sub-Kelompok": subGroup.name,
+            "Deskripsi Sub-Kelompok": subGroup.description || "-",
+            "Jumlah Anggota": 0,
+            "Ketua Kelompok": "-",
+            "Nama Anggota": "-",
+            NIM: "-",
+            "Attendance (%)": "-",
+            "Total Aktivitas": 0,
+            "Aktivitas Hadir": 0,
+            "Status Attendance": "-",
+          });
+        } else {
+          // Add each member of the sub-group
+          subGroup.members.forEach((member, index) => {
+            const leader = subGroup.members.find(
+              (m) => m.userId === subGroup.leaderId
+            );
+
+            excelData.push({
+              "Nama Sub-Kelompok": index === 0 ? subGroup.name : "",
+              "Deskripsi Sub-Kelompok":
+                index === 0 ? subGroup.description || "-" : "",
+              "Jumlah Anggota": index === 0 ? subGroup.members.length : 0,
+              "Ketua Kelompok": index === 0 ? leader?.fullName || "-" : "",
+              "Nama Anggota": member.fullName,
+              NIM: member.nim,
+              "Attendance (%)": member.attendancePercentage.toFixed(1),
+              "Total Aktivitas": member.totalActivities,
+              "Aktivitas Hadir": member.attendedActivities,
+              "Status Attendance": member.isLowAttendance ? "Rendah" : "Normal",
+            });
+          });
+        }
+
+        // Add empty row between sub-groups for better readability
+        excelData.push({
+          "Nama Sub-Kelompok": "",
+          "Deskripsi Sub-Kelompok": "",
+          "Jumlah Anggota": 0,
+          "Ketua Kelompok": "",
+          "Nama Anggota": "",
+          NIM: "",
+          "Attendance (%)": "",
+          "Total Aktivitas": 0,
+          "Aktivitas Hadir": 0,
+          "Status Attendance": "",
+        });
+      });
+
+      // Create worksheet
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+      // Set column widths
+      worksheet["!cols"] = [
+        { wch: 20 }, // Nama Sub-Kelompok
+        { wch: 30 }, // Deskripsi Sub-Kelompok
+        { wch: 15 }, // Jumlah Anggota
+        { wch: 20 }, // Ketua Kelompok
+        { wch: 25 }, // Nama Anggota
+        { wch: 15 }, // NIM
+        { wch: 15 }, // Attendance (%)
+        { wch: 15 }, // Total Aktivitas
+        { wch: 15 }, // Aktivitas Hadir
+        { wch: 18 }, // Status Attendance
+      ];
+
+      // Create workbook
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Data Kelompok");
+
+      // Generate filename with date
+      const date = new Date().toISOString().split("T")[0];
+      const filename = `${groupParent.name.replace(/\s+/g, "_")}_${date}.xlsx`;
+
+      // Export file
+      XLSX.writeFile(workbook, filename);
+
+      toast.success("Data berhasil di-export ke Excel!");
+    } catch (error) {
+      console.error("Error exporting to Excel:", error);
+      toast.error("Gagal export data ke Excel");
+    }
+  };
+
   return (
     <div className="min-h-screen p-8">
       <div className="max-w-7xl mx-auto">
@@ -164,6 +277,17 @@ export default function GroupDetailPage() {
             <Plus className="w-5 h-5" />
             Tambah Sub-kelompok
           </Button>
+
+          {/* Export Button */}
+          <Button
+            onClick={handleExportToExcel}
+            variant="outline"
+            className="gap-2"
+            disabled={loading || subGroups.length === 0}
+          >
+            <Download className="w-5 h-5" />
+            Export Excel
+          </Button>
         </motion.div>
 
         {/* Sub-groups Grid */}
@@ -219,6 +343,16 @@ export default function GroupDetailPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() =>
+                                router.push(
+                                  `/group-management/${groupParentId}/${subGroup.id}`
+                                )
+                              }
+                            >
+                              <Users className="w-4 h-4 mr-2" />
+                              Lihat Anggota
+                            </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => {
                                 setSelectedSubGroup(subGroup);
@@ -309,9 +443,7 @@ export default function GroupDetailPage() {
                         {subGroup.members.some((m) => m.isLowAttendance) && (
                           <div className="flex items-center gap-1 text-xs text-orange-600 bg-orange-50 p-2 rounded">
                             <AlertCircle className="w-3 h-3" />
-                            <span>
-                              Ada anggota dengan attendance &lt; 25%
-                            </span>
+                            <span>Ada anggota dengan attendance &lt; 25%</span>
                           </div>
                         )}
                       </div>
