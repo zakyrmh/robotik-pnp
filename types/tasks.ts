@@ -1,11 +1,10 @@
-import { OrPhase, SubmissionType, TaskType } from "@/types/enum";
+import { OrPhase, SubmissionType, TaskStatus, TaskType } from "@/types/enum";
 import { Timestamp } from "firebase/firestore";
 
 export interface Task {
   id: string;
   activityId?: string; // Optional, bisa standalone task
   orPeriod: string;
-  phase: OrPhase;
   
   // Basic Info
   title: string;
@@ -15,36 +14,13 @@ export interface Task {
   
   // Deadline
   deadline: Timestamp;
-  lateSubmissionAllowed: boolean;
-  lateSubmissionDeadline?: Timestamp;
-  latePenalty?: number; // Pengurangan poin untuk late submission (%)
   
   // Submission Settings
   submissionTypes: SubmissionType[]; // Bisa multiple
   allowedFileTypes?: string[]; // ['.pdf', '.doc', '.jpg']
-  maxFileSize?: number; // Bytes
-  maxFiles?: number;
   
   // Grading
-  hasGrading: boolean;
-  maxScore?: number; // e.g., 100
-  isScorePublished: boolean; // Apakah nilai sudah di-publish
-  
-  // Group Settings (jika type = GROUP)
-  groupSettings?: {
-    minMembers: number;
-    maxMembers: number;
-    allowSelfFormation: boolean; // Bisa buat grup sendiri atau di-assign
-  };
-  
-  // Materials
-  materialsUrls?: string[];
-  attachmentsUrls?: string[];
-  
-  // Statistics
-  totalSubmissions?: number;
-  gradedSubmissions?: number;
-  averageScore?: number;
+  isScorePublished: boolean;
   
   // Status
   isPublished: boolean;
@@ -53,9 +29,32 @@ export interface Task {
   // Soft Delete
   deletedAt?: Timestamp;
   deletedBy?: string;
+  updatedBy?: string;
   
   // Metadata
   createdBy: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+}
+
+export interface TaskSubmission {
+  id: string;
+  taskId: string;
+  userId?: string;
+  subGroupId?: string;
+  fileUrl?: string;
+  fileName?: string;
+  fileSize?: number;
+  fileType?: string;
+  linkUrl?: string;
+  textAnswer?: string;
+  score?: number;
+  feedback?: string;
+  submittedAt: Timestamp;
+  gradedAt?: Timestamp;
+  gradedBy?: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
+  deletedAt?: Timestamp;
+  deletedBy?: string;
 }
