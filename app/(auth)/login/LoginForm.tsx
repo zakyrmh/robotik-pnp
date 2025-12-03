@@ -60,10 +60,13 @@ export default function LoginPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ idToken }),
+        body: JSON.stringify({ idToken, rememberMe }),
       });
 
       if (!response.ok) {
+        const errorData = await response.json();
+        toast.error(errorData.error || "Gagal membuat session. Coba lagi.");
+        console.error("Session API error:", errorData);
         throw new Error("Failed to create session");
       }
 
@@ -78,11 +81,8 @@ export default function LoginPage() {
 
       toast.success("Login berhasil!");
 
-      // Redirect ke halaman tujuan atau dashboard
-      setTimeout(() => {
-        router.push(redirectTo || "/dashboard");
-        router.refresh();
-      }, 500);
+      // Redirect langsung tanpa timeout/refresh untuk avoid race condition
+      router.push(redirectTo || "/dashboard");
     } catch (error) {
       if (error instanceof FirebaseError) {
         console.error("Login error:", error);

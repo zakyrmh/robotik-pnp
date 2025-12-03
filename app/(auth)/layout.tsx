@@ -22,7 +22,6 @@ export default function AuthLayout({
         setIsAuthenticated(false);
       } else {
         setIsAuthenticated(true);
-        router.push("/dashboard");
       }
       setLoading(false);
     });

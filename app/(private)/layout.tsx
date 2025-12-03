@@ -41,6 +41,18 @@ export default function PrivateLayout({
 
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (user) {
+        try {
+          const idToken = await user.getIdToken(true); // forceRefresh: true untuk token baru
+          await fetch("/api/auth/session", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ idToken, rememberMe: localStorage.getItem("rememberMe") === "true" }), // Pakai rememberMe dari localStorage
+          });
+          console.log("Session cookie refreshed"); // Logging untuk debug
+        } catch (refreshError) {
+          console.error("Error refreshing session:", refreshError);
+        }
+        
         setIsAuthenticated(true);
         
         try {

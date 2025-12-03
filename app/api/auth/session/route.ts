@@ -1,19 +1,18 @@
 import { NextResponse } from "next/server";
 import { getAuth } from "firebase-admin/auth";
-import "@/lib/firebaseAdmin"; // pastikan ini menginisialisasi admin
+import "@/lib/firebaseAdmin";
 
 export async function POST(req: Request) {
   try {
-    const { idToken } = await req.json();
+    const { idToken, rememberMe } = await req.json();
     if (!idToken) {
       return NextResponse.json({ error: "Missing idToken" }, { status: 400 });
     }
 
-    // Buat session cookie yang berlaku 5 hari
-    const expiresIn = 60 * 60 * 24 * 5 * 1000;
+    const expiresIn = rememberMe ? 60 * 60 * 24 * 14 * 1000 : 60 * 60 * 24 * 1000;
+
     const sessionCookie = await getAuth().createSessionCookie(idToken, { expiresIn });
 
-    // Buat response dan set cookie HttpOnly
     const response = NextResponse.json({ success: true });
     response.cookies.set({
       name: "session",
@@ -22,6 +21,7 @@ export async function POST(req: Request) {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       path: "/",
+      sameSite: "strict",
     });
 
     return response;
