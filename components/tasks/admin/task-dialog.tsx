@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react"; // Hapus useMemo karena tidak digunakan lagi
+import { useEffect, useState, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -106,7 +106,7 @@ const TaskDialog = ({
     if (!open) {
       form.reset(defaultValues);
     }
-  }, [open, form]);
+  }, [open, form, defaultValues]);
 
   const handleSubmit = async (values: TaskFormValues) => {
     if (!currentUserId) {
@@ -193,7 +193,7 @@ const TaskDialog = ({
       // Mode create: Reset ke default
       form.reset(defaultValues);
     }
-  }, [selectedTask, form]);
+  }, [selectedTask, form, defaultValues]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
