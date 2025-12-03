@@ -71,7 +71,8 @@ const TaskGradeManagementPage = () => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [activitiesLoading, setActivitiesLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -177,6 +178,16 @@ const TaskGradeManagementPage = () => {
     setDeadlineTo("");
   };
 
+  const handleOpenCreate = () => {
+    setSelectedTask(null);
+    setIsDialogOpen(true);
+  };
+
+  const handleOpenEdit = (task: Task) => {
+    setSelectedTask(task);
+    setIsDialogOpen(true);
+  };
+
   return (
     <div className="min-h-screen p-8">
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
@@ -224,7 +235,7 @@ const TaskGradeManagementPage = () => {
             </Button>
             <Button
               className="gap-2"
-              onClick={() => setIsCreateOpen(true)}
+              onClick={handleOpenCreate}
               disabled={!currentUserId || activitiesLoading}
             >
               <Plus className="h-4 w-4" />
@@ -436,7 +447,11 @@ const TaskGradeManagementPage = () => {
                             >
                               Detail
                             </Button>
-                            <Button size="sm" variant="ghost" disabled>
+                            <Button 
+                              size="sm" 
+                              variant="ghost" 
+                              onClick={() => handleOpenEdit(task)}
+                            >
                               Edit
                             </Button>
                           </div>
@@ -452,11 +467,12 @@ const TaskGradeManagementPage = () => {
       </div>
 
       <TaskDialog
-        open={isCreateOpen}
-        onOpenChange={setIsCreateOpen}
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
         onSuccess={loadTasks}
         currentUserId={currentUserId}
         activities={activities}
+        selectedTask={selectedTask}
       />
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState, useMemo } from "react"; // Hapus useMemo karena tidak digunakan lagi
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -33,11 +33,13 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
 import { Activity } from "@/types/activities";
+import { Task } from "@/types/tasks"; // Tambah import ini
 import { SubmissionType, TaskType } from "@/types/enum";
-import { createTask } from "@/lib/firebase/tasks";
+import { createTask, updateTask } from "@/lib/firebase/tasks"; // Tambah updateTask
 import { Loader2, Upload } from "lucide-react";
 import { Timestamp } from "firebase/firestore";
 import { toast } from "sonner";
+import { format } from "date-fns"; // Tambah import ini untuk format deadline
 
 const taskSchema = z.object({
   activityId: z.string().optional(),
@@ -65,6 +67,7 @@ interface TaskDialogProps {
   onSuccess: () => void;
   currentUserId: string | null;
   activities: Activity[];
+  selectedTask?: Task | null;
 }
 
 const TaskDialog = ({
@@ -73,27 +76,26 @@ const TaskDialog = ({
   onSuccess,
   currentUserId,
   activities,
+  selectedTask, // Tambah selectedTask ke destructuring
 }: TaskDialogProps) => {
   const [loading, setLoading] = useState(false);
 
-  const defaultValues: TaskFormValues = useMemo(
-    () => ({
-      activityId: "",
-      orPeriod: "",
-      title: "",
-      description: "",
-      instructions: "",
-      type: TaskType.INDIVIDUAL,
-      groupParentId: "",
-      deadline: "",
-      submissionTypes: [SubmissionType.FILE],
-      allowedFileTypes: "",
-      isScorePublished: false,
-      isPublished: true,
-      isVisible: true,
-    }),
-    []
-  );
+  const defaultValues: TaskFormValues = useMemo(() => ({
+    activityId: "",
+    orPeriod: "",
+    title: "",
+    description: "",
+    instructions: "",
+    type: TaskType.INDIVIDUAL,
+    groupParentId: "",
+    deadline: "",
+    submissionTypes: [SubmissionType.FILE],
+    allowedFileTypes: "",
+    isScorePublished: false,
+    isPublished: true,
+    isVisible: true,
+  }), []);
+  
 
   const form = useForm<TaskFormValues>({
     resolver: zodResolver(taskSchema),
@@ -104,7 +106,7 @@ const TaskDialog = ({
     if (!open) {
       form.reset(defaultValues);
     }
-  }, [open, form, defaultValues]);
+  }, [open, form]);
 
   const handleSubmit = async (values: TaskFormValues) => {
     if (!currentUserId) {
@@ -117,9 +119,9 @@ const TaskDialog = ({
     try {
       const allowedFileTypes = values.allowedFileTypes
         ? values.allowedFileTypes
-            .split(",")
-            .map((item) => item.trim())
-            .filter(Boolean)
+          .split(",")
+          .map((item) => item.trim())
+          .filter(Boolean)
         : undefined;
 
       const deadlineDate = new Date(values.deadline);
@@ -141,25 +143,57 @@ const TaskDialog = ({
         isScorePublished: values.isScorePublished,
         isPublished: values.isPublished,
         isVisible: values.isVisible,
-        createdBy: currentUserId,
         updatedBy: currentUserId,
       };
 
-      await createTask(payload);
-      toast.success("Tugas berhasil dibuat");
+      if (selectedTask) {
+        // Mode edit
+        await updateTask(selectedTask.id, payload);
+        toast.success("Tugas berhasil diupdate");
+      } else {
+        // Mode create
+        await createTask({
+          ...payload,
+          createdBy: currentUserId,
+        });
+        toast.success("Tugas berhasil dibuat");
+      }
+
       onSuccess();
-      onOpenChange(false);
+      setTimeout(() => onOpenChange(false), 0);
     } catch (error) {
       console.error(error);
       toast.error(
-        `Gagal menyimpan tugas: ${
-          error instanceof Error ? error.message : "Terjadi kesalahan"
+        `Gagal menyimpan tugas: ${error instanceof Error ? error.message : "Terjadi kesalahan"
         }`
       );
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (selectedTask) {
+      // Mode edit: Isi form dengan data selectedTask
+      form.reset({
+        activityId: selectedTask.activityId || "",
+        orPeriod: selectedTask.orPeriod,
+        title: selectedTask.title,
+        description: selectedTask.description,
+        instructions: selectedTask.instructions || "",
+        type: selectedTask.type,
+        deadline: selectedTask.deadline ? format(selectedTask.deadline.toDate(), "yyyy-MM-dd'T'HH:mm") : "",
+        submissionTypes: selectedTask.submissionTypes || [SubmissionType.FILE],
+        allowedFileTypes: selectedTask.allowedFileTypes?.join(", ") || "",
+        isScorePublished: selectedTask.isScorePublished,
+        isPublished: selectedTask.isPublished,
+        isVisible: selectedTask.isVisible,
+      });
+    } else {
+      // Mode create: Reset ke default
+      form.reset(defaultValues);
+    }
+  }, [selectedTask, form]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -460,7 +494,7 @@ const TaskDialog = ({
               ) : (
                 <>
                   <Upload className="h-4 w-4" />
-                  Simpan Tugas
+                  {selectedTask ? "Update Tugas" : "Simpan Tugas"}
                 </>
               )}
             </Button>

@@ -1,4 +1,4 @@
-import { OrPhase, SubmissionType, TaskStatus, TaskType } from "@/types/enum";
+import { SubmissionType, TaskType } from "@/types/enum";
 import { Timestamp } from "firebase/firestore";
 
 export interface Task {
