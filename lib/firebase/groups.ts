@@ -415,7 +415,7 @@ export async function getCaangUsersWithAttendance(orPeriod: string): Promise<Gro
     
     // Filter caang users
     const caangUsers = usersResult.data.filter(
-      user => user.role === UserRole.CAANG && user.isActive
+      user => user.roles.isCaang && user.isActive
     );
     
     // Calculate attendance for each user

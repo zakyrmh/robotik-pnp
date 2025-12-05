@@ -106,7 +106,7 @@ export default function AttendanceListTable() {
       if (usersResponse.success && usersResponse.data) {
         // Filter only caang users
         const caangUsers = usersResponse.data.filter(
-          (user) => user.role === "caang" && !user.deletedAt
+          (user) => user.roles.isCaang && !user.deletedAt
         );
 
         // Map attendances with related data

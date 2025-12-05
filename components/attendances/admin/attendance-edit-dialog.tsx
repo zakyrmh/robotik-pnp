@@ -92,9 +92,11 @@ export default function AttendanceEditDialog({
         // Load users (caang)
         const usersResponse = await getUsers();
         if (usersResponse.success && usersResponse.data) {
-          // Filter only CAANG users
+          // UPDATE: Filter only CAANG users using the new roles object
+          // Sebelumnya: user.role === "caang"
+          // Sekarang: user.roles?.isCaang
           const caangUsers = usersResponse.data.filter(
-            (user) => user.role === "caang" && !user.deletedAt
+            (user) => user.roles?.isCaang && !user.deletedAt
           );
           setUsers(caangUsers);
         }

@@ -1,241 +1,221 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { motion } from "framer-motion";
-import Loading from "@/components/Loading";
-import DashboardFiltersComponent, {
-  DashboardFilters,
-} from "@/components/Dashboard/admin/DashboardFilters";
-import AttendanceTrendChart from "@/components/Dashboard/admin/AttendanceTrendChart";
-import ActivityStatsChart from "@/components/Dashboard/admin/ActivityStatsChart";
-import RegistrationStatusChart from "@/components/Dashboard/admin/RegistrationStatusChart";
-import RecentCaangTable from "@/components/Dashboard/admin/RecentCaangTable";
-import UpcomingActivitiesTable from "@/components/Dashboard/admin/UpcomingActivitiesTable";
-import PendingAttendanceTable from "@/components/Dashboard/admin/PendingAttendanceTable";
-import { getActivities } from "@/lib/firebase/activities";
-import { getAttendances } from "@/lib/firebase/attendances";
-import { getRegistrations } from "@/lib/firebase/registrations";
-import { getUsers } from "@/lib/firebase/users";
-import { Activity } from "@/types/activities";
-import { Attendance } from "@/types/attendances";
-import { Registration } from "@/types/registrations";
+import { useState } from "react";
 import { User } from "@/types/users";
-import { UserRole } from "@/types/enum";
 
-export default function AdminDashboard() {
-  const [loading, setLoading] = useState(true);
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [attendances, setAttendances] = useState<Attendance[]>([]);
-  const [registrations, setRegistrations] = useState<Registration[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
-  const [filters, setFilters] = useState<DashboardFilters>({});
+interface AdminDashboardProps {
+  user: User | null;
+}
 
-  // Fetch all data
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const [activitiesData, attendancesData, registrationsData, usersResponse] =
-        await Promise.all([
-          getActivities(),
-          getAttendances(),
-          getRegistrations(),
-          getUsers(),
-        ]);
+type TabType = 
+  | "overview" 
+  | "kestari" 
+  | "komdis" 
+  | "recruitment" 
+  | "official" 
+  | "kri" 
+  | "superadmin";
 
-      setActivities(activitiesData);
-      setAttendances(attendancesData);
-      setRegistrations(registrationsData);
-      
-      if (usersResponse.success && usersResponse.data) {
-        setUsers(usersResponse.data);
-      }
-    } catch (error) {
-      console.error("Error fetching dashboard data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+export default function AdminDashboard({ user }: AdminDashboardProps) {
+  const [activeTab, setActiveTab] = useState<TabType>("overview");
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  // Filter data based on filters
-  const filteredActivities = activities.filter((activity) => {
-    // Filter by date range
-    if (filters.dateRange?.from || filters.dateRange?.to) {
-      const activityDate = activity.startDateTime
-        ? new Date(activity.startDateTime.seconds * 1000)
-        : null;
-
-      if (activityDate) {
-        if (filters.dateRange.from && activityDate < filters.dateRange.from) {
-          return false;
-        }
-        if (filters.dateRange.to && activityDate > filters.dateRange.to) {
-          return false;
-        }
-      }
-    }
-
-    // Filter by OR period
-    if (filters.orPeriod && activity.orPeriod !== filters.orPeriod) {
-      return false;
-    }
-
-    return true;
-  });
-
-  const filteredAttendances = attendances.filter((attendance) => {
-    // Filter by date range
-    if (filters.dateRange?.from || filters.dateRange?.to) {
-      const attendanceDate = attendance.checkedInAt
-        ? new Date(attendance.checkedInAt.seconds * 1000)
-        : attendance.createdAt
-        ? new Date(attendance.createdAt.seconds * 1000)
-        : null;
-
-      if (attendanceDate) {
-        if (
-          filters.dateRange.from &&
-          attendanceDate < filters.dateRange.from
-        ) {
-          return false;
-        }
-        if (filters.dateRange.to && attendanceDate > filters.dateRange.to) {
-          return false;
-        }
-      }
-    }
-
-    // Filter by OR period
-    if (filters.orPeriod && attendance.orPeriod !== filters.orPeriod) {
-      return false;
-    }
-
-    return true;
-  });
-
-  const filteredRegistrations = registrations.filter((registration) => {
-    // Filter by date range
-    if (filters.dateRange?.from || filters.dateRange?.to) {
-      const registrationDate = registration.createdAt
-        ? new Date(registration.createdAt.seconds * 1000)
-        : null;
-
-      if (registrationDate) {
-        if (
-          filters.dateRange.from &&
-          registrationDate < filters.dateRange.from
-        ) {
-          return false;
-        }
-        if (
-          filters.dateRange.to &&
-          registrationDate > filters.dateRange.to
-        ) {
-          return false;
-        }
-      }
-    }
-
-    // Filter by OR period
-    if (filters.orPeriod && registration.orPeriod !== filters.orPeriod) {
-      return false;
-    }
-
-    // Filter by status
-    if (filters.status && registration.status !== filters.status) {
-      return false;
-    }
-
-    return true;
-  });
-
-  // Calculate total users with role "caang"
-  const totalCaangUsers = users.filter(
-    (user) => user.role === UserRole.CAANG && user.isActive && !user.deletedAt
-  ).length;
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: { y: 0, opacity: 1 },
-  };
-
-  if (loading) {
-    return <Loading />;
+  // Safety check jika user data belum masuk
+  if (!user) {
+    return <div className="p-8 text-center">Memuat data user...</div>;
   }
 
-  return (
-    <div className="min-h-screen p-8">
-      <div className="max-w-7xl mx-auto">
-        <motion.div
-          className="space-y-6"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          {/* Header */}
-          <motion.div variants={itemVariants}>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Dashboard Admin
-            </h1>
-            <p className="text-gray-500 dark:text-gray-400 mt-2">
-              Overview aktivitas, kehadiran, dan registrasi
-            </p>
-          </motion.div>
+  const { roles, profile } = user;
 
-          {/* Filters */}
-          <motion.div variants={itemVariants}>
-            <DashboardFiltersComponent
-              filters={filters}
-              onFiltersChange={setFilters}
-            />
-          </motion.div>
+  // Helper untuk mengecek akses (Super Admin biasanya bisa akses semua menu)
+  const canAccess = (roleCheck: boolean) => roles.isSuperAdmin || roleCheck;
 
-          {/* Charts Section */}
-          <motion.div variants={itemVariants}>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <AttendanceTrendChart 
-                attendances={filteredAttendances}
-                activities={filteredActivities}
-                totalCaangUsers={totalCaangUsers}
-              />
-              <ActivityStatsChart activities={filteredActivities} />
+  // --- RENDER CONTENT HANDLER ---
+  const renderContent = () => {
+    switch (activeTab) {
+      case "overview":
+        return (
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold">Halo, {profile.fullName}</h2>
+            <p className="text-gray-600">Selamat datang di Dashboard Internal.</p>
+            {/* Widget atau Info umum disini */}
+            <div className="p-4 border border-dashed border-gray-300 rounded-lg">
+              <span className="text-gray-400">Area Widget Overview (Kosong)</span>
             </div>
-          </motion.div>
+          </div>
+        );
 
-          <motion.div variants={itemVariants}>
-            <RegistrationStatusChart registrations={filteredRegistrations} />
-          </motion.div>
+      case "superadmin":
+        return (
+          <div>
+            <h2 className="text-xl font-bold mb-4">Control Panel Super Admin</h2>
+            {/* Manajemen User, Global Config, dll */}
+            <div className="h-64 bg-gray-50 border-2 border-dashed border-gray-200 rounded flex items-center justify-center">
+              Super Admin Content
+            </div>
+          </div>
+        );
 
-          {/* Tables Section */}
-          <motion.div variants={itemVariants}>
-            <RecentCaangTable registrations={filteredRegistrations} />
-          </motion.div>
+      case "kestari":
+        return (
+          <div>
+            <h2 className="text-xl font-bold mb-4">Menu Kestari</h2>
+            {/* Absensi, Manajemen Piket, Surat */}
+            <div className="h-64 bg-blue-50 border-2 border-dashed border-blue-200 rounded flex items-center justify-center">
+              Manajemen Kestari & Piket
+            </div>
+          </div>
+        );
 
-          <motion.div variants={itemVariants}>
-            <UpcomingActivitiesTable activities={filteredActivities} />
-          </motion.div>
+      case "komdis":
+        return (
+          <div>
+            <h2 className="text-xl font-bold mb-4">Menu Komisi Disiplin</h2>
+            {/* Input Pelanggaran, List Sanksi */}
+            <div className="h-64 bg-red-50 border-2 border-dashed border-red-200 rounded flex items-center justify-center">
+              Manajemen Sanksi & Pelanggaran
+            </div>
+          </div>
+        );
 
-          <motion.div variants={itemVariants}>
-            <PendingAttendanceTable
-              attendances={filteredAttendances}
-              onUpdate={fetchData}
+      case "recruitment":
+        return (
+          <div>
+            <h2 className="text-xl font-bold mb-4">Panitia Oprec (Recruiter)</h2>
+            {/* Data Caang, Nilai Wawancara */}
+            <div className="h-64 bg-green-50 border-2 border-dashed border-green-200 rounded flex items-center justify-center">
+              Data Peserta & Penilaian
+            </div>
+          </div>
+        );
+
+      case "official":
+        return (
+          <div>
+            <h2 className="text-xl font-bold mb-4">Official Department</h2>
+            {/* Jobdesk Departemen */}
+            <div className="h-64 bg-purple-50 border-2 border-dashed border-purple-200 rounded flex items-center justify-center">
+              Workspace Department (Infokom/Litbang/dll)
+            </div>
+          </div>
+        );
+
+      case "kri":
+        return (
+          <div>
+            <h2 className="text-xl font-bold mb-4">Tim Robot (KRI)</h2>
+            {/* Logbook, Progress Robot */}
+            <div className="h-64 bg-orange-50 border-2 border-dashed border-orange-200 rounded flex items-center justify-center">
+              Logbook & Progress Tim Robot
+            </div>
+          </div>
+        );
+
+      default:
+        return <div>Menu tidak ditemukan</div>;
+    }
+  };
+
+  return (
+    <div className="flex min-h-screen bg-gray-100">
+      {/* --- SIDEBAR --- */}
+      <aside className="w-64 bg-white shadow-md hidden md:block">
+        <div className="p-6 border-b">
+          <h1 className="text-lg font-bold text-gray-800">Admin Panel</h1>
+          <p className="text-xs text-gray-500 mt-1">{user.email}</p>
+        </div>
+        <nav className="p-4 space-y-2">
+          {/* Menu Umum */}
+          <SidebarButton 
+            active={activeTab === "overview"} 
+            onClick={() => setActiveTab("overview")} 
+            label="Overview" 
+          />
+
+          {/* Menu Role Based - Hanya muncul jika role = true */}
+          
+          {roles.isSuperAdmin && (
+            <>
+              <div className="pt-4 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">Core</div>
+              <SidebarButton 
+                active={activeTab === "superadmin"} 
+                onClick={() => setActiveTab("superadmin")} 
+                label="Super Admin" 
+              />
+            </>
+          )}
+
+          {(canAccess(roles.isKestari) || canAccess(roles.isKomdis) || canAccess(roles.isRecruiter)) && (
+            <div className="pt-4 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">Management</div>
+          )}
+
+          {canAccess(roles.isKestari) && (
+            <SidebarButton 
+              active={activeTab === "kestari"} 
+              onClick={() => setActiveTab("kestari")} 
+              label="Kestari" 
             />
-          </motion.div>
-        </motion.div>
-      </div>
+          )}
+
+          {canAccess(roles.isKomdis) && (
+            <SidebarButton 
+              active={activeTab === "komdis"} 
+              onClick={() => setActiveTab("komdis")} 
+              label="Komdis" 
+            />
+          )}
+
+          {canAccess(roles.isRecruiter) && (
+            <SidebarButton 
+              active={activeTab === "recruitment"} 
+              onClick={() => setActiveTab("recruitment")} 
+              label="Recruitment (Oprec)" 
+            />
+          )}
+
+          {(canAccess(roles.isOfficialMember) || canAccess(roles.isKRIMember)) && (
+            <div className="pt-4 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">Division</div>
+          )}
+
+          {canAccess(roles.isOfficialMember) && (
+            <SidebarButton 
+              active={activeTab === "official"} 
+              onClick={() => setActiveTab("official")} 
+              label="Official Dept" 
+            />
+          )}
+
+          {canAccess(roles.isKRIMember) && (
+            <SidebarButton 
+              active={activeTab === "kri"} 
+              onClick={() => setActiveTab("kri")} 
+              label="Tim Robot (KRI)" 
+            />
+          )}
+        </nav>
+      </aside>
+
+      {/* --- MAIN CONTENT AREA --- */}
+      <main className="flex-1 p-8">
+        <div className="bg-white rounded-lg shadow p-6 min-h-[500px]">
+          {renderContent()}
+        </div>
+      </main>
     </div>
+  );
+}
+
+// Komponen Kecil untuk Tombol Sidebar
+function SidebarButton({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full text-left px-4 py-2 rounded transition-colors duration-200 ${
+        active 
+          ? "bg-blue-600 text-white font-medium" 
+          : "text-gray-600 hover:bg-gray-100"
+      }`}
+    >
+      {label}
+    </button>
   );
 }

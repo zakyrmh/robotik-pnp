@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebaseConfig";
 import { useAuth } from "@/hooks/useAuth";
-import Image from "next/image";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +14,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown, LogOut, Settings } from "lucide-react";
+import FirebaseImage from "@/components/FirebaseImage";
 
 export function UserInfo() {
   const { user, logout, loading } = useAuth();
@@ -46,11 +46,11 @@ export function UserInfo() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="flex items-center gap-2 rounded-md outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2">
-        <Image
-          src={USER.img}
-          alt="User Avatar"
+        <FirebaseImage
+          path={USER.img}
           width={40}
           height={40}
+          alt="User Avatar"
           className="h-10 w-10 rounded-full object-cover"
         />
         <ChevronDown className="h-4 w-4 text-muted-foreground max-lg:hidden" />
@@ -63,8 +63,8 @@ export function UserInfo() {
       >
         <DropdownMenuLabel>
           <div className="flex items-center gap-3">
-            <Image
-              src={USER.img}
+            <FirebaseImage
+              path={USER.img}
               alt="User Avatar"
               width={48}
               height={48}
@@ -88,7 +88,8 @@ export function UserInfo() {
           onClick={logout}
           className="cursor-pointer text-red-600"
         >
-          <LogOut className="mr-2 h-4 w-4" /> {loading ? "Loading..." : "Logout"}
+          <LogOut className="mr-2 h-4 w-4" />{" "}
+          {loading ? "Loading..." : "Logout"}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

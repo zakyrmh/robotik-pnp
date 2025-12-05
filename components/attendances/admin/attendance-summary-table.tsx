@@ -65,7 +65,7 @@ export default function AttendanceSummaryTable() {
 
         // Filter only caang users and sort activities by date
         const caangUsers = usersResponse.data.filter(
-          (user) => user.role === "caang" && !user.deletedAt
+          (user) => user.roles.isCaang && !user.deletedAt
         );
         
         const sortedActivities = activitiesData.sort((a, b) => 

@@ -36,7 +36,8 @@ import { getActivities } from "@/lib/firebase/activities";
 import { getUserById } from "@/lib/firebase/users";
 import { getAttendanceByCompositeId } from "@/lib/firebase/attendances";
 import { Activity } from "@/types/activities";
-import { User as UserType } from "@/types/users";
+// Update Import Type
+import { User as UserType } from "@/types/users"; 
 import { Attendance } from "@/types/attendances";
 import { AttendanceStatus, AttendanceMethod } from "@/types/enum";
 import { format } from "date-fns";
@@ -65,10 +66,13 @@ export default function ScanQRPage() {
   const [scanning, setScanning] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+  
+  // Ganti currentUserRole string menjadi status permission boolean
+  const [isAuthorizedScanner, setIsAuthorizedScanner] = useState(false); 
+  
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
 
-  // Listen to auth state and check admin role
+  // Listen to auth state and check admin/authorized roles
   useEffect(() => {
     const auth = getAuth(app);
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -77,18 +81,35 @@ export default function ScanQRPage() {
 
         // Get user data to check role
         const userResponse = await getUserById(user.uid);
+        
         if (userResponse.success && userResponse.data) {
-          setCurrentUserRole(userResponse.data.role);
+          const userData = userResponse.data;
+          const roles = userData.roles;
 
-          if (userResponse.data.role !== "admin") {
+          // LOGIKA BARU: Cek permission berdasarkan roles boolean
+          // Diizinkan jika: SuperAdmin, Kestari, Komdis, atau Recruiter (Panitia)
+          const hasAccess = 
+            roles?.isSuperAdmin || 
+            roles?.isKestari || 
+            roles?.isKomdis || 
+            roles?.isRecruiter;
+
+          if (hasAccess) {
+            setIsAuthorizedScanner(true);
+          } else {
             toast.error(
-              "Akses ditolak! Hanya admin yang dapat menggunakan fitur ini."
+              "Akses ditolak! Anda tidak memiliki izin untuk melakukan scanning absensi."
             );
             router.push("/dashboard");
           }
+        } else {
+            // Jika data user tidak ketemu
+            toast.error("Gagal mengambil data user.");
+            router.push("/login");
         }
       } else {
         setCurrentUserId(null);
+        setIsAuthorizedScanner(false);
         router.push("/login");
       }
     });
@@ -136,10 +157,11 @@ export default function ScanQRPage() {
       }
     };
 
-    if (currentUserRole === "admin") {
+    // Hanya load activity jika user sudah terotorisasi
+    if (isAuthorizedScanner) {
       loadActivities();
     }
-  }, [currentUserRole]);
+  }, [isAuthorizedScanner]);
 
   // Update selected activity when selection changes
   useEffect(() => {
@@ -391,11 +413,13 @@ export default function ScanQRPage() {
     // Cast the error parameter to the Error type
     if (typeof error === "object" && error !== null && "message" in error) {
       const errorAsError = error as Error;
+      // Filter out common minor errors if needed
       console.error(errorAsError.message);
     }
   };
 
-  if (loading || currentUserRole !== "admin") {
+  // Render logic: Use isAuthorizedScanner instead of currentUserRole
+  if (loading || !isAuthorizedScanner) {
     return (
       <div className="min-h-screen p-8 flex items-center justify-center">
         <Card>

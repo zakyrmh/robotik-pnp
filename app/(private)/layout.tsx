@@ -12,15 +12,28 @@ import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { doc, getDoc, getFirestore } from "firebase/firestore";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { User, UserSystemRoles } from "@/types/users";
 
-function SidebarConsumer({ role }: { role: string }) {
+// Default roles jika data belum ada (Safety fallback)
+const DEFAULT_ROLES: UserSystemRoles = {
+  isSuperAdmin: false,
+  isKestari: false,
+  isKomdis: false,
+  isRecruiter: false,
+  isKRIMember: false,
+  isOfficialMember: false,
+  isCaang: true, // Default dianggap Caang agar aman
+  isAlumni: false,
+};
+
+function SidebarConsumer({ userRoles }: { userRoles: UserSystemRoles }) {
   const { isOpen, isMobile, closeSidebar } = useSidebarContext();
   return (
     <Sidebar
       isOpen={isOpen}
       isMobile={isMobile}
       onClose={closeSidebar}
-      role={role}
+      userRoles={userRoles}
     />
   );
 }
@@ -30,7 +43,7 @@ export default function PrivateLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [role, setRole] = useState("");
+  const [userRoles, setUserRoles] = useState<UserSystemRoles>(DEFAULT_ROLES);
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const router = useRouter();
@@ -39,32 +52,42 @@ export default function PrivateLayout({
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    const unsub = onAuthStateChanged(auth, async (user) => {
-      if (user) {
+    const unsub = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        // 1. Session Refresh Logic (Keep existing)
         try {
-          const idToken = await user.getIdToken(true); // forceRefresh: true untuk token baru
+          const idToken = await firebaseUser.getIdToken(true);
           await fetch("/api/auth/session", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ idToken, rememberMe: localStorage.getItem("rememberMe") === "true" }), // Pakai rememberMe dari localStorage
+            body: JSON.stringify({ 
+              idToken, 
+              rememberMe: localStorage.getItem("rememberMe") === "true" 
+            }),
           });
-          console.log("Session cookie refreshed"); // Logging untuk debug
         } catch (refreshError) {
           console.error("Error refreshing session:", refreshError);
         }
         
         setIsAuthenticated(true);
         
+        // 2. Fetch User Data & Roles
         try {
-          const userRef = doc(db, "users_new", user.uid);
+          const userRef = doc(db, "users_new", firebaseUser.uid);
           const snap = await getDoc(userRef);
 
           if (snap.exists()) {
-            const data = snap.data();
-            setRole((data.role as "user" | "admin") ?? "user");
+            const userData = snap.data() as User;
+            
+            // Mengambil roles dari database, atau pakai default jika belum migrasi
+            // Pastikan field di firestore bernama 'roles' sesuai types/users.ts
+            setUserRoles(userData.roles || DEFAULT_ROLES);
+          } else {
+            console.warn("User document not found via layout check");
+            // Opsional: Redirect ke halaman setup profil jika dokumen belum ada
           }
         } catch (error) {
-          console.error("Error fetching user role:", error);
+          console.error("Error fetching user roles:", error);
         }
       } else {
         setIsAuthenticated(false);
@@ -77,9 +100,7 @@ export default function PrivateLayout({
   }, [router]);
 
   if (loading) {
-    return (
-      <Loading />
-    );
+    return <Loading />;
   }
 
   if (!isAuthenticated) {
@@ -89,10 +110,11 @@ export default function PrivateLayout({
   return (
     <SidebarProvider>
       <div className="flex h-screen w-full overflow-hidden bg-background">
-        <SidebarConsumer role={role} />
+        {/* Pass userRoles ke Sidebar */}
+        <SidebarConsumer userRoles={userRoles} />
         <div className="flex flex-1 flex-col overflow-hidden">
           <Header />
-          <main className="flex-1 overflow-y-auto w-screen lg:w-full">
+          <main className="flex-1 overflow-y-auto w-screen lg:w-full p-4 md:p-6">
             {children}
           </main>
         </div>
