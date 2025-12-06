@@ -141,7 +141,7 @@ export default function AttendanceListTable() {
               id: `absent_${activity.id}_${user.id}`, // Virtual ID
               activityId: activity.id,
               userId: user.id,
-              orPeriod: activity.orPeriod,
+              orPeriod: activity.orPeriod ?? "",
               status: AttendanceStatus.ABSENT,
               checkedInBy: "",
               method: "manual" as AttendanceMethod,

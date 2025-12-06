@@ -77,7 +77,7 @@ export function Sidebar({
           requiredRoles: ["isRecruiter", "isSuperAdmin"],
         },
         {
-          href: "/activity-management",
+          href: "/activity-management/recruitment",
           label: "Jadwal Aktivitas",
           icon: CalendarClock,
           requiredRoles: ["isRecruiter", "isSuperAdmin"],
@@ -149,7 +149,7 @@ export function Sidebar({
       items: [
         {
           href: "/activity-management",
-          label: "Monitoring Kegiatan",
+          label: "Monitoring Kegiatan/members",
           icon: CalendarDays,
           requiredRoles: ["isKomdis", "isSuperAdmin"],
         },

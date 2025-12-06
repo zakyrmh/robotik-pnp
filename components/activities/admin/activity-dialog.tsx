@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -39,17 +39,21 @@ import {
 } from "@/components/ui/popover";
 import { CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
-import { Activity } from "@/types/activities";
+import { Activity, ActivityType } from "@/types/activities";
 import { ActivityMode } from "@/types/enum";
 import { createActivity, getActivities, updateActivity } from "@/lib/firebase/activities";
 import { Timestamp } from "firebase/firestore";
 import { toast } from "sonner";
 import slugify from "slugify";
 
-const activitySchema = z.object({
+// 1. Ubah Schema menjadi fungsi dinamis berdasarkan tipe aktivitas
+const getActivitySchema = (type: ActivityType) => z.object({
   title: z.string().min(5, "Judul minimal 5 karakter"),
   description: z.string().min(10, "Deskripsi minimal 10 karakter"),
-  orPeriod: z.string().min(1, "OR Period wajib diisi"),
+  // Validasi orPeriod hanya wajib jika tipe recruitment
+  orPeriod: type === 'recruitment' 
+    ? z.string().min(1, "OR Period wajib diisi") 
+    : z.string().optional(),
   startDateTime: z.date(),
   endDateTime: z.date(),
   mode: z.nativeEnum(ActivityMode),
@@ -64,7 +68,7 @@ const activitySchema = z.object({
   status: z.enum(["upcoming", "ongoing", "completed", "cancelled"]),
 });
 
-type ActivityFormData = z.infer<typeof activitySchema>;
+type ActivityFormData = z.infer<ReturnType<typeof getActivitySchema>>;
 
 interface ActivityDialogProps {
   open: boolean;
@@ -72,6 +76,8 @@ interface ActivityDialogProps {
   activity?: Activity;
   onSuccess: () => void;
   currentUserId: string | null;
+  // 2. Tambahkan prop defaultType
+  defaultType?: ActivityType; 
 }
 
 export default function ActivityDialog({
@@ -80,16 +86,21 @@ export default function ActivityDialog({
   activity,
   onSuccess,
   currentUserId,
+  defaultType = 'recruitment', // Default fallback
 }: ActivityDialogProps) {
   const [loading, setLoading] = useState(false);
   const isEdit = !!activity;
 
+  // Gunakan schema yang sesuai dengan defaultType
+  const schema = useMemo(() => getActivitySchema(defaultType), [defaultType]);
+
   const form = useForm<ActivityFormData>({
-    resolver: zodResolver(activitySchema),
+    resolver: zodResolver(schema),
     defaultValues: {
       title: "",
       description: "",
-      orPeriod: "OR 21",
+      // Reset orPeriod jika internal, set default jika recruitment
+      orPeriod: defaultType === 'recruitment' ? "OR 21" : "", 
       startDateTime: new Date(),
       endDateTime: new Date(),
       mode: ActivityMode.OFFLINE,
@@ -110,7 +121,7 @@ export default function ActivityDialog({
       form.reset({
         title: activity.title,
         description: activity.description,
-        orPeriod: activity.orPeriod,
+        orPeriod: activity.orPeriod || "",
         startDateTime: activity.startDateTime.toDate(),
         endDateTime: activity.endDateTime.toDate(),
         mode: activity.mode,
@@ -125,9 +136,18 @@ export default function ActivityDialog({
         status: activity.status,
       });
     } else if (!open) {
-      form.reset();
+      form.reset({
+         ...form.getValues(), // Keep current values structure
+         title: "",
+         description: "",
+         // Reset conditional default value
+         orPeriod: defaultType === 'recruitment' ? "OR 21" : "",
+         status: "upcoming",
+         startDateTime: new Date(),
+         endDateTime: new Date()
+      });
     }
-  }, [activity, open, form]);
+  }, [activity, open, form, defaultType]);
 
   const onSubmit = async (data: ActivityFormData) => {
     if (!currentUserId) {
@@ -144,8 +164,13 @@ export default function ActivityDialog({
         strict: true,
       });
 
+      // Cek slug unik (bisa dioptimasi nanti dengan query specific slug)
+      // Saat ini mengambil semua status untuk cek duplikasi
       const activities = await getActivities({ status: "all" });
-      const existingSlugs = activities.map((activity) => activity.slug);
+      const existingSlugs = activities
+        .filter(a => a.id !== activity?.id) // Exclude current activity if edit
+        .map((activity) => activity.slug);
+        
       const slugExists = existingSlugs.includes(slug);
 
       if (slugExists) {
@@ -162,8 +187,12 @@ export default function ActivityDialog({
       const activityData: Omit<Activity, "id" | "createdAt" | "updatedAt"> = {
         title: data.title,
         slug: slug,
+        // 3. Pastikan type tersimpan
+        type: defaultType, 
         description: data.description,
-        orPeriod: data.orPeriod,
+        // Simpan orPeriod hanya jika recruitment, jika internal kirim undefined/null
+        orPeriod: defaultType === 'recruitment' ? data.orPeriod : undefined,
+        
         startDateTime: Timestamp.fromDate(data.startDateTime),
         endDateTime: Timestamp.fromDate(data.endDateTime),
         mode: data.mode,
@@ -172,6 +201,7 @@ export default function ActivityDialog({
         isActive: data.isActive,
         status: data.status,
         createdBy: currentUserId,
+        
         // Optional fields - only add if they exist
         ...(data.location && { location: data.location }),
         ...(data.onlineLink && { onlineLink: data.onlineLink }),
@@ -220,12 +250,14 @@ export default function ActivityDialog({
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {isEdit ? "Edit Aktivitas" : "Buat Aktivitas Baru"}
+            {isEdit ? "Edit Aktivitas" : `Buat Aktivitas ${defaultType === 'recruitment' ? 'Seleksi' : 'Internal'}`}
           </DialogTitle>
           <DialogDescription>
             {isEdit
               ? "Ubah informasi aktivitas"
-              : "Buat aktivitas baru untuk calon anggota"}
+              : defaultType === 'recruitment' 
+                  ? "Buat jadwal seleksi atau wawancara untuk calon anggota"
+                  : "Buat jadwal rapat atau event untuk anggota"}
           </DialogDescription>
         </DialogHeader>
 
@@ -245,7 +277,7 @@ export default function ActivityDialog({
                     </FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="Pelatihan Sensor Ultrasonik"
+                        placeholder={defaultType === 'recruitment' ? "Wawancara Tahap 1" : "Rapat Pleno Komdis"}
                         {...field}
                       />
                     </FormControl>
@@ -264,7 +296,7 @@ export default function ActivityDialog({
                     </FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Deskripsi aktivitas..."
+                        placeholder="Deskripsi detail aktivitas..."
                         rows={3}
                         {...field}
                       />
@@ -274,24 +306,27 @@ export default function ActivityDialog({
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="orPeriod"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      OR Period<span className="text-red-500"> *</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input placeholder="OR 21" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Contoh: OR 21, OR 22, dst.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {/* 4. Conditional Rendering untuk OR Period */}
+              {defaultType === 'recruitment' && (
+                <FormField
+                  control={form.control}
+                  name="orPeriod"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        OR Period<span className="text-red-500"> *</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input placeholder="OR 21" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Tandai aktivitas ini untuk angkatan OR tertentu.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
             </div>
 
             {/* Schedule */}
@@ -441,12 +476,12 @@ export default function ActivityDialog({
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Mode & Lokasi</h3>
 
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center gap-4">
                 <FormField
                   control={form.control}
                   name="mode"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="w-1/3">
                       <FormLabel>
                         Mode<span className="text-red-500"> *</span>
                       </FormLabel>
@@ -472,43 +507,45 @@ export default function ActivityDialog({
                   )}
                 />
 
-                {selectedMode === "offline" && (
-                  <FormField
-                    control={form.control}
-                    name="location"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Lokasi</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Workshop UKM Robotik"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
+                <div className="flex-1">
+                  {selectedMode === "offline" && (
+                    <FormField
+                      control={form.control}
+                      name="location"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Lokasi</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Workshop UKM Robotik"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
 
-                {selectedMode === "online" && (
-                  <FormField
-                    control={form.control}
-                    name="onlineLink"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Link Online</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="https://meet.google.com/..."
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
+                  {selectedMode === "online" && (
+                    <FormField
+                      control={form.control}
+                      name="onlineLink"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Link Online</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="https://meet.google.com/..."
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                </div>
               </div>
             </div>
 
@@ -526,7 +563,9 @@ export default function ActivityDialog({
                         Aktifkan Absensi
                       </FormLabel>
                       <FormDescription>
-                        Calon anggota harus melakukan absensi
+                        {defaultType === 'recruitment' 
+                           ? "Calon anggota wajib melakukan absensi"
+                           : "Anggota wajib melakukan absensi"}
                       </FormDescription>
                     </div>
                     <FormControl>
@@ -711,75 +750,73 @@ export default function ActivityDialog({
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Status & Visibilitas</h3>
 
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Status<span className="text-red-500"> *</span>
-                    </FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="upcoming">Akan Datang</SelectItem>
-                        <SelectItem value="ongoing">Berlangsung</SelectItem>
-                        <SelectItem value="completed">Selesai</SelectItem>
-                        <SelectItem value="cancelled">Dibatalkan</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="isVisible"
-                render={({ field }) => (
-                  <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">
-                        Visible untuk CAANG
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Status<span className="text-red-500"> *</span>
                       </FormLabel>
-                      <FormDescription>
-                        Aktivitas terlihat di dashboard CAANG
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="upcoming">Akan Datang</SelectItem>
+                          <SelectItem value="ongoing">Berlangsung</SelectItem>
+                          <SelectItem value="completed">Selesai</SelectItem>
+                          <SelectItem value="cancelled">Dibatalkan</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="isActive"
-                render={({ field }) => (
-                  <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                      <FormLabel className="text-base">Aktif</FormLabel>
-                      <FormDescription>
-                        CAANG bisa akses & absen aktivitas ini
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+                <div className="space-y-2">
+                   <FormField
+                    control={form.control}
+                    name="isVisible"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-sm">
+                            Visible
+                          </FormLabel>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="isActive"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center justify-between rounded-lg border p-3">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-sm">Aktif</FormLabel>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Submit Buttons */}

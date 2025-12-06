@@ -11,7 +11,6 @@ import {
   Trash2,
   Eye,
   Users,
-  Clock,
   MapPin,
   Video,
 } from "lucide-react";
@@ -38,36 +37,76 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { getActivities } from "@/lib/firebase/activities";
-import { Activity } from "@/types/activities";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
+
+// Firebase & Types
+import { getActivities } from "@/lib/firebase/activities"; // Arahkan ke file logic firebase Anda
+import { Activity, ActivityType } from "@/types/activities";
+import { User } from "@/types/users";
+import { db, auth } from "@/lib/firebaseConfig";
+import { doc, getDoc } from "firebase/firestore";
+import { onAuthStateChanged } from "firebase/auth";
+
+// Components (Asumsi path ini sesuai project Anda)
 import ActivityDialog from "@/components/activities/admin/activity-dialog";
 import ActivityDetailDialog from "@/components/activities/admin/activity-detail-dialog";
 import DeleteActivityDialog from "@/components/activities/admin/delete-activity-dialog";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { app } from "@/lib/firebaseConfig";
 
-export default function AdminActivitiesPage() {
+interface ActivityManagerViewProps {
+  activityType: ActivityType; // 'recruitment' atau 'internal'
+  pageTitle: string;
+  pageDescription: string;
+}
+
+export default function ActivityManagerView({
+  activityType,
+  pageTitle,
+  pageDescription,
+}: ActivityManagerViewProps) {
+  // State Data
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  // State Filters
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
-  // Dialog states
+  // State Dialogs
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
-  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(
-    null
-  );
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
 
+  // 1. Fetch User Role untuk Permission Check
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (authUser) => {
+      if (authUser) {
+        try {
+          const userDoc = await getDoc(doc(db, "users_new", authUser.uid));
+          if (userDoc.exists()) {
+            setCurrentUser({ id: userDoc.id, ...userDoc.data() } as User);
+          }
+        } catch (error) {
+          console.error("Error fetching user role:", error);
+        }
+      } else {
+        setCurrentUser(null);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // 2. Fetch Activities (Filtered by Type)
   const loadActivities = useCallback(async () => {
     setLoading(true);
     try {
-      const filters: { status?: string } = {};
+      const filters: { status?: string; type: ActivityType } = {
+        type: activityType, // KUNCI: Filter data berdasarkan context halaman
+      };
+      
       if (filterStatus !== "all") filters.status = filterStatus;
 
       const data = await getActivities(filters);
@@ -77,75 +116,67 @@ export default function AdminActivitiesPage() {
     } finally {
       setLoading(false);
     }
-  }, [filterStatus]);
+  }, [filterStatus, activityType]);
 
   useEffect(() => {
     loadActivities();
   }, [loadActivities]);
 
+  // 3. Client-side Search Filter
   const filteredActivities = activities.filter((activity) =>
     activity.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  useEffect(() => {
-    const auth = getAuth(app);
+  // 4. Permission Logic
+  const canManage = () => {
+    if (!currentUser) return false;
+    const { roles } = currentUser;
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setCurrentUserId(user.uid);
-      } else {
-        setCurrentUserId(null);
-      }
-    });
+    if (roles.isSuperAdmin) return true;
 
-    return () => unsubscribe();
-  }, []);
+    if (activityType === "recruitment") {
+      // Hanya Recruiter yang bisa Create/Edit/Delete kegiatan OR
+      return roles.isRecruiter;
+    } else if (activityType === "internal") {
+      // Hanya Komdis yang bisa Create/Edit/Delete kegiatan Internal
+      return roles.isKomdis;
+    }
+    return false;
+  };
 
+  // Helper UI Colors
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "upcoming":
-        return "bg-blue-500";
-      case "ongoing":
-        return "bg-green-500";
-      case "completed":
-        return "bg-gray-500";
-      case "cancelled":
-        return "bg-red-500";
-      default:
-        return "bg-gray-500";
+      case "upcoming": return "bg-blue-500";
+      case "ongoing": return "bg-green-500";
+      case "completed": return "bg-gray-500";
+      case "cancelled": return "bg-red-500";
+      default: return "bg-gray-500";
     }
   };
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case "upcoming":
-        return "Akan Datang";
-      case "ongoing":
-        return "Berlangsung";
-      case "completed":
-        return "Selesai";
-      case "cancelled":
-        return "Dibatalkan";
-      default:
-        return status;
+      case "upcoming": return "Akan Datang";
+      case "ongoing": return "Berlangsung";
+      case "completed": return "Selesai";
+      case "cancelled": return "Dibatalkan";
+      default: return status;
     }
   };
 
   return (
     <div className="min-h-screen p-8">
       <div className="max-w-7xl mx-auto">
+        
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Manajemen Aktivitas
-          </h1>
-          <p className="text-gray-600">
-            Kelola semua aktivitas seleksi calon anggota UKM Robotik
-          </p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">{pageTitle}</h1>
+          <p className="text-gray-600">{pageDescription}</p>
         </motion.div>
 
         {/* Filters & Actions */}
@@ -180,27 +211,26 @@ export default function AdminActivitiesPage() {
             </SelectContent>
           </Select>
 
-          {/* Create Button */}
-          <Button onClick={() => setIsCreateOpen(true)} className="gap-2">
-            <Plus className="w-5 h-5" />
-            Buat Aktivitas
-          </Button>
+          {/* Create Button - Hanya muncul jika punya akses */}
+          {canManage() && (
+            <Button onClick={() => setIsCreateOpen(true)} className="gap-2">
+              <Plus className="w-5 h-5" />
+              Buat Aktivitas
+            </Button>
+          )}
         </motion.div>
 
         {/* Activities Grid */}
         {loading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
+            {[1, 2, 3].map((i) => (
               <Card key={i} className="animate-pulse">
                 <CardHeader>
                   <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
                   <div className="h-4 bg-gray-200 rounded w-1/2"></div>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    <div className="h-4 bg-gray-200 rounded"></div>
-                    <div className="h-4 bg-gray-200 rounded w-5/6"></div>
-                  </div>
+                  <div className="h-20 bg-gray-200 rounded"></div>
                 </CardContent>
               </Card>
             ))}
@@ -217,9 +247,7 @@ export default function AdminActivitiesPage() {
                   transition={{ delay: index * 0.05 }}
                   layout
                 >
-                  <Card
-                    className="hover:shadow-lg transition-shadow group"
-                  >
+                  <Card className="hover:shadow-lg transition-shadow group h-full flex flex-col">
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <div className="flex items-start gap-3 flex-1">
@@ -234,7 +262,7 @@ export default function AdminActivitiesPage() {
                           </div>
                         </div>
 
-                        {/* Actions Menu */}
+                        {/* Actions Menu - Hanya muncul jika punya akses */}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm">
@@ -249,122 +277,80 @@ export default function AdminActivitiesPage() {
                               }}
                             >
                               <Eye className="w-4 h-4 mr-2" />
-                              Lihat Detail
+                              Detail
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedActivity(activity);
-                                setIsEditOpen(true);
-                              }}
-                            >
-                              <Edit className="w-4 h-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedActivity(activity);
-                                setIsDeleteOpen(true);
-                              }}
-                              className="text-red-600"
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Hapus
-                            </DropdownMenuItem>
+                            
+                            {canManage() && (
+                              <>
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSelectedActivity(activity);
+                                    setIsEditOpen(true);
+                                  }}
+                                >
+                                  <Edit className="w-4 h-4 mr-2" />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setSelectedActivity(activity);
+                                    setIsDeleteOpen(true);
+                                  }}
+                                  className="text-red-600"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Hapus
+                                </DropdownMenuItem>
+                              </>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
 
-                      {/* Status Badge */}
-                      <div className="flex items-center gap-2 mt-3">
-                        <Badge
-                          className={`${getStatusColor(
-                            activity.status
-                          )} text-white`}
-                        >
+                      <div className="flex flex-wrap items-center gap-2 mt-3">
+                        <Badge className={`${getStatusColor(activity.status)} text-white`}>
                           {getStatusLabel(activity.status)}
                         </Badge>
-                        {activity.mode === "online" && (
-                          <Badge variant="outline" className="gap-1">
-                            <Video className="w-3 h-3" />
-                            Online
-                          </Badge>
-                        )}
-                        {activity.mode === "offline" && (
-                          <Badge variant="outline" className="gap-1">
-                            <MapPin className="w-3 h-3" />
-                            Offline
-                          </Badge>
-                        )}
+                        <Badge variant="outline" className="gap-1">
+                          {activity.mode === "online" ? <Video className="w-3 h-3"/> : <MapPin className="w-3 h-3"/>}
+                          {activity.mode === "online" ? "Online" : "Offline"}
+                        </Badge>
                       </div>
                     </CardHeader>
 
-                    <CardContent>
+                    <CardContent className="mt-auto">
                       <div className="space-y-2 text-sm">
-                        {/* Date & Time */}
                         <div className="flex items-center gap-2 text-gray-600">
                           <Calendar className="w-4 h-4" />
                           <span>
                             {activity.startDateTime
                               ? format(
-                                  activity.startDateTime instanceof Date
-                                    ? activity.startDateTime
-                                    : activity.startDateTime.toDate(),
-                                  "dd MMMM yyyy, HH:mm",
-                                  { locale: localeId }
-                                )
+                                  activity.startDateTime instanceof Date 
+                                  ? activity.startDateTime 
+                                  : activity.startDateTime.toDate(), 
+                                  "dd MMM yyyy, HH:mm", { locale: localeId })
                               : "-"}
                           </span>
                         </div>
-
-                        {/* End Time */}
-                        <div className="flex items-center gap-2 text-gray-600">
-                          <Clock className="w-4 h-4" />
-                          <span>
-                            Sampai{" "}
-                            {activity.endDateTime
-                              ? format(
-                                  activity.endDateTime instanceof Date
-                                    ? activity.endDateTime
-                                    : activity.endDateTime.toDate(),
-                                  "HH:mm",
-                                  { locale: localeId }
-                                )
-                              : "-"}
-                          </span>
-                        </div>
-
-                        {/* Location/Link */}
-                        {activity.mode === "offline" && activity.location && (
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <MapPin className="w-4 h-4" />
-                            <span className="truncate">
-                              {activity.location}
-                            </span>
-                          </div>
+                        
+                        {activity.location && activity.mode === 'offline' && (
+                           <div className="flex items-center gap-2 text-gray-600">
+                             <MapPin className="w-4 h-4" />
+                             <span className="truncate max-w-[200px]">{activity.location}</span>
+                           </div>
                         )}
-
-                        {activity.mode === "online" && activity.onlineLink && (
-                          <div className="flex items-center gap-2 text-gray-600">
-                            <Video className="w-4 h-4" />
-                            <span className="truncate">Online Meeting</span>
-                          </div>
-                        )}
-
-                        {/* Participants */}
+                        
                         {activity.attendanceEnabled && (
                           <div className="flex items-center gap-2 text-gray-600">
                             <Users className="w-4 h-4" />
-                            <span>
-                              {activity.attendedCount || 0} /{" "}
-                              {activity.totalParticipants || 0} peserta
-                            </span>
+                            <span>{activity.attendedCount || 0} Hadir</span>
                           </div>
                         )}
-
-                        {/* OR Period Badge */}
-                        <Badge variant="secondary" className="mt-2">
-                          {activity.orPeriod}
-                        </Badge>
+                        
+                        {/* Jika Activity Recruitment, tampilkan periode OR */}
+                        {activityType === 'recruitment' && activity.orPeriod && (
+                           <Badge variant="secondary" className="mt-1">OR {activity.orPeriod}</Badge>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -387,13 +373,13 @@ export default function AdminActivitiesPage() {
             </h3>
             <p className="text-gray-600 mb-6">
               {searchQuery
-                ? "Tidak ditemukan aktivitas yang sesuai dengan pencarian"
-                : "Belum ada aktivitas yang dibuat"}
+                ? "Tidak ditemukan aktivitas yang sesuai."
+                : `Belum ada aktivitas ${activityType === 'recruitment' ? 'seleksi' : 'internal'}.`}
             </p>
-            {!searchQuery && (
+            {canManage() && (
               <Button onClick={() => setIsCreateOpen(true)} className="gap-2">
                 <Plus className="w-5 h-5" />
-                Buat Aktivitas Pertama
+                Buat Aktivitas
               </Button>
             )}
           </motion.div>
@@ -401,11 +387,13 @@ export default function AdminActivitiesPage() {
       </div>
 
       {/* Dialogs */}
+      {/* PENTING: Pass defaultType agar activity tersimpan dengan tipe yang benar */}
       <ActivityDialog
         open={isCreateOpen}
         onOpenChange={setIsCreateOpen}
         onSuccess={loadActivities}
-        currentUserId={currentUserId}
+        currentUserId={currentUser?.id || null}
+        defaultType={activityType} 
       />
 
       {selectedActivity && (
@@ -415,7 +403,8 @@ export default function AdminActivitiesPage() {
             onOpenChange={setIsEditOpen}
             activity={selectedActivity}
             onSuccess={loadActivities}
-            currentUserId={currentUserId}
+            currentUserId={currentUser?.id || null}
+            defaultType={activityType}
           />
 
           <ActivityDetailDialog
@@ -429,7 +418,7 @@ export default function AdminActivitiesPage() {
             onOpenChange={setIsDeleteOpen}
             activity={selectedActivity}
             onSuccess={loadActivities}
-            currentUserId={currentUserId}
+            currentUserId={currentUser?.id || null}
           />
         </>
       )}

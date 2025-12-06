@@ -12,8 +12,9 @@ import {
   orderBy,
   serverTimestamp,
   Timestamp,
+  QueryConstraint
 } from 'firebase/firestore';
-import { Activity } from '@/types/activities';
+import { Activity, ActivityType } from '@/types/activities';
 
 const COLLECTION_NAME = 'activities';
 
@@ -25,45 +26,52 @@ function convertDocToActivity(docId: string, data: Record<string, unknown>): Act
   return {
     id: docId,
     ...data,
+    // Pastikan konversi Timestamp aman
     startDateTime: data.startDateTime instanceof Timestamp ? data.startDateTime : Timestamp.fromDate(new Date(data.startDateTime as string | number | Date)),
     endDateTime: data.endDateTime instanceof Timestamp ? data.endDateTime : Timestamp.fromDate(new Date(data.endDateTime as string | number | Date)),
     createdAt: data.createdAt instanceof Timestamp ? data.createdAt : Timestamp.now(),
     updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt : Timestamp.now(),
+    // Handle optional timestamp fields if they exist
+    deletedAt: data.deletedAt instanceof Timestamp ? data.deletedAt : (data.deletedAt || null),
   } as Activity;
 }
 
+/**
+ * Get activities with optional filters
+ * Supports filtering by Status and Type (Recruitment vs Internal)
+ */
 export async function getActivities(filters?: {
   status?: string;
+  type?: ActivityType;
 }) {
   try {
-    console.log('Fetching activities with filters:', filters);
+    // console.log('Fetching activities with filters:', filters);
     
-    let q;
+    const constraints: QueryConstraint[] = [];
+
+    // 1. Default Sorting: Terbaru ke Terlama
+    constraints.push(orderBy('startDateTime', 'desc'));
+
+    // 2. Filter by Type (Recruitment / Internal) - PENTING
+    if (filters?.type) {
+      constraints.push(where('type', '==', filters.type));
+    }
     
-    // Query without deletedAt filter - we'll filter on client side
-    if (!filters?.status || filters.status === 'all') {
-      // Query without status filter
-      q = query(
-        collection(db, COLLECTION_NAME),
-        orderBy('startDateTime', 'desc')
-      );
-    } else {
-      // Query with status filter
-      q = query(
-        collection(db, COLLECTION_NAME),
-        where('status', '==', filters.status),
-        orderBy('startDateTime', 'desc')
-      );
+    // 3. Filter by Status (Upcoming, Ongoing, etc)
+    if (filters?.status && filters.status !== 'all') {
+      constraints.push(where('status', '==', filters.status));
     }
 
+    // Construct Query
+    const q = query(collection(db, COLLECTION_NAME), ...constraints);
+
     const snapshot = await getDocs(q);
-    console.log('Firestore snapshot size:', snapshot.size);
+    // console.log('Firestore snapshot size:', snapshot.size);
     
-    // Filter out deleted activities on client side
+    // Filter out deleted activities on client side (Soft Delete Check)
     const activities = snapshot.docs
       .map((doc) => {
         const data = doc.data();
-        console.log('Document data:', doc.id, data);
         return convertDocToActivity(doc.id, data);
       })
       .filter((activity) => {
@@ -71,18 +79,16 @@ export async function getActivities(filters?: {
         return !activity.deletedAt;
       });
 
-    console.log('Processed activities after filtering:', activities.length);
+    // console.log('Processed activities after filtering:', activities.length);
     return activities;
   } catch (error) {
     console.error('Error getting activities:', error);
     
-    // If error is about missing index, provide helpful message
+    // Helper error message for Indexing
     if (error instanceof Error && error.message.includes('index')) {
       console.error(
-        'Missing Firestore index. Please create a composite index:\n' +
-        'Collection: activities\n' +
-        'Fields: status (Ascending), startDateTime (Descending)\n' +
-        'Or follow the link in the error message above.'
+        'Missing Firestore index. Please check your console link to create it.\n' +
+        'Likely needed: type (Asc) + status (Asc) + startDateTime (Desc)'
       );
     }
     

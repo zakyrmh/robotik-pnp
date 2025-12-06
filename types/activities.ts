@@ -1,14 +1,17 @@
 import { ActivityMode } from "@/types/enum";
 import { Timestamp } from "firebase/firestore";
 
+export type ActivityType = 'recruitment' | 'internal';
+
 export interface Activity {
   id: string;
   slug: string;
+  type: ActivityType;
   
   // Basic Info
   title: string;
   description: string;
-  orPeriod: string;
+  orPeriod?: string;
   
   // Schedule
   startDateTime: Timestamp;

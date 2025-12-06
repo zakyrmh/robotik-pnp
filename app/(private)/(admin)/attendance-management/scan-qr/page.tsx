@@ -354,7 +354,7 @@ export default function ScanQRPage() {
       const newAttendance: Omit<Attendance, "id"> = {
         activityId: activityId!,
         userId: userId!,
-        orPeriod: selectedActivity.orPeriod,
+        orPeriod: selectedActivity.orPeriod ?? "",
         status,
         checkedInAt: Timestamp.now(),
         checkedInBy: currentUserId,
