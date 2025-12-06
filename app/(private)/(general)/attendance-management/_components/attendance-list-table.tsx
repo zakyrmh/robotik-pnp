@@ -1,13 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { useState } from "react";
 import {
   Search,
   Eye,
   Edit,
   Trash2,
-  ArrowUpDown,
   ArrowUp,
   ArrowDown,
   Users,
@@ -43,34 +41,44 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { getAttendances } from "@/lib/firebase/attendances";
-import { getActivities } from "@/lib/firebase/activities";
-import { getUsers } from "@/lib/firebase/users";
 import { Attendance } from "@/types/attendances";
 import { Activity } from "@/types/activities";
 import { User } from "@/types/users";
-import { AttendanceMethod, AttendanceStatus } from "@/types/enum";
-import AttendanceDetailDialog from "@/components/attendances/admin/attendance-detail-dialog";
-import AttendanceEditDialog from "@/components/attendances/admin/attendance-edit-dialog";
-import DeleteAttendanceDialog from "@/components/attendances/admin/delete-attendance-dialog";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { app } from "@/lib/firebaseConfig";
+import { AttendanceStatus } from "@/types/enum";
+import AttendanceDetailDialog from "@/app/(private)/(general)/attendance-management/_components/attendance-detail-dialog";
+import AttendanceEditDialog from "@/app/(private)/(general)/attendance-management/_components/attendance-edit-dialog";
+import DeleteAttendanceDialog from "@/app/(private)/(general)/attendance-management/_components/delete-attendance-dialog";
+import { motion } from "framer-motion";
+
+// Interface baru untuk menerima data dari parent
+export interface AttendanceWithRelations extends Attendance {
+  user?: User;
+  activity?: Activity;
+  isAbsent?: boolean;
+}
+
+interface AttendanceListTableProps {
+  data: AttendanceWithRelations[]; // Data Absensi + Virtual Absents
+  loading: boolean;
+  refreshData: () => void;
+  currentUserId: string | null;
+  // Untuk filter dropdown
+  activities: Activity[];
+  users: User[];
+  activityType: "recruitment" | "internal";
+}
 
 type SortField = "userName" | "activityName" | "status" | "createdAt";
 type SortOrder = "asc" | "desc";
 
-interface AttendanceWithRelations extends Attendance {
-  user?: User;
-  activity?: Activity;
-  isAbsent?: boolean; // Flag untuk user yang belum absen
-}
-
-export default function AttendanceListTable() {
-  const [attendances, setAttendances] = useState<AttendanceWithRelations[]>([]);
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-
+export default function AttendanceListTable({
+  data,
+  loading,
+  refreshData,
+  currentUserId,
+  activities,
+  activityType,
+}: AttendanceListTableProps) {
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
   const [filterActivity, setFilterActivity] = useState<string>("all");
@@ -81,177 +89,84 @@ export default function AttendanceListTable() {
   const [sortField, setSortField] = useState<SortField>("createdAt");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
 
-  // Dialog states
+  // Dialogs
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [selectedAttendance, setSelectedAttendance] =
     useState<AttendanceWithRelations | null>(null);
 
-  // Get unique OR periods from attendances
+  // Get unique OR periods from data (bisa dari activities atau attendances)
   const orPeriods = Array.from(
-    new Set(attendances.map((a) => a.orPeriod))
-  ).filter(Boolean);
+    new Set(activities.map((a) => a.orPeriod))
+  ).filter((p): p is string => !!p); // Tambahkan type predicate ': p is string'
 
-  // Load initial data
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      // Load all data in parallel
-      const [attendancesData, activitiesData, usersResponse] =
-        await Promise.all([getAttendances(), getActivities(), getUsers()]);
-
-      setActivities(activitiesData);
-
-      if (usersResponse.success && usersResponse.data) {
-        // Filter only caang users
-        const caangUsers = usersResponse.data.filter(
-          (user) => user.roles.isCaang && !user.deletedAt
-        );
-
-        // Map attendances with related data
-        const attendancesWithRelations: AttendanceWithRelations[] =
-          attendancesData.map((attendance) => ({
-            ...attendance,
-            user: usersResponse.data?.find((u) => u.id === attendance.userId),
-            activity: activitiesData.find(
-              (a) => a.id === attendance.activityId
-            ),
-            isAbsent: false,
-          }));
-
-        // Add absent users for each activity
-        const allAttendances: AttendanceWithRelations[] = [
-          ...attendancesWithRelations,
-        ];
-
-        // For each activity, find users without attendance and add them as absent
-        activitiesData.forEach((activity) => {
-          const attendedUserIds = attendancesData
-            .filter((a) => a.activityId === activity.id)
-            .map((a) => a.userId);
-
-          const absentUsers = caangUsers.filter(
-            (user) => !attendedUserIds.includes(user.id)
-          );
-
-          // Create virtual attendance records for absent users
-          absentUsers.forEach((user) => {
-            allAttendances.push({
-              id: `absent_${activity.id}_${user.id}`, // Virtual ID
-              activityId: activity.id,
-              userId: user.id,
-              orPeriod: activity.orPeriod ?? "",
-              status: AttendanceStatus.ABSENT,
-              checkedInBy: "",
-              method: "manual" as AttendanceMethod,
-              needsApproval: false,
-              points: 0,
-              createdAt: activity.createdAt,
-              updatedAt: activity.updatedAt,
-              user: user,
-              activity: activity,
-              isAbsent: true, // Mark as virtual absent record
-            });
-          });
-        });
-
-        setAttendances(allAttendances);
-      }
-    } catch (error) {
-      console.error("Error loading data:", error);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  // Listen to auth state
-  useEffect(() => {
-    const auth = getAuth(app);
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setCurrentUserId(user.uid);
-      } else {
-        setCurrentUserId(null);
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  // Calculate absence percentage per user
+  // Calculate absence percentage per user (Helper for Highlight)
   const calculateAbsencePercentage = (userId: string) => {
-    // Filter activities based on current OR period filter
-    const relevantActivities = filterOrPeriod === "all" 
-      ? activities 
-      : activities.filter(a => a.orPeriod === filterOrPeriod);
+    // Gunakan prop 'activities' yang sudah difilter oleh parent
+    const relevantActivities =
+      filterOrPeriod === "all"
+        ? activities
+        : activities.filter((a) => a.orPeriod === filterOrPeriod);
 
     if (relevantActivities.length === 0) return 0;
 
-    // Count how many activities this user was absent
-    const absentCount = relevantActivities.filter(activity => {
-      const userAttendance = attendances.find(
-        a => a.userId === userId && a.activityId === activity.id
+    const absentCount = relevantActivities.filter((activity) => {
+      const userAttendance = data.find(
+        (a) => a.userId === userId && a.activityId === activity.id
       );
-      // Consider absent if: no attendance record OR status is ABSENT
-      return !userAttendance || userAttendance.status === AttendanceStatus.ABSENT;
+      return (
+        !userAttendance || userAttendance.status === AttendanceStatus.ABSENT
+      );
     }).length;
 
     return (absentCount / relevantActivities.length) * 100;
   };
 
-  // Get highlight class based on absence percentage
   const getHighlightClass = (userId: string) => {
-    // Only apply highlight when showing all activities and all status
-    if (filterActivity !== "all" || filterStatus !== "all") {
-      return "";
-    }
-
+    if (filterActivity !== "all" || filterStatus !== "all") return "";
     const absencePercentage = calculateAbsencePercentage(userId);
-    
-    if (absencePercentage >= 75) {
-      return "bg-red-100 hover:bg-red-200";
-    } else if (absencePercentage >= 50) {
-      return "bg-yellow-100 hover:bg-yellow-200";
-    }
-    
+    if (absencePercentage >= 75)
+      return "bg-red-100 hover:bg-red-200 dark:bg-red-900/20";
+    if (absencePercentage >= 50)
+      return "bg-yellow-100 hover:bg-yellow-200 dark:bg-yellow-900/20";
     return "";
   };
 
-  // Filter and sort attendances
-  const filteredAndSortedAttendances = attendances
+  // Filter Logic
+  const filteredAndSortedAttendances = data
     .filter((attendance) => {
-      // Search filter (nama caang or NIM)
       const searchLower = searchQuery.toLowerCase();
+      const userName = attendance.user?.profile?.fullName?.toLowerCase() || "";
+      const userNim = attendance.user?.profile?.nim?.toLowerCase() || "";
+
       const matchesSearch =
         !searchQuery ||
-        attendance.user?.profile?.fullName
-          .toLowerCase()
-          .includes(searchLower) ||
-        attendance.user?.profile?.nim.toLowerCase().includes(searchLower);
-
-      // Activity filter
+        userName.includes(searchLower) ||
+        userNim.includes(searchLower);
       const matchesActivity =
         filterActivity === "all" || attendance.activityId === filterActivity;
-
-      // Status filter
       const matchesStatus =
         filterStatus === "all" || attendance.status === filterStatus;
 
-      // OR Period filter
+      // Filter OR Period (Cek di Activity atau Attendance)
+      const attendancePeriod =
+        attendance.orPeriod || attendance.activity?.orPeriod;
       const matchesOrPeriod =
-        filterOrPeriod === "all" || attendance.orPeriod === filterOrPeriod;
+        filterOrPeriod === "all" || attendancePeriod === filterOrPeriod;
 
-      // Hide absent users if:
-      // 1. Filter activity is "all"
-      // 2. Filter OR Period is not "all"
+      // Hide absent users if specific filter is active (optional logic, kept from your original code)
       if (attendance.isAbsent) {
-        if (filterActivity === "all" || filterOrPeriod !== "all") {
-          return false;
+        if (
+          filterActivity === "all" ||
+          (filterOrPeriod !== "all" && !matchesOrPeriod)
+        ) {
+          // Logic: Jika filter all activity, jangan tampilkan jutaan virtual absent
+          // Kecuali jika memang mau menampilkan list 'Siapa yang absen'
+          // Sesuai kode lama: return false;
+          // TAPI: Untuk list anggota komdis, kita mungkin mau lihat alfa di tabel utama?
+          // Mari kita ikuti logika kode lama untuk keamanan:
+          if (filterActivity === "all") return false;
         }
       }
 
@@ -261,7 +176,6 @@ export default function AttendanceListTable() {
     })
     .sort((a, b) => {
       let comparison = 0;
-
       switch (sortField) {
         case "userName":
           comparison = (a.user?.profile?.fullName || "").localeCompare(
@@ -277,14 +191,16 @@ export default function AttendanceListTable() {
           comparison = a.status.localeCompare(b.status);
           break;
         case "createdAt":
-          comparison = a.createdAt.toMillis() - b.createdAt.toMillis();
+          // Handle virtual absent timestamps
+          const timeA = a.createdAt?.toMillis() || 0;
+          const timeB = b.createdAt?.toMillis() || 0;
+          comparison = timeA - timeB;
           break;
       }
-
       return sortOrder === "asc" ? comparison : -comparison;
     });
 
-  // Calculate statistics (excluding PENDING_APPROVAL)
+  // Calculate statistics from FILTERED data (excluding Pending)
   const statistics = {
     total: filteredAndSortedAttendances.filter(
       (a) => a.status !== AttendanceStatus.PENDING_APPROVAL
@@ -306,27 +222,15 @@ export default function AttendanceListTable() {
     ).length,
   };
 
-  // Handle sort
   const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
-    } else {
+    if (sortField === field) setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    else {
       setSortField(field);
       setSortOrder("asc");
     }
   };
 
-  const getSortIcon = (field: SortField) => {
-    if (sortField !== field) {
-      return <ArrowUpDown className="w-4 h-4 ml-1" />;
-    }
-    return sortOrder === "asc" ? (
-      <ArrowUp className="w-4 h-4 ml-1" />
-    ) : (
-      <ArrowDown className="w-4 h-4 ml-1" />
-    );
-  };
-
+  // Helper Badge & Label (sama seperti sebelumnya)
   const getStatusBadge = (status: AttendanceStatus) => {
     switch (status) {
       case AttendanceStatus.PRESENT:
@@ -340,55 +244,39 @@ export default function AttendanceListTable() {
       case AttendanceStatus.ABSENT:
         return <Badge className="bg-red-500">Alfa</Badge>;
       case AttendanceStatus.PENDING_APPROVAL:
-        return <Badge className="bg-orange-500">Menunggu Approval</Badge>;
+        return <Badge className="bg-orange-500">Pending</Badge>;
       default:
         return <Badge>{status}</Badge>;
     }
   };
 
-  const getStatusLabel = (status: AttendanceStatus) => {
-    switch (status) {
-      case AttendanceStatus.PRESENT:
-        return "Hadir";
-      case AttendanceStatus.LATE:
-        return "Terlambat";
-      case AttendanceStatus.EXCUSED:
-        return "Izin";
-      case AttendanceStatus.SICK:
-        return "Sakit";
-      case AttendanceStatus.ABSENT:
-        return "Alfa";
-      case AttendanceStatus.PENDING_APPROVAL:
-        return "Menunggu Approval";
-      default:
-        return status;
-    }
-  };
-
   return (
     <div className="space-y-6">
-      {/* Filters */}
+      {/* Filters Card */}
       <Card>
         <CardHeader>
           <CardTitle>Filter & Pencarian</CardTitle>
           <CardDescription>
-            Gunakan filter untuk mempersempit hasil pencarian
+            Kelola absensi untuk{" "}
+            {activityType === "recruitment" ? "Caang" : "Anggota"}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Search */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
               <Input
-                placeholder="Cari nama caang atau NIM..."
+                placeholder={
+                  activityType === "recruitment"
+                    ? "Cari Caang..."
+                    : "Cari Anggota..."
+                }
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
               />
             </div>
 
-            {/* Filter Activity */}
             <Select value={filterActivity} onValueChange={setFilterActivity}>
               <SelectTrigger>
                 <SelectValue placeholder="Semua Aktivitas" />
@@ -403,35 +291,36 @@ export default function AttendanceListTable() {
               </SelectContent>
             </Select>
 
-            {/* Filter Status */}
             <Select value={filterStatus} onValueChange={setFilterStatus}>
               <SelectTrigger>
                 <SelectValue placeholder="Semua Status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Status</SelectItem>
-                {Object.values(AttendanceStatus).map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {getStatusLabel(status)}
+                {Object.values(AttendanceStatus).map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
 
-            {/* Filter OR Period */}
-            <Select value={filterOrPeriod} onValueChange={setFilterOrPeriod}>
-              <SelectTrigger>
-                <SelectValue placeholder="Semua Periode OR" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Semua Periode OR</SelectItem>
-                {orPeriods.map((period) => (
-                  <SelectItem key={period} value={period}>
-                    {period}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Filter OR Period (Hanya relevan jika ada datanya) */}
+            {orPeriods.length > 0 && (
+              <Select value={filterOrPeriod} onValueChange={setFilterOrPeriod}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Semua Periode" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Periode</SelectItem>
+                  {orPeriods.map((p) => (
+                    <SelectItem key={p} value={p}>
+                      {p}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -448,9 +337,7 @@ export default function AttendanceListTable() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600 mb-1">
-                  Total
-                </p>
+                <p className="text-sm font-medium text-gray-600 mb-1">Total</p>
                 <p className="text-2xl font-bold text-gray-900">
                   {statistics.total}
                 </p>
@@ -467,9 +354,7 @@ export default function AttendanceListTable() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-green-700 mb-1">
-                  Hadir
-                </p>
+                <p className="text-sm font-medium text-green-700 mb-1">Hadir</p>
                 <p className="text-2xl font-bold text-green-900">
                   {statistics.present}
                 </p>
@@ -566,85 +451,64 @@ export default function AttendanceListTable() {
                     <Button
                       variant="ghost"
                       onClick={() => handleSort("userName")}
-                      className="flex items-center hover:bg-transparent p-0"
                     >
-                      Nama Caang
-                      {getSortIcon("userName")}
+                      Nama
+                      {sortField === "userName" &&
+                        (sortOrder === "asc" ? (
+                          <ArrowUp className="ml-1 h-4 w-4" />
+                        ) : (
+                          <ArrowDown className="ml-1 h-4 w-4" />
+                        ))}
                     </Button>
                   </TableHead>
                   <TableHead>
                     <Button
                       variant="ghost"
                       onClick={() => handleSort("activityName")}
-                      className="flex items-center hover:bg-transparent p-0"
                     >
-                      Nama Aktivitas
-                      {getSortIcon("activityName")}
+                      Aktivitas
+                      {sortField === "activityName" &&
+                        (sortOrder === "asc" ? (
+                          <ArrowUp className="ml-1 h-4 w-4" />
+                        ) : (
+                          <ArrowDown className="ml-1 h-4 w-4" />
+                        ))}
                     </Button>
                   </TableHead>
-                  <TableHead>
-                    <Button
-                      variant="ghost"
-                      onClick={() => handleSort("status")}
-                      className="flex items-center hover:bg-transparent p-0"
-                    >
-                      Status Absensi
-                      {getSortIcon("status")}
-                    </Button>
-                  </TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
-                  // Loading skeleton
-                  Array.from({ length: 5 }).map((_, idx) => (
-                    <TableRow key={idx}>
-                      <TableCell>
-                        <Skeleton className="h-4 w-8" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-4 w-32" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-4 w-40" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-6 w-24" />
-                      </TableCell>
-                      <TableCell>
-                        <Skeleton className="h-8 w-24 ml-auto" />
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell colSpan={5}>
+                        <Skeleton className="h-12 w-full" />
                       </TableCell>
                     </TableRow>
                   ))
                 ) : filteredAndSortedAttendances.length === 0 ? (
-                  // Empty state
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-8">
-                      <p className="text-gray-500">
-                        {searchQuery ||
-                        filterActivity !== "all" ||
-                        filterStatus !== "all" ||
-                        filterOrPeriod !== "all"
-                          ? "Tidak ada data absensi yang sesuai dengan filter"
-                          : "Belum ada data absensi"}
-                      </p>
+                      Tidak ada data.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  // Data rows
                   filteredAndSortedAttendances.map((attendance, idx) => (
-                    <TableRow 
+                    <TableRow
                       key={attendance.id}
-                      className={attendance.user?.id ? getHighlightClass(attendance.user.id) : ""}
+                      className={
+                        attendance.user?.id
+                          ? getHighlightClass(attendance.user.id)
+                          : ""
+                      }
                     >
-                      <TableCell>
-                        {idx + 1}
-                      </TableCell>
+                      <TableCell>{idx + 1}</TableCell>
                       <TableCell>
                         <div>
                           <p className="font-medium">
-                            {attendance.user?.profile?.fullName || "-"}
+                            {attendance.user?.profile?.fullName || "Unknown"}
                           </p>
                           <p className="text-sm text-gray-500">
                             {attendance.user?.profile?.nim || "-"}
@@ -654,10 +518,11 @@ export default function AttendanceListTable() {
                       <TableCell>
                         <div>
                           <p className="font-medium">
-                            {attendance.activity?.title || "-"}
+                            {attendance.activity?.title || "Unknown"}
                           </p>
-                          <p className="text-sm text-gray-500">
-                            {attendance.orPeriod}
+                          <p className="text-xs text-gray-500">
+                            {attendance.orPeriod ||
+                              attendance.activity?.orPeriod}
                           </p>
                         </div>
                       </TableCell>
@@ -667,8 +532,8 @@ export default function AttendanceListTable() {
                           {attendance.status ===
                             AttendanceStatus.PENDING_APPROVAL &&
                             attendance.needsApproval && (
-                              <span className="text-xs text-orange-600 font-medium">
-                                (Belum Disetujui)
+                              <span className="text-xs text-orange-600 font-bold">
+                                (!)
                               </span>
                             )}
                         </div>
@@ -682,7 +547,6 @@ export default function AttendanceListTable() {
                               setSelectedAttendance(attendance);
                               setIsDetailOpen(true);
                             }}
-                            title="Lihat Detail"
                           >
                             <Eye className="w-4 h-4" />
                           </Button>
@@ -693,7 +557,6 @@ export default function AttendanceListTable() {
                               setSelectedAttendance(attendance);
                               setIsEditOpen(true);
                             }}
-                            title="Edit"
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
@@ -701,12 +564,11 @@ export default function AttendanceListTable() {
                             <Button
                               variant="ghost"
                               size="sm"
+                              className="text-red-600"
                               onClick={() => {
                                 setSelectedAttendance(attendance);
                                 setIsDeleteOpen(true);
                               }}
-                              className="text-red-600 hover:text-red-700"
-                              title="Hapus"
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
@@ -722,30 +584,33 @@ export default function AttendanceListTable() {
         </CardContent>
       </Card>
 
-      {/* Dialogs */}
+      {/* Dialogs - Pass data users/activities dari props parent */}
       {selectedAttendance && (
         <>
           <AttendanceDetailDialog
             open={isDetailOpen}
             onOpenChange={setIsDetailOpen}
             attendance={selectedAttendance}
-            onSuccess={loadData}
+            onSuccess={refreshData}
             currentUserId={currentUserId}
           />
-
           <AttendanceEditDialog
             open={isEditOpen}
             onOpenChange={setIsEditOpen}
             attendance={selectedAttendance}
-            onSuccess={loadData}
+            onSuccess={refreshData}
             currentUserId={currentUserId}
+            availableActivities={activities} // PASS DATA DARI PARENT
+            availableUsers={data
+              .map((d) => d.user!)
+              .filter((u, i, arr) => arr.findIndex((t) => t.id === u.id) === i)
+              .filter(Boolean)} // Atau pass prop `users`
           />
-
           <DeleteAttendanceDialog
             open={isDeleteOpen}
             onOpenChange={setIsDeleteOpen}
             attendance={selectedAttendance}
-            onSuccess={loadData}
+            onSuccess={refreshData}
             currentUserId={currentUserId}
             userName={selectedAttendance.user?.profile?.fullName}
             activityName={selectedAttendance.activity?.title}

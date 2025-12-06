@@ -83,8 +83,8 @@ export function Sidebar({
           requiredRoles: ["isRecruiter", "isSuperAdmin"],
         },
         {
-          href: "/attendance-management",
-          label: "Presensi Peserta",
+          href: "/attendance-management/recruitment",
+          label: "Presensi Caang",
           icon: UserCheck,
           requiredRoles: ["isRecruiter", "isSuperAdmin"],
         },
@@ -148,9 +148,15 @@ export function Sidebar({
       groupLabel: "Komisi Disiplin",
       items: [
         {
-          href: "/activity-management",
-          label: "Monitoring Kegiatan/members",
+          href: "/activity-management/members",
+          label: "Monitoring Kegiatan",
           icon: CalendarDays,
+          requiredRoles: ["isKomdis", "isSuperAdmin"],
+        },
+        {
+          href: "/attendance-management/members",
+          label: "Presensi Anggota",
+          icon: UserCheck,
           requiredRoles: ["isKomdis", "isSuperAdmin"],
         },
         {
