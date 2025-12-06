@@ -17,7 +17,6 @@ import { GroupParent, SubGroup, GroupMember } from '@/types/groups';
 import { getUsers } from './users';
 import { getAttendances } from './attendances';
 import { getActivities } from './activities';
-import { UserRole } from '@/types/enum';
 
 const GROUP_PARENTS_COLLECTION = 'group_parents';
 const SUB_GROUPS_COLLECTION = 'sub_groups';
