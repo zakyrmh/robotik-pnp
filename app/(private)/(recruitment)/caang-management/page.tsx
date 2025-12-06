@@ -66,7 +66,7 @@ export default function CaangManagementPage() {
       try {
         setLoading(true);
         const fetchedUsers = await RecruitmentService.getCaangUsers();
-        const registrationIds = fetchedUsers.map((u) => u.registrationId).filter((id): id is string => !!id);
+        const registrationIds = fetchedUsers.map((u) => u.id);
         const regMap = await RecruitmentService.getRegistrations(registrationIds);
 
         setUsers(fetchedUsers);
@@ -87,7 +87,7 @@ export default function CaangManagementPage() {
   // --- 2. FILTERING LOGIC ---
   const filteredData = useMemo(() => {
     return users.filter((user) => {
-      const reg = user.registrationId ? registrations.get(user.registrationId) : null;
+      const reg = registrations.get(user.id);
       
       const searchLower = searchQuery.toLowerCase();
       const matchesSearch = user.profile.fullName.toLowerCase().includes(searchLower) || user.profile.nim.toLowerCase().includes(searchLower);
@@ -115,8 +115,8 @@ export default function CaangManagementPage() {
     let blacklisted = 0;
 
     users.forEach((user) => {
-      const reg = user.registrationId ? registrations.get(user.registrationId) : null;
-      if (reg && reg.payment.proofUrl && !reg.payment.verified) pendingVerification++;
+      const reg = registrations.get(user.id);
+      if (reg && reg.payment?.proofUrl && !reg.payment.verified) pendingVerification++;
       if (user.isActive) activeLolos++;
       if (user.blacklistInfo?.isBlacklisted) blacklisted++;
     });
@@ -183,7 +183,7 @@ export default function CaangManagementPage() {
       userIds.forEach(userId => {
         const user = users.find(u => u.id === userId);
         if (user && user.registrationId) {
-          const reg = registrations.get(user.registrationId);
+          const reg = registrations.get(userId);
           // Hanya verify yg belum verified dan sudah upload
           if (reg && reg.payment.proofUrl && !reg.payment.verified) {
              regIdsToVerify.push(reg.id);
@@ -366,7 +366,7 @@ export default function CaangManagementPage() {
         isOpen={isDetailOpen}
         onClose={() => setIsDetailOpen(false)}
         user={selectedUserForDetail}
-        registration={selectedUserForDetail?.registrationId ? registrations.get(selectedUserForDetail.registrationId) : null}
+        registration={selectedUserForDetail ? registrations.get(selectedUserForDetail.id) : null}
         onVerifyPayment={handleVerifyPayment}
         onOpenBlacklist={() => {
             setIsBulkBlacklistMode(false); // Pastikan mode single
@@ -384,7 +384,7 @@ export default function CaangManagementPage() {
         onSubmit={handleBlacklistSubmit}
         // Kondisional rendering nama
         userName={isBulkBlacklistMode ? `${selectedUserIds.size} Peserta Terpilih` : selectedUserForDetail?.profile.fullName}
-        period={isBulkBlacklistMode ? "Periode Saat Ini" : (selectedUserForDetail?.registrationId ? registrations.get(selectedUserForDetail.registrationId)?.orPeriod : "-")}
+        period={isBulkBlacklistMode ? "Periode Saat Ini" : (selectedUserForDetail ? registrations.get(selectedUserForDetail.id)?.orPeriod : "-")}
       />
 
       {/* COMPONENT: BULK VERIFY CONFIRMATION */}
