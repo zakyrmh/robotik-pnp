@@ -1,27 +1,28 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  ArrowLeft, 
-  LayoutDashboard, 
-  Users, 
-  BookOpen, 
-  CalendarCheck, 
-  ClipboardList, 
-  ShieldAlert, 
-  FileWarning, 
+import {
+  ArrowLeft,
+  LayoutDashboard,
+  Users,
+  BookOpen,
+  CalendarCheck,
+  ClipboardList,
+  ShieldAlert,
+  FileWarning,
   Settings,
   GraduationCap,
   UserCheck,
   CalendarClock,
   FileCheck,
-  UsersRound
+  UsersRound,
+  CalendarDays,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { UserSystemRoles } from "@/types/users"; 
+import { UserSystemRoles } from "@/types/users";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -40,7 +41,7 @@ type MenuItem = {
   icon: React.ElementType;
   // Jika requiredRoles kosong, berarti menu ini untuk SEMUA user
   // Jika diisi, user harus punya minimal SATU dari role tersebut
-  requiredRoles?: (keyof UserSystemRoles)[]; 
+  requiredRoles?: (keyof UserSystemRoles)[];
 };
 
 type MenuGroup = {
@@ -48,7 +49,12 @@ type MenuGroup = {
   items: MenuItem[];
 };
 
-export function Sidebar({ isOpen, isMobile, onClose, userRoles }: SidebarProps) {
+export function Sidebar({
+  isOpen,
+  isMobile,
+  onClose,
+  userRoles,
+}: SidebarProps) {
   const pathname = usePathname();
 
   // Definisi Menu berdasarkan Struktur Organisasi
@@ -57,110 +63,118 @@ export function Sidebar({ isOpen, isMobile, onClose, userRoles }: SidebarProps) 
       groupLabel: "General",
       items: [
         { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-        // Semua user bisa lihat profil/timeline
-        { href: "/timeline", label: "Timeline", icon: CalendarCheck }, 
+        { href: "/timeline", label: "Timeline", icon: CalendarCheck },
       ],
     },
     {
       groupLabel: "Pendidikan & Seleksi",
       items: [
-        // Khusus Panitia Oprec
-        { 
-          href: "/caang-management", 
-          label: "Data Caang", 
-          icon: Users, 
-          requiredRoles: ["isRecruiter", "isSuperAdmin"] 
+        // Khusus Recruiter
+        {
+          href: "/caang-management",
+          label: "Data Caang",
+          icon: Users,
+          requiredRoles: ["isRecruiter", "isSuperAdmin"],
         },
-        { 
-          href: "/activity-management", 
-          label: "Aktivitas & Jadwal", 
-          icon: CalendarClock, 
-          requiredRoles: ["isRecruiter", "isSuperAdmin"] 
+        {
+          href: "/activity-management",
+          label: "Jadwal Aktivitas",
+          icon: CalendarClock,
+          requiredRoles: ["isRecruiter", "isSuperAdmin"],
         },
-        { 
-          href: "/attendance-management", 
-          label: "Presensi Peserta", 
-          icon: UserCheck, 
-          requiredRoles: ["isRecruiter", "isSuperAdmin"] 
+        {
+          href: "/attendance-management",
+          label: "Presensi Peserta",
+          icon: UserCheck,
+          requiredRoles: ["isRecruiter", "isSuperAdmin"],
         },
-        { 
-          href: "/material-management", 
-          label: "Manajemen Materi", 
-          icon: BookOpen, 
-          requiredRoles: ["isRecruiter", "isSuperAdmin"] 
+        {
+          href: "/material-management",
+          label: "Manajemen Materi",
+          icon: BookOpen,
+          requiredRoles: ["isRecruiter", "isSuperAdmin"],
         },
-        { 
-          href: "/task-grade-management", 
-          label: "Tugas dan Penilaian", 
-          icon: FileCheck, 
-          requiredRoles: ["isRecruiter", "isSuperAdmin"] 
+        {
+          href: "/task-grade-management",
+          label: "Tugas dan Penilaian",
+          icon: FileCheck,
+          requiredRoles: ["isRecruiter", "isSuperAdmin"],
         },
-        { 
-          href: "/group-management", 
-          label: "Pembagian Kelompok", 
-          icon: UsersRound, 
-          requiredRoles: ["isRecruiter", "isSuperAdmin"] 
+        {
+          href: "/group-management",
+          label: "Pembagian Kelompok",
+          icon: UsersRound,
+          requiredRoles: ["isRecruiter", "isSuperAdmin"],
         },
+
         // Khusus Caang (Peserta)
-        { 
-          href: "/learning", 
-          label: "Materi & Tugas", 
-          icon: GraduationCap, 
-          requiredRoles: ["isCaang"] 
+        {
+          href: "/learning",
+          label: "Materi & Tugas",
+          icon: GraduationCap,
+          requiredRoles: ["isCaang"],
         },
-        { 
-          href: "/presence", 
-          label: "Presensi Saya", 
-          icon: UserCheck, 
-          requiredRoles: ["isCaang"] 
+        {
+          href: "/presence",
+          label: "Presensi Saya",
+          icon: UserCheck,
+          requiredRoles: ["isCaang"],
         },
       ],
     },
     {
       groupLabel: "Kesekretariatan",
       items: [
-        // Semua anggota aktif & pengurus bisa lihat jadwal piket
-        { 
-          href: "/picket-schedule", 
-          label: "Jadwal Piket", 
+        {
+          href: "/picket-schedule",
+          label: "Jadwal Piket",
           icon: ClipboardList,
-          requiredRoles: ["isOfficialMember", "isKestari", "isSuperAdmin", "isKRIMember"]
+          requiredRoles: [
+            "isOfficialMember",
+            "isKestari",
+            "isSuperAdmin",
+            "isKRIMember",
+          ],
         },
-        // Khusus Dept Kestari untuk validasi
-        { 
-          href: "/picket-management", 
-          label: "Kelola Piket", 
-          icon: Settings, 
-          requiredRoles: ["isKestari", "isSuperAdmin"] 
+        {
+          href: "/picket-management",
+          label: "Kelola Piket",
+          icon: Settings,
+          requiredRoles: ["isKestari", "isSuperAdmin"],
         },
       ],
     },
     {
       groupLabel: "Komisi Disiplin",
       items: [
-        // Khusus Komdis
-        { 
-          href: "/violations", 
-          label: "Input Pelanggaran", 
-          icon: ShieldAlert, 
-          requiredRoles: ["isKomdis", "isSuperAdmin"] 
+        {
+          href: "/activity-management",
+          label: "Monitoring Kegiatan",
+          icon: CalendarDays,
+          requiredRoles: ["isKomdis", "isSuperAdmin"],
         },
-        { 
-          href: "/sanctions-data", 
-          label: "Data Sanksi", 
-          icon: FileWarning, 
-          requiredRoles: ["isKomdis", "isSuperAdmin"] 
+        {
+          href: "/violations",
+          label: "Input Pelanggaran",
+          icon: ShieldAlert,
+          requiredRoles: ["isKomdis", "isSuperAdmin"],
+        },
+        {
+          href: "/sanctions-data",
+          label: "Data Sanksi",
+          icon: FileWarning,
+          requiredRoles: ["isKomdis", "isSuperAdmin"],
         },
       ],
     },
     {
       groupLabel: "Sistem",
       items: [
-        { 
-          href: "/user-management", 
-          label: "Manajemen User", 
-          icon: Users, 
-          requiredRoles: ["isSuperAdmin"] 
+        {
+          href: "/user-management",
+          label: "Manajemen User",
+          icon: Users,
+          requiredRoles: ["isSuperAdmin"],
         },
       ],
     },
@@ -203,7 +217,9 @@ export function Sidebar({ isOpen, isMobile, onClose, userRoles }: SidebarProps) 
           <nav className="flex-1 overflow-y-auto p-4 space-y-6">
             {MENU_GROUPS.map((group, groupIndex) => {
               // Filter item yang boleh dilihat user ini
-              const visibleItems = group.items.filter(item => hasPermission(item.requiredRoles));
+              const visibleItems = group.items.filter((item) =>
+                hasPermission(item.requiredRoles)
+              );
 
               // Jika tidak ada item yang visible di grup ini, jangan render grupnya
               if (visibleItems.length === 0) return null;
@@ -220,7 +236,9 @@ export function Sidebar({ isOpen, isMobile, onClose, userRoles }: SidebarProps) 
                       onClick={isMobile ? onClose : undefined}
                       className={cn(
                         "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
-                        pathname === item.href ? "bg-accent text-accent-foreground" : "text-foreground/80"
+                        pathname === item.href
+                          ? "bg-accent text-accent-foreground"
+                          : "text-foreground/80"
                       )}
                     >
                       <item.icon className="h-4 w-4" />
