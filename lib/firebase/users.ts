@@ -6,6 +6,7 @@ import {
   updateDoc,
   serverTimestamp,
   query,
+  where,
 } from "firebase/firestore";
 import { db } from "@/lib/firebaseConfig";
 import { User } from "@/types/users";
@@ -102,7 +103,12 @@ export const getUserById = async (
  */
 export const updateUser = async (
   userId: string,
-  userData: Partial<Omit<User, "id" | "email" | "emailVerified" | "registrationId" | "createdAt">>
+  userData: Partial<
+    Omit<
+      User,
+      "id" | "email" | "emailVerified" | "registrationId" | "createdAt"
+    >
+  >
 ): Promise<FirebaseResponse<User>> => {
   try {
     if (!userId) {
@@ -130,7 +136,13 @@ export const updateUser = async (
     };
 
     // Remove read-only fields if they somehow got included
-    const readOnlyFields = ["id", "email", "emailVerified", "registrationId", "createdAt"];
+    const readOnlyFields = [
+      "id",
+      "email",
+      "emailVerified",
+      "registrationId",
+      "createdAt",
+    ];
     readOnlyFields.forEach((field) => {
       if (field in updateData) {
         delete updateData[field as keyof typeof updateData];
@@ -236,5 +248,54 @@ export const deleteUser = async (
       success: false,
       error: error instanceof Error ? error.message : "Failed to delete user",
     };
+  }
+};
+
+
+/**
+ * Mengambil daftar kandidat (CAANG) berdasarkan OR Period.
+ * Logika: 
+ * 1. Cari dokumen di 'registrations' yang orPeriod-nya sesuai.
+ * 2. Ambil ID dokumennya (karena ID registration == ID user).
+ * 3. Fetch data user dari collection 'users' berdasarkan ID tersebut.
+ */
+export const getCandidatesByPeriod = async (orPeriod: string): Promise<User[]> => {
+  try {
+    // 1. Ambil data dari collection 'registrations' dulu
+    const regRef = collection(db, "registrations");
+    
+    // Filter berdasarkan orPeriod
+    // Opsional: Tambahkan filter status jika perlu (misal: status != 'rejected')
+    const q = query(regRef, where("orPeriod", "==", orPeriod));
+    
+    const regSnapshot = await getDocs(q);
+
+    if (regSnapshot.empty) {
+      return [];
+    }
+
+    // 2. Ambil List ID user dari dokumen registration yang ditemukan
+    const userIds = regSnapshot.docs.map((doc) => doc.id);
+
+    // 3. Ambil data User secara paralel berdasarkan ID
+    // Kita menggunakan Promise.all agar pengambilan data berjalan serentak (cepat)
+    const userPromises = userIds.map(async (userId) => {
+      const userDocRef = doc(db, "users_new", userId);
+      const userSnap = await getDoc(userDocRef);
+
+      if (userSnap.exists()) {
+        return { id: userSnap.id, ...userSnap.data() } as User;
+      }
+      return null;
+    });
+
+    const usersResult = await Promise.all(userPromises);
+
+    // 4. Filter hasil yang null (jaga-jaga jika ada ID di registration tapi tidak ada di users)
+    return usersResult.filter((user): user is User => user !== null);
+
+  } catch (error) {
+    console.error("Error fetching candidates by period:", error);
+    return [];
   }
 };

@@ -9,6 +9,7 @@ import {
   orderBy,
   query,
   serverTimestamp,
+  setDoc,
   Timestamp,
   updateDoc,
   where,
@@ -152,3 +153,27 @@ export const softDeleteTaskSubmission = async (
   });
 };
 
+export const upsertGrade = async (
+  taskId: string, 
+  userId: string, 
+  score: number,
+  adminId: string
+) => {
+  // ID unik gabungan taskId dan userId untuk memastikan 1 user 1 nilai per tugas
+  const submissionId = `${taskId}_${userId}`; 
+  const submissionRef = doc(db, "task_submissions", submissionId);
+
+  const payload: Partial<TaskSubmission> = {
+    id: submissionId,
+    taskId,
+    userId,
+    score,
+    gradedBy: adminId,
+    gradedAt: Timestamp.now(),
+    submittedAt: Timestamp.now(), // Dianggap submit saat dinilai admin
+    updatedAt: Timestamp.now(),
+  };
+
+  // merge: true penting agar field lain tidak tertimpa jika sudah ada
+  await setDoc(submissionRef, payload, { merge: true });
+};

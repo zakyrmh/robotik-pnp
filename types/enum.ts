@@ -113,6 +113,7 @@ export enum SubmissionType {
   FILE = 'file',
   LINK = 'link',
   TEXT = 'text',
+  NO_INPUT = 'no_input',
 }
 
 /**
