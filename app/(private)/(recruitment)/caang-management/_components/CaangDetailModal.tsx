@@ -135,6 +135,7 @@ export default function CaangDetailModal({
                       width={100}
                       height={100}
                       alt="Pas Foto"
+                      unoptimized
                     />
                   ) : (
                     <p className="text-muted-foreground italic">Belum upload</p>
@@ -163,6 +164,7 @@ export default function CaangDetailModal({
                           alt="Bukti Bayar"
                           width={100}
                           height={100}
+                          unoptimized
                         />
                       </a>
                     ) : (

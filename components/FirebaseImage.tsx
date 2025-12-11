@@ -68,8 +68,9 @@ export default function FirebaseImage({
   return (
     <Image
       {...props}
-      src={isLoading ? '/images/avatar.jpg' :imgSrc} // Next.js Image src
+      src={isLoading ? '/images/avatar.jpg' : imgSrc} // Next.js Image src
       alt={props.alt || 'User Image'}
+      unoptimized={true} // Bypass Next.js Image Optimization to fix timeout issues
     />
   );
 }
