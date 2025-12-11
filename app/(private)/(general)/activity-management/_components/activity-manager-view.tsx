@@ -106,7 +106,7 @@ export default function ActivityManagerView({
       const filters: { status?: string; type: ActivityType } = {
         type: activityType, // KUNCI: Filter data berdasarkan context halaman
       };
-      
+
       if (filterStatus !== "all") filters.status = filterStatus;
 
       const data = await getActivities(filters);
@@ -168,15 +168,15 @@ export default function ActivityManagerView({
   return (
     <div className="min-h-screen p-8">
       <div className="max-w-7xl mx-auto">
-        
+
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">{pageTitle}</h1>
-          <p className="text-gray-600">{pageDescription}</p>
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-50 mb-2">{pageTitle}</h1>
+          <p className="text-gray-600 dark:text-gray-400">{pageDescription}</p>
         </motion.div>
 
         {/* Filters & Actions */}
@@ -188,7 +188,7 @@ export default function ActivityManagerView({
         >
           {/* Search */}
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
             <Input
               placeholder="Cari aktivitas..."
               value={searchQuery}
@@ -226,11 +226,11 @@ export default function ActivityManagerView({
             {[1, 2, 3].map((i) => (
               <Card key={i} className="animate-pulse">
                 <CardHeader>
-                  <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-6 bg-gray-200 dark:bg-gray-800 rounded w-3/4 mb-2"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-1/2"></div>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-20 bg-gray-200 rounded"></div>
+                  <div className="h-20 bg-gray-200 dark:bg-gray-800 rounded"></div>
                 </CardContent>
               </Card>
             ))}
@@ -253,10 +253,10 @@ export default function ActivityManagerView({
                         <div className="flex items-start gap-3 flex-1">
                           <span className="text-3xl">📅</span>
                           <div className="flex-1">
-                            <CardTitle className="text-lg mb-1 group-hover:text-blue-600 transition-colors">
+                            <CardTitle className="text-lg mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                               {activity.title}
                             </CardTitle>
-                            <CardDescription className="line-clamp-2">
+                            <CardDescription className="line-clamp-2 dark:text-gray-400">
                               {activity.description}
                             </CardDescription>
                           </div>
@@ -279,7 +279,7 @@ export default function ActivityManagerView({
                               <Eye className="w-4 h-4 mr-2" />
                               Detail
                             </DropdownMenuItem>
-                            
+
                             {canManage() && (
                               <>
                                 <DropdownMenuItem
@@ -296,7 +296,7 @@ export default function ActivityManagerView({
                                     setSelectedActivity(activity);
                                     setIsDeleteOpen(true);
                                   }}
-                                  className="text-red-600"
+                                  className="text-red-600 dark:text-red-400"
                                 >
                                   <Trash2 className="w-4 h-4 mr-2" />
                                   Hapus
@@ -312,7 +312,7 @@ export default function ActivityManagerView({
                           {getStatusLabel(activity.status)}
                         </Badge>
                         <Badge variant="outline" className="gap-1">
-                          {activity.mode === "online" ? <Video className="w-3 h-3"/> : <MapPin className="w-3 h-3"/>}
+                          {activity.mode === "online" ? <Video className="w-3 h-3" /> : <MapPin className="w-3 h-3" />}
                           {activity.mode === "online" ? "Online" : "Offline"}
                         </Badge>
                       </div>
@@ -320,36 +320,36 @@ export default function ActivityManagerView({
 
                     <CardContent className="mt-auto">
                       <div className="space-y-2 text-sm">
-                        <div className="flex items-center gap-2 text-gray-600">
+                        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
                           <Calendar className="w-4 h-4" />
                           <span>
                             {activity.startDateTime
                               ? format(
-                                  activity.startDateTime instanceof Date 
-                                  ? activity.startDateTime 
-                                  : activity.startDateTime.toDate(), 
-                                  "dd MMM yyyy, HH:mm", { locale: localeId })
+                                activity.startDateTime instanceof Date
+                                  ? activity.startDateTime
+                                  : activity.startDateTime.toDate(),
+                                "dd MMM yyyy, HH:mm", { locale: localeId })
                               : "-"}
                           </span>
                         </div>
-                        
+
                         {activity.location && activity.mode === 'offline' && (
-                           <div className="flex items-center gap-2 text-gray-600">
-                             <MapPin className="w-4 h-4" />
-                             <span className="truncate max-w-[200px]">{activity.location}</span>
-                           </div>
+                          <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
+                            <MapPin className="w-4 h-4" />
+                            <span className="truncate max-w-[200px]">{activity.location}</span>
+                          </div>
                         )}
-                        
+
                         {activity.attendanceEnabled && (
-                          <div className="flex items-center gap-2 text-gray-600">
+                          <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
                             <Users className="w-4 h-4" />
                             <span>{activity.attendedCount || 0} Hadir</span>
                           </div>
                         )}
-                        
+
                         {/* Jika Activity Recruitment, tampilkan periode OR */}
                         {activityType === 'recruitment' && activity.orPeriod && (
-                           <Badge variant="secondary" className="mt-1">OR {activity.orPeriod}</Badge>
+                          <Badge variant="secondary" className="mt-1">OR {activity.orPeriod}</Badge>
                         )}
                       </div>
                     </CardContent>
@@ -367,11 +367,11 @@ export default function ActivityManagerView({
             animate={{ opacity: 1 }}
             className="text-center py-12"
           >
-            <Calendar className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            <Calendar className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-600 mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
               Tidak ada aktivitas
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
               {searchQuery
                 ? "Tidak ditemukan aktivitas yang sesuai."
                 : `Belum ada aktivitas ${activityType === 'recruitment' ? 'seleksi' : 'internal'}.`}
@@ -393,7 +393,7 @@ export default function ActivityManagerView({
         onOpenChange={setIsCreateOpen}
         onSuccess={loadActivities}
         currentUserId={currentUser?.id || null}
-        defaultType={activityType} 
+        defaultType={activityType}
       />
 
       {selectedActivity && (

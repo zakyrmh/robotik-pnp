@@ -90,7 +90,7 @@ export default function AdminMaterialsPage() {
         orPeriod?: string;
         category?: string;
       } = {};
-      
+
       if (filterActivity !== "all") filters.activityId = filterActivity;
       if (filterOrPeriod !== "all") filters.orPeriod = filterOrPeriod;
       if (filterCategory !== "all") filters.category = filterCategory as TrainingCategory;
@@ -181,10 +181,10 @@ export default function AdminMaterialsPage() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-50 mb-2">
             Manajemen Materi Pembelajaran
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-400">
             Kelola semua materi pembelajaran untuk calon anggota UKM Robotik
           </p>
         </motion.div>
@@ -198,7 +198,7 @@ export default function AdminMaterialsPage() {
         >
           {/* Search */}
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
             <Input
               placeholder="Cari materi..."
               value={searchQuery}
@@ -268,13 +268,13 @@ export default function AdminMaterialsPage() {
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <Card key={i} className="animate-pulse">
                 <CardHeader>
-                  <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-6 bg-gray-200 dark:bg-gray-800 rounded w-3/4 mb-2"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-1/2"></div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    <div className="h-4 bg-gray-200 rounded"></div>
-                    <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-5/6"></div>
                   </div>
                 </CardContent>
               </Card>
@@ -300,10 +300,10 @@ export default function AdminMaterialsPage() {
                             {getFileIcon(material.fileType)}
                           </span>
                           <div className="flex-1">
-                            <CardTitle className="text-lg mb-1 group-hover:text-blue-600 transition-colors">
+                            <CardTitle className="text-lg mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                               {material.title}
                             </CardTitle>
-                            <CardDescription className="line-clamp-2">
+                            <CardDescription className="line-clamp-2 dark:text-gray-400">
                               {material.description || "Tidak ada deskripsi"}
                             </CardDescription>
                           </div>
@@ -340,7 +340,7 @@ export default function AdminMaterialsPage() {
                                 setSelectedMaterial(material);
                                 setIsDeleteOpen(true);
                               }}
-                              className="text-red-600"
+                              className="text-red-600 dark:text-red-400"
                             >
                               <Trash2 className="w-4 h-4 mr-2" />
                               Hapus
@@ -360,11 +360,10 @@ export default function AdminMaterialsPage() {
                         </Badge>
                         <Badge
                           variant="outline"
-                          className={`gap-1 ${
-                            material.isPublic
+                          className={`gap-1 ${material.isPublic
                               ? "text-green-600 border-green-600"
                               : "text-orange-600 border-orange-600"
-                          }`}
+                            }`}
                         >
                           {material.isPublic ? (
                             <>
@@ -384,7 +383,7 @@ export default function AdminMaterialsPage() {
                     <CardContent>
                       <div className="space-y-2 text-sm">
                         {/* File Info */}
-                        <div className="flex items-center gap-2 text-gray-600">
+                        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
                           <FileText className="w-4 h-4" />
                           <span>
                             {material.fileName} (
@@ -393,7 +392,7 @@ export default function AdminMaterialsPage() {
                         </div>
 
                         {/* Download Count */}
-                        <div className="flex items-center gap-2 text-gray-600">
+                        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
                           <Download className="w-4 h-4" />
                           <span>{material.downloadCount || 0} unduhan</span>
                         </div>
@@ -404,16 +403,16 @@ export default function AdminMaterialsPage() {
                         </Badge>
 
                         {/* Created Date */}
-                        <p className="text-xs text-gray-500 mt-2">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                           Diupload:{" "}
                           {material.createdAt
                             ? format(
-                                material.createdAt instanceof Date
-                                  ? material.createdAt
-                                  : material.createdAt.toDate(),
-                                "dd MMM yyyy",
-                                { locale: localeId }
-                              )
+                              material.createdAt instanceof Date
+                                ? material.createdAt
+                                : material.createdAt.toDate(),
+                              "dd MMM yyyy",
+                              { locale: localeId }
+                            )
                             : "-"}
                         </p>
                       </div>
@@ -432,11 +431,11 @@ export default function AdminMaterialsPage() {
             animate={{ opacity: 1 }}
             className="text-center py-12"
           >
-            <FileText className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            <FileText className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-600 mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
               Tidak ada materi
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
               {searchQuery
                 ? "Tidak ditemukan materi yang sesuai dengan pencarian"
                 : "Belum ada materi yang diupload"}

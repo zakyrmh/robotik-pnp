@@ -29,7 +29,7 @@ import { User } from "@/types/users";
 import { AttendanceStatus } from "@/types/enum";
 import { exportToCSV } from "@/utils/exportToCSV";
 // Kita gunakan tipe Attendance standar, karena data virtual dari parent structure-nya sama
-import { Attendance } from "@/types/attendances"; 
+import { Attendance } from "@/types/attendances";
 
 // Interface untuk data yang diterima dari Parent Component
 interface AttendanceSummaryTableProps {
@@ -102,7 +102,7 @@ export default function AttendanceSummaryTable({
           // Note: Logic "Virtual Absent" di parent sudah mengcover ini, 
           // tapi kita double check agar aman.
           const status = attendance ? attendance.status : AttendanceStatus.ABSENT;
-          
+
           userAttendancesMap[activity.id] = status;
 
           // Hitung Summary
@@ -128,8 +128,8 @@ export default function AttendanceSummaryTable({
 
         // Hitung Persentase Ketidakhadiran (Alfa)
         const totalActivities = sortedActivities.length;
-        const absentPercentage = totalActivities > 0 
-          ? (summary.alfa / totalActivities) * 100 
+        const absentPercentage = totalActivities > 0
+          ? (summary.alfa / totalActivities) * 100
           : 0;
 
         return {
@@ -157,7 +157,7 @@ export default function AttendanceSummaryTable({
 
         // Sort descending by level (Level 2 paling atas)
         if (levelA !== levelB) {
-          return levelB - levelA; 
+          return levelB - levelA;
         }
 
         // Jika level sama, urutkan nama ascending
@@ -192,7 +192,7 @@ export default function AttendanceSummaryTable({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger>
-                 <Badge className="bg-green-500 hover:bg-green-600 text-[10px] w-6 h-6 flex items-center justify-center p-0">H</Badge>
+                <Badge className="bg-green-500 hover:bg-green-600 text-[10px] w-6 h-6 flex items-center justify-center p-0">H</Badge>
               </TooltipTrigger>
               <TooltipContent><p>Hadir</p></TooltipContent>
             </Tooltip>
@@ -212,7 +212,7 @@ export default function AttendanceSummaryTable({
       case AttendanceStatus.EXCUSED:
         return (
           <TooltipProvider>
-             <Tooltip>
+            <Tooltip>
               <TooltipTrigger>
                 <Badge className="bg-blue-500 hover:bg-blue-600 text-[10px] w-6 h-6 flex items-center justify-center p-0">I</Badge>
               </TooltipTrigger>
@@ -225,7 +225,7 @@ export default function AttendanceSummaryTable({
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger>
-                 <Badge className="bg-purple-500 hover:bg-purple-600 text-[10px] w-6 h-6 flex items-center justify-center p-0">S</Badge>
+                <Badge className="bg-purple-500 hover:bg-purple-600 text-[10px] w-6 h-6 flex items-center justify-center p-0">S</Badge>
               </TooltipTrigger>
               <TooltipContent><p>Sakit</p></TooltipContent>
             </Tooltip>
@@ -279,7 +279,7 @@ export default function AttendanceSummaryTable({
         user.fullName,
         user.nim,
         // Loop aktivitas sesuai urutan activitiesData
-        ...activitiesData.map((activity) => 
+        ...activitiesData.map((activity) =>
           getStatusText(user.attendances[activity.id])
         ),
         user.summary.hadir,
@@ -319,13 +319,13 @@ export default function AttendanceSummaryTable({
         animate={{ opacity: 1, y: 0 }}
         className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
       >
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-           <AlertCircle className="w-4 h-4" />
-           <span>Total Peserta: <strong>{userSummaries.length}</strong></span>
-           <span>|</span>
-           <span>Total Aktivitas: <strong>{activitiesData.length}</strong></span>
+        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+          <AlertCircle className="w-4 h-4" />
+          <span>Total Peserta: <strong>{userSummaries.length}</strong></span>
+          <span>|</span>
+          <span>Total Aktivitas: <strong>{activitiesData.length}</strong></span>
         </div>
-        
+
         <Button onClick={handleExportCSV} className="gap-2" disabled={userSummaries.length === 0}>
           <Download className="w-4 h-4" />
           Export CSV
@@ -333,18 +333,18 @@ export default function AttendanceSummaryTable({
       </motion.div>
 
       {/* Legend / Keterangan Warna */}
-      <Card className="bg-gray-50 border-gray-200">
+      <Card className="bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700">
         <CardContent className="p-4 flex flex-wrap gap-4 text-xs sm:text-sm">
           <div className="flex items-center gap-2">
-             <span className="w-3 h-3 rounded-full bg-yellow-100 border border-yellow-400"></span>
-             <span>Kuning: Alfa ≥ 50%</span>
+            <span className="w-3 h-3 rounded-full bg-yellow-100 border border-yellow-400"></span>
+            <span>Kuning: Alfa ≥ 50%</span>
           </div>
           <div className="flex items-center gap-2">
-             <span className="w-3 h-3 rounded-full bg-red-100 border border-red-400"></span>
-             <span>Merah: Alfa ≥ 75%</span>
+            <span className="w-3 h-3 rounded-full bg-red-100 border border-red-400"></span>
+            <span>Merah: Alfa ≥ 75%</span>
           </div>
-          <div className="flex items-center gap-2 ml-auto text-gray-400">
-             <span>H: Hadir, T: Telat, I: Izin, S: Sakit, A: Alfa</span>
+          <div className="flex items-center gap-2 ml-auto text-gray-400 dark:text-gray-500">
+            <span>H: Hadir, T: Telat, I: Izin, S: Sakit, A: Alfa</span>
           </div>
         </CardContent>
       </Card>
@@ -357,10 +357,10 @@ export default function AttendanceSummaryTable({
               <TableHeader>
                 <TableRow>
                   {/* Sticky Columns */}
-                  <TableHead className="sticky left-0 bg-white z-20 w-[50px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                  <TableHead className="sticky left-0 bg-white dark:bg-gray-900 z-20 w-[50px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
                     No
                   </TableHead>
-                  <TableHead className="sticky left-[50px] bg-white z-20 min-w-[200px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                  <TableHead className="sticky left-[50px] bg-white dark:bg-gray-900 z-20 min-w-[200px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
                     Nama & NIM
                   </TableHead>
 
@@ -387,23 +387,23 @@ export default function AttendanceSummaryTable({
                   ))}
 
                   {/* Summary Columns */}
-                  <TableHead className="text-center bg-gray-50 min-w-[50px] text-red-600 font-bold">Alfa</TableHead>
-                  <TableHead className="text-center bg-gray-50 min-w-[50px]">Hadir</TableHead>
-                  <TableHead className="text-center bg-gray-50 min-w-[50px]">Telat</TableHead>
+                  <TableHead className="text-center bg-gray-50 dark:bg-gray-800 min-w-[50px] text-red-600 dark:text-red-400 font-bold">Alfa</TableHead>
+                  <TableHead className="text-center bg-gray-50 dark:bg-gray-800 min-w-[50px]">Hadir</TableHead>
+                  <TableHead className="text-center bg-gray-50 dark:bg-gray-800 min-w-[50px]">Telat</TableHead>
                 </TableRow>
               </TableHeader>
-              
+
               <TableBody>
                 {userSummaries.length === 0 ? (
-                   <TableRow>
-                     <TableCell colSpan={activitiesData.length + 6} className="text-center py-8 text-gray-500">
-                       Belum ada data user atau aktivitas.
-                     </TableCell>
-                   </TableRow>
+                  <TableRow>
+                    <TableCell colSpan={activitiesData.length + 6} className="text-center py-8 text-gray-500 dark:text-gray-400">
+                      Belum ada data user atau aktivitas.
+                    </TableCell>
+                  </TableRow>
                 ) : (
                   userSummaries.map((user, idx) => (
-                    <TableRow 
-                      key={user.userId} 
+                    <TableRow
+                      key={user.userId}
                       className={getRowHighlight(user.absentPercentage, user.blacklist)}
                     >
                       {/* Sticky Data */}
@@ -413,7 +413,7 @@ export default function AttendanceSummaryTable({
                       <TableCell className="sticky left-[50px] bg-inherit z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
                         <div className="flex flex-col">
                           <span className="font-medium text-sm truncate max-w-[180px]">{user.fullName}</span>
-                          <span className="text-[10px] text-gray-500">{user.nim}</span>
+                          <span className="text-[10px] text-gray-500 dark:text-gray-400">{user.nim}</span>
                         </div>
                       </TableCell>
 
@@ -427,13 +427,13 @@ export default function AttendanceSummaryTable({
                       ))}
 
                       {/* Summary Counts */}
-                      <TableCell className="text-center font-bold text-red-600 bg-white/30">
+                      <TableCell className="text-center font-bold text-red-600 dark:text-red-400 bg-white/30 dark:bg-black/20">
                         {user.summary.alfa}
                       </TableCell>
-                      <TableCell className="text-center text-green-700 bg-white/30">
+                      <TableCell className="text-center text-green-700 dark:text-green-400 bg-white/30 dark:bg-black/20">
                         {user.summary.hadir}
                       </TableCell>
-                       <TableCell className="text-center text-yellow-700 bg-white/30">
+                      <TableCell className="text-center text-yellow-700 dark:text-yellow-400 bg-white/30 dark:bg-black/20">
                         {user.summary.telat}
                       </TableCell>
                     </TableRow>
