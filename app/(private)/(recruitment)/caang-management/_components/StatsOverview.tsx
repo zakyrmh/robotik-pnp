@@ -65,7 +65,7 @@ function StatsCard({
       case "destructive":
         return "bg-red-50 border-red-200 text-red-900";
       default:
-        return "bg-white";
+        return "bg-card";
     }
   };
 

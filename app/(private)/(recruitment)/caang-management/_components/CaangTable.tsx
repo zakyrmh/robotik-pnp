@@ -128,7 +128,7 @@ export default function CaangTable({
   };
 
   return (
-    <div className="rounded-md border bg-white">
+    <div className="rounded-md border bg-card">
       <Table>
         <TableHeader>
           <TableRow>
@@ -219,7 +219,7 @@ export default function CaangTable({
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                      <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center overflow-hidden">
                         {user.profile.photoUrl ? (
                           <FirebaseImage
                             path={user.profile.photoUrl}
