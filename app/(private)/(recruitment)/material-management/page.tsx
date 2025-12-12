@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plus,
@@ -43,9 +44,9 @@ import { Material } from "@/types/materials";
 import { Activity } from "@/types/activities";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
-import MaterialDialog from "@/components/materials/admin/material-dialog";
-import MaterialDetailDialog from "@/components/materials/admin/material-detail-dialog";
-import DeleteMaterialDialog from "@/components/materials/admin/delete-material-dialog";
+import MaterialDialog from "@/app/(private)/(recruitment)/material-management/_components/material-dialog";
+import MaterialDetailDialog from "@/app/(private)/(recruitment)/material-management/_components/material-detail-dialog";
+import DeleteMaterialDialog from "@/app/(private)/(recruitment)/material-management/_components/delete-material-dialog";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { app } from "@/lib/firebaseConfig";
 import { TrainingCategory } from "@/types/enum";
@@ -58,6 +59,7 @@ export default function AdminMaterialsPage() {
   const [filterActivity, setFilterActivity] = useState<string>("all");
   const [filterOrPeriod, setFilterOrPeriod] = useState<string>("all");
   const [filterCategory, setFilterCategory] = useState<string>("all");
+  const router = useRouter();
 
   // Dialog states
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -125,19 +127,6 @@ export default function AdminMaterialsPage() {
 
     return () => unsubscribe();
   }, []);
-
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case "elektronika":
-        return "bg-blue-500";
-      case "mekanik":
-        return "bg-yellow-500";
-      case "pemrograman":
-        return "bg-green-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
 
   const getCategoryLabel = (category: string) => {
     switch (category) {
@@ -255,10 +244,20 @@ export default function AdminMaterialsPage() {
             </Select>
 
             {/* Create Button */}
-            <Button onClick={() => setIsCreateOpen(true)} className="gap-2">
-              <Plus className="w-5 h-5" />
-              Upload Materi
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => router.push("/material-management/trash")}
+                className="gap-2 border-dashed"
+              >
+                <Trash2 className="w-4 h-4" />
+                Sampah
+              </Button>
+              <Button onClick={() => setIsCreateOpen(true)} className="gap-2">
+                <Plus className="w-5 h-5" />
+                Upload Materi
+              </Button>
+            </div>
           </div>
         </motion.div>
 
@@ -352,17 +351,10 @@ export default function AdminMaterialsPage() {
                       {/* Category & Access Badge */}
                       <div className="flex items-center gap-2 mt-3">
                         <Badge
-                          className={`${getCategoryColor(
-                            material.category
-                          )} text-white`}
-                        >
-                          {getCategoryLabel(material.category)}
-                        </Badge>
-                        <Badge
                           variant="outline"
                           className={`gap-1 ${material.isPublic
-                              ? "text-green-600 border-green-600"
-                              : "text-orange-600 border-orange-600"
+                            ? "text-green-600 border-green-600"
+                            : "text-orange-600 border-orange-600"
                             }`}
                         >
                           {material.isPublic ? (

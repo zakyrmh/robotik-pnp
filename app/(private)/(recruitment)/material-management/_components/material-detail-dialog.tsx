@@ -40,31 +40,6 @@ export default function MaterialDetailDialog({
   material,
   activities,
 }: MaterialDetailDialogProps) {
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'elektronika':
-        return 'bg-blue-500';
-      case 'mekanik':
-        return 'bg-yellow-500';
-      case 'pemrograman':
-        return 'bg-green-500';
-      default:
-        return 'bg-gray-500';
-    }
-  };
-
-  const getCategoryLabel = (category: string) => {
-    switch (category) {
-      case 'elektronika':
-        return 'Elektronika';
-      case 'mekanik':
-        return 'Mekanik';
-      case 'pemrograman':
-        return 'Pemrograman';
-      default:
-        return category;
-    }
-  };
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
@@ -87,7 +62,7 @@ export default function MaterialDetailDialog({
     try {
       // Open file in new tab
       window.open(material.fileUrl, '_blank');
-      
+
       // Increment download count
       await incrementDownloadCount(material.id);
       toast.success('File berhasil didownload');
@@ -133,17 +108,11 @@ export default function MaterialDetailDialog({
             </div>
             <div className="flex flex-col gap-2">
               <Badge
-                className={`${getCategoryColor(material.category)} text-white`}
-              >
-                {getCategoryLabel(material.category)}
-              </Badge>
-              <Badge
                 variant="outline"
-                className={`gap-1 ${
-                  material.isPublic
-                    ? 'text-green-600 border-green-600'
-                    : 'text-orange-600 border-orange-600'
-                }`}
+                className={`gap-1 ${material.isPublic
+                  ? 'text-green-600 border-green-600'
+                  : 'text-orange-600 border-orange-600'
+                  }`}
               >
                 {material.isPublic ? (
                   <>
@@ -300,12 +269,12 @@ export default function MaterialDetailDialog({
                   <p className="font-medium">
                     {material.createdAt
                       ? format(
-                          material.createdAt instanceof Date
-                            ? material.createdAt
-                            : material.createdAt.toDate(),
-                          'dd MMMM yyyy, HH:mm',
-                          { locale: localeId }
-                        )
+                        material.createdAt instanceof Date
+                          ? material.createdAt
+                          : material.createdAt.toDate(),
+                        'dd MMMM yyyy, HH:mm',
+                        { locale: localeId }
+                      )
                       : '-'}
                   </p>
                 </div>

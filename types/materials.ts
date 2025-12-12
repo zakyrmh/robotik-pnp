@@ -1,29 +1,27 @@
-import { TrainingCategory } from "@/types/enum";
 import { Timestamp } from "firebase/firestore";
 
 export interface Material {
   id: string;
-  activityId?: string; // Bisa linked ke activity atau standalone
+  activityId?: string;
   orPeriod: string;
-  
+
   // Info
   title: string;
   description?: string;
-  category: TrainingCategory;
-  
+
   // File
   fileUrl: string;
   fileName: string;
   fileSize: number; // Bytes
   fileType: string; // MIME type
-  
+
   // Access Control
-  isPublic: boolean; // Bisa diakses semua atau hanya yang sudah attend activity
-  requiredActivityId?: string; // Harus attend activity ini dulu
-  
+  isPublic: boolean;
+  requiredActivityId?: string;
+
   // Statistics
   downloadCount: number;
-  
+
   // Metadata
   uploadedBy: string;
   createdAt: Timestamp;

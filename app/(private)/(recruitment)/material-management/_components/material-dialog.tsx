@@ -34,9 +34,7 @@ import { Switch } from "@/components/ui/switch";
 import { Loader2, Upload, X } from "lucide-react";
 import { Material } from "@/types/materials";
 import { Activity } from "@/types/activities";
-import { TrainingCategory, OrPhase } from "@/types/enum";
-import { createMaterial, updateMaterial } from "@/lib/firebase/materials";
-import { uploadFileToSupabase, deleteFileFromSupabase } from "@/lib/supabase-storage";
+import { createMaterial, updateMaterial, uploadMaterialFile, deleteMaterialFile } from "@/lib/firebase/materials";
 import { toast } from "sonner";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
@@ -56,8 +54,6 @@ const materialSchema = z.object({
   title: z.string().min(5, "Judul minimal 5 karakter"),
   description: z.string().optional(),
   orPeriod: z.string().min(1, "OR Period wajib diisi"),
-  phase: z.nativeEnum(OrPhase),
-  category: z.nativeEnum(TrainingCategory),
   activityId: z.string().optional(),
   isPublic: z.boolean(),
   requiredActivityId: z.string().optional(),
@@ -101,11 +97,9 @@ export default function MaterialDialog({
       title: "",
       description: "",
       orPeriod: "OR 21",
-      phase: OrPhase.PELATIHAN,
-      category: TrainingCategory.PEMROGRAMAN,
-      activityId: "",
+      activityId: "none",
       isPublic: true,
-      requiredActivityId: "",
+      requiredActivityId: "none",
     },
   });
 
@@ -115,10 +109,9 @@ export default function MaterialDialog({
         title: material.title,
         description: material.description || "",
         orPeriod: material.orPeriod,
-        category: material.category,
-        activityId: material.activityId || "",
+        activityId: material.activityId || "none",
         isPublic: material.isPublic,
-        requiredActivityId: material.requiredActivityId || "",
+        requiredActivityId: material.requiredActivityId || "none",
       });
       setSelectedFile(null);
       setFileError("");
@@ -185,24 +178,20 @@ export default function MaterialDialog({
 
         // Delete old file if editing
         if (isEdit && material?.fileUrl) {
-          await deleteFileFromSupabase("materials", material.fileUrl);
+          try {
+            await deleteMaterialFile(material.fileUrl);
+          } catch (e) {
+            console.error("Error deleting old file:", e);
+            // Continue even if delete fails
+          }
         }
 
         setUploadProgress(30);
 
         // Upload new file
-        const uploadResult = await uploadFileToSupabase(
-          selectedFile,
-          "materials",
-          `material_${Date.now()}`,
-          (progress) => {
-            setUploadProgress(30 + progress * 0.6); // 30-90%
-          }
-        );
-
-        if (!uploadResult.success || !uploadResult.url) {
-          throw new Error(uploadResult.error || "Gagal mengupload file");
-        }
+        const uploadResult = await uploadMaterialFile(selectedFile, (progress) => {
+          setUploadProgress(30 + progress * 0.6); // 30-90%
+        });
 
         fileUrl = uploadResult.url;
         fileName = selectedFile.name;
@@ -217,15 +206,16 @@ export default function MaterialDialog({
         title: data.title,
         description: data.description || "",
         orPeriod: data.orPeriod,
-        category: data.category,
         fileUrl,
         fileName,
         fileSize,
         fileType,
         isPublic: data.isPublic,
         uploadedBy: currentUserId,
-        ...(data.activityId && { activityId: data.activityId }),
-        ...(data.requiredActivityId && {
+        ...(data.activityId &&
+          data.activityId !== "none" && { activityId: data.activityId }),
+        ...(data.requiredActivityId &&
+          data.requiredActivityId !== "none" && {
           requiredActivityId: data.requiredActivityId,
         }),
       };
@@ -246,8 +236,7 @@ export default function MaterialDialog({
     } catch (error) {
       console.error("Error saving material:", error);
       toast.error(
-        `Gagal menyimpan materi: ${
-          error instanceof Error ? error.message : "Unknown error"
+        `Gagal menyimpan materi: ${error instanceof Error ? error.message : "Unknown error"
         }`
       );
     } finally {
@@ -332,65 +321,7 @@ export default function MaterialDialog({
                     </FormItem>
                   )}
                 />
-
-                <FormField
-                  control={form.control}
-                  name="phase"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        Fase<span className="text-red-500"> *</span>
-                      </FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {Object.values(OrPhase).map((phase) => (
-                            <SelectItem key={phase} value={phase}>
-                              {phase}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
               </div>
-
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Kategori<span className="text-red-500"> *</span>
-                    </FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {Object.values(TrainingCategory).map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category.charAt(0).toUpperCase() +
-                              category.slice(1)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
 
             {/* File Upload */}
@@ -404,15 +335,15 @@ export default function MaterialDialog({
                 </FormLabel>
                 <div className="flex items-center gap-4">
                   <label className="flex-1">
-                    <div className="flex items-center justify-center w-full h-32 px-4 transition bg-white border-2 border-gray-300 border-dashed rounded-md appearance-none cursor-pointer hover:border-gray-400 focus:outline-none">
+                    <div className="flex items-center justify-center w-full h-32 px-4 transition bg-transparent border-2 border-gray-300 border-dashed rounded-md appearance-none cursor-pointer hover:border-gray-400 focus:outline-none dark:bg-input/30">
                       <div className="flex flex-col items-center space-y-2">
                         <Upload className="w-8 h-8 text-gray-400" />
                         <span className="text-sm text-gray-600">
                           {selectedFile
                             ? selectedFile.name
                             : isEdit && material
-                            ? material.fileName
-                            : "Klik untuk upload file"}
+                              ? material.fileName
+                              : "Klik untuk upload file"}
                         </span>
                         <span className="text-xs text-gray-500">
                           PDF, PPT, Word, atau Image (Max 50MB)
@@ -478,7 +409,7 @@ export default function MaterialDialog({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Tidak ada</SelectItem>
+                        <SelectItem value="none">Tidak ada</SelectItem>
                         {activities.map((activity) => (
                           <SelectItem key={activity.id} value={activity.id}>
                             {activity.title}
@@ -539,7 +470,7 @@ export default function MaterialDialog({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">Tidak ada</SelectItem>
+                          <SelectItem value="none">Tidak ada</SelectItem>
                           {activities.map((activity) => (
                             <SelectItem key={activity.id} value={activity.id}>
                               {activity.title}
