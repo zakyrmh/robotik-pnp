@@ -98,10 +98,10 @@ export default function GroupManagementPage() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">
             Manajemen Kelompok
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 dark:text-gray-400">
             Kelola kelompok project khusus untuk calon anggota
           </p>
         </motion.div>
@@ -115,7 +115,7 @@ export default function GroupManagementPage() {
         >
           {/* Search */}
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
             <Input
               placeholder="Cari kelompok..."
               value={searchQuery}
@@ -140,13 +140,13 @@ export default function GroupManagementPage() {
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <Card key={i} className="animate-pulse">
                 <CardHeader>
-                  <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-6 bg-gray-200 dark:bg-gray-800 rounded w-3/4 mb-2"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-1/2"></div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    <div className="h-4 bg-gray-200 rounded"></div>
-                    <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-5/6"></div>
                   </div>
                 </CardContent>
               </Card>
@@ -170,7 +170,7 @@ export default function GroupManagementPage() {
                         <div className="flex items-start gap-3 flex-1">
                           <span className="text-3xl">📂</span>
                           <div className="flex-1">
-                            <CardTitle className="text-lg mb-1 group-hover:text-blue-600 transition-colors">
+                            <CardTitle className="text-lg mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                               {groupParent.name}
                             </CardTitle>
                             <CardDescription className="line-clamp-2">
@@ -207,7 +207,7 @@ export default function GroupManagementPage() {
                                 setSelectedGroupParent(groupParent);
                                 setIsDeleteOpen(true);
                               }}
-                              className="text-red-600"
+                              className="text-red-600 dark:text-red-400"
                             >
                               <Trash2 className="w-4 h-4 mr-2" />
                               Hapus
@@ -225,13 +225,13 @@ export default function GroupManagementPage() {
                     <CardContent>
                       <div className="space-y-2 text-sm">
                         {/* Sub-groups Count */}
-                        <div className="flex items-center gap-2 text-gray-600">
+                        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                           <UsersRound className="w-4 h-4" />
                           <span>{groupParent.totalSubGroups} Sub-kelompok</span>
                         </div>
 
                         {/* Total Members */}
-                        <div className="flex items-center gap-2 text-gray-600">
+                        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                           <Users className="w-4 h-4" />
                           <span>{groupParent.totalMembers} Total Anggota</span>
                         </div>
@@ -251,11 +251,11 @@ export default function GroupManagementPage() {
             animate={{ opacity: 1 }}
             className="text-center py-12"
           >
-            <Users className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            <Users className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-600 mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
               Tidak ada kelompok
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
               {searchQuery
                 ? "Tidak ditemukan kelompok yang sesuai dengan pencarian"
                 : "Belum ada kelompok yang dibuat"}

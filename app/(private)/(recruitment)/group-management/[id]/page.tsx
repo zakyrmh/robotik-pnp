@@ -237,15 +237,15 @@ export default function GroupDetailPage() {
 
           {groupParent && (
             <>
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-2">
                 {groupParent.name}
               </h1>
-              <p className="text-gray-600">
+              <p className="text-gray-600 dark:text-gray-400">
                 {groupParent.description || "Tidak ada deskripsi"}
               </p>
               <div className="flex items-center gap-4 mt-4">
                 <Badge variant="secondary">{groupParent.orPeriod}</Badge>
-                <div className="text-sm text-gray-600">
+                <div className="text-sm text-gray-600 dark:text-gray-400">
                   {groupParent.totalSubGroups} Sub-kelompok •{" "}
                   {groupParent.totalMembers} Total Anggota
                 </div>
@@ -263,7 +263,7 @@ export default function GroupDetailPage() {
         >
           {/* Search */}
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
             <Input
               placeholder="Cari sub-kelompok..."
               value={searchQuery}
@@ -296,13 +296,13 @@ export default function GroupDetailPage() {
             {[1, 2, 3, 4, 5, 6].map((i) => (
               <Card key={i} className="animate-pulse">
                 <CardHeader>
-                  <div className="h-6 bg-gray-200 rounded w-3/4 mb-2"></div>
-                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-6 bg-gray-200 dark:bg-gray-800 rounded w-3/4 mb-2"></div>
+                  <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-1/2"></div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    <div className="h-4 bg-gray-200 rounded"></div>
-                    <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded"></div>
+                    <div className="h-4 bg-gray-200 dark:bg-gray-800 rounded w-5/6"></div>
                   </div>
                 </CardContent>
               </Card>
@@ -326,7 +326,7 @@ export default function GroupDetailPage() {
                         <div className="flex items-start gap-3 flex-1">
                           <span className="text-3xl">👥</span>
                           <div className="flex-1">
-                            <CardTitle className="text-lg mb-1 group-hover:text-blue-600 transition-colors">
+                            <CardTitle className="text-lg mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                               {subGroup.name}
                             </CardTitle>
                             <CardDescription className="line-clamp-2">
@@ -367,7 +367,7 @@ export default function GroupDetailPage() {
                                 setSelectedSubGroup(subGroup);
                                 setIsDeleteOpen(true);
                               }}
-                              className="text-red-600"
+                              className="text-red-600 dark:text-red-400"
                             >
                               <Trash2 className="w-4 h-4 mr-2" />
                               Hapus
@@ -380,7 +380,7 @@ export default function GroupDetailPage() {
                     <CardContent>
                       <div className="space-y-3">
                         {/* Member Count */}
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                           <Users className="w-4 h-4" />
                           <span>{subGroup.memberIds.length} Anggota</span>
                         </div>
@@ -390,33 +390,31 @@ export default function GroupDetailPage() {
                           {subGroup.members.slice(0, 3).map((member) => (
                             <div
                               key={member.userId}
-                              className={`text-xs p-2 rounded ${
-                                member.isLowAttendance
-                                  ? "bg-red-50 border border-red-200"
-                                  : "bg-gray-50"
-                              }`}
+                              className={`text-xs p-2 rounded ${member.isLowAttendance
+                                ? "bg-red-50 border border-red-200 dark:bg-red-900/20 dark:border-red-800"
+                                : "bg-gray-50 dark:bg-gray-800"
+                                }`}
                             >
                               <div className="flex items-start justify-between gap-2">
                                 <div className="flex-1 min-w-0">
                                   <p className="font-medium truncate">
                                     {member.fullName}
                                   </p>
-                                  <p className="text-gray-500">{member.nim}</p>
+                                  <p className="text-gray-500 dark:text-gray-400">{member.nim}</p>
                                 </div>
                                 <div className="text-right">
                                   <p
-                                    className={`font-semibold ${
-                                      member.isLowAttendance
-                                        ? "text-red-600"
-                                        : "text-green-600"
-                                    }`}
+                                    className={`font-semibold ${member.isLowAttendance
+                                      ? "text-red-600 dark:text-red-400"
+                                      : "text-green-600 dark:text-green-400"
+                                      }`}
                                   >
                                     {member.attendancePercentage.toFixed(0)}%
                                   </p>
                                 </div>
                               </div>
                               {member.isLowAttendance && (
-                                <div className="flex items-center gap-1 mt-1 text-red-600">
+                                <div className="flex items-center gap-1 mt-1 text-red-600 dark:text-red-400">
                                   <AlertCircle className="w-3 h-3" />
                                   <span className="text-xs">
                                     Attendance rendah
@@ -427,21 +425,22 @@ export default function GroupDetailPage() {
                           ))}
 
                           {subGroup.members.length > 3 && (
-                            <p className="text-xs text-gray-500 text-center">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
                               +{subGroup.members.length - 3} anggota lainnya
                             </p>
                           )}
 
                           {subGroup.members.length === 0 && (
-                            <p className="text-xs text-gray-400 text-center py-2">
+                            <p className="text-xs text-gray-400 dark:text-gray-600 text-center py-2">
                               Belum ada anggota
                             </p>
                           )}
                         </div>
 
+
                         {/* Low Attendance Warning */}
                         {subGroup.members.some((m) => m.isLowAttendance) && (
-                          <div className="flex items-center gap-1 text-xs text-orange-600 bg-orange-50 p-2 rounded">
+                          <div className="flex items-center gap-1 text-xs text-orange-600 bg-orange-50 dark:text-orange-400 dark:bg-orange-900/20 p-2 rounded">
                             <AlertCircle className="w-3 h-3" />
                             <span>Ada anggota dengan attendance &lt; 25%</span>
                           </div>
@@ -462,11 +461,11 @@ export default function GroupDetailPage() {
             animate={{ opacity: 1 }}
             className="text-center py-12"
           >
-            <Users className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+            <Users className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-600 mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
               Tidak ada sub-kelompok
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
               {searchQuery
                 ? "Tidak ditemukan sub-kelompok yang sesuai dengan pencarian"
                 : "Belum ada sub-kelompok yang dibuat"}
