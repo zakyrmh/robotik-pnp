@@ -6,16 +6,17 @@ export interface GroupParent {
   name: string; // Misal: "Kelompok Project 1", "Kelompok Project 2"
   description?: string;
   orPeriod: string; // Misal: "OR 21"
-  
+
   // Metadata
   totalSubGroups: number; // Jumlah sub-group yang ada
   totalMembers: number; // Total anggota dari semua sub-group
-  
+
   isActive: boolean;
-  
+
   createdBy: string; // Admin yang membuat
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  deletedAt?: Timestamp;
 }
 
 // Sub-Group - Kelompok aktual dengan anggota (misal: "Kelompok 1", "Kelompok 2")
@@ -25,21 +26,22 @@ export interface SubGroup {
   name: string; // Misal: "Kelompok 1", "Kelompok 2"
   description?: string;
   orPeriod: string;
-  
+
   // Members
   memberIds: string[]; // User IDs
   leaderId?: string; // Ketua kelompok (optional)
-  
+
   // Member Details for Display (cached data)
   members: GroupMember[];
-  
+
   // Status
   isActive: boolean;
-  
+
   // Metadata
   createdBy: string;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+  deletedAt?: Timestamp;
 }
 
 // Member info dengan attendance data untuk highlighting

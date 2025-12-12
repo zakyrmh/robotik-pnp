@@ -278,6 +278,17 @@ export default function GroupDetailPage() {
             Tambah Sub-kelompok
           </Button>
 
+          {/* Edit Members Button */}
+          <Button
+            variant="outline"
+            onClick={() => router.push(`/group-management/${groupParentId}/edit-members`)}
+            className="gap-2"
+            disabled={loading || subGroups.length === 0}
+          >
+            <Users className="w-5 h-5" />
+            Edit Anggota Sub-kelompok
+          </Button>
+
           {/* Export Button */}
           <Button
             onClick={handleExportToExcel}

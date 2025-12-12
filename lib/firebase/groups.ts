@@ -12,11 +12,13 @@ import {
   serverTimestamp,
   Timestamp,
   writeBatch,
+  deleteField,
 } from 'firebase/firestore';
 import { GroupParent, SubGroup, GroupMember } from '@/types/groups';
 import { getUsers } from './users';
 import { getAttendances } from './attendances';
 import { getActivities } from './activities';
+import { getRegistrationsByOrPeriod } from './registrations';
 
 const GROUP_PARENTS_COLLECTION = 'group_parents';
 const SUB_GROUPS_COLLECTION = 'sub_groups';
@@ -66,7 +68,7 @@ export async function getGroupParents(orPeriod?: string): Promise<GroupParent[]>
     }
 
     const snapshot = await getDocs(q);
-    
+
     const groupParents = snapshot.docs
       .map((doc) => convertDocToGroupParent(doc.id, doc.data()))
       .filter((gp) => gp.isActive);
@@ -88,14 +90,14 @@ export async function getGroupParentById(id: string): Promise<GroupParent | null
 
     if (docSnap.exists()) {
       const data = docSnap.data();
-      
+
       if (!data.isActive) {
         return null;
       }
-      
+
       return convertDocToGroupParent(docSnap.id, data);
     }
-    
+
     return null;
   } catch (error) {
     console.error('Error getting group parent by ID:', error);
@@ -118,7 +120,7 @@ export async function createGroupParent(
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
-    
+
     return docRef.id;
   } catch (error) {
     console.error('Error creating group parent:', error);
@@ -151,31 +153,119 @@ export async function updateGroupParent(
 export async function deleteGroupParent(id: string): Promise<void> {
   try {
     const batch = writeBatch(db);
-    
+
     // Mark parent as inactive
     const parentRef = doc(db, GROUP_PARENTS_COLLECTION, id);
     batch.update(parentRef, {
       isActive: false,
       updatedAt: serverTimestamp(),
+      deletedAt: serverTimestamp(),
     });
-    
+
     // Mark all sub-groups as inactive
     const subGroupsQuery = query(
       collection(db, SUB_GROUPS_COLLECTION),
       where('parentId', '==', id)
     );
     const subGroupsSnapshot = await getDocs(subGroupsQuery);
-    
+
     subGroupsSnapshot.docs.forEach((doc) => {
       batch.update(doc.ref, {
         isActive: false,
         updatedAt: serverTimestamp(),
+        deletedAt: serverTimestamp(),
       });
     });
-    
+
     await batch.commit();
   } catch (error) {
     console.error('Error deleting group parent:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get all soft-deleted group parents
+ */
+export async function getDeletedGroupParents(): Promise<GroupParent[]> {
+  try {
+    const q = query(
+      collection(db, GROUP_PARENTS_COLLECTION),
+      where('isActive', '==', false),
+      orderBy('deletedAt', 'desc')
+    );
+
+    const snapshot = await getDocs(q);
+
+    return snapshot.docs.map((doc) => convertDocToGroupParent(doc.id, doc.data()));
+  } catch (error) {
+    console.error('Error getting deleted group parents:', error);
+    throw error;
+  }
+}
+
+/**
+ * Restore a soft-deleted group parent and its sub-groups
+ */
+export async function restoreGroupParent(id: string): Promise<void> {
+  try {
+    const batch = writeBatch(db);
+
+    // Restore parent
+    const parentRef = doc(db, GROUP_PARENTS_COLLECTION, id);
+    batch.update(parentRef, {
+      isActive: true,
+      updatedAt: serverTimestamp(),
+      deletedAt: deleteField(),
+    });
+
+    // Restore all sub-groups
+    const subGroupsQuery = query(
+      collection(db, SUB_GROUPS_COLLECTION),
+      where('parentId', '==', id)
+    );
+    const subGroupsSnapshot = await getDocs(subGroupsQuery);
+
+    subGroupsSnapshot.docs.forEach((doc) => {
+      batch.update(doc.ref, {
+        isActive: true,
+        updatedAt: serverTimestamp(),
+        deletedAt: deleteField(),
+      });
+    });
+
+    await batch.commit();
+  } catch (error) {
+    console.error('Error restoring group parent:', error);
+    throw error;
+  }
+}
+
+/**
+ * Permanently delete a group parent and its sub-groups
+ */
+export async function hardDeleteGroupParent(id: string): Promise<void> {
+  try {
+    const batch = writeBatch(db);
+
+    // Delete parent
+    const parentRef = doc(db, GROUP_PARENTS_COLLECTION, id);
+    batch.delete(parentRef);
+
+    // Delete all sub-groups
+    const subGroupsQuery = query(
+      collection(db, SUB_GROUPS_COLLECTION),
+      where('parentId', '==', id)
+    );
+    const subGroupsSnapshot = await getDocs(subGroupsQuery);
+
+    subGroupsSnapshot.docs.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+
+    await batch.commit();
+  } catch (error) {
+    console.error('Error hard deleting group parent:', error);
     throw error;
   }
 }
@@ -194,7 +284,7 @@ export async function getSubGroupsByParent(parentId: string): Promise<SubGroup[]
     );
 
     const snapshot = await getDocs(q);
-    
+
     const subGroups = snapshot.docs
       .map((doc) => convertDocToSubGroup(doc.id, doc.data()))
       .filter((sg) => sg.isActive);
@@ -216,14 +306,14 @@ export async function getSubGroupById(id: string): Promise<SubGroup | null> {
 
     if (docSnap.exists()) {
       const data = docSnap.data();
-      
+
       if (!data.isActive) {
         return null;
       }
-      
+
       return convertDocToSubGroup(docSnap.id, data);
     }
-    
+
     return null;
   } catch (error) {
     console.error('Error getting sub-group by ID:', error);
@@ -239,7 +329,7 @@ export async function createSubGroup(
 ): Promise<string> {
   try {
     const batch = writeBatch(db);
-    
+
     // Create sub-group
     const subGroupRef = doc(collection(db, SUB_GROUPS_COLLECTION));
     batch.set(subGroupRef, {
@@ -248,11 +338,11 @@ export async function createSubGroup(
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
-    
+
     // Update parent totalSubGroups and totalMembers
     const parentRef = doc(db, GROUP_PARENTS_COLLECTION, data.parentId);
     const parentSnap = await getDoc(parentRef);
-    
+
     if (parentSnap.exists()) {
       const parentData = parentSnap.data() as GroupParent;
       batch.update(parentRef, {
@@ -261,7 +351,7 @@ export async function createSubGroup(
         updatedAt: serverTimestamp(),
       });
     }
-    
+
     await batch.commit();
     return subGroupRef.id;
   } catch (error) {
@@ -279,41 +369,41 @@ export async function updateSubGroup(
 ): Promise<void> {
   try {
     const batch = writeBatch(db);
-    
+
     // Get current sub-group data
     const subGroupRef = doc(db, SUB_GROUPS_COLLECTION, id);
     const subGroupSnap = await getDoc(subGroupRef);
-    
+
     if (!subGroupSnap.exists()) {
       throw new Error('Sub-group not found');
     }
-    
+
     const currentData = subGroupSnap.data() as SubGroup;
     const oldMemberCount = currentData.memberIds.length;
     const newMemberCount = data.memberIds?.length ?? oldMemberCount;
-    
+
     // Update sub-group
     batch.update(subGroupRef, {
       ...data,
       updatedAt: serverTimestamp(),
     });
-    
+
     // Update parent totalMembers if memberIds changed
     if (data.memberIds && newMemberCount !== oldMemberCount) {
       const parentRef = doc(db, GROUP_PARENTS_COLLECTION, currentData.parentId);
       const parentSnap = await getDoc(parentRef);
-      
+
       if (parentSnap.exists()) {
         const parentData = parentSnap.data() as GroupParent;
         const memberDifference = newMemberCount - oldMemberCount;
-        
+
         batch.update(parentRef, {
           totalMembers: parentData.totalMembers + memberDifference,
           updatedAt: serverTimestamp(),
         });
       }
     }
-    
+
     await batch.commit();
   } catch (error) {
     console.error('Error updating sub-group:', error);
@@ -327,27 +417,27 @@ export async function updateSubGroup(
 export async function deleteSubGroup(id: string): Promise<void> {
   try {
     const batch = writeBatch(db);
-    
+
     // Get sub-group data
     const subGroupRef = doc(db, SUB_GROUPS_COLLECTION, id);
     const subGroupSnap = await getDoc(subGroupRef);
-    
+
     if (!subGroupSnap.exists()) {
       throw new Error('Sub-group not found');
     }
-    
+
     const subGroupData = subGroupSnap.data() as SubGroup;
-    
+
     // Mark sub-group as inactive
     batch.update(subGroupRef, {
       isActive: false,
       updatedAt: serverTimestamp(),
     });
-    
+
     // Update parent totalSubGroups and totalMembers
     const parentRef = doc(db, GROUP_PARENTS_COLLECTION, subGroupData.parentId);
     const parentSnap = await getDoc(parentRef);
-    
+
     if (parentSnap.exists()) {
       const parentData = parentSnap.data() as GroupParent;
       batch.update(parentRef, {
@@ -356,10 +446,43 @@ export async function deleteSubGroup(id: string): Promise<void> {
         updatedAt: serverTimestamp(),
       });
     }
-    
+
     await batch.commit();
   } catch (error) {
     console.error('Error deleting sub-group:', error);
+    throw error;
+  }
+}
+
+/**
+ * Update multiple sub-groups members in a batch
+ */
+export async function updateSubGroupsMembersBatch(
+  updates: { subGroupId: string; members: GroupMember[]; leaderId?: string | null }[]
+): Promise<void> {
+  try {
+    const batch = writeBatch(db);
+
+    for (const update of updates) {
+      const subGroupRef = doc(db, SUB_GROUPS_COLLECTION, update.subGroupId);
+      const memberIds = update.members.map(m => m.userId);
+
+      const updateData: Record<string, unknown> = {
+        memberIds,
+        members: update.members,
+        updatedAt: serverTimestamp(),
+      };
+
+      if (update.leaderId !== undefined) {
+        updateData.leaderId = update.leaderId === null ? deleteField() : update.leaderId;
+      }
+
+      batch.update(subGroupRef, updateData);
+    }
+
+    await batch.commit();
+  } catch (error) {
+    console.error('Error updating sub-groups batch:', error);
     throw error;
   }
 }
@@ -378,21 +501,21 @@ export async function calculateUserAttendance(
     const activities = await getActivities();
     const periodActivities = activities.filter(a => a.orPeriod === orPeriod);
     const totalActivities = periodActivities.length;
-    
+
     if (totalActivities === 0) {
       return { percentage: 0, totalActivities: 0, attendedActivities: 0 };
     }
-    
+
     // Get user's attendances
     const attendances = await getAttendances({ userId, orPeriod });
-    
+
     // Count attended (present or late)
     const attendedActivities = attendances.filter(
       a => a.status === 'present' || a.status === 'late'
     ).length;
-    
+
     const percentage = (attendedActivities / totalActivities) * 100;
-    
+
     return { percentage, totalActivities, attendedActivities };
   } catch (error) {
     console.error('Error calculating user attendance:', error);
@@ -407,21 +530,26 @@ export async function getCaangUsersWithAttendance(orPeriod: string): Promise<Gro
   try {
     // Get all users
     const usersResult = await getUsers();
-    
+
     if (!usersResult.success || !usersResult.data) {
       throw new Error('Failed to get users');
     }
-    
-    // Filter caang users
+
+    // Get registrations for the specified period to filter users
+    // Only users registered in this period should be considered
+    const registrations = await getRegistrationsByOrPeriod(orPeriod);
+    const registeredUserIds = new Set(registrations.map(r => r.id));
+
+    // Filter caang users who are active AND registered in the specified period
     const caangUsers = usersResult.data.filter(
-      user => user.roles.isCaang && user.isActive
+      user => user.roles.isCaang && user.isActive && registeredUserIds.has(user.id)
     );
-    
+
     // Calculate attendance for each user
     const usersWithAttendance: GroupMember[] = await Promise.all(
       caangUsers.map(async (user) => {
         const attendance = await calculateUserAttendance(user.id, orPeriod);
-        
+
         return {
           userId: user.id,
           fullName: user.profile.fullName,
@@ -433,10 +561,10 @@ export async function getCaangUsersWithAttendance(orPeriod: string): Promise<Gro
         };
       })
     );
-    
+
     // Sort by attendance percentage (descending)
     usersWithAttendance.sort((a, b) => b.attendancePercentage - a.attendancePercentage);
-    
+
     return usersWithAttendance;
   } catch (error) {
     console.error('Error getting caang users with attendance:', error);
@@ -449,13 +577,13 @@ export async function getCaangUsersWithAttendance(orPeriod: string): Promise<Gro
  */
 function distributeUsersIntoGroups(users: GroupMember[], numberOfGroups: number): GroupMember[][] {
   const groups: GroupMember[][] = Array.from({ length: numberOfGroups }, () => []);
-  
+
   // Distribute users round-robin to balance groups
   users.forEach((user, index) => {
     const groupIndex = index % numberOfGroups;
     groups[groupIndex].push(user);
   });
-  
+
   return groups;
 }
 
@@ -472,11 +600,11 @@ export async function generateGroupParent(
   try {
     // Get caang users with attendance data (already sorted by attendance)
     const caangUsers = await getCaangUsersWithAttendance(orPeriod);
-    
+
     if (caangUsers.length === 0) {
       throw new Error('No caang users found for the specified period');
     }
-    
+
     // Create group parent
     const parentId = await createGroupParent({
       name: parentName,
@@ -485,18 +613,18 @@ export async function generateGroupParent(
       isActive: true,
       createdBy,
     });
-    
+
     // Distribute users into sub-groups
     const groupedUsers = distributeUsersIntoGroups(caangUsers, numberOfSubGroups);
-    
+
     // Create sub-groups
     const batch = writeBatch(db);
     let totalMembers = 0;
-    
+
     for (let i = 0; i < numberOfSubGroups; i++) {
       const groupMembers = groupedUsers[i];
       const memberIds = groupMembers.map(m => m.userId);
-      
+
       const subGroupRef = doc(collection(db, SUB_GROUPS_COLLECTION));
       batch.set(subGroupRef, {
         parentId,
@@ -509,10 +637,10 @@ export async function generateGroupParent(
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
-      
+
       totalMembers += memberIds.length;
     }
-    
+
     // Update parent with totals
     const parentRef = doc(db, GROUP_PARENTS_COLLECTION, parentId);
     batch.update(parentRef, {
@@ -520,9 +648,9 @@ export async function generateGroupParent(
       totalMembers,
       updatedAt: serverTimestamp(),
     });
-    
+
     await batch.commit();
-    
+
     return parentId;
   } catch (error) {
     console.error('Error generating group parent:', error);

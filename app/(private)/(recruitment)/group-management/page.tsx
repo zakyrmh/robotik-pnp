@@ -124,14 +124,24 @@ export default function GroupManagementPage() {
             />
           </div>
 
-          {/* Generate Button */}
-          <Button
-            onClick={() => setIsGenerateOpen(true)}
-            className="gap-2"
-          >
-            <Plus className="w-5 h-5" />
-            Generate Kelompok
-          </Button>
+          {/* Actions */}
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => router.push("/group-management/trash")}
+              className="gap-2 border-dashed"
+            >
+              <Trash2 className="w-4 h-4" />
+              Sampah
+            </Button>
+            <Button
+              onClick={() => setIsGenerateOpen(true)}
+              className="gap-2"
+            >
+              <Plus className="w-5 h-5" />
+              Generate Kelompok
+            </Button>
+          </div>
         </motion.div>
 
         {/* Group Parents Grid */}

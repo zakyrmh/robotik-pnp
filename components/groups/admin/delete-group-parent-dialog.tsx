@@ -64,10 +64,10 @@ export default function DeleteGroupParentDialog({
               {groupParent.name}
             </p>
             <div className="text-sm text-red-800 space-y-1">
-              <p>• {groupParent.totalSubGroups} sub-kelompok akan dihapus</p>
-              <p>• {groupParent.totalMembers} anggota akan kehilangan kelompok</p>
+              <p>• {groupParent.totalSubGroups} sub-kelompok akan disembunyikan</p>
+              <p>• Anggota tidak akan melihat kelompok ini</p>
               <p className="font-semibold mt-2">
-                ⚠️ Tindakan ini tidak dapat dibatalkan!
+                ℹ️ Kelompok akan dipindahkan ke Sampah dan dapat dipulihkan.
               </p>
             </div>
           </div>
