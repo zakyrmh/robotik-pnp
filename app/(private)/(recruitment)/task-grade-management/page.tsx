@@ -10,6 +10,7 @@ import {
   Plus,
   RefreshCcw,
   Search,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +38,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import TaskDialog from "@/components/tasks/admin/task-dialog";
+import DeleteTaskDialog from "./_components/delete-task-dialog";
 import { getTasks } from "@/lib/firebase/tasks";
 import { getActivities } from "@/lib/firebase/activities";
 import { Task } from "@/types/tasks";
@@ -76,6 +78,9 @@ const TaskGradeManagementPage = () => {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [activitiesLoading, setActivitiesLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [titleFilter, setTitleFilter] = useState("");
@@ -232,6 +237,14 @@ const TaskGradeManagementPage = () => {
                 <RefreshCcw className="h-4 w-4" />
               )}
               Muat Ulang
+            </Button>
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={() => router.push("/task-grade-management/trash")}
+            >
+              <Trash2 className="h-4 w-4" />
+              Sampah
             </Button>
             <Button
               className="gap-2"
@@ -454,6 +467,17 @@ const TaskGradeManagementPage = () => {
                             >
                               Edit
                             </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                              onClick={() => {
+                                setTaskToDelete(task);
+                                setIsDeleteDialogOpen(true);
+                              }}
+                            >
+                              Hapus
+                            </Button>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -473,6 +497,14 @@ const TaskGradeManagementPage = () => {
         currentUserId={currentUserId}
         activities={activities}
         selectedTask={selectedTask}
+      />
+
+      <DeleteTaskDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        task={taskToDelete}
+        onSuccess={loadTasks}
+        currentUserId={currentUserId}
       />
     </div>
   );

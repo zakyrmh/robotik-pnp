@@ -11,6 +11,7 @@ import {
   serverTimestamp,
   Timestamp,
   updateDoc,
+  deleteDoc,
 } from "firebase/firestore";
 
 const COLLECTION_NAME = "tasks";
@@ -133,4 +134,16 @@ export const restoreTask = async (id: string) => {
     updatedAt: serverTimestamp(),
   });
 };
+export const getDeletedTasks = async (): Promise<Task[]> => {
+  const q = query(collection(db, COLLECTION_NAME), orderBy("deletedAt", "desc"));
+  const snapshot = await getDocs(q);
 
+  return snapshot.docs
+    .map((docSnap) => convertDocToTask(docSnap.id, docSnap.data()))
+    .filter((task) => task.deletedAt);
+};
+
+export const hardDeleteTask = async (id: string) => {
+  const docRef = doc(db, COLLECTION_NAME, id);
+  await deleteDoc(docRef);
+};
