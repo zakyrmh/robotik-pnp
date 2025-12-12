@@ -21,6 +21,7 @@ export interface Material {
 
   // Statistics
   downloadCount: number;
+  openCount: number;
 
   // Metadata
   uploadedBy: string;

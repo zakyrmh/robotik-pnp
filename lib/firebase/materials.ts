@@ -126,12 +126,13 @@ export async function getMaterialById(id: string): Promise<Material | null> {
  * Returns the ID of the created material
  */
 export async function createMaterial(
-  data: Omit<Material, 'id' | 'createdAt' | 'updatedAt' | 'downloadCount'>
+  data: Omit<Material, 'id' | 'createdAt' | 'updatedAt' | 'downloadCount' | 'openCount'>
 ): Promise<string> {
   try {
     const docRef = await addDoc(collection(db, COLLECTION_NAME), {
       ...data,
       downloadCount: 0,
+      openCount: 0,
       deletedAt: null,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -149,7 +150,7 @@ export async function createMaterial(
  */
 export async function updateMaterial(
   id: string,
-  data: Partial<Omit<Material, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'deletedBy' | 'downloadCount'>>
+  data: Partial<Omit<Material, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'deletedBy' | 'downloadCount' | 'openCount'>>
 ): Promise<void> {
   try {
     const docRef = doc(db, COLLECTION_NAME, id);
@@ -207,6 +208,21 @@ export async function incrementDownloadCount(id: string): Promise<void> {
     });
   } catch (error) {
     console.error('Error incrementing download count:', error);
+  }
+}
+
+/**
+ * Increment open count for a material
+ */
+export async function incrementOpenCount(id: string): Promise<void> {
+  try {
+    const docRef = doc(db, COLLECTION_NAME, id);
+    await updateDoc(docRef, {
+      openCount: increment(1),
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    console.error('Error incrementing open count:', error);
     throw error;
   }
 }

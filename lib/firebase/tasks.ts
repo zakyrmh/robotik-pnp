@@ -12,6 +12,7 @@ import {
   Timestamp,
   updateDoc,
   deleteDoc,
+  where,
 } from "firebase/firestore";
 
 const COLLECTION_NAME = "tasks";
@@ -62,10 +63,27 @@ const convertDocToTask = (docId: string, data: Record<string, unknown>): Task =>
 
 export const getTasks = async ({
   includeDeleted = false,
+  orPeriod,
+  isVisible,
 }: {
   includeDeleted?: boolean;
+  orPeriod?: string;
+  isVisible?: boolean;
 } = {}): Promise<Task[]> => {
-  const q = query(collection(db, COLLECTION_NAME), orderBy("createdAt", "desc"));
+  let q = query(collection(db, COLLECTION_NAME), orderBy("createdAt", "desc"));
+
+  const conditions = [];
+  if (orPeriod) {
+    conditions.push(where("orPeriod", "==", orPeriod));
+  }
+  if (isVisible !== undefined) {
+    conditions.push(where("isVisible", "==", isVisible));
+  }
+
+  if (conditions.length > 0) {
+    q = query(collection(db, COLLECTION_NAME), ...conditions, orderBy("createdAt", "desc"));
+  }
+
   const snapshot = await getDocs(q);
 
   return snapshot.docs

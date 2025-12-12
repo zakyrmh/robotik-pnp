@@ -202,7 +202,7 @@ export default function MaterialDialog({
       setUploadProgress(90);
 
       // Build material data
-      const materialData: Omit<Material, "id" | "createdAt" | "updatedAt" | "downloadCount"> = {
+      const materialData: Omit<Material, "id" | "createdAt" | "updatedAt" | "downloadCount" | "openCount"> = {
         title: data.title,
         description: data.description || "",
         orPeriod: data.orPeriod,
