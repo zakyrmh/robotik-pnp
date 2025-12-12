@@ -59,7 +59,7 @@ export const SubmissionTable = ({
                     href={sub.fileUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex items-center gap-1 text-blue-600 hover:underline"
+                    className="flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline"
                   >
                     <FileText className="h-3 w-3" />
                     Buka File
@@ -68,7 +68,7 @@ export const SubmissionTable = ({
                   <a
                     href={sub.linkUrl}
                     target="_blank"
-                    className="flex items-center gap-1 text-blue-600 hover:underline"
+                    className="flex items-center gap-1 text-blue-600 dark:text-blue-400 hover:underline"
                   >
                     <ExternalLink className="h-3 w-3" /> Link
                   </a>
@@ -80,7 +80,7 @@ export const SubmissionTable = ({
                 {sub.score !== undefined ? (
                   sub.score
                 ) : (
-                  <span className="text-gray-400 italic">Belum dinilai</span>
+                  <span className="text-muted-foreground italic">Belum dinilai</span>
                 )}
               </TableCell>
               <TableCell className="text-right">

@@ -128,7 +128,7 @@ const TaskDetailPage = () => {
 
   if (error || !task) {
     return (
-      <div className="p-8 text-center text-red-500">
+      <div className="p-8 text-center text-destructive">
         <h2 className="text-xl font-bold">Error</h2>
         <p>{error}</p>
         <Button onClick={() => router.back()} className="mt-4">
@@ -143,7 +143,7 @@ const TaskDetailPage = () => {
   );
 
   return (
-    <div className="min-h-screen p-8 bg-gray-50/50">
+    <div className="min-h-screen p-8 bg-background">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
         {/* Navigation */}
         <div className="flex items-center justify-between">
@@ -200,7 +200,7 @@ const TaskDetailPage = () => {
                       submissions={submissions}
                     />
                   ) : submissions.length === 0 ? (
-                    <div className="py-12 text-center text-muted-foreground border-2 border-dashed rounded-lg">
+                    <div className="py-12 text-center text-muted-foreground border-2 border-dashed border-muted rounded-lg">
                       Belum ada yang mengumpulkan tugas ini.
                     </div>
                   ) : (

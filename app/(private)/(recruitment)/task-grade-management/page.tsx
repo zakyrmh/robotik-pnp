@@ -195,10 +195,10 @@ const TaskGradeManagementPage = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
         >
-          <h1 className="text-4xl font-bold text-gray-900">
+          <h1 className="text-4xl font-bold text-foreground">
             Manajemen Tugas & Nilai
           </h1>
-          <p className="mt-2 text-gray-600">
+          <p className="mt-2 text-muted-foreground">
             Pantau seluruh tugas, filter berdasarkan kebutuhan, dan siapkan CRUD
             serta integrasi penilaian pada tahap berikutnya.
           </p>
@@ -211,7 +211,7 @@ const TaskGradeManagementPage = () => {
           className="flex flex-col gap-4 md:flex-row"
         >
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Cari tugas berdasarkan judul, deskripsi, instruksi, atau OR period..."
               value={searchQuery}
@@ -309,7 +309,7 @@ const TaskGradeManagementPage = () => {
                   Deadline (From)
                 </p>
                 <div className="relative">
-                  <CalendarDays className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <CalendarDays className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     type="date"
                     className="pl-9"
@@ -324,7 +324,7 @@ const TaskGradeManagementPage = () => {
                   Deadline (To)
                 </p>
                 <div className="relative">
-                  <CalendarDays className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <CalendarDays className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     type="date"
                     className="pl-9"
@@ -447,9 +447,9 @@ const TaskGradeManagementPage = () => {
                             >
                               Detail
                             </Button>
-                            <Button 
-                              size="sm" 
-                              variant="ghost" 
+                            <Button
+                              size="sm"
+                              variant="ghost"
                               onClick={() => handleOpenEdit(task)}
                             >
                               Edit
