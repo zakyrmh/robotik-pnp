@@ -43,6 +43,7 @@ function convertDocToActivity(docId: string, data: Record<string, unknown>): Act
 export async function getActivities(filters?: {
   status?: string;
   type?: ActivityType;
+  orPeriod?: string;
 }) {
   try {
     // console.log('Fetching activities with filters:', filters);
@@ -60,6 +61,11 @@ export async function getActivities(filters?: {
     // 3. Filter by Status (Upcoming, Ongoing, etc)
     if (filters?.status && filters.status !== 'all') {
       constraints.push(where('status', '==', filters.status));
+    }
+    
+    // 4. Filter by OR Period
+    if (filters?.orPeriod) {
+      constraints.push(where('orPeriod', '==', filters.orPeriod));
     }
 
     // Construct Query
