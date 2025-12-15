@@ -62,16 +62,18 @@ export default function DashboardPage() {
     return <Loading />;
   }
 
-  const isInternalUser = 
-    userRoles.isSuperAdmin || 
-    userRoles.isRecruiter || 
-    userRoles.isKestari || 
-    userRoles.isKomdis || 
-    userRoles.isOfficialMember || 
+  const isInternalUser =
+    userRoles.isSuperAdmin ||
+    userRoles.isRecruiter ||
+    userRoles.isKestari ||
+    userRoles.isKomdis ||
+    userRoles.isOfficialMember ||
     userRoles.isKRIMember;
 
   if (isInternalUser) {
     return <AdminDashboard user={userData} />;
   }
-  return <CaangDashboard />;
+  if (userRoles.isCaang) {
+    return <CaangDashboard />;
+  }
 }

@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { School } from "lucide-react";
+import FirebaseImage from "@/components/FirebaseImage";
 
 // Helper function untuk tanggal
 const formatDate = (timestamp?: Timestamp) => {
@@ -102,7 +103,9 @@ export default function CaangDetailModal({
               <InfoRow
                 label="Jenis Kelamin"
                 value={
-                  user.profile.gender === Gender.MALE ? "Laki-laki" : "Perempuan"
+                  user.profile.gender === Gender.MALE
+                    ? "Laki-laki"
+                    : "Perempuan"
                 }
               />
               <InfoRow
@@ -129,13 +132,12 @@ export default function CaangDetailModal({
                 </CardHeader>
                 <CardContent className="flex justify-center">
                   {registration?.documents.photoUrl ? (
-                    <Image
-                      src={registration.documents.photoUrl ?? ""}
-                      className="h-48 rounded object-cover border"
+                    <FirebaseImage
+                      path={registration?.documents.photoUrl}
                       width={100}
                       height={100}
-                      alt="Pas Foto"
-                      unoptimized
+                      alt={user.profile.fullName}
+                      className="h-full w-full object-cover"
                     />
                   ) : (
                     <p className="text-muted-foreground italic">Belum upload</p>

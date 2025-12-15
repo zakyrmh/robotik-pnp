@@ -171,7 +171,9 @@ export default function Notification() {
         </h3>
         <div className="bg-white rounded-xl shadow-sm p-8 text-center dark:bg-gray-600">
           <Bell className="w-12 h-12 text-gray-300 mx-auto mb-2 dark:text-gray-400" />
-          <p className="text-sm text-gray-500 dark:text-gray-400">Tidak ada notifikasi</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Tidak ada notifikasi
+          </p>
         </div>
       </div>
     );
@@ -182,7 +184,7 @@ export default function Notification() {
       <h3 className="text-lg font-bold text-gray-800 mb-4 dark:text-gray-100">
         Notifikasi & Pengumuman
       </h3>
-      <div className="bg-white rounded-xl shadow-sm p-4 space-y-4 max-h-96 overflow-y-auto dark:bg-gray-600">
+      <div className="bg-white rounded-xl shadow-sm p-4 text-sm max-h-96 overflow-y-auto dark:bg-gray-600">
         {notifications.map((notif, index) => {
           const { IconComponent, bgColor, textColor } = getNotificationIcon(
             notif.type,
@@ -194,31 +196,37 @@ export default function Notification() {
             <div
               key={notif.id}
               className={`flex items-start space-x-3 ${
-                !isLastItem ? "pb-4 border-b" : ""
+                !isLastItem ? "pb-4 border-b dark:border-gray-500" : ""
               } ${
-                !notif.isRead ? "bg-blue-50 -mx-4 px-4 py-2 rounded-lg dark:bg-gray-700" : ""
+                !notif.isRead
+                  ? "bg-blue-50 -mx-4 px-4 py-2 dark:bg-gray-700"
+                  : ""
               }`}
             >
               <div
-                className={`w-10 h-10 ${bgColor} rounded-lg flex items-center justify-center flex-shrink-0`}
+                className={`w-8 h-8 lg:w-10 lg:h-10 ${bgColor} rounded-lg flex items-center justify-center flex-shrink-0`}
               >
-                <IconComponent className={textColor} />
+                <IconComponent
+                  className={`${textColor} w-4 h-4 lg:w-5 lg:h-5`}
+                />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium text-gray-800 dark:text-gray-100">
+                <p className="font-medium text-gray-800 dark:text-gray-100">
                   {notif.title}
                   {!notif.isRead && (
                     <span className="ml-2 inline-block w-2 h-2 bg-blue-500 rounded-full dark:bg-blue-400"></span>
                   )}
                 </p>
-                <p className="text-xs text-gray-500 mt-1 dark:text-gray-400">{notif.message}</p>
-                <p className="text-xs text-gray-400 mt-1 dark:text-gray-500">
+                <p className="text-xs text-gray-500 mt-0.5 dark:text-gray-400">
+                  {notif.message}
+                </p>
+                <p className="text-[10px] lg:text-xs text-gray-400 mt-1 dark:text-gray-500">
                   {formatRelativeTime(notif.createdAt)}
                 </p>
                 {notif.actionUrl && notif.actionLabel && (
                   <a
                     href={notif.actionUrl}
-                    className="text-xs text-blue-600 hover:underline mt-2 inline-block dark:text-blue-400"
+                    className="text-xs text-blue-600 hover:underline mt-1.5 inline-block dark:text-blue-400"
                   >
                     {notif.actionLabel} →
                   </a>

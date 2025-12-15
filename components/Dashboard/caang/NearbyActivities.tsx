@@ -140,24 +140,24 @@ export default function NearbyActivities() {
 
           return (
             <div key={activity.id} className={cardStyle}>
-              <div className="flex items-start justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-start space-x-4">
                   <div
                     className={`${
                       isToday
-                        ? "w-16 h-16 bg-white/20 text-white"
-                        : "text-center w-14"
-                    } rounded-xl flex flex-col items-center justify-center`}
+                        ? "w-14 h-14 md:w-16 md:h-16 bg-white/20 text-white"
+                        : "text-center w-12 md:w-14"
+                    } rounded-xl flex flex-col items-center justify-center flex-shrink-0 transition-all`}
                   >
                     <span
-                      className={`text-2xl font-bold ${
+                      className={`text-xl md:text-2xl font-bold ${
                         isToday ? "" : "text-blue-600 dark:text-blue-400"
                       }`}
                     >
                       {day}
                     </span>
                     <span
-                      className={`text-xs ${
+                      className={`text-[10px] md:text-xs ${
                         isToday ? "" : "text-gray-500 dark:text-gray-400"
                       }`}
                     >
@@ -167,34 +167,34 @@ export default function NearbyActivities() {
 
                   <div>
                     {isToday && (
-                      <span className="inline-block px-3 py-1 bg-white/25 backdrop-blur-sm rounded-full text-xs font-bold mb-2">
+                      <span className="inline-block px-2.5 py-0.5 bg-white/25 backdrop-blur-sm rounded-full text-[10px] md:text-xs font-bold mb-1.5 md:mb-2 border border-white/20">
                         🔴 HARI INI
                       </span>
                     )}
                     <h4
                       className={`${
                         isToday
-                          ? "text-xl font-bold mb-2"
-                          : "font-semibold text-gray-800 dark:text-gray-100"
+                          ? "text-lg md:text-xl font-bold mb-1 md:mb-2"
+                          : "text-base md:text-lg font-semibold text-gray-800 dark:text-gray-100"
                       }`}
                     >
                       {activity.title}
                     </h4>
                     <div
-                      className={`space-y-1 text-sm ${
+                      className={`space-y-0.5 text-xs md:text-sm ${
                         isToday
-                          ? "text-white"
+                          ? "text-white/90"
                           : "text-gray-600 dark:text-gray-400"
                       }`}
                     >
                       <p className="flex items-center">
-                        <Clock className="mr-2 h-4 w-4" />
+                        <Clock className="mr-1.5 h-3.5 w-3.5" />
                         {format(activity.startDateTime.toDate(), "hh:mm")}{" "}
                         <span>WIB</span>
                       </p>
                       {activity.location && (
                         <p className="flex items-center">
-                          <MapPin className="mr-2 h-4 w-4" />
+                          <MapPin className="mr-1.5 h-3.5 w-3.5" />
                           {activity.location}
                         </p>
                       )}
@@ -202,23 +202,25 @@ export default function NearbyActivities() {
                   </div>
                 </div>
 
-                {/* Tombol Absen hanya muncul jika attendanceEnabled dan status ongoing */}
-                {activity.attendanceEnabled && isOngoing && (
-                  <Link
-                    href={`/activity/${activity.slug}`}
-                    className="flex items-center px-5 py-3 bg-white text-red-600 rounded-xl font-bold hover:bg-red-50 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-gray-700 transition whitespace-nowrap"
-                  >
-                    <QrCode className="mr-2 h-5 w-5" />
-                    Absen
-                  </Link>
-                )}
+                <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-center border-t sm:border-t-0 pt-3 sm:pt-0 mt-2 sm:mt-0 w-full sm:w-auto gap-3">
+                  {/* Tombol Absen hanya muncul jika attendanceEnabled dan status ongoing */}
+                  {activity.attendanceEnabled && isOngoing && (
+                    <Link
+                      href={`/activity/${activity.slug}`}
+                      className="flex-1 sm:flex-none flex items-center justify-center px-4 py-2 md:px-5 md:py-3 bg-white text-red-600 rounded-lg md:rounded-xl font-bold hover:bg-red-50 dark:bg-gray-800 dark:text-red-400 dark:hover:bg-gray-700 transition whitespace-nowrap text-sm"
+                    >
+                      <QrCode className="mr-2 h-4 w-4 md:h-5 md:w-5" />
+                      Absen
+                    </Link>
+                  )}
 
-                {/* Label hari tersisa (tampil untuk semua kecuali hari ini) */}
-                {!isToday && (
-                  <span className="px-4 py-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg text-sm font-medium">
-                    {daysLeft(activity.startDateTime)}
-                  </span>
-                )}
+                  {/* Label hari tersisa (tampil untuk semua kecuali hari ini) */}
+                  {!isToday && (
+                    <span className="px-3 py-1.5 md:px-4 md:py-2 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-lg text-xs md:text-sm font-medium">
+                      {daysLeft(activity.startDateTime)}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           );

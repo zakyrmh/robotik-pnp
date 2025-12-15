@@ -6,7 +6,6 @@ import {
   LayoutDashboard,
   Users,
   BookOpen,
-  CalendarCheck,
   ClipboardList,
   ShieldAlert,
   FileWarning,
@@ -23,6 +22,9 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { UserSystemRoles } from "@/types/users";
+import { useEffect, useState } from "react";
+import { auth, db } from "@/lib/firebaseConfig";
+import { doc, getDoc } from "firebase/firestore";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -42,6 +44,8 @@ type MenuItem = {
   // Jika requiredRoles kosong, berarti menu ini untuk SEMUA user
   // Jika diisi, user harus punya minimal SATU dari role tersebut
   requiredRoles?: (keyof UserSystemRoles)[];
+  // Jika true, user (khusus Caang) harus sudah verified status registrasinya
+  checkVerified?: boolean;
 };
 
 type MenuGroup = {
@@ -56,6 +60,40 @@ export function Sidebar({
   userRoles,
 }: SidebarProps) {
   const pathname = usePathname();
+  const [isCaangVerified, setIsCaangVerified] = useState(false);
+
+  // Fetch Verification Status untuk Caang
+  useEffect(() => {
+    // Hanya fetch jika user adalah Caang
+    if (userRoles.isCaang) {
+      const checkVerification = async () => {
+        const user = auth.currentUser;
+        if (!user) return;
+
+        try {
+          const regRef = doc(db, "registrations", user.uid);
+          const regSnap = await getDoc(regRef);
+
+          if (regSnap.exists()) {
+            const data = regSnap.data();
+            // User dianggap verified jika status === 'verified' DAN verification.verified === true
+            const verified =
+              data.status === "verified" &&
+              data.verification?.verified === true;
+            setIsCaangVerified(verified);
+          }
+        } catch (error) {
+          console.error("Error checking verification:", error);
+        }
+      };
+
+      checkVerification();
+    } else {
+      // Jika bukan caang, default false (tidak relevan karena role lain tidak pakai checkVerified)
+      // Tapi set false agar aman
+      setIsCaangVerified(false);
+    }
+  }, [userRoles.isCaang]);
 
   // Definisi Menu berdasarkan Struktur Organisasi
   const MENU_GROUPS: MenuGroup[] = [
@@ -63,7 +101,6 @@ export function Sidebar({
       groupLabel: "General",
       items: [
         { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-        { href: "/timeline", label: "Timeline", icon: CalendarCheck },
       ],
     },
     {
@@ -113,12 +150,14 @@ export function Sidebar({
           label: "Materi & Tugas",
           icon: GraduationCap,
           requiredRoles: ["isCaang"],
+          checkVerified: true, // Only for verified Caang
         },
         {
           href: "/presence",
           label: "Presensi Saya",
           icon: UserCheck,
           requiredRoles: ["isCaang"],
+          checkVerified: true, // Only for verified Caang
         },
       ],
     },
@@ -187,10 +226,16 @@ export function Sidebar({
   ];
 
   // Fungsi helper untuk mengecek apakah user berhak melihat item ini
-  const hasPermission = (requiredRoles?: (keyof UserSystemRoles)[]) => {
-    if (!requiredRoles || requiredRoles.length === 0) return true;
+  const hasPermission = (item: MenuItem) => {
+    // 1. Cek Verified Status khusus Caang
+    if (item.checkVerified) {
+      if (!isCaangVerified) return false;
+    }
+
+    // 2. Cek Role
+    if (!item.requiredRoles || item.requiredRoles.length === 0) return true;
     // Cek apakah user memiliki salah satu dari role yang dibutuhkan
-    return requiredRoles.some((role) => userRoles[role] === true);
+    return item.requiredRoles.some((role) => userRoles[role] === true);
   };
 
   return (
@@ -224,7 +269,7 @@ export function Sidebar({
             {MENU_GROUPS.map((group, groupIndex) => {
               // Filter item yang boleh dilihat user ini
               const visibleItems = group.items.filter((item) =>
-                hasPermission(item.requiredRoles)
+                hasPermission(item)
               );
 
               // Jika tidak ada item yang visible di grup ini, jangan render grupnya
