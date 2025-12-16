@@ -17,6 +17,9 @@ import FilterToolbar from "./_components/FilterToolbar";
 import CaangTable from "./_components/CaangTable";
 import CaangDetailModal from "./_components/CaangDetailModal";
 import BlacklistDialog from "./_components/BlacklistDialog";
+import FormDataVerificationModal from "./_components/FormDataVerificationModal";
+import DocumentsVerificationModal from "./_components/DocumentsVerificationModal";
+import PaymentVerificationModal from "./_components/PaymentVerificationModal";
 
 // Tambahan Import UI untuk Konfirmasi
 import {
@@ -36,7 +39,9 @@ export default function CaangManagementPage() {
 
   // --- STATE: DATA ---
   const [users, setUsers] = useState<User[]>([]);
-  const [registrations, setRegistrations] = useState<Map<string, Registration>>(new Map());
+  const [registrations, setRegistrations] = useState<Map<string, Registration>>(
+    new Map()
+  );
   const [loading, setLoading] = useState(true);
 
   // --- STATE: FILTERS ---
@@ -46,8 +51,11 @@ export default function CaangManagementPage() {
   const [departments, setDepartments] = useState<string[]>([]);
 
   // --- STATE: SELECTION & MODALS ---
-  const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
-  const [selectedUserForDetail, setSelectedUserForDetail] = useState<User | null>(null);
+  const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(
+    new Set()
+  );
+  const [selectedUserForDetail, setSelectedUserForDetail] =
+    useState<User | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
   // --- STATE: BLACKLIST (Single & Bulk) ---
@@ -60,6 +68,25 @@ export default function CaangManagementPage() {
   const [isBulkVerifyOpen, setIsBulkVerifyOpen] = useState(false);
   const [isBulkVerifyLoading, setIsBulkVerifyLoading] = useState(false);
 
+  // --- STATE: FORM DATA VERIFICATION ---
+  const [isFormDataVerifyOpen, setIsFormDataVerifyOpen] = useState(false);
+  const [isFormDataVerifyLoading, setIsFormDataVerifyLoading] = useState(false);
+  const [selectedUserForFormVerify, setSelectedUserForFormVerify] =
+    useState<User | null>(null);
+
+  // --- STATE: DOCUMENTS VERIFICATION ---
+  const [isDocumentsVerifyOpen, setIsDocumentsVerifyOpen] = useState(false);
+  const [isDocumentsVerifyLoading, setIsDocumentsVerifyLoading] =
+    useState(false);
+  const [selectedUserForDocsVerify, setSelectedUserForDocsVerify] =
+    useState<User | null>(null);
+
+  // --- STATE: PAYMENT VERIFICATION ---
+  const [isPaymentVerifyOpen, setIsPaymentVerifyOpen] = useState(false);
+  const [isPaymentVerifyLoading, setIsPaymentVerifyLoading] = useState(false);
+  const [selectedUserForPaymentVerify, setSelectedUserForPaymentVerify] =
+    useState<User | null>(null);
+
   // --- 1. FETCH DATA ---
   useEffect(() => {
     const fetchData = async () => {
@@ -67,12 +94,20 @@ export default function CaangManagementPage() {
         setLoading(true);
         const fetchedUsers = await RecruitmentService.getCaangUsers();
         const registrationIds = fetchedUsers.map((u) => u.id);
-        const regMap = await RecruitmentService.getRegistrations(registrationIds);
+        const regMap = await RecruitmentService.getRegistrations(
+          registrationIds
+        );
 
         setUsers(fetchedUsers);
         setRegistrations(regMap);
 
-        const uniqueDepts = Array.from(new Set(fetchedUsers.map((u) => u.profile.department).filter(Boolean))).sort();
+        const uniqueDepts = Array.from(
+          new Set(
+            fetchedUsers
+              .map((u) => u.profile.department)
+              .filter((d): d is string => !!d)
+          )
+        ).sort();
         setDepartments(uniqueDepts);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -88,24 +123,38 @@ export default function CaangManagementPage() {
   const filteredData = useMemo(() => {
     return users.filter((user) => {
       const reg = registrations.get(user.id);
-      
+
       const searchLower = searchQuery.toLowerCase();
-      const matchesSearch = user.profile.fullName.toLowerCase().includes(searchLower) || user.profile.nim.toLowerCase().includes(searchLower);
-      const matchesDept = selectedDepartment === "all" || user.profile.department === selectedDepartment;
-      
+      const matchesSearch =
+        user.profile.fullName.toLowerCase().includes(searchLower) ||
+        (user.profile.nim || "").toLowerCase().includes(searchLower);
+      const matchesDept =
+        selectedDepartment === "all" ||
+        user.profile.department === selectedDepartment;
+
       let matchesAdmin = true;
       if (adminStatusFilter !== "all") {
         if (!reg) matchesAdmin = false;
         else {
-          if (adminStatusFilter === "pending") matchesAdmin = !reg.payment.verified && !!reg.payment.proofUrl;
-          if (adminStatusFilter === "verified") matchesAdmin = reg.payment.verified;
-          if (adminStatusFilter === "rejected") matchesAdmin = reg.status === "rejected";
-          if (adminStatusFilter === "not_uploaded") matchesAdmin = !reg.payment.proofUrl;
+          if (adminStatusFilter === "pending")
+            matchesAdmin = !reg.payment.verified && !!reg.payment.proofUrl;
+          if (adminStatusFilter === "verified")
+            matchesAdmin = reg.payment.verified;
+          if (adminStatusFilter === "rejected")
+            matchesAdmin = reg.status === "rejected";
+          if (adminStatusFilter === "not_uploaded")
+            matchesAdmin = !reg.payment.proofUrl;
         }
       }
       return matchesSearch && matchesDept && matchesAdmin;
     });
-  }, [users, registrations, searchQuery, selectedDepartment, adminStatusFilter]);
+  }, [
+    users,
+    registrations,
+    searchQuery,
+    selectedDepartment,
+    adminStatusFilter,
+  ]);
 
   // --- 3. STATISTICS LOGIC ---
   const stats = useMemo(() => {
@@ -116,7 +165,8 @@ export default function CaangManagementPage() {
 
     users.forEach((user) => {
       const reg = registrations.get(user.id);
-      if (reg && reg.payment?.proofUrl && !reg.payment.verified) pendingVerification++;
+      if (reg && reg.payment?.proofUrl && !reg.payment.verified)
+        pendingVerification++;
       if (user.isActive) activeLolos++;
       if (user.blacklistInfo?.isBlacklisted) blacklisted++;
     });
@@ -150,7 +200,11 @@ export default function CaangManagementPage() {
         const newMap = new Map(prev);
         const current = newMap.get(regId);
         if (current) {
-          newMap.set(regId, { ...current, payment: { ...current.payment, verified: true }, status: RegistrationStatus.VERIFIED });
+          newMap.set(regId, {
+            ...current,
+            payment: { ...current.payment, verified: true },
+            status: RegistrationStatus.VERIFIED,
+          });
         }
         return newMap;
       });
@@ -180,19 +234,21 @@ export default function CaangManagementPage() {
       const regIdsToVerify: string[] = [];
       const userIds = Array.from(selectedUserIds);
 
-      userIds.forEach(userId => {
-        const user = users.find(u => u.id === userId);
+      userIds.forEach((userId) => {
+        const user = users.find((u) => u.id === userId);
         if (user && user.registrationId) {
           const reg = registrations.get(userId);
           // Hanya verify yg belum verified dan sudah upload
           if (reg && reg.payment.proofUrl && !reg.payment.verified) {
-             regIdsToVerify.push(reg.id);
+            regIdsToVerify.push(reg.id);
           }
         }
       });
 
       if (regIdsToVerify.length === 0) {
-        toast.info("Tidak ada user terpilih yang perlu diverifikasi (mungkin sudah verified atau belum upload).");
+        toast.info(
+          "Tidak ada user terpilih yang perlu diverifikasi (mungkin sudah verified atau belum upload)."
+        );
         setIsBulkVerifyOpen(false);
         return;
       }
@@ -202,20 +258,22 @@ export default function CaangManagementPage() {
       // Update Local State
       setRegistrations((prev) => {
         const newMap = new Map(prev);
-        regIdsToVerify.forEach(regId => {
-            const current = newMap.get(regId);
-            if(current) {
-                newMap.set(regId, { 
-                    ...current, 
-                    payment: { ...current.payment, verified: true }, 
-                    status: RegistrationStatus.VERIFIED 
-                });
-            }
+        regIdsToVerify.forEach((regId) => {
+          const current = newMap.get(regId);
+          if (current) {
+            newMap.set(regId, {
+              ...current,
+              payment: { ...current.payment, verified: true },
+              status: RegistrationStatus.VERIFIED,
+            });
+          }
         });
         return newMap;
       });
 
-      toast.success(`Berhasil memverifikasi ${regIdsToVerify.length} pembayaran.`);
+      toast.success(
+        `Berhasil memverifikasi ${regIdsToVerify.length} pembayaran.`
+      );
       setSelectedUserIds(new Set()); // Reset selection
     } catch (error) {
       console.error("Bulk verify error:", error);
@@ -228,7 +286,7 @@ export default function CaangManagementPage() {
 
   // B. BULK BLACKLIST
   const handleBulkBlacklistClick = () => {
-     if (selectedUserIds.size === 0) {
+    if (selectedUserIds.size === 0) {
       toast.warning("Pilih peserta terlebih dahulu.");
       return;
     }
@@ -251,34 +309,38 @@ export default function CaangManagementPage() {
       if (isBulkBlacklistMode) {
         // --- LOGIC BULK ---
         const userIds = Array.from(selectedUserIds);
-        await RecruitmentService.bulkBlacklistUsers(userIds, currentUser.uid, blacklistReason, period);
+        await RecruitmentService.bulkBlacklistUsers(
+          userIds,
+          currentUser.uid,
+          blacklistReason,
+          period
+        );
 
         // Update Local State for Bulk
         setUsers((prevUsers) =>
-           prevUsers.map((u) => {
-             if (userIds.includes(u.id)) {
-               return {
-                 ...u,
-                 isActive: false,
-                 blacklistInfo: {
-                   isBlacklisted: true,
-                   reason: blacklistReason,
-                   bannedAt: Timestamp.now(),
-                   bannedBy: currentUser.uid,
-                   period: period,
-                 },
-               };
-             }
-             return u;
-           })
+          prevUsers.map((u) => {
+            if (userIds.includes(u.id)) {
+              return {
+                ...u,
+                isActive: false,
+                blacklistInfo: {
+                  isBlacklisted: true,
+                  reason: blacklistReason,
+                  bannedAt: Timestamp.now(),
+                  bannedBy: currentUser.uid,
+                  period: period,
+                },
+              };
+            }
+            return u;
+          })
         );
         toast.success(`${userIds.length} user berhasil di-blacklist.`);
         setSelectedUserIds(new Set()); // Reset selection
-
       } else {
         // --- LOGIC SINGLE ---
         if (!selectedUserForDetail) return;
-        
+
         const blacklistData = {
           isActive: false,
           blacklistInfo: {
@@ -289,10 +351,19 @@ export default function CaangManagementPage() {
             period: period, // Ambil dari reg user detail jika ada
           },
         };
-        
-        await RecruitmentService.blacklistUser(selectedUserForDetail.id, currentUser.uid, blacklistReason, period);
-        
-        setUsers((prev) => prev.map(u => u.id === selectedUserForDetail.id ? { ...u, ...blacklistData } : u));
+
+        await RecruitmentService.blacklistUser(
+          selectedUserForDetail.id,
+          currentUser.uid,
+          blacklistReason,
+          period
+        );
+
+        setUsers((prev) =>
+          prev.map((u) =>
+            u.id === selectedUserForDetail.id ? { ...u, ...blacklistData } : u
+          )
+        );
         toast.success(`User berhasil di-blacklist.`);
         setIsDetailOpen(false);
       }
@@ -301,7 +372,6 @@ export default function CaangManagementPage() {
       setBlacklistReason("");
       setIsBlacklistConfirmOpen(false);
       setIsBulkBlacklistMode(false); // Reset mode
-
     } catch (error) {
       console.error("Error blacklisting:", error);
       toast.error("Gagal melakukan blacklist.");
@@ -315,17 +385,175 @@ export default function CaangManagementPage() {
     setIsBlacklistConfirmOpen(false);
     setIsBulkBlacklistMode(false);
     setBlacklistReason("");
-  }
-
+  };
 
   // --- EXPORT CSV (Sama seperti sebelumnya) ---
-  const handleExportCSV = () => { /* ... kode export csv tetap sama ... */ };
+  const handleExportCSV = () => {
+    /* ... kode export csv tetap sama ... */
+  };
+
+  const handleVerifyData = (regId: string) => {
+    // Find the user for this registration
+    const user = users.find((u) => u.id === regId);
+    if (!user) {
+      toast.error("User tidak ditemukan");
+      return;
+    }
+    // Open the modal with user data
+    setSelectedUserForFormVerify(user);
+    setIsFormDataVerifyOpen(true);
+  };
+
+  const handleConfirmFormDataVerify = async () => {
+    if (!currentUser || !selectedUserForFormVerify) return;
+
+    const regId = selectedUserForFormVerify.id;
+
+    try {
+      setIsFormDataVerifyLoading(true);
+      await RecruitmentService.verifyFormData(regId, currentUser.uid);
+
+      // Update Local State
+      setRegistrations((prev) => {
+        const newMap = new Map(prev);
+        const current = newMap.get(regId);
+        if (current) {
+          newMap.set(regId, {
+            ...current,
+            stepVerifications: {
+              ...current.stepVerifications,
+              step1FormData: {
+                verified: true,
+                verifiedBy: currentUser.uid,
+                verifiedAt: Timestamp.now(),
+              },
+            },
+            status: RegistrationStatus.FORM_VERIFIED,
+          });
+        }
+        return newMap;
+      });
+
+      toast.success("Data diri berhasil diverifikasi");
+      setIsFormDataVerifyOpen(false);
+      setSelectedUserForFormVerify(null);
+    } catch (e) {
+      console.error(e);
+      toast.error("Gagal verifikasi data");
+    } finally {
+      setIsFormDataVerifyLoading(false);
+    }
+  };
+
+  const handleVerifyDocuments = (regId: string) => {
+    const user = users.find((u) => u.id === regId);
+    if (!user) {
+      toast.error("User tidak ditemukan");
+      return;
+    }
+    setSelectedUserForDocsVerify(user);
+    setIsDocumentsVerifyOpen(true);
+  };
+
+  const handleConfirmDocumentsVerify = async () => {
+    if (!currentUser || !selectedUserForDocsVerify) return;
+
+    const regId = selectedUserForDocsVerify.id;
+
+    try {
+      setIsDocumentsVerifyLoading(true);
+      await RecruitmentService.verifyDocuments(regId, currentUser.uid);
+
+      // Update Local State
+      setRegistrations((prev) => {
+        const newMap = new Map(prev);
+        const current = newMap.get(regId);
+        if (current) {
+          newMap.set(regId, {
+            ...current,
+            stepVerifications: {
+              ...current.stepVerifications,
+              step2Documents: {
+                verified: true,
+                verifiedBy: currentUser.uid,
+                verifiedAt: Timestamp.now(),
+              },
+            },
+          });
+        }
+        return newMap;
+      });
+
+      toast.success("Dokumen berhasil diverifikasi");
+      setIsDocumentsVerifyOpen(false);
+      setSelectedUserForDocsVerify(null);
+    } catch (e) {
+      console.error(e);
+      toast.error("Gagal verifikasi dokumen");
+    } finally {
+      setIsDocumentsVerifyLoading(false);
+    }
+  };
+
+  const handleVerifyPaymentModal = (regId: string) => {
+    const user = users.find((u) => u.id === regId);
+    if (!user) {
+      toast.error("User tidak ditemukan");
+      return;
+    }
+    setSelectedUserForPaymentVerify(user);
+    setIsPaymentVerifyOpen(true);
+  };
+
+  const handleConfirmPaymentVerify = async () => {
+    if (!currentUser || !selectedUserForPaymentVerify) return;
+
+    const regId = selectedUserForPaymentVerify.id;
+
+    try {
+      setIsPaymentVerifyLoading(true);
+      await RecruitmentService.verifyPayment(regId);
+
+      // Update Local State
+      setRegistrations((prev) => {
+        const newMap = new Map(prev);
+        const current = newMap.get(regId);
+        if (current) {
+          newMap.set(regId, {
+            ...current,
+            payment: { ...current.payment, verified: true },
+            stepVerifications: {
+              ...current.stepVerifications,
+              step3Payment: {
+                verified: true,
+                verifiedBy: currentUser.uid,
+                verifiedAt: Timestamp.now(),
+              },
+            },
+            status: RegistrationStatus.VERIFIED,
+          });
+        }
+        return newMap;
+      });
+
+      toast.success("Pembayaran berhasil diverifikasi");
+      setIsPaymentVerifyOpen(false);
+      setSelectedUserForPaymentVerify(null);
+    } catch (e) {
+      console.error(e);
+      toast.error("Gagal verifikasi pembayaran");
+    } finally {
+      setIsPaymentVerifyLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-6 p-6 pb-20">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Manajemen Caang</h1>
-        <p className="text-muted-foreground">Monitoring dan pengelolaan data peserta Open Recruitment.</p>
+        <p className="text-muted-foreground">
+          Monitoring dan pengelolaan data peserta Open Recruitment.
+        </p>
       </div>
 
       <StatsOverview stats={stats} />
@@ -341,13 +569,13 @@ export default function CaangManagementPage() {
         handleExportCSV={handleExportCSV}
         selectedCount={selectedUserIds.size}
         // Pasang handler bulk disini
-        onBulkVerify={handleBulkVerifyClick} 
+        onBulkVerify={handleBulkVerifyClick}
         onBulkBlacklist={handleBulkBlacklistClick}
       />
 
       {loading ? (
         <div className="flex h-64 w-full items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : (
         <CaangTable
@@ -357,7 +585,9 @@ export default function CaangManagementPage() {
           handleSelectAll={handleSelectAll}
           handleSelectUser={handleSelectUser}
           onOpenDetail={handleOpenDetail}
-          onVerifyPayment={handleVerifyPayment}
+          onVerifyFormData={handleVerifyData}
+          onVerifyDocuments={handleVerifyDocuments}
+          onVerifyPayment={handleVerifyPaymentModal}
         />
       )}
 
@@ -366,11 +596,16 @@ export default function CaangManagementPage() {
         isOpen={isDetailOpen}
         onClose={() => setIsDetailOpen(false)}
         user={selectedUserForDetail}
-        registration={selectedUserForDetail ? registrations.get(selectedUserForDetail.id) : null}
+        registration={
+          selectedUserForDetail
+            ? registrations.get(selectedUserForDetail.id)
+            : null
+        }
         onVerifyPayment={handleVerifyPayment}
+        onVerifyData={handleVerifyData}
         onOpenBlacklist={() => {
-            setIsBulkBlacklistMode(false); // Pastikan mode single
-            setIsBlacklistConfirmOpen(true);
+          setIsBulkBlacklistMode(false); // Pastikan mode single
+          setIsBlacklistConfirmOpen(true);
         }}
       />
 
@@ -383,8 +618,69 @@ export default function CaangManagementPage() {
         setReason={setBlacklistReason}
         onSubmit={handleBlacklistSubmit}
         // Kondisional rendering nama
-        userName={isBulkBlacklistMode ? `${selectedUserIds.size} Peserta Terpilih` : selectedUserForDetail?.profile.fullName}
-        period={isBulkBlacklistMode ? "Periode Saat Ini" : (selectedUserForDetail ? registrations.get(selectedUserForDetail.id)?.orPeriod : "-")}
+        userName={
+          isBulkBlacklistMode
+            ? `${selectedUserIds.size} Peserta Terpilih`
+            : selectedUserForDetail?.profile.fullName
+        }
+        period={
+          isBulkBlacklistMode
+            ? "Periode Saat Ini"
+            : selectedUserForDetail
+            ? registrations.get(selectedUserForDetail.id)?.orPeriod
+            : "-"
+        }
+      />
+
+      {/* COMPONENT: FORM DATA VERIFICATION MODAL */}
+      <FormDataVerificationModal
+        isOpen={isFormDataVerifyOpen}
+        onClose={() => {
+          setIsFormDataVerifyOpen(false);
+          setSelectedUserForFormVerify(null);
+        }}
+        loading={isFormDataVerifyLoading}
+        onConfirm={handleConfirmFormDataVerify}
+        user={selectedUserForFormVerify}
+        registration={
+          selectedUserForFormVerify
+            ? registrations.get(selectedUserForFormVerify.id) || null
+            : null
+        }
+      />
+
+      {/* COMPONENT: DOCUMENTS VERIFICATION MODAL */}
+      <DocumentsVerificationModal
+        isOpen={isDocumentsVerifyOpen}
+        onClose={() => {
+          setIsDocumentsVerifyOpen(false);
+          setSelectedUserForDocsVerify(null);
+        }}
+        loading={isDocumentsVerifyLoading}
+        onConfirm={handleConfirmDocumentsVerify}
+        user={selectedUserForDocsVerify}
+        registration={
+          selectedUserForDocsVerify
+            ? registrations.get(selectedUserForDocsVerify.id) || null
+            : null
+        }
+      />
+
+      {/* COMPONENT: PAYMENT VERIFICATION MODAL */}
+      <PaymentVerificationModal
+        isOpen={isPaymentVerifyOpen}
+        onClose={() => {
+          setIsPaymentVerifyOpen(false);
+          setSelectedUserForPaymentVerify(null);
+        }}
+        loading={isPaymentVerifyLoading}
+        onConfirm={handleConfirmPaymentVerify}
+        user={selectedUserForPaymentVerify}
+        registration={
+          selectedUserForPaymentVerify
+            ? registrations.get(selectedUserForPaymentVerify.id) || null
+            : null
+        }
       />
 
       {/* COMPONENT: BULK VERIFY CONFIRMATION */}
@@ -393,26 +689,33 @@ export default function CaangManagementPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Verifikasi Pembayaran Massal?</AlertDialogTitle>
             <AlertDialogDescription>
-              Anda akan memverifikasi pembayaran untuk <strong>{selectedUserIds.size} peserta</strong> yang dipilih. 
-              Sistem hanya akan memproses peserta yang sudah upload bukti bayar namun belum diverifikasi.
+              Anda akan memverifikasi pembayaran untuk{" "}
+              <strong>{selectedUserIds.size} peserta</strong> yang dipilih.
+              Sistem hanya akan memproses peserta yang sudah upload bukti bayar
+              namun belum diverifikasi.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isBulkVerifyLoading}>Batal</AlertDialogCancel>
-            <AlertDialogAction 
-                onClick={(e) => {
-                    e.preventDefault(); // Mencegah auto-close dialog
-                    handleBulkVerifyConfirm();
-                }} 
-                disabled={isBulkVerifyLoading}
-                className="bg-green-600 hover:bg-green-700"
+            <AlertDialogCancel disabled={isBulkVerifyLoading}>
+              Batal
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault(); // Mencegah auto-close dialog
+                handleBulkVerifyConfirm();
+              }}
+              disabled={isBulkVerifyLoading}
+              className="bg-green-600 hover:bg-green-700"
             >
-              {isBulkVerifyLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : "Ya, Verifikasi Semua"}
+              {isBulkVerifyLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                "Ya, Verifikasi Semua"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
     </div>
   );
 }

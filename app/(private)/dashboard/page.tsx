@@ -1,79 +1,58 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { auth, db } from "@/lib/firebaseConfig";
-import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
-import { User, UserSystemRoles } from "@/types/users";
 import Loading from "@/components/Loading";
 import AdminDashboard from "@/app/(private)/dashboard/adminPage";
-import CaangDashboard from "@/app/(private)/dashboard/caangPage";
-
-const DEFAULT_ROLES: UserSystemRoles = {
-  isSuperAdmin: false,
-  isKestari: false,
-  isKomdis: false,
-  isRecruiter: false,
-  isKRIMember: false,
-  isOfficialMember: false,
-  isCaang: true,
-  isAlumni: false,
-};
+import CaangDashboard from "@/app/(private)/dashboard/(caang)/caangPage";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function DashboardPage() {
+  const { user, userData, loading } = useAuth();
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
-  const [userRoles, setUserRoles] = useState<UserSystemRoles>(DEFAULT_ROLES);
-  const [userData, setUserData] = useState<User | null>(null);
 
+  // Redirect jika tidak login
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (!firebaseUser) {
-        router.push("/login");
-        return;
-      }
+    if (!loading && !user) {
+      router.push("/login");
+    }
+  }, [user, loading, router]);
 
-      try {
-        const userRef = doc(db, "users_new", firebaseUser.uid);
-        const snap = await getDoc(userRef);
-
-        if (snap.exists()) {
-          const data = snap.data() as User;
-          setUserData(data);
-
-          if (data.roles) {
-            setUserRoles(data.roles);
-          }
-        } else {
-          console.warn("User data not found in Dashboard");
-        }
-      } catch (err) {
-        console.error("Error fetching dashboard data:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    });
-
-    return () => unsubscribe();
-  }, [router]);
-
-  if (isLoading) {
+  // Tampilkan loading saat cek auth atau fetch data user
+  if (loading) {
     return <Loading />;
   }
 
+  // Jika user login tapi data profile tidak ditemukan di Firestore
+  if (!userData) {
+    return null;
+  }
+
+  const { roles } = userData;
+
+  if (!roles) {
+    return <div className="p-4 text-center">Error: User roles not found.</div>;
+  }
+
   const isInternalUser =
-    userRoles.isSuperAdmin ||
-    userRoles.isRecruiter ||
-    userRoles.isKestari ||
-    userRoles.isKomdis ||
-    userRoles.isOfficialMember ||
-    userRoles.isKRIMember;
+    roles.isSuperAdmin ||
+    roles.isRecruiter ||
+    roles.isKestari ||
+    roles.isKomdis ||
+    roles.isOfficialMember ||
+    roles.isKRIMember;
 
   if (isInternalUser) {
     return <AdminDashboard user={userData} />;
   }
-  if (userRoles.isCaang) {
+
+  if (roles.isCaang) {
     return <CaangDashboard />;
   }
+
+  return (
+    <div className="p-4 text-center">
+      Role user tidak dikenali. Hubungi admin.
+    </div>
+  );
 }

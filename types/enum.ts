@@ -13,6 +13,7 @@ export enum UserRole {
 export enum RegistrationStatus {
   DRAFT = 'draft', // Baru buat akun
   FORM_SUBMITTED = 'form_submitted', // Sudah isi form
+  FORM_VERIFIED = 'form_verified', // Form sudah diverifikasi admin
   DOCUMENTS_UPLOADED = 'documents_uploaded', // Sudah upload dokumen
   PAYMENT_PENDING = 'payment_pending', // Menunggu verifikasi pembayaran
   VERIFIED = 'verified', // Terverifikasi, bisa ikut seleksi

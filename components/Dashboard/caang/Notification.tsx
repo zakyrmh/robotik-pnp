@@ -89,38 +89,38 @@ export default function Notification() {
     }
 
     // Tentukan warna berdasarkan priority
-    let bgColor = "bg-blue-100";
-    let textColor = "text-blue-600";
+    let bgColor = "bg-blue-100 dark:bg-blue-900/30";
+    let textColor = "text-blue-600 dark:text-blue-400";
 
     switch (priority) {
       case NotificationPriority.URGENT:
-        bgColor = "bg-red-100";
-        textColor = "text-red-600";
+        bgColor = "bg-red-100 dark:bg-red-900/30";
+        textColor = "text-red-600 dark:text-red-400";
         break;
       case NotificationPriority.HIGH:
-        bgColor = "bg-orange-100";
-        textColor = "text-orange-600";
+        bgColor = "bg-orange-100 dark:bg-orange-900/30";
+        textColor = "text-orange-600 dark:text-orange-400";
         break;
       case NotificationPriority.NORMAL:
-        bgColor = "bg-blue-100";
-        textColor = "text-blue-600";
+        bgColor = "bg-blue-100 dark:bg-blue-900/30";
+        textColor = "text-blue-600 dark:text-blue-400";
         break;
       case NotificationPriority.LOW:
-        bgColor = "bg-gray-100";
-        textColor = "text-gray-600";
+        bgColor = "bg-gray-100 dark:bg-gray-700";
+        textColor = "text-gray-600 dark:text-gray-400";
         break;
     }
 
     // Override warna untuk type tertentu
     if (type === NotifType.GRADE) {
-      bgColor = "bg-green-100";
-      textColor = "text-green-600";
+      bgColor = "bg-green-100 dark:bg-green-900/30";
+      textColor = "text-green-600 dark:text-green-400";
     } else if (type === NotifType.DEADLINE) {
-      bgColor = "bg-yellow-100";
-      textColor = "text-yellow-600";
+      bgColor = "bg-yellow-100 dark:bg-yellow-900/30";
+      textColor = "text-yellow-600 dark:text-yellow-400";
     } else if (type === NotifType.ANNOUNCEMENT) {
-      bgColor = "bg-purple-100";
-      textColor = "text-purple-600";
+      bgColor = "bg-purple-100 dark:bg-purple-900/30";
+      textColor = "text-purple-600 dark:text-purple-400";
     }
 
     return { IconComponent, bgColor, textColor };
@@ -156,7 +156,7 @@ export default function Notification() {
         <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">
           Notifikasi & Pengumuman
         </h3>
-        <div className="bg-white rounded-xl shadow-sm p-8 flex items-center justify-center dark:bg-gray-600">
+        <div className="bg-white rounded-xl shadow-sm p-8 flex items-center justify-center dark:bg-gray-800">
           <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
         </div>
       </div>
@@ -169,8 +169,8 @@ export default function Notification() {
         <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100 mb-4">
           Notifikasi & Pengumuman
         </h3>
-        <div className="bg-white rounded-xl shadow-sm p-8 text-center dark:bg-gray-600">
-          <Bell className="w-12 h-12 text-gray-300 mx-auto mb-2 dark:text-gray-400" />
+        <div className="bg-white rounded-xl shadow-sm p-8 text-center dark:bg-gray-800">
+          <Bell className="w-12 h-12 text-gray-300 mx-auto mb-2 dark:text-gray-600" />
           <p className="text-sm text-gray-500 dark:text-gray-400">
             Tidak ada notifikasi
           </p>
@@ -184,7 +184,7 @@ export default function Notification() {
       <h3 className="text-lg font-bold text-gray-800 mb-4 dark:text-gray-100">
         Notifikasi & Pengumuman
       </h3>
-      <div className="bg-white rounded-xl shadow-sm p-4 text-sm max-h-96 overflow-y-auto dark:bg-gray-600">
+      <div className="bg-white rounded-xl shadow-sm p-4 text-sm max-h-96 overflow-y-auto dark:bg-gray-800">
         {notifications.map((notif, index) => {
           const { IconComponent, bgColor, textColor } = getNotificationIcon(
             notif.type,
@@ -196,10 +196,10 @@ export default function Notification() {
             <div
               key={notif.id}
               className={`flex items-start space-x-3 ${
-                !isLastItem ? "pb-4 border-b dark:border-gray-500" : ""
+                !isLastItem ? "pb-4 border-b dark:border-gray-700" : ""
               } ${
                 !notif.isRead
-                  ? "bg-blue-50 -mx-4 px-4 py-2 dark:bg-gray-700"
+                  ? "bg-blue-50 -mx-4 px-4 py-2 dark:bg-gray-700/50"
                   : ""
               }`}
             >

@@ -117,8 +117,8 @@ export async function createGroupParent(
       totalSubGroups: 0,
       totalMembers: 0,
       isActive: true,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+      createdAt: serverTimestamp() as unknown as Timestamp,
+      updatedAt: serverTimestamp() as unknown as Timestamp,
     });
 
     return docRef.id;
@@ -139,7 +139,7 @@ export async function updateGroupParent(
     const docRef = doc(db, GROUP_PARENTS_COLLECTION, id);
     await updateDoc(docRef, {
       ...data,
-      updatedAt: serverTimestamp(),
+      updatedAt: serverTimestamp() as unknown as Timestamp,
     });
   } catch (error) {
     console.error('Error updating group parent:', error);
@@ -158,8 +158,8 @@ export async function deleteGroupParent(id: string): Promise<void> {
     const parentRef = doc(db, GROUP_PARENTS_COLLECTION, id);
     batch.update(parentRef, {
       isActive: false,
-      updatedAt: serverTimestamp(),
-      deletedAt: serverTimestamp(),
+      updatedAt: serverTimestamp() as unknown as Timestamp,
+      deletedAt: serverTimestamp() as unknown as Timestamp,
     });
 
     // Mark all sub-groups as inactive
@@ -172,8 +172,8 @@ export async function deleteGroupParent(id: string): Promise<void> {
     subGroupsSnapshot.docs.forEach((doc) => {
       batch.update(doc.ref, {
         isActive: false,
-        updatedAt: serverTimestamp(),
-        deletedAt: serverTimestamp(),
+        updatedAt: serverTimestamp() as unknown as Timestamp,
+        deletedAt: serverTimestamp() as unknown as Timestamp,
       });
     });
 
@@ -215,7 +215,7 @@ export async function restoreGroupParent(id: string): Promise<void> {
     const parentRef = doc(db, GROUP_PARENTS_COLLECTION, id);
     batch.update(parentRef, {
       isActive: true,
-      updatedAt: serverTimestamp(),
+      updatedAt: serverTimestamp() as unknown as Timestamp,
       deletedAt: deleteField(),
     });
 
@@ -229,7 +229,7 @@ export async function restoreGroupParent(id: string): Promise<void> {
     subGroupsSnapshot.docs.forEach((doc) => {
       batch.update(doc.ref, {
         isActive: true,
-        updatedAt: serverTimestamp(),
+        updatedAt: serverTimestamp() as unknown as Timestamp,
         deletedAt: deleteField(),
       });
     });
@@ -335,8 +335,8 @@ export async function createSubGroup(
     batch.set(subGroupRef, {
       ...data,
       isActive: true,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+      createdAt: serverTimestamp() as unknown as Timestamp,
+      updatedAt: serverTimestamp() as unknown as Timestamp,
     });
 
     // Update parent totalSubGroups and totalMembers
@@ -348,7 +348,7 @@ export async function createSubGroup(
       batch.update(parentRef, {
         totalSubGroups: parentData.totalSubGroups + 1,
         totalMembers: parentData.totalMembers + data.memberIds.length,
-        updatedAt: serverTimestamp(),
+        updatedAt: serverTimestamp() as unknown as Timestamp,
       });
     }
 
@@ -385,7 +385,7 @@ export async function updateSubGroup(
     // Update sub-group
     batch.update(subGroupRef, {
       ...data,
-      updatedAt: serverTimestamp(),
+      updatedAt: serverTimestamp() as unknown as Timestamp,
     });
 
     // Update parent totalMembers if memberIds changed
@@ -399,7 +399,7 @@ export async function updateSubGroup(
 
         batch.update(parentRef, {
           totalMembers: parentData.totalMembers + memberDifference,
-          updatedAt: serverTimestamp(),
+          updatedAt: serverTimestamp() as unknown as Timestamp,
         });
       }
     }
@@ -431,7 +431,7 @@ export async function deleteSubGroup(id: string): Promise<void> {
     // Mark sub-group as inactive
     batch.update(subGroupRef, {
       isActive: false,
-      updatedAt: serverTimestamp(),
+      updatedAt: serverTimestamp() as unknown as Timestamp,
     });
 
     // Update parent totalSubGroups and totalMembers
@@ -443,7 +443,7 @@ export async function deleteSubGroup(id: string): Promise<void> {
       batch.update(parentRef, {
         totalSubGroups: Math.max(0, parentData.totalSubGroups - 1),
         totalMembers: Math.max(0, parentData.totalMembers - subGroupData.memberIds.length),
-        updatedAt: serverTimestamp(),
+        updatedAt: serverTimestamp() as unknown as Timestamp,
       });
     }
 
@@ -470,7 +470,7 @@ export async function updateSubGroupsMembersBatch(
       const updateData: Record<string, unknown> = {
         memberIds,
         members: update.members,
-        updatedAt: serverTimestamp(),
+        updatedAt: serverTimestamp() as unknown as Timestamp,
       };
 
       if (update.leaderId !== undefined) {
@@ -553,7 +553,7 @@ export async function getCaangUsersWithAttendance(orPeriod: string): Promise<Gro
         return {
           userId: user.id,
           fullName: user.profile.fullName,
-          nim: user.profile.nim,
+          nim: user.profile.nim || "-",
           attendancePercentage: attendance.percentage,
           totalActivities: attendance.totalActivities,
           attendedActivities: attendance.attendedActivities,
@@ -634,8 +634,8 @@ export async function generateGroupParent(
         members: groupMembers,
         isActive: true,
         createdBy,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+        createdAt: serverTimestamp() as unknown as Timestamp,
+        updatedAt: serverTimestamp() as unknown as Timestamp,
       });
 
       totalMembers += memberIds.length;
@@ -646,7 +646,7 @@ export async function generateGroupParent(
     batch.update(parentRef, {
       totalSubGroups: numberOfSubGroups,
       totalMembers,
-      updatedAt: serverTimestamp(),
+      updatedAt: serverTimestamp() as unknown as Timestamp,
     });
 
     await batch.commit();

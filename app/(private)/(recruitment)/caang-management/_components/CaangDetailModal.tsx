@@ -37,6 +37,7 @@ interface CaangDetailModalProps {
   user: User | null;
   registration: Registration | null | undefined;
   onVerifyPayment: (regId: string) => void;
+  onVerifyData: (regId: string) => void;
   onOpenBlacklist: () => void;
 }
 
@@ -46,6 +47,7 @@ export default function CaangDetailModal({
   user,
   registration,
   onVerifyPayment,
+  onVerifyData,
   onOpenBlacklist,
 }: CaangDetailModalProps) {
   if (!user) return null;
@@ -121,6 +123,25 @@ export default function CaangDetailModal({
                 className="col-span-2"
               />
             </div>
+
+            {/* ACTION: VERIFIKASI DATA */}
+            {registration && !registration.verification?.verified && (
+              <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl border border-yellow-200 dark:border-yellow-800">
+                <div className="text-yellow-800 dark:text-yellow-200">
+                  <p className="font-semibold">Menunggu Verifikasi Data</p>
+                  <p className="text-sm">
+                    Pastikan data diri peserta sudah benar sebelum melanjutkan
+                    ke tahap upload dokumen.
+                  </p>
+                </div>
+                <Button
+                  onClick={() => onVerifyData(registration.id)}
+                  className="bg-yellow-600 hover:bg-yellow-700 text-white whitespace-nowrap"
+                >
+                  Verifikasi Data Diri
+                </Button>
+              </div>
+            )}
           </TabsContent>
 
           {/* TAB 2: BERKAS & PEMBAYARAN */}

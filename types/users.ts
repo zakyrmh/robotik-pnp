@@ -78,16 +78,16 @@ export interface UserAssignments {
 export interface UserProfile {
   fullName: string;
   nickname?: string;
-  nim: string;
-  phone: string;
-  gender: Gender;
-  birthDate: Timestamp;
-  birthPlace: string;
-  address: string;
+  nim?: string;
+  phone?: string;
+  gender?: Gender;
+  birthDate?: Timestamp;
+  birthPlace?: string;
+  address?: string;
   
-  major: string;
-  department: string;
-  entryYear: number;
+  major?: string;
+  department?: string;
+  entryYear?: number;
   
   photoUrl?: string;
   ktmUrl?: string;

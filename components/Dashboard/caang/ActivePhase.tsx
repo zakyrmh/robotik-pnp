@@ -137,7 +137,7 @@ export default function ActivePhase() {
             </div>
             <div className="flex items-center space-x-2">
               <Clock className="text-blue-100 dark:text-blue-300 h-4 w-4" />
-              <span>Total: 2 sesi</span>
+              <span>Total: {loading ? "..." : totalActivities} sesi</span>
             </div>
           </div>
         </div>

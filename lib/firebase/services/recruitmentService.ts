@@ -113,4 +113,43 @@ export const RecruitmentService = {
 
     await batch.commit();
   },
+  // 7. Verify Form Data (Step 1 - Personal Data)
+  async verifyFormData(regId: string, adminId: string) {
+    const regRef = doc(db, "registrations", regId);
+    return updateDoc(regRef, {
+      "stepVerifications.step1FormData.verified": true,
+      "stepVerifications.step1FormData.verifiedAt": Timestamp.now(),
+      "stepVerifications.step1FormData.verifiedBy": adminId,
+      status: "form_verified", // Update status agar caang bisa upload dokumen
+    });
+  },
+
+  // 8. Verify Documents (Step 2 - Documents Upload)
+  async verifyDocuments(regId: string, adminId: string) {
+    const regRef = doc(db, "registrations", regId);
+    return updateDoc(regRef, {
+      "stepVerifications.step2Documents.verified": true,
+      "stepVerifications.step2Documents.verifiedAt": Timestamp.now(),
+      "stepVerifications.step2Documents.verifiedBy": adminId,
+      status: "documents_uploaded", // Update status agar caang bisa upload pembayaran
+    });
+  },
+
+  // 9. Bulk Verify Form Data (Step 1 - Personal Data)
+  async bulkVerifyFormData(regIds: string[], adminId: string) {
+    const batch = writeBatch(db);
+    const verifiedAt = Timestamp.now();
+
+    regIds.forEach((id) => {
+      const ref = doc(db, "registrations", id);
+      batch.update(ref, {
+        "stepVerifications.step1FormData.verified": true,
+        "stepVerifications.step1FormData.verifiedAt": verifiedAt,
+        "stepVerifications.step1FormData.verifiedBy": adminId,
+        status: "form_verified",
+      });
+    });
+
+    await batch.commit();
+  },
 };

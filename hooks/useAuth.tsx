@@ -1,20 +1,54 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
+  onAuthStateChanged,
+  User as FirebaseUser,
 } from "firebase/auth";
-import { auth } from "@/lib/firebaseConfig";
+import { doc, getDoc } from "firebase/firestore";
+import { auth, db } from "@/lib/firebaseConfig";
 import { useRouter } from "next/navigation";
 import { FirebaseError } from "firebase/app";
+import { User } from "@/types/users";
 
 export function useAuth() {
-  const [loading, setLoading] = useState(false);
+  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [userData, setUserData] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  const user = auth.currentUser;
+  // Listen to auth state changes and fetch user data
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setUser(firebaseUser);
+
+      if (firebaseUser) {
+        try {
+          const userRef = doc(db, "users_new", firebaseUser.uid);
+          const snap = await getDoc(userRef);
+
+          if (snap.exists()) {
+            setUserData(snap.data() as User);
+          } else {
+            console.warn("User data not found in Firestore");
+            setUserData(null);
+          }
+        } catch (err) {
+          console.error("Error fetching user data:", err);
+          setError("Gagal mengambil data user");
+        }
+      } else {
+        setUserData(null);
+      }
+
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   // Login function
   const login = async (
@@ -90,6 +124,9 @@ export function useAuth() {
       // Redirect ke login
       router.push("/login");
       router.refresh();
+
+      setUser(null);
+      setUserData(null);
     } catch (err) {
       if (err instanceof FirebaseError) {
         setError("Terjadi kesalahan saat logout");
@@ -102,9 +139,10 @@ export function useAuth() {
 
   return {
     user,
-    login,
-    logout,
+    userData,
     loading,
     error,
+    login,
+    logout,
   };
 }

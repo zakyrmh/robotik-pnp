@@ -15,7 +15,7 @@ const protectedRoutes = [
 ];
 
 // Daftar halaman auth yang tidak boleh diakses jika sudah login
-const authRoutes = ["/login", "/forgot-password"];
+const authRoutes = ["/login", "/forgot-password", "/register"];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -66,5 +66,6 @@ export const config = {
     "/group",
     "/login",
     "/forgot-password",
+    "/register",
   ],
 };

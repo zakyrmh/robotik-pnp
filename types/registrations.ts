@@ -1,12 +1,27 @@
 import { PaymentMethod, RegistrationStatus } from "@/types/enum";
 import { Timestamp } from "firebase/firestore";
 
+export interface StepVerificationData {
+  verified: boolean;
+  verifiedBy?: string;
+  verifiedAt?: Timestamp;
+  rejectionReason?: string;
+  notes?: string;
+}
+
 export interface Registration {
   id: string;
   orPeriod: string;
   orYear: string;
   registrationId: string;
   status: RegistrationStatus;
+
+  // Step Verifications
+  stepVerifications: {
+    step1FormData: StepVerificationData;      // Verifikasi data diri
+    step2Documents: StepVerificationData;     // Verifikasi dokumen
+    step3Payment: StepVerificationData;       // Verifikasi pembayaran
+  };
 
   documents: RegistrationDocuments;
   
