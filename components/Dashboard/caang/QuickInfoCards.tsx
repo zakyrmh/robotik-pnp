@@ -1,6 +1,46 @@
+"use client";
+
 import { Banknote, Calendar, Headset, Info, Mail, Phone } from "lucide-react";
+import { useEffect, useState } from "react";
+import { getAppSettings } from "@/lib/firebase/settings";
 
 export default function QuickInfoCard() {
+  const [deadline, setDeadline] = useState<string>("...");
+  const [daysLeft, setDaysLeft] = useState<string>("...");
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const settings = await getAppSettings();
+        if (settings?.endDateRegistration) {
+          const date = settings.endDateRegistration.toDate();
+          const formattedDate = date.toLocaleDateString("id-ID", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          });
+          setDeadline(formattedDate);
+
+          const now = new Date();
+          const diffTime = date.getTime() - now.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+          if (diffDays > 0) {
+            setDaysLeft(`${diffDays} hari lagi`);
+          } else if (diffDays === 0) {
+            setDaysLeft("Hari ini terakhir");
+          } else {
+            setDaysLeft("Sudah berakhir");
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch settings:", error);
+      }
+    };
+
+    fetchSettings();
+  }, []);
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
       <div className="bg-white rounded-xl shadow-sm p-6 border-l-4 border-blue-500 dark:bg-gray-800 dark:border-blue-400">
@@ -20,13 +60,13 @@ export default function QuickInfoCard() {
         </p>
         <div className="flex items-center space-x-2 text-lg font-bold text-blue-600 dark:text-blue-400">
           <Calendar className="text-blue-600 h-6 w-6 dark:text-blue-400" />
-          <span>20 September 2025</span>
+          <span>{deadline}</span>
         </div>
         <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
           <p className="text-xs text-gray-500 dark:text-gray-400">
             Sisa waktu:{" "}
             <span className="font-semibold text-red-600 dark:text-red-400">
-              9 hari lagi
+              {daysLeft}
             </span>
           </p>
         </div>

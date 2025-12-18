@@ -14,9 +14,9 @@ import {
   saveFillData,
   getJurusanProdi,
 } from "@/lib/firebase/services/fill-data-service";
-import PersonalDataForm from "@/components/Dashboard/caang/fill-data/PersonalDataForm";
-import AcademicDataForm from "@/components/Dashboard/caang/fill-data/AcademicDataForm";
-import RegistrationForm from "@/components/Dashboard/caang/fill-data/RegistrationForm";
+import PersonalDataForm from "@/app/(private)/dashboard/fill-data/_components/PersonalDataForm";
+import AcademicDataForm from "@/app/(private)/dashboard/fill-data/_components/AcademicDataForm";
+import RegistrationForm from "@/app/(private)/dashboard/fill-data/_components/RegistrationForm";
 import { Jurusan } from "@/types/jurusan-prodi";
 
 export default function FillDataPage() {

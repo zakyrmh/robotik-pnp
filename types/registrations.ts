@@ -30,6 +30,7 @@ export enum RegistrationStatus {
   FORM_VERIFIED = "form_verified",
   DOCUMENTS_UPLOADED = "documents_uploaded",
   PAYMENT_PENDING = "payment_pending",
+  SUBMITTED = "submitted",
   VERIFIED = "verified",
   REJECTED = "rejected",
 }

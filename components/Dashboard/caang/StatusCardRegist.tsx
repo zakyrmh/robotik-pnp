@@ -1,11 +1,27 @@
+"use client";
+
 import { User } from "@/types/users";
 import { BadgeCheck, Rocket } from "lucide-react";
+import { useEffect, useState } from "react";
+import { getAppSettings } from "@/lib/firebase/settings";
 
 interface StatusCardProps {
   user?: User | null;
 }
 
 export default function StatusCard({ user }: StatusCardProps) {
+  const [orPeriod, setOrPeriod] = useState<string>("");
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      const settings = await getAppSettings();
+      if (settings?.currentOrPeriod) {
+        setOrPeriod(settings.currentOrPeriod);
+      }
+    };
+    fetchSettings();
+  }, []);
+
   return (
     <div className="bg-gradient-to-r from-green-500 via-green-600 to-emerald-600 dark:from-green-900 dark:via-green-800 dark:to-emerald-900 rounded-2xl p-8 text-white shadow-xl mb-8 relative overflow-hidden fade-in transition-all duration-300">
       <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 dark:bg-black/20"></div>
@@ -27,7 +43,7 @@ export default function StatusCard({ user }: StatusCardProps) {
           <p className="text-lg text-green-50 mb-4 dark:text-green-100">
             Hai <span className="font-bold">{user?.profile.fullName}</span>,
             terima kasih telah mendaftar di Open Recruitment UKM Robotik PNP
-            Angkatan 21!
+            Angkatan {orPeriod}!
           </p>
           <p className="text-green-100 dark:text-green-200">
             Silakan lengkapi data pendaftaran Anda dengan mengikuti

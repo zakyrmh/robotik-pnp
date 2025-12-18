@@ -1,5 +1,10 @@
 import { storage } from "@/lib/firebaseConfig";
-import { ref, uploadBytesResumable, getDownloadURL, UploadTask } from "firebase/storage";
+import {
+  ref,
+  uploadBytesResumable,
+  getDownloadURL,
+  UploadTask,
+} from "firebase/storage";
 
 export type UploadProgressCallback = (progress: number) => void;
 
@@ -17,17 +22,13 @@ export interface UploadResult {
  * @returns Download URL of the uploaded file
  */
 export async function uploadFileWithProgress(
-  userId: string,
+  storagePath: string,
   file: File,
-  fieldName: string,
   onProgress?: UploadProgressCallback
-): Promise<string> {
+): Promise<{ url: string; path: string }> {
   return new Promise((resolve, reject) => {
     // Create storage reference
-    const storageRef = ref(
-      storage,
-      `registrations/${userId}/${fieldName}/${Date.now()}_${file.name}`
-    );
+    const storageRef = ref(storage, storagePath);
 
     // Create upload task
     const uploadTask = uploadBytesResumable(storageRef, file);
@@ -37,8 +38,9 @@ export async function uploadFileWithProgress(
       "state_changed",
       (snapshot) => {
         // Calculate progress percentage
-        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        
+        const progress =
+          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+
         // Call progress callback if provided
         if (onProgress) {
           onProgress(Math.round(progress));
@@ -53,7 +55,7 @@ export async function uploadFileWithProgress(
         // Handle successful uploads
         try {
           const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          resolve(downloadURL);
+          resolve({ url: downloadURL, path: storagePath });
         } catch (error) {
           reject(error);
         }
@@ -79,7 +81,10 @@ export function validateFileSize(file: File, maxSizeMB: number = 2): boolean {
  * @param allowedTypes - Array of allowed MIME types
  * @returns true if valid, false otherwise
  */
-export function validateFileType(file: File, allowedTypes: string[] = ["image/*"]): boolean {
+export function validateFileType(
+  file: File,
+  allowedTypes: string[] = ["image/*"]
+): boolean {
   return allowedTypes.some((type) => {
     if (type.endsWith("/*")) {
       const baseType = type.split("/")[0];

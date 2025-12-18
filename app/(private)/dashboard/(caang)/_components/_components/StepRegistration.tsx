@@ -1,3 +1,5 @@
+"use client";
+
 import {
   ArrowRight,
   UserPen,
@@ -7,10 +9,15 @@ import {
   Hourglass,
   CheckCircle2,
   XCircle,
+  Send,
+  FileText,
 } from "lucide-react";
 import Link from "next/link";
 import { RegistrationStatus } from "@/types/enum";
 import { Registration } from "@/types/registrations";
+import { useState } from "react";
+import { submitRegistration } from "@/lib/firebase/services/registration-service";
+import { useRouter } from "next/navigation";
 
 interface StepRegistrationProps {
   registration: Registration | null;
@@ -19,23 +26,62 @@ interface StepRegistrationProps {
 export default function StepRegistration({
   registration,
 }: StepRegistrationProps) {
-  const status = registration?.status;
-  const isFormSubmitted = status && status !== RegistrationStatus.DRAFT;
-  const isDocsUploaded = registration?.documents?.allUploaded ?? false;
-  const isPaymentUploaded = !!registration?.payment?.proofUrl;
-  const isFullyVerified = status === RegistrationStatus.VERIFIED;
+  const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showResume, setShowResume] = useState(false);
 
-  // Calculate Progress (0-4: completed steps)
+  // Status Checks
+  const status = registration?.status;
+
+  // Step 1: Data Diri
+  // Done if registration exists and status is not DRAFT (implies saved)
+  // If no registration, it's definitely not done.
+  const isStep1Done = !!registration && status !== RegistrationStatus.DRAFT;
+
+  // Step 2: Dokumen
+  // Done if all documents are marked uploaded
+  const isStep2Done = registration?.documents?.allUploaded ?? false;
+
+  // Step 3: Bayar & Bukti
+  // Done if proofUrl exists
+  const isStep3Done = !!registration?.payment?.proofUrl;
+
+  // Step 4: Final Submission Status
+  // "Submitted" status or Verified/Rejected means current status is beyond Step 4 (or Step 4 is done)
+  // We added SUBMITTED to enum.
+  const isSubmitted =
+    status === RegistrationStatus.SUBMITTED ||
+    status === RegistrationStatus.VERIFIED;
+
+  const isVerified = status === RegistrationStatus.VERIFIED;
+  const isRejected = status === RegistrationStatus.REJECTED;
+
+  // Progress Calculation
   let progress = 0;
-  if (isFormSubmitted) progress++;
-  if (step1Verified) progress++;
-  if (isDocsUploaded && step2Verified) progress++;
-  if (isPaymentUploaded && step3Verified) progress++;
+  if (isStep1Done) progress++;
+  if (isStep2Done) progress++;
+  if (isStep3Done) progress++;
+  if (isSubmitted) progress++;
 
   const percentage = (progress / 4) * 100;
 
+  const handleSubmit = async () => {
+    if (!registration) return;
+    try {
+      setIsSubmitting(true);
+      await submitRegistration(registration.id);
+      setShowResume(false);
+      router.refresh();
+    } catch (error) {
+      console.error("Error submitting registration:", error);
+      alert("Gagal mengirim pendaftaran. Silakan coba lagi.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
-    <div className="mb-8">
+    <div className="mb-8 relative">
       <h3 className="text-xl font-bold text-gray-800 mb-4 dark:text-gray-100">
         Langkah Pendaftaran
       </h3>
@@ -61,21 +107,17 @@ export default function StepRegistration({
           {/* STEP 1: DATA DIRI */}
           <div
             className={`relative rounded-2xl p-6 shadow-lg transition-all ${
-              step1Rejected
-                ? "bg-red-100 border-2 border-red-500 text-red-800 dark:bg-red-900/30 dark:text-red-300 dark:border-red-600"
-                : step1Verified
+              isStep1Done
                 ? "bg-green-600 text-white"
                 : "bg-gradient-to-br from-blue-500 to-blue-600 text-white"
             }`}
           >
             <div className="absolute top-4 right-4">
-              {step1Verified ? (
+              {isStep1Done ? (
                 <CheckCircle2 className="w-6 h-6" />
-              ) : step1Rejected ? (
-                <XCircle className="w-6 h-6" />
               ) : (
                 <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-bold">
-                  {isFormSubmitted ? "MENUNGGU VERIFIKASI" : "AKTIF"}
+                  PENDING
                 </span>
               )}
             </div>
@@ -83,64 +125,54 @@ export default function StepRegistration({
               <UserPen />
             </div>
             <h4 className="font-bold text-lg mb-2">Lengkapi Data Diri</h4>
-            <p
-              className={`text-sm mb-4 ${
-                step1Rejected
-                  ? "text-red-700 dark:text-red-200"
-                  : "text-blue-100"
-              }`}
-            >
-              {step1Verified
-                ? "Data diri telah diverifikasi"
-                : step1Rejected
-                ? `Ditolak: ${step1Rejected}`
+            <p className="text-sm mb-4 text-blue-100">
+              {isStep1Done
+                ? "Data diri telah disimpan"
                 : "Isi formulir dengan data pribadi dan akademik Anda"}
             </p>
-            {step1Verified ? (
-              <div className="flex items-center justify-center gap-2 w-full bg-white/20 py-3 rounded-xl font-bold">
-                <span>Selesai</span>
-              </div>
-            ) : (
+
+            {/* Always unlocked for editing unless submitted (Final Locked) */}
+            {!isSubmitted ? (
               <Link
                 href="/dashboard/fill-data"
                 className={`flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold transition ${
-                  step1Rejected
-                    ? "bg-red-600 text-white hover:bg-red-700"
-                    : "bg-white text-blue-600 hover:bg-blue-50 dark:bg-gray-900 dark:text-blue-400 dark:hover:bg-gray-800"
+                  isStep1Done
+                    ? "bg-white/20 hover:bg-white/30 text-white"
+                    : "bg-white text-blue-600 hover:bg-blue-50"
                 }`}
               >
-                <span>{isFormSubmitted ? "Edit Data" : "Mulai Sekarang"}</span>
+                <span>{isStep1Done ? "Edit Data" : "Mulai Sekarang"}</span>
                 <ArrowRight className="w-4 h-4" />
               </Link>
+            ) : (
+              <div className="flex items-center justify-center gap-2 w-full bg-white/20 py-3 rounded-xl font-bold">
+                <span>Terkunci</span>
+              </div>
             )}
           </div>
 
           {/* STEP 2: UPLOAD DOKUMEN */}
           <div
             className={`relative rounded-2xl p-6 transition-all ${
-              step2Rejected
-                ? "bg-red-100 border-2 border-red-500 text-red-800 dark:bg-red-900/30 dark:text-red-300 dark:border-red-600 shadow-md"
-                : step1Verified && !step2Verified
-                ? "bg-white border-2 border-blue-500 text-gray-800 dark:bg-gray-700 dark:text-white dark:border-blue-400 shadow-md"
-                : step2Verified
+              !isStep1Done
+                ? "bg-gray-100 text-gray-400 opacity-60 dark:bg-gray-700/50 dark:text-gray-500"
+                : isStep2Done
                 ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                : "bg-gray-100 text-gray-400 opacity-60 dark:bg-gray-700/50 dark:text-gray-500"
+                : "bg-white border-2 border-blue-500 text-gray-800 dark:bg-gray-700 dark:text-white dark:border-blue-400 shadow-md"
             }`}
           >
             <div className="absolute top-4 right-4">
-              {step2Verified ? (
+              {isStep2Done ? (
                 <CheckCircle2 className="w-6 h-6" />
-              ) : step2Rejected ? (
-                <XCircle className="w-6 h-6" />
-              ) : !step1Verified ? (
+              ) : !isStep1Done ? (
                 <Lock className="w-6 h-6" />
-              ) : isDocsUploaded ? (
+              ) : (
                 <Hourglass className="w-6 h-6 animate-pulse" />
-              ) : null}
+              )}
             </div>
             <div
               className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${
-                step1Verified && !step2Verified
+                isStep1Done && !isStep2Done
                   ? "bg-blue-100 text-blue-600"
                   : "bg-gray-200 dark:bg-gray-600"
               }`}
@@ -149,25 +181,21 @@ export default function StepRegistration({
             </div>
             <h4 className="font-bold text-lg mb-2">Upload Dokumen</h4>
             <p className="text-sm mb-4">
-              {step2Verified
-                ? "Dokumen telah diunggah dan diverifikasi"
-                : step2Rejected
-                ? `Ditolak: ${step2Rejected}`
-                : isDocsUploaded
-                ? "Menunggu verifikasi admin"
-                : "Unggah foto dan dokumen lainnya"}
+              {isStep2Done
+                ? "Dokumen lengkap"
+                : "Unggah foto dan dokumen pendukung"}
             </p>
 
-            {step1Verified && !step2Verified && !isDocsUploaded ? (
+            {isStep1Done && !isSubmitted ? (
               <Link href="/dashboard/upload-documents">
                 <button
                   className={`w-full py-3 rounded-xl font-bold transition ${
-                    step2Rejected
-                      ? "bg-red-600 text-white hover:bg-red-700"
+                    isStep2Done
+                      ? "bg-green-200 text-green-800 hover:bg-green-300"
                       : "bg-blue-600 text-white hover:bg-blue-700"
                   }`}
                 >
-                  {step2Rejected ? "Upload Ulang" : "Upload Sekarang"}
+                  {isStep2Done ? "Edit Dokumen" : "Upload Sekarang"}
                 </button>
               </Link>
             ) : (
@@ -175,11 +203,7 @@ export default function StepRegistration({
                 className="w-full bg-gray-200 text-gray-500 py-3 rounded-xl font-bold cursor-not-allowed dark:bg-gray-600 dark:text-gray-400"
                 disabled
               >
-                {step2Verified
-                  ? "Selesai"
-                  : isDocsUploaded
-                  ? "Menunggu Verifikasi"
-                  : "Terkunci"}
+                {isSubmitted ? "Terkunci" : "Terkunci"}
               </button>
             )}
           </div>
@@ -187,29 +211,25 @@ export default function StepRegistration({
           {/* STEP 3: BAYAR */}
           <div
             className={`relative rounded-2xl p-6 transition-all ${
-              step3Rejected
-                ? "bg-red-100 border-2 border-red-500 text-red-800 dark:bg-red-900/30 dark:text-red-300 dark:border-red-600 shadow-md"
-                : step2Verified && !step3Verified
-                ? "bg-white border-2 border-blue-500 text-gray-800 dark:bg-gray-700 dark:text-white dark:border-blue-400 shadow-md"
-                : step3Verified
+              !isStep2Done
+                ? "bg-gray-100 text-gray-400 opacity-60 dark:bg-gray-700/50 dark:text-gray-500"
+                : isStep3Done
                 ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                : "bg-gray-100 text-gray-400 opacity-60 dark:bg-gray-700/50 dark:text-gray-500"
+                : "bg-white border-2 border-blue-500 text-gray-800 dark:bg-gray-700 dark:text-white dark:border-blue-400 shadow-md"
             }`}
           >
             <div className="absolute top-4 right-4">
-              {step3Verified ? (
+              {isStep3Done ? (
                 <CheckCircle2 className="w-6 h-6" />
-              ) : step3Rejected ? (
-                <XCircle className="w-6 h-6" />
-              ) : !step2Verified ? (
+              ) : !isStep2Done ? (
                 <Lock className="w-6 h-6" />
-              ) : isPaymentUploaded ? (
+              ) : (
                 <Hourglass className="w-6 h-6 animate-pulse" />
-              ) : null}
+              )}
             </div>
             <div
               className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${
-                step2Verified && !step3Verified
+                isStep2Done && !isStep3Done
                   ? "bg-blue-100 text-blue-600"
                   : "bg-gray-200 dark:bg-gray-600"
               }`}
@@ -218,24 +238,20 @@ export default function StepRegistration({
             </div>
             <h4 className="font-bold text-lg mb-2">Bayar & Bukti</h4>
             <p className="text-sm mb-4">
-              {step3Verified
-                ? "Pembayaran telah diverifikasi"
-                : step3Rejected
-                ? `Ditolak: ${step3Rejected}`
-                : isPaymentUploaded
-                ? "Menunggu verifikasi admin"
-                : "Transfer Rp 10.000 dan upload bukti"}
+              {isStep3Done
+                ? "Bukti pembayaran terupload"
+                : "Transfer dan upload bukti"}
             </p>
-            {step2Verified && !step3Verified && !isPaymentUploaded ? (
+            {isStep2Done && !isSubmitted ? (
               <Link href="/dashboard/payment">
                 <button
                   className={`w-full py-3 rounded-xl font-bold transition ${
-                    step3Rejected
-                      ? "bg-red-600 text-white hover:bg-red-700"
+                    isStep3Done
+                      ? "bg-green-200 text-green-800 hover:bg-green-300"
                       : "bg-blue-600 text-white hover:bg-blue-700"
                   }`}
                 >
-                  {step3Rejected ? "Upload Ulang" : "Bayar Sekarang"}
+                  {isStep3Done ? "Edit/Bayar" : "Bayar Sekarang"}
                 </button>
               </Link>
             ) : (
@@ -243,11 +259,7 @@ export default function StepRegistration({
                 className="w-full bg-gray-200 text-gray-500 py-3 rounded-xl font-bold cursor-not-allowed dark:bg-gray-600 dark:text-gray-400"
                 disabled
               >
-                {step3Verified
-                  ? "Selesai"
-                  : isPaymentUploaded
-                  ? "Menunggu Verifikasi"
-                  : "Terkunci"}
+                {isSubmitted ? "Terkunci" : "Terkunci"}
               </button>
             )}
           </div>
@@ -255,50 +267,143 @@ export default function StepRegistration({
           {/* STEP 4: VERIFIKASI FINAL */}
           <div
             className={`relative rounded-2xl p-6 transition-all ${
-              isFullyVerified
-                ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300"
-                : step3Verified
-                ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 border border-yellow-200"
-                : "bg-gray-100 text-gray-400 opacity-60 dark:bg-gray-700/50 dark:text-gray-500"
+              isSubmitted
+                ? isVerified
+                  ? "bg-green-600 text-white"
+                  : isRejected
+                  ? "bg-red-100 border-2 border-red-500 text-red-800"
+                  : "bg-blue-100 text-blue-800 border border-blue-200"
+                : isStep3Done
+                ? "bg-white border-2 border-blue-500 text-gray-800 shadow-md"
+                : "bg-gray-100 text-gray-400 opacity-60"
             }`}
           >
             <div className="absolute top-4 right-4">
-              {isFullyVerified ? (
+              {isVerified ? (
                 <CheckCircle2 className="w-6 h-6" />
-              ) : !step3Verified ? (
+              ) : isRejected ? (
+                <XCircle className="w-6 h-6" />
+              ) : isSubmitted ? (
+                <Hourglass className="w-6 h-6 animate-pulse" />
+              ) : !isStep3Done ? (
                 <Lock className="w-6 h-6" />
               ) : (
-                <Hourglass className="w-6 h-6 animate-pulse" />
+                <Send className="w-6 h-6 text-blue-600" />
               )}
             </div>
             <div
               className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${
-                step3Verified && !isFullyVerified
-                  ? "bg-yellow-200 text-yellow-700"
-                  : "bg-gray-200 dark:bg-gray-600"
+                isSubmitted
+                  ? "bg-white/20 backdrop-blur-sm"
+                  : isStep3Done
+                  ? "bg-blue-100 text-blue-600"
+                  : "bg-gray-200"
               }`}
             >
-              <Hourglass />
+              <FileText />
             </div>
             <h4 className="font-bold text-lg mb-2">Verifikasi</h4>
             <p className="text-sm mb-4">
-              {isFullyVerified
-                ? "Pendaftaran Diterima"
-                : "Admin memverifikasi semua data"}
+              {isVerified
+                ? "Pendaftaran Diterima!"
+                : isRejected
+                ? "Pendaftaran Ditolak."
+                : isSubmitted
+                ? "Menunggu verifikasi admin"
+                : "Cek kembali dan kirim"}
             </p>
-            <button
-              className="w-full bg-transparent border border-current py-3 rounded-xl font-bold opacity-50 cursor-default"
-              disabled
-            >
-              {isFullyVerified
-                ? "Verified"
-                : step3Verified
-                ? "Menunggu"
-                : "Terkunci"}
-            </button>
+
+            {isStep3Done && !isSubmitted ? (
+              <button
+                onClick={() => setShowResume(true)}
+                className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition"
+              >
+                Verifikasi & Kirim
+              </button>
+            ) : (
+              <button
+                className={`w-full py-3 rounded-xl font-bold cursor-default ${
+                  isSubmitted ? "bg-white/20" : "bg-gray-200 text-gray-500"
+                }`}
+                disabled
+              >
+                {isVerified ? "Selesai" : isSubmitted ? "Menunggu" : "Terkunci"}
+              </button>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Resume Modal */}
+      {showResume && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto dark:bg-gray-800">
+            <div className="p-6">
+              <h3 className="text-2xl font-bold mb-4 dark:text-white">
+                Konfirmasi Pendaftaran
+              </h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-6">
+                Pastikan seluruh data yang Anda masukkan sudah benar. Setelah
+                dikirim, data tidak dapat diubah lagi sampai admin melakukan
+                verifikasi.
+              </p>
+
+              <div className="space-y-4 mb-8">
+                <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg dark:bg-green-900/20">
+                  <CheckCircle2 className="text-green-600" />
+                  <div>
+                    <p className="font-bold text-gray-800 dark:text-gray-200">
+                      Data Diri
+                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Telah terisi
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg dark:bg-green-900/20">
+                  <CheckCircle2 className="text-green-600" />
+                  <div>
+                    <p className="font-bold text-gray-800 dark:text-gray-200">
+                      Dokumen
+                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Semua dokumen terupload
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg dark:bg-green-900/20">
+                  <CheckCircle2 className="text-green-600" />
+                  <div>
+                    <p className="font-bold text-gray-800 dark:text-gray-200">
+                      Pembayaran
+                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      Bukti pembayaran terupload
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setShowResume(false)}
+                  className="flex-1 py-3 px-4 rounded-xl font-bold text-gray-600 hover:bg-gray-100 transition dark:text-gray-300 dark:hover:bg-gray-700"
+                  disabled={isSubmitting}
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  className="flex-1 py-3 px-4 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700 transition flex items-center justify-center gap-2"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Mengirim..." : "Kirim Pendaftaran"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

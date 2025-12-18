@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { getMaterials } from "@/lib/firebase/materials";
 import { getTasks } from "@/lib/firebase/tasks";
 import { getTaskSubmissions } from "@/lib/firebase/task-submissions";
-import { getRegistrationById } from "@/lib/firebase/registrations";
+import { getRegistrationById } from "@/lib/firebase/services/registration-service";
 import { Material } from "@/types/materials";
 import { Task, TaskSubmission } from "@/types/tasks";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,10 +18,12 @@ export default function LearningPage() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [orPeriod, setOrPeriod] = useState<string | null>(null);
-  
+
   const [materials, setMaterials] = useState<Material[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [submissions, setSubmissions] = useState<Record<string, TaskSubmission>>({});
+  const [submissions, setSubmissions] = useState<
+    Record<string, TaskSubmission>
+  >({});
 
   useEffect(() => {
     async function fetchData() {
@@ -29,7 +31,7 @@ export default function LearningPage() {
 
       try {
         setLoading(true);
-        
+
         // 1. Get User Registration to find orPeriod
         const registration = await getRegistrationById(user.uid);
         if (!registration) {
@@ -41,17 +43,17 @@ export default function LearningPage() {
 
         // 2. Fetch Materials & Tasks in parallel
         const [materialsData, tasksData, submissionsData] = await Promise.all([
-          getMaterials({ 
-            orPeriod: registration.orPeriod, 
-            isPublic: true 
+          getMaterials({
+            orPeriod: registration.orPeriod,
+            isPublic: true,
           }),
-          getTasks({ 
-            orPeriod: registration.orPeriod, 
-            isVisible: true 
+          getTasks({
+            orPeriod: registration.orPeriod,
+            isVisible: true,
           }),
-          getTaskSubmissions({ 
-            userId: user.uid 
-          })
+          getTaskSubmissions({
+            userId: user.uid,
+          }),
         ]);
 
         setMaterials(materialsData);
@@ -59,11 +61,10 @@ export default function LearningPage() {
 
         // Map submissions by taskId for O(1) access
         const subMap: Record<string, TaskSubmission> = {};
-        submissionsData.forEach(sub => {
+        submissionsData.forEach((sub) => {
           subMap[sub.taskId] = sub;
         });
         setSubmissions(subMap);
-
       } catch (error) {
         console.error("Error fetching learning data:", error);
       } finally {
@@ -125,7 +126,7 @@ export default function LearningPage() {
         </TabsContent>
 
         <TabsContent value="tasks" className="space-y-4">
-           {tasks.length === 0 ? (
+          {tasks.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               Belum ada tugas yang tersedia.
             </div>
@@ -141,13 +142,13 @@ export default function LearningPage() {
                   return a.deadline.toMillis() - b.deadline.toMillis();
                 })
                 .map((task) => (
-                  <TaskCard 
-                    key={task.id} 
-                    task={task} 
+                  <TaskCard
+                    key={task.id}
+                    task={task}
                     submission={submissions[task.id]}
                     currentUserId={user!.uid}
                   />
-              ))}
+                ))}
             </div>
           )}
         </TabsContent>

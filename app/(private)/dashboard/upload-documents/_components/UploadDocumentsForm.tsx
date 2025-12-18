@@ -16,12 +16,15 @@ import {
   X,
 } from "lucide-react";
 import { Registration } from "@/types/registrations";
-import { submitStep2Documents } from "@/lib/firebase/services/registration-service";
 import {
   uploadFileWithProgress,
   validateFileSize,
   validateFileType,
 } from "@/lib/firebase/services/storage-service";
+import { updateRegistration } from "@/lib/firebase/services/registration-service";
+import { doc, updateDoc, Timestamp } from "firebase/firestore";
+import { db } from "@/lib/firebaseConfig";
+import { RegistrationStatus } from "@/types/registrations";
 import UploadProgressModal from "./UploadProgressModal";
 
 interface UploadDocumentsFormProps {
@@ -174,15 +177,20 @@ export default function UploadDocumentsForm({
         youtubeSubscribeUrl: "",
       };
 
+      // Helper to get extension
+      const getExt = (file: File) => file.name.split(".").pop() || "jpg";
+
       // 1. Upload Foto Profil
       updateStepProgress(0, 0, "uploading");
       if (photoFile.file) {
-        uploadedUrls.photoUrl = await uploadFileWithProgress(
-          user.uid,
+        const ext = getExt(photoFile.file);
+        const path = `users/${user.uid}/profile.${ext}`;
+        const result = await uploadFileWithProgress(
+          path,
           photoFile.file,
-          "photo",
           (progress) => updateStepProgress(0, progress, "uploading")
         );
+        uploadedUrls.photoUrl = result.path;
       } else {
         uploadedUrls.photoUrl = photoFile.preview;
       }
@@ -191,12 +199,16 @@ export default function UploadDocumentsForm({
       // 2. Upload Bukti Follow IG Robotik
       updateStepProgress(1, 0, "uploading");
       if (igRobotikFile.file) {
-        uploadedUrls.igRobotikFollowUrl = await uploadFileWithProgress(
-          user.uid,
+        const ext = getExt(igRobotikFile.file);
+        const path = `registrations/${
+          user.uid
+        }/ig_robotik_follow_${Date.now()}.${ext}`;
+        const result = await uploadFileWithProgress(
+          path,
           igRobotikFile.file,
-          "ig-robotik-follow",
           (progress) => updateStepProgress(1, progress, "uploading")
         );
+        uploadedUrls.igRobotikFollowUrl = result.path;
       } else {
         uploadedUrls.igRobotikFollowUrl = igRobotikFile.preview;
       }
@@ -205,12 +217,16 @@ export default function UploadDocumentsForm({
       // 3. Upload Bukti Follow IG MRC
       updateStepProgress(2, 0, "uploading");
       if (igMrcFile.file) {
-        uploadedUrls.igMrcFollowUrl = await uploadFileWithProgress(
-          user.uid,
+        const ext = getExt(igMrcFile.file);
+        const path = `registrations/${
+          user.uid
+        }/ig_mrc_follow_${Date.now()}.${ext}`;
+        const result = await uploadFileWithProgress(
+          path,
           igMrcFile.file,
-          "ig-mrc-follow",
           (progress) => updateStepProgress(2, progress, "uploading")
         );
+        uploadedUrls.igMrcFollowUrl = result.path;
       } else {
         uploadedUrls.igMrcFollowUrl = igMrcFile.preview;
       }
@@ -219,12 +235,16 @@ export default function UploadDocumentsForm({
       // 4. Upload Bukti Subscribe YT Robotik
       updateStepProgress(3, 0, "uploading");
       if (youtubeFile.file) {
-        uploadedUrls.youtubeSubscribeUrl = await uploadFileWithProgress(
-          user.uid,
+        const ext = getExt(youtubeFile.file);
+        const path = `registrations/${
+          user.uid
+        }/youtube_subscribe_${Date.now()}.${ext}`;
+        const result = await uploadFileWithProgress(
+          path,
           youtubeFile.file,
-          "youtube-subscribe",
           (progress) => updateStepProgress(3, progress, "uploading")
         );
+        uploadedUrls.youtubeSubscribeUrl = result.path;
       } else {
         uploadedUrls.youtubeSubscribeUrl = youtubeFile.preview;
       }
@@ -232,17 +252,33 @@ export default function UploadDocumentsForm({
 
       // Upload KTM jika ada
       if (ktmFile.file) {
-        uploadedUrls.ktmUrl = await uploadFileWithProgress(
-          user.uid,
-          ktmFile.file,
-          "ktm"
-        );
+        const ext = getExt(ktmFile.file);
+        const path = `registrations/${user.uid}/ktm_${Date.now()}.${ext}`;
+        const result = await uploadFileWithProgress(path, ktmFile.file);
+        uploadedUrls.ktmUrl = result.path;
       } else if (ktmFile.preview) {
         uploadedUrls.ktmUrl = ktmFile.preview;
       }
 
-      // Simpan semua URL ke database
-      await submitStep2Documents(user.uid, uploadedUrls);
+      // Update Registration Document
+      await updateRegistration(user.uid, {
+        documents: {
+          ...registration?.documents,
+          ...uploadedUrls,
+          allUploaded: true,
+          uploadedAt: Timestamp.now(),
+        },
+        status: RegistrationStatus.DOCUMENTS_UPLOADED,
+      });
+
+      // Update User Profile (photoUrl & ktmUrl)
+      // Assuming 'users_new' is the collection name based on other services
+      const userRef = doc(db, "users_new", user.uid);
+      await updateDoc(userRef, {
+        "profile.photoUrl": uploadedUrls.photoUrl,
+        "profile.ktmUrl": uploadedUrls.ktmUrl || null,
+        updatedAt: Timestamp.now(),
+      });
 
       toast.success("Semua dokumen berhasil diunggah", {
         description: "Menunggu verifikasi dari admin",
