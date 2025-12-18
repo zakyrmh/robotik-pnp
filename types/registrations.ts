@@ -1,13 +1,4 @@
-import { PaymentMethod, RegistrationStatus } from "@/types/enum";
 import { Timestamp } from "firebase/firestore";
-
-export interface StepVerificationData {
-  verified: boolean;
-  verifiedBy?: string;
-  verifiedAt?: Timestamp;
-  rejectionReason?: string;
-  notes?: string;
-}
 
 export interface Registration {
   id: string;
@@ -16,28 +7,31 @@ export interface Registration {
   registrationId: string;
   status: RegistrationStatus;
 
-  // Step Verifications
-  stepVerifications: {
-    step1FormData: StepVerificationData;      // Verifikasi data diri
-    step2Documents: StepVerificationData;     // Verifikasi dokumen
-    step3Payment: StepVerificationData;       // Verifikasi pembayaran
-  };
-
   documents: RegistrationDocuments;
-  
+
   payment: PaymentData;
-  
+
   verification?: VerificationData;
-  
+
   motivation: string;
   experience?: string;
   achievement?: string;
-  
+
   canEdit: boolean;
-  
+
   submittedAt?: Timestamp;
   createdAt: Timestamp;
   updatedAt: Timestamp;
+}
+
+export enum RegistrationStatus {
+  DRAFT = "draft",
+  FORM_SUBMITTED = "form_submitted",
+  FORM_VERIFIED = "form_verified",
+  DOCUMENTS_UPLOADED = "documents_uploaded",
+  PAYMENT_PENDING = "payment_pending",
+  VERIFIED = "verified",
+  REJECTED = "rejected",
 }
 
 export interface RegistrationDocuments {
@@ -52,21 +46,27 @@ export interface RegistrationDocuments {
 
 export interface PaymentData {
   method: PaymentMethod;
-  
+
   bankName?: string;
   accountNumber?: string;
   accountName?: string;
-  
+
   ewalletProvider?: string;
   ewalletNumber?: string;
-  
+
   proofUrl?: string;
   proofUploadedAt?: Timestamp;
-  
+
   verified: boolean;
   verifiedBy?: string;
   verifiedAt?: Timestamp;
   rejectionReason?: string;
+}
+
+export enum PaymentMethod {
+  TRANSFER = "transfer",
+  E_WALLET = "e_wallet",
+  CASH = "cash",
 }
 
 export interface VerificationData {

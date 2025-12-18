@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Mail, ArrowRight, RefreshCw } from "lucide-react";
 
-import { sendEmailVerification, signOut } from "firebase/auth";
-import { auth } from "@/lib/firebaseConfig";
+import { VerificationService } from "@/lib/firebase/services/verification";
 import { toast, Toaster } from "sonner";
+import { User } from "firebase/auth";
 
 export default function VerificationPendingPage() {
   const router = useRouter();
@@ -15,32 +15,29 @@ export default function VerificationPendingPage() {
   const [timer, setTimer] = useState(60);
   const [canResend, setCanResend] = useState(false);
   const [isResending, setIsResending] = useState(false);
-  const [currentUser, setCurrentUser] = useState(auth.currentUser);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   useEffect(() => {
     // Check auth state
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribe = VerificationService.subscribeToAuthChanges((user) => {
       setCurrentUser(user);
       if (user?.emailVerified) {
         toast.success("Email sudah terverifikasi. Mengalihkan ke login...");
-        signOut(auth).then(() => router.push("/login"));
+        VerificationService.logout().then(() => router.push("/login"));
       }
     });
 
     // Interval to poll verification status
     const interval = setInterval(async () => {
-      if (auth.currentUser) {
-        try {
-          // console.log("Checking verification status...");
-          await auth.currentUser.reload();
-          if (auth.currentUser.emailVerified) {
-            toast.success("Email berhasil diverifikasi! Silakan login.");
-            await signOut(auth);
-            router.push("/login");
-          }
-        } catch (error) {
-          console.error("Error checking verification", error);
+      try {
+        const isVerified = await VerificationService.checkEmailVerified();
+        if (isVerified) {
+          toast.success("Email berhasil diverifikasi! Silakan login.");
+          await VerificationService.logout();
+          router.push("/login");
         }
+      } catch {
+        // Error logged in service
       }
     }, 2000);
 
@@ -73,9 +70,9 @@ export default function VerificationPendingPage() {
 
     setIsResending(true);
     try {
-      await sendEmailVerification(currentUser);
+      await VerificationService.resendVerificationEmail();
       toast.success("Email verifikasi dikirim ulang!");
-      setTimer(60); // Reset timer 1 minute
+      setTimer(60);
       setCanResend(false);
     } catch (error: unknown) {
       console.error("Resend error:", error);
@@ -92,7 +89,7 @@ export default function VerificationPendingPage() {
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      await VerificationService.logout();
       router.push("/login");
     } catch (error) {
       console.error("Logout error", error);

@@ -15,7 +15,7 @@ import {
   ArrowRight,
   Loader2,
 } from "lucide-react";
-import { toast } from "sonner"; // Use sonner toast like LoginForm
+import { toast } from "sonner";
 
 import { registerUser } from "@/lib/firebase/auth";
 import Link from "next/link";
@@ -101,7 +101,7 @@ export default function RegisterForm() {
           UKM Robotik PNP
         </h1>
         <p className="text-gray-300 dark:text-gray-400 text-sm">
-          Daftar anggota baru
+          Daftar calon anggota baru
         </p>
       </motion.div>
 

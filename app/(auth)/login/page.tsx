@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   title: "Login | Robotik PNP",
 };
 
-export default function RegisterPage() {
+export default function LoginPage() {
   return (
     <>
       <LoginForm />

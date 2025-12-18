@@ -19,21 +19,6 @@ interface StepRegistrationProps {
 export default function StepRegistration({
   registration,
 }: StepRegistrationProps) {
-  // Extract verification data
-  const step1Verified =
-    registration?.stepVerifications?.step1FormData?.verified ?? false;
-  const step2Verified =
-    registration?.stepVerifications?.step2Documents?.verified ?? false;
-  const step3Verified =
-    registration?.stepVerifications?.step3Payment?.verified ?? false;
-
-  const step1Rejected =
-    registration?.stepVerifications?.step1FormData?.rejectionReason;
-  const step2Rejected =
-    registration?.stepVerifications?.step2Documents?.rejectionReason;
-  const step3Rejected =
-    registration?.stepVerifications?.step3Payment?.rejectionReason;
-
   const status = registration?.status;
   const isFormSubmitted = status && status !== RegistrationStatus.DRAFT;
   const isDocsUploaded = registration?.documents?.allUploaded ?? false;

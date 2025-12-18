@@ -2,11 +2,10 @@
 
 import { useEffect, useState } from "react";
 import RegisterForm from "./_components/register-form";
-import { getAppSettings } from "@/lib/firebase/settings";
+import { registrationStatus } from "@/lib/firebase/settings";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Toaster } from "sonner"; // Import Toaster
 
 export default function RegisterPage() {
   const [isRegistrationOpen, setIsRegistrationOpen] = useState<boolean | null>(
@@ -16,19 +15,9 @@ export default function RegisterPage() {
 
   useEffect(() => {
     const checkSettings = async () => {
-      try {
-        const settings = await getAppSettings();
-        if (settings && typeof settings.registrationOpen === "boolean") {
-          setIsRegistrationOpen(settings.registrationOpen);
-        } else {
-          setIsRegistrationOpen(settings?.registrationOpen ?? false);
-        }
-      } catch (error) {
-        console.error("Failed to check registration settings", error);
-        setIsRegistrationOpen(false);
-      } finally {
-        setLoading(false);
-      }
+      const isOpen = await registrationStatus();
+      setIsRegistrationOpen(isOpen);
+      setLoading(false);
     };
 
     checkSettings();
@@ -77,7 +66,6 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-900 via-slate-900 to-blue-800 dark:from-gray-900 dark:via-slate-900 dark:to-gray-800 flex items-center justify-center p-4">
       <RegisterForm />
-      <Toaster richColors position="top-right" />
     </div>
   );
 }

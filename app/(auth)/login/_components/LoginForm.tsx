@@ -6,9 +6,7 @@ import { Mail, Lock, Eye, EyeOff, User, ArrowRight } from "lucide-react";
 import { toast, Toaster } from "sonner";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebaseConfig";
-import { FirebaseError } from "firebase/app";
+import { loginUser } from "@/lib/firebase/auth";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -44,15 +42,14 @@ export default function LoginPage() {
         return;
       }
 
-      // Sign in dengan Firebase Auth
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email,
-        password
-      );
+      // Sign in dengan Login Helper
+      const result = await loginUser(email, password);
 
-      // Dapatkan ID Token
-      const idToken = await userCredential.user.getIdToken();
+      if (!result.success || !result.idToken) {
+        toast.error(result.error);
+        setIsLoading(false);
+        return;
+      }
 
       // Kirim ID Token ke server untuk create session cookie
       const response = await fetch("/api/auth/session", {
@@ -60,7 +57,7 @@ export default function LoginPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ idToken, rememberMe }),
+        body: JSON.stringify({ idToken: result.idToken, rememberMe }),
       });
 
       if (!response.ok) {
@@ -84,40 +81,8 @@ export default function LoginPage() {
       // Redirect langsung tanpa timeout/refresh untuk avoid race condition
       router.push(redirectTo || "/dashboard");
     } catch (error) {
-      if (error instanceof FirebaseError) {
-        console.error("Login error:", error);
-
-        // Handle Firebase Auth errors
-        let errorMessage = "Terjadi kesalahan saat login";
-
-        switch (error.code) {
-          case "auth/user-not-found":
-            errorMessage = "Email tidak terdaftar";
-            break;
-          case "auth/wrong-password":
-            errorMessage = "Password salah";
-            break;
-          case "auth/invalid-email":
-            errorMessage = "Format email tidak valid";
-            break;
-          case "auth/user-disabled":
-            errorMessage = "Akun Anda telah dinonaktifkan";
-            break;
-          case "auth/too-many-requests":
-            errorMessage = "Terlalu banyak percobaan login. Coba lagi nanti";
-            break;
-          case "auth/network-request-failed":
-            errorMessage = "Koneksi internet bermasalah";
-            break;
-          case "auth/invalid-credential":
-            errorMessage = "Email atau password salah";
-            break;
-          default:
-            errorMessage = error.message || "Terjadi kesalahan saat login";
-        }
-
-        toast.error(errorMessage);
-      }
+      console.error("Unexpected login error:", error);
+      toast.error("Terjadi kesalahan tidak terduga saat login.");
     } finally {
       setIsLoading(false);
     }

@@ -21,3 +21,17 @@ export const getAppSettings = async (): Promise<AppSettings | null> => {
     return null;
   }
 };
+
+export const registrationStatus = async (): Promise<boolean> => {
+  try {
+    const settings = await getAppSettings();
+    if (settings && typeof settings.registrationOpen === "boolean") {
+      return settings.registrationOpen;
+    } else {
+      return settings?.registrationOpen ?? false;
+    }
+  } catch (error) {
+    console.error("Failed to check registration settings", error);
+    return false;
+  }
+};

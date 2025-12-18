@@ -130,14 +130,6 @@ export enum TaskStatus {
   REVISION_REQUIRED = 'revision_required',
 }
 
-/**
- * Metode pembayaran
- */
-export enum PaymentMethod {
-  TRANSFER = 'transfer',
-  E_WALLET = 'e_wallet',
-  CASH = 'cash',
-}
 
 /**
  * Tipe notifikasi

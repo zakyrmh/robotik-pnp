@@ -113,6 +113,15 @@ export function useAuth() {
     setError(null);
 
     try {
+      // Set offline status in RTDB before signing out
+      if (auth.currentUser) {
+        // Dynamic import to avoid circular dependencies if any, though likely safe to import at top
+        const { setUserOffline } = await import(
+          "@/lib/firebase/services/user-status"
+        );
+        await setUserOffline(auth.currentUser.uid);
+      }
+
       // Sign out dari Firebase Auth
       await firebaseSignOut(auth);
 
