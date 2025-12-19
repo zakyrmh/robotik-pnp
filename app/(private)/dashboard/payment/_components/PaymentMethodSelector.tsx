@@ -1,4 +1,4 @@
-import { PaymentMethod } from "@/types/enum";
+import { PaymentMethod } from "@/types/registrations";
 import { Banknote, CreditCard, Wallet } from "lucide-react";
 
 interface PaymentMethodSelectorProps {

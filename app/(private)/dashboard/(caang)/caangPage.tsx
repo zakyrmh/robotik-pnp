@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { db } from "@/lib/firebaseConfig";
-import { doc, getDoc } from "firebase/firestore";
+import { getRegistrationById } from "@/lib/firebase/services/registration-service";
 import { Registration } from "@/types/registrations";
 import Loading from "@/components/Loading";
 import { RegistrationStatus } from "@/types/enum";
@@ -19,11 +18,10 @@ export default function CaangDashboard() {
 
     const fetchData = async () => {
       try {
-        const caangRef = doc(db, "registrations", user.uid);
-        const caangSnap = await getDoc(caangRef);
+        const data = await getRegistrationById(user.uid);
 
-        if (caangSnap.exists()) {
-          setCaang(caangSnap.data() as Registration);
+        if (data) {
+          setCaang(data);
         } else {
           console.warn("Dokumen registration tidak ditemukan untuk user ini!");
         }
@@ -57,7 +55,7 @@ export default function CaangDashboard() {
     (status === RegistrationStatus.VERIFIED && verification?.verified) || false;
 
   // Cek Waiting (Dashboard 2)
-  const isWaiting = status === RegistrationStatus.PAYMENT_PENDING;
+  const isWaiting = status === RegistrationStatus.SUBMITTED;
 
   // DASHBOARD 3: PELATIHAN (Verified)
   if (isVerified) {

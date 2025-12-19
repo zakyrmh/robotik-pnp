@@ -7,11 +7,19 @@ import { User as FirebaseUser } from "firebase/auth";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Upload } from "lucide-react";
-import { Registration } from "@/types/registrations";
-import { submitStep3Payment } from "@/lib/firebase/services/registration-service";
-import { storage } from "@/lib/firebaseConfig";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
-import { PaymentMethod } from "@/types/enum";
+import {
+  PaymentMethod,
+  Registration,
+  RegistrationStatus,
+  PaymentData,
+} from "@/types/registrations";
+import { updateRegistration } from "@/lib/firebase/services/registration-service";
+import { Timestamp } from "firebase/firestore";
+import {
+  uploadFileWithProgress,
+  deleteFile,
+  getFileUrl,
+} from "@/lib/firebase/services/storage-service";
 import UploadProgressModal from "../../upload-documents/_components/UploadProgressModal";
 import PaymentInstructions from "./PaymentInstructions";
 import PaymentMethodSelector from "./PaymentMethodSelector";
@@ -67,10 +75,29 @@ export default function PaymentForm({ user, registration }: PaymentFormProps) {
   useEffect(() => {
     return () => {
       if (previewUrl && !previewUrl.startsWith("http")) {
-        URL.revokeObjectURL(previewUrl);
+        // Only revoke blob URLs created locally, not firebase storage paths that haven't been resolved yet?
+        // Actually blob urls start with blob:
+        if (previewUrl.startsWith("blob:")) {
+          URL.revokeObjectURL(previewUrl);
+        }
       }
     };
   }, [previewUrl]);
+
+  // Resolve preview URL if it's a storage path
+  useEffect(() => {
+    const resolveUrl = async () => {
+      if (
+        registration?.payment?.proofUrl &&
+        !registration.payment.proofUrl.startsWith("http") &&
+        !registration.payment.proofUrl.startsWith("blob:")
+      ) {
+        const url = await getFileUrl(registration.payment.proofUrl);
+        if (url) setPreviewUrl(url);
+      }
+    };
+    resolveUrl();
+  }, [registration?.payment?.proofUrl]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -103,38 +130,26 @@ export default function PaymentForm({ user, registration }: PaymentFormProps) {
   const uploadProof = async (file: File): Promise<string> => {
     if (!user) throw new Error("User not found");
 
-    return new Promise((resolve, reject) => {
-      const storageRef = ref(
-        storage,
-        `registrations/${user.uid}/payment/${Date.now()}_${file.name}`
-      );
+    const storagePath = `registrations/${user.uid}/payment/${Date.now()}_${
+      file.name
+    }`;
 
-      const uploadTask = uploadBytesResumable(storageRef, file);
+    updateStep(0, { status: "uploading", progress: 0 });
 
-      updateStep(0, { status: "uploading", progress: 0 });
-
-      uploadTask.on(
-        "state_changed",
-        (snapshot) => {
-          const progress =
-            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          updateStep(0, { progress: Math.round(progress) });
-        },
-        (error) => {
-          console.error("Upload error:", error);
-          reject(error);
-        },
-        async () => {
-          try {
-            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-            updateStep(0, { status: "completed", progress: 100 });
-            resolve(downloadURL);
-          } catch (error) {
-            reject(error);
-          }
+    try {
+      const result = await uploadFileWithProgress(
+        storagePath,
+        file,
+        (progress) => {
+          updateStep(0, { progress });
         }
       );
-    });
+      updateStep(0, { status: "completed", progress: 100 });
+      return result.path;
+    } catch (error) {
+      console.error("Upload error:", error);
+      throw error;
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -163,6 +178,10 @@ export default function PaymentForm({ user, registration }: PaymentFormProps) {
       }
     }
 
+    // Tracking for transaction simulation
+    let newUploadedUrl: string | null = null;
+    const oldProofUrl = registration?.payment?.proofUrl;
+
     try {
       setShowProgressModal(true);
 
@@ -173,29 +192,51 @@ export default function PaymentForm({ user, registration }: PaymentFormProps) {
         updateStep(0, { status: "uploading", progress: 0 });
         updateStep(1, { status: "pending", progress: 0 });
 
+        // Note: uploadProof returns the Download URL
         finalProofUrl = await uploadProof(selectedFile);
+        newUploadedUrl = finalProofUrl;
 
-        // Update local state purely for consistency (mostly redirect handles next)
+        // Update local state
         setPaymentData((prev) => ({ ...prev, proofUrl: finalProofUrl }));
       } else {
         // Skip upload step if reusing existing file
         updateStep(0, { status: "completed", progress: 100 });
       }
 
-      // Step 2: Save Data
+      // Step 2: Save Data (Firestore Transaction Point)
       updateStep(1, { status: "uploading", progress: 0 });
 
-      await submitStep3Payment(user.uid, {
+      const paymentUpdate: PaymentData = {
         method: paymentData.method,
-        bankName: paymentData.bankName,
-        accountNumber: paymentData.accountNumber,
-        accountName: paymentData.accountName,
-        ewalletProvider: paymentData.ewalletProvider,
-        ewalletNumber: paymentData.ewalletNumber,
         proofUrl: finalProofUrl,
+        proofUploadedAt: Timestamp.now(),
+        verified: false,
+      };
+
+      if (paymentData.method === PaymentMethod.TRANSFER) {
+        paymentUpdate.bankName = paymentData.bankName;
+        paymentUpdate.accountNumber = paymentData.accountNumber;
+        paymentUpdate.accountName = paymentData.accountName;
+      } else if (paymentData.method === PaymentMethod.E_WALLET) {
+        paymentUpdate.ewalletProvider = paymentData.ewalletProvider;
+        paymentUpdate.ewalletNumber = paymentData.ewalletNumber;
+      }
+
+      await updateRegistration(user.uid, {
+        payment: paymentUpdate,
+        status: RegistrationStatus.PAYMENT_PENDING,
       });
 
       updateStep(1, { status: "completed", progress: 100 });
+
+      // Step 3: Success Compensation (Delete OLD file)
+      // Only delete if we uploaded a NEW file and there was an OLD one
+      if (newUploadedUrl && oldProofUrl && newUploadedUrl !== oldProofUrl) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        deleteFile(oldProofUrl).catch((err: any) =>
+          console.warn("Failed to delete old payment proof:", err)
+        );
+      }
 
       toast.success("Pembayaran berhasil diunggah", {
         description: "Menunggu verifikasi dari admin",
@@ -205,7 +246,20 @@ export default function PaymentForm({ user, registration }: PaymentFormProps) {
         router.push("/dashboard");
       }, 1500);
     } catch (error) {
-      console.error("Error submitting payment:", error);
+      console.error("Error submitting payment (Rolling back):", error);
+
+      // Step 4: Failure Compensation (Rollback - Delete NEW file)
+      if (newUploadedUrl) {
+        toast.info("Membatalkan upload...", { duration: 2000 });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        await deleteFile(newUploadedUrl).catch((cleanupErr: any) =>
+          console.error(
+            "Critical: Failed to rollback payment proof:",
+            cleanupErr
+          )
+        );
+      }
+
       toast.error("Gagal memproses pembayaran");
       setShowProgressModal(false);
     }

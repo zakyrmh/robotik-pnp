@@ -1,25 +1,9 @@
-import { PaymentMethod } from "@/types/enum";
+import { PaymentMethod, PaymentFormState } from "@/types/registrations";
 
 interface PaymentDetailsFormProps {
   method: PaymentMethod;
-  paymentData: {
-    bankName: string;
-    accountNumber: string;
-    accountName: string;
-    ewalletProvider: string;
-    ewalletNumber: string;
-  };
-  setPaymentData: React.Dispatch<
-    React.SetStateAction<{
-      method: PaymentMethod;
-      bankName: string;
-      accountNumber: string;
-      accountName: string;
-      ewalletProvider: string;
-      ewalletNumber: string;
-      proofUrl: string;
-    }>
-  >;
+  paymentData: PaymentFormState;
+  setPaymentData: React.Dispatch<React.SetStateAction<PaymentFormState>>;
 }
 
 export default function PaymentDetailsForm({

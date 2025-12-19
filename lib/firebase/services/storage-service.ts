@@ -4,7 +4,43 @@ import {
   uploadBytesResumable,
   getDownloadURL,
   UploadTask,
+  deleteObject,
 } from "firebase/storage";
+
+export async function deleteFile(storagePath: string): Promise<void> {
+  try {
+    const storageRef = ref(storage, storagePath);
+    await deleteObject(storageRef);
+    console.log(`File deleted successfully: ${storagePath}`);
+  } catch (error) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "storage/object-not-found"
+    ) {
+      console.warn(`File not found during deletion (ignored): ${storagePath}`);
+      return;
+    }
+    console.error(`Error deleting file: ${storagePath}`, error);
+    throw error;
+  }
+}
+
+/**
+ * Get download URL for a file path
+ * @param storagePath - Path of the file
+ * @returns Download URL
+ */
+export async function getFileUrl(storagePath: string): Promise<string> {
+  try {
+    const storageRef = ref(storage, storagePath);
+    return await getDownloadURL(storageRef);
+  } catch (error) {
+    console.warn(`Error getting download URL for ${storagePath}:`, error);
+    return "";
+  }
+}
 
 export type UploadProgressCallback = (progress: number) => void;
 

@@ -77,3 +77,13 @@ export interface VerificationData {
   notes?: string;
   rejectionReason?: string;
 }
+
+export interface PaymentFormState {
+  method: PaymentMethod;
+  bankName: string;
+  accountNumber: string;
+  accountName: string;
+  ewalletProvider: string;
+  ewalletNumber: string;
+  proofUrl: string;
+}

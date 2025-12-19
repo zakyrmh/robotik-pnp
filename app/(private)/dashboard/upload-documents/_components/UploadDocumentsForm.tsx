@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { User as FirebaseUser } from "firebase/auth";
@@ -20,6 +20,8 @@ import {
   uploadFileWithProgress,
   validateFileSize,
   validateFileType,
+  deleteFile,
+  getFileUrl,
 } from "@/lib/firebase/services/storage-service";
 import { updateRegistration } from "@/lib/firebase/services/registration-service";
 import { doc, updateDoc, Timestamp } from "firebase/firestore";
@@ -88,6 +90,41 @@ export default function UploadDocumentsForm({
     },
   ]);
 
+  // Resolve preview URLs if they are storage paths
+  useEffect(() => {
+    const resolveUrls = async () => {
+      const checkAndResolve = async (
+        preview: string | undefined,
+        setter: React.Dispatch<React.SetStateAction<DocumentFile>>
+      ) => {
+        if (
+          preview &&
+          !preview.startsWith("http") &&
+          !preview.startsWith("blob:")
+        ) {
+          const url = await getFileUrl(preview);
+          if (url) setter((prev) => ({ ...prev, preview: url }));
+        }
+      };
+
+      await Promise.all([
+        checkAndResolve(registration?.documents?.photoUrl, setPhotoFile),
+        checkAndResolve(registration?.documents?.ktmUrl, setKtmFile),
+        checkAndResolve(
+          registration?.documents?.igRobotikFollowUrl,
+          setIgRobotikFile
+        ),
+        checkAndResolve(registration?.documents?.igMrcFollowUrl, setIgMrcFile),
+        checkAndResolve(
+          registration?.documents?.youtubeSubscribeUrl,
+          setYoutubeFile
+        ),
+      ]);
+    };
+
+    resolveUrls();
+  }, [registration]);
+
   // Handler untuk memilih file dengan preview
   const handleFileSelect = (
     file: File,
@@ -144,21 +181,34 @@ export default function UploadDocumentsForm({
       toast.error("Foto profil wajib diunggah");
       return;
     }
-
     if (!igRobotikFile.preview) {
       toast.error("Bukti follow Instagram Robotik wajib diunggah");
       return;
     }
-
     if (!igMrcFile.preview) {
       toast.error("Bukti follow Instagram MRC wajib diunggah");
       return;
     }
-
     if (!youtubeFile.preview) {
       toast.error("Bukti subscribe YouTube Robotik wajib diunggah");
       return;
     }
+
+    // Tracking for transaction simulation
+    const newlyUploadedPaths: string[] = [];
+    const oldPathsToDelete: string[] = [];
+
+    // Add old paths if they are being replaced
+    if (photoFile.file && registration?.documents?.photoUrl)
+      oldPathsToDelete.push(registration.documents.photoUrl);
+    if (ktmFile.file && registration?.documents?.ktmUrl)
+      oldPathsToDelete.push(registration.documents.ktmUrl);
+    if (igRobotikFile.file && registration?.documents?.igRobotikFollowUrl)
+      oldPathsToDelete.push(registration.documents.igRobotikFollowUrl);
+    if (igMrcFile.file && registration?.documents?.igMrcFollowUrl)
+      oldPathsToDelete.push(registration.documents.igMrcFollowUrl);
+    if (youtubeFile.file && registration?.documents?.youtubeSubscribeUrl)
+      oldPathsToDelete.push(registration.documents.youtubeSubscribeUrl);
 
     try {
       setUploading(true);
@@ -171,10 +221,10 @@ export default function UploadDocumentsForm({
         igMrcFollowUrl: string;
         youtubeSubscribeUrl: string;
       } = {
-        photoUrl: "",
-        igRobotikFollowUrl: "",
-        igMrcFollowUrl: "",
-        youtubeSubscribeUrl: "",
+        photoUrl: registration?.documents?.photoUrl || "",
+        igRobotikFollowUrl: registration?.documents?.igRobotikFollowUrl || "",
+        igMrcFollowUrl: registration?.documents?.igMrcFollowUrl || "",
+        youtubeSubscribeUrl: registration?.documents?.youtubeSubscribeUrl || "",
       };
 
       // Helper to get extension
@@ -191,8 +241,7 @@ export default function UploadDocumentsForm({
           (progress) => updateStepProgress(0, progress, "uploading")
         );
         uploadedUrls.photoUrl = result.path;
-      } else {
-        uploadedUrls.photoUrl = photoFile.preview;
+        newlyUploadedPaths.push(result.path);
       }
       updateStepProgress(0, 100, "completed");
 
@@ -209,8 +258,7 @@ export default function UploadDocumentsForm({
           (progress) => updateStepProgress(1, progress, "uploading")
         );
         uploadedUrls.igRobotikFollowUrl = result.path;
-      } else {
-        uploadedUrls.igRobotikFollowUrl = igRobotikFile.preview;
+        newlyUploadedPaths.push(result.path);
       }
       updateStepProgress(1, 100, "completed");
 
@@ -227,8 +275,7 @@ export default function UploadDocumentsForm({
           (progress) => updateStepProgress(2, progress, "uploading")
         );
         uploadedUrls.igMrcFollowUrl = result.path;
-      } else {
-        uploadedUrls.igMrcFollowUrl = igMrcFile.preview;
+        newlyUploadedPaths.push(result.path);
       }
       updateStepProgress(2, 100, "completed");
 
@@ -245,21 +292,24 @@ export default function UploadDocumentsForm({
           (progress) => updateStepProgress(3, progress, "uploading")
         );
         uploadedUrls.youtubeSubscribeUrl = result.path;
-      } else {
-        uploadedUrls.youtubeSubscribeUrl = youtubeFile.preview;
+        newlyUploadedPaths.push(result.path);
       }
       updateStepProgress(3, 100, "completed");
 
       // Upload KTM jika ada
       if (ktmFile.file) {
         const ext = getExt(ktmFile.file);
-        const path = `registrations/${user.uid}/ktm_${Date.now()}.${ext}`;
+        const path = `users/${user.uid}/ktm_${Date.now()}.${ext}`;
         const result = await uploadFileWithProgress(path, ktmFile.file);
         uploadedUrls.ktmUrl = result.path;
-      } else if (ktmFile.preview) {
-        uploadedUrls.ktmUrl = ktmFile.preview;
+        newlyUploadedPaths.push(result.path);
       }
 
+      // ------------------------------------------------------------------
+      // TRANSACTION SIMULATION
+      // ------------------------------------------------------------------
+
+      // A. Update Firestore (The Critical Point)
       // Update Registration Document
       await updateRegistration(user.uid, {
         documents: {
@@ -272,13 +322,18 @@ export default function UploadDocumentsForm({
       });
 
       // Update User Profile (photoUrl & ktmUrl)
-      // Assuming 'users_new' is the collection name based on other services
       const userRef = doc(db, "users_new", user.uid);
       await updateDoc(userRef, {
         "profile.photoUrl": uploadedUrls.photoUrl,
         "profile.ktmUrl": uploadedUrls.ktmUrl || null,
         updatedAt: Timestamp.now(),
       });
+
+      // B. Success Compensation: Delete OLD files
+      // We do this concurrently to not block UI too long, but failures here are non-blocking
+      Promise.all(oldPathsToDelete.map((path) => deleteFile(path))).catch(
+        (err) => console.error("Warning: Failed to cleanup old files:", err)
+      ); // Non-critical
 
       toast.success("Semua dokumen berhasil diunggah", {
         description: "Menunggu verifikasi dari admin",
@@ -289,8 +344,19 @@ export default function UploadDocumentsForm({
         router.push("/dashboard");
       }, 2000);
     } catch (error) {
-      console.error("Error uploading documents:", error);
-      toast.error("Gagal mengunggah dokumen");
+      console.error("Error uploading documents (Rolling back):", error);
+
+      // C. Failure Compensation: Delete NEWLY uploaded files (Rollback)
+      if (newlyUploadedPaths.length > 0) {
+        toast.info("Membatalkan upload...", { duration: 2000 });
+        await Promise.all(
+          newlyUploadedPaths.map((path) => deleteFile(path))
+        ).catch((cleanupErr) =>
+          console.error("Critical: Failed to rollback files:", cleanupErr)
+        );
+      }
+
+      toast.error("Gagal menyimpan data. Upload dibatalkan.");
       setShowProgressModal(false);
     } finally {
       setUploading(false);
