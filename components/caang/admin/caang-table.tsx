@@ -52,7 +52,7 @@ export default function CaangTable({ users, registrations }: CaangTableProps) {
     console.log("Delete user:", user.id);
   };
 
-  const formatDate = (timestamp: Date | Timestamp) => {
+  const formatDate = (timestamp: Date | Timestamp | undefined | null) => {
     if (!timestamp) return "-";
     try {
       const date =

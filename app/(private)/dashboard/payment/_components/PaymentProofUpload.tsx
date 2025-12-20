@@ -1,4 +1,4 @@
-import Image from "next/image";
+import FirebaseStorageImage from "@/components/FirebaseStorageImage";
 import { Image as ImageIcon } from "lucide-react";
 
 interface PaymentProofUploadProps {
@@ -31,8 +31,8 @@ export default function PaymentProofUpload({
       <div className="space-y-4">
         {previewUrl ? (
           <div className="relative w-full max-w-md aspect-[4/3] rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-700">
-            <Image
-              src={previewUrl}
+            <FirebaseStorageImage
+              imagePath={previewUrl}
               alt="Bukti Pembayaran"
               fill
               className="object-contain"

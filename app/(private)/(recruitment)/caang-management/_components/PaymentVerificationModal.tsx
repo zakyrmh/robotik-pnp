@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { User } from "@/types/users";
-import { Registration } from "@/types/registrations";
+import { PaymentMethod, Registration } from "@/types/registrations";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import FirebaseImage from "@/components/FirebaseImage";

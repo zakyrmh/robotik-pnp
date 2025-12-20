@@ -168,21 +168,6 @@ export default function FormDataVerificationModal({
             </div>
           </div>
 
-          {/* Verification Info */}
-          {registration?.stepVerifications?.step1FormData?.verified && (
-            <div className="bg-green-50 p-3 rounded-md text-sm text-green-800 border border-green-200">
-              <p className="font-medium">
-                ⚠️ Data ini sudah pernah diverifikasi
-              </p>
-              <p className="text-xs mt-1">
-                Diverifikasi pada:{" "}
-                {formatDate(
-                  registration.stepVerifications.step1FormData.verifiedAt
-                )}
-              </p>
-            </div>
-          )}
-
           {/* Warning */}
           <div className="bg-amber-50 p-3 rounded-md text-xs text-amber-800 border border-amber-200">
             <p className="font-medium">⚠️ Perhatian:</p>

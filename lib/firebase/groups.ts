@@ -1,4 +1,4 @@
-import { db } from '@/lib/firebaseConfig';
+import { db } from "@/lib/firebaseConfig";
 import {
   collection,
   doc,
@@ -13,37 +13,47 @@ import {
   Timestamp,
   writeBatch,
   deleteField,
-} from 'firebase/firestore';
-import { GroupParent, SubGroup, GroupMember } from '@/types/groups';
-import { getUsers } from './users';
-import { getAttendances } from './attendances';
-import { getActivities } from './activities';
-import { getRegistrationsByOrPeriod } from './registrations';
+} from "firebase/firestore";
+import { GroupParent, SubGroup, GroupMember } from "@/types/groups";
+import { getUsers } from "./users";
+import { getAttendances } from "./attendances";
+import { getActivities } from "./activities";
+import { getRegistrationsByOrPeriod } from "./services/registration-service";
 
-const GROUP_PARENTS_COLLECTION = 'group_parents';
-const SUB_GROUPS_COLLECTION = 'sub_groups';
+const GROUP_PARENTS_COLLECTION = "group_parents";
+const SUB_GROUPS_COLLECTION = "sub_groups";
 
 /**
  * Convert Firestore document data to GroupParent type
  */
-function convertDocToGroupParent(docId: string, data: Record<string, unknown>): GroupParent {
+function convertDocToGroupParent(
+  docId: string,
+  data: Record<string, unknown>
+): GroupParent {
   return {
     id: docId,
     ...data,
-    createdAt: data.createdAt instanceof Timestamp ? data.createdAt : Timestamp.now(),
-    updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt : Timestamp.now(),
+    createdAt:
+      data.createdAt instanceof Timestamp ? data.createdAt : Timestamp.now(),
+    updatedAt:
+      data.updatedAt instanceof Timestamp ? data.updatedAt : Timestamp.now(),
   } as GroupParent;
 }
 
 /**
  * Convert Firestore document data to SubGroup type
  */
-function convertDocToSubGroup(docId: string, data: Record<string, unknown>): SubGroup {
+function convertDocToSubGroup(
+  docId: string,
+  data: Record<string, unknown>
+): SubGroup {
   return {
     id: docId,
     ...data,
-    createdAt: data.createdAt instanceof Timestamp ? data.createdAt : Timestamp.now(),
-    updatedAt: data.updatedAt instanceof Timestamp ? data.updatedAt : Timestamp.now(),
+    createdAt:
+      data.createdAt instanceof Timestamp ? data.createdAt : Timestamp.now(),
+    updatedAt:
+      data.updatedAt instanceof Timestamp ? data.updatedAt : Timestamp.now(),
   } as SubGroup;
 }
 
@@ -52,18 +62,20 @@ function convertDocToSubGroup(docId: string, data: Record<string, unknown>): Sub
 /**
  * Get all group parents
  */
-export async function getGroupParents(orPeriod?: string): Promise<GroupParent[]> {
+export async function getGroupParents(
+  orPeriod?: string
+): Promise<GroupParent[]> {
   try {
     let q = query(
       collection(db, GROUP_PARENTS_COLLECTION),
-      orderBy('createdAt', 'desc')
+      orderBy("createdAt", "desc")
     );
 
     if (orPeriod) {
       q = query(
         collection(db, GROUP_PARENTS_COLLECTION),
-        where('orPeriod', '==', orPeriod),
-        orderBy('createdAt', 'desc')
+        where("orPeriod", "==", orPeriod),
+        orderBy("createdAt", "desc")
       );
     }
 
@@ -75,7 +87,7 @@ export async function getGroupParents(orPeriod?: string): Promise<GroupParent[]>
 
     return groupParents;
   } catch (error) {
-    console.error('Error getting group parents:', error);
+    console.error("Error getting group parents:", error);
     throw error;
   }
 }
@@ -83,7 +95,9 @@ export async function getGroupParents(orPeriod?: string): Promise<GroupParent[]>
 /**
  * Get group parent by ID
  */
-export async function getGroupParentById(id: string): Promise<GroupParent | null> {
+export async function getGroupParentById(
+  id: string
+): Promise<GroupParent | null> {
   try {
     const docRef = doc(db, GROUP_PARENTS_COLLECTION, id);
     const docSnap = await getDoc(docRef);
@@ -100,7 +114,7 @@ export async function getGroupParentById(id: string): Promise<GroupParent | null
 
     return null;
   } catch (error) {
-    console.error('Error getting group parent by ID:', error);
+    console.error("Error getting group parent by ID:", error);
     throw error;
   }
 }
@@ -109,7 +123,10 @@ export async function getGroupParentById(id: string): Promise<GroupParent | null
  * Create a new group parent
  */
 export async function createGroupParent(
-  data: Omit<GroupParent, 'id' | 'createdAt' | 'updatedAt' | 'totalSubGroups' | 'totalMembers'>
+  data: Omit<
+    GroupParent,
+    "id" | "createdAt" | "updatedAt" | "totalSubGroups" | "totalMembers"
+  >
 ): Promise<string> {
   try {
     const docRef = await addDoc(collection(db, GROUP_PARENTS_COLLECTION), {
@@ -123,7 +140,7 @@ export async function createGroupParent(
 
     return docRef.id;
   } catch (error) {
-    console.error('Error creating group parent:', error);
+    console.error("Error creating group parent:", error);
     throw error;
   }
 }
@@ -133,7 +150,7 @@ export async function createGroupParent(
  */
 export async function updateGroupParent(
   id: string,
-  data: Partial<Omit<GroupParent, 'id' | 'createdAt' | 'updatedAt'>>
+  data: Partial<Omit<GroupParent, "id" | "createdAt" | "updatedAt">>
 ): Promise<void> {
   try {
     const docRef = doc(db, GROUP_PARENTS_COLLECTION, id);
@@ -142,7 +159,7 @@ export async function updateGroupParent(
       updatedAt: serverTimestamp() as unknown as Timestamp,
     });
   } catch (error) {
-    console.error('Error updating group parent:', error);
+    console.error("Error updating group parent:", error);
     throw error;
   }
 }
@@ -165,7 +182,7 @@ export async function deleteGroupParent(id: string): Promise<void> {
     // Mark all sub-groups as inactive
     const subGroupsQuery = query(
       collection(db, SUB_GROUPS_COLLECTION),
-      where('parentId', '==', id)
+      where("parentId", "==", id)
     );
     const subGroupsSnapshot = await getDocs(subGroupsQuery);
 
@@ -179,7 +196,7 @@ export async function deleteGroupParent(id: string): Promise<void> {
 
     await batch.commit();
   } catch (error) {
-    console.error('Error deleting group parent:', error);
+    console.error("Error deleting group parent:", error);
     throw error;
   }
 }
@@ -191,15 +208,17 @@ export async function getDeletedGroupParents(): Promise<GroupParent[]> {
   try {
     const q = query(
       collection(db, GROUP_PARENTS_COLLECTION),
-      where('isActive', '==', false),
-      orderBy('deletedAt', 'desc')
+      where("isActive", "==", false),
+      orderBy("deletedAt", "desc")
     );
 
     const snapshot = await getDocs(q);
 
-    return snapshot.docs.map((doc) => convertDocToGroupParent(doc.id, doc.data()));
+    return snapshot.docs.map((doc) =>
+      convertDocToGroupParent(doc.id, doc.data())
+    );
   } catch (error) {
-    console.error('Error getting deleted group parents:', error);
+    console.error("Error getting deleted group parents:", error);
     throw error;
   }
 }
@@ -222,7 +241,7 @@ export async function restoreGroupParent(id: string): Promise<void> {
     // Restore all sub-groups
     const subGroupsQuery = query(
       collection(db, SUB_GROUPS_COLLECTION),
-      where('parentId', '==', id)
+      where("parentId", "==", id)
     );
     const subGroupsSnapshot = await getDocs(subGroupsQuery);
 
@@ -236,7 +255,7 @@ export async function restoreGroupParent(id: string): Promise<void> {
 
     await batch.commit();
   } catch (error) {
-    console.error('Error restoring group parent:', error);
+    console.error("Error restoring group parent:", error);
     throw error;
   }
 }
@@ -255,7 +274,7 @@ export async function hardDeleteGroupParent(id: string): Promise<void> {
     // Delete all sub-groups
     const subGroupsQuery = query(
       collection(db, SUB_GROUPS_COLLECTION),
-      where('parentId', '==', id)
+      where("parentId", "==", id)
     );
     const subGroupsSnapshot = await getDocs(subGroupsQuery);
 
@@ -265,7 +284,7 @@ export async function hardDeleteGroupParent(id: string): Promise<void> {
 
     await batch.commit();
   } catch (error) {
-    console.error('Error hard deleting group parent:', error);
+    console.error("Error hard deleting group parent:", error);
     throw error;
   }
 }
@@ -275,12 +294,14 @@ export async function hardDeleteGroupParent(id: string): Promise<void> {
 /**
  * Get all sub-groups for a parent
  */
-export async function getSubGroupsByParent(parentId: string): Promise<SubGroup[]> {
+export async function getSubGroupsByParent(
+  parentId: string
+): Promise<SubGroup[]> {
   try {
     const q = query(
       collection(db, SUB_GROUPS_COLLECTION),
-      where('parentId', '==', parentId),
-      orderBy('name', 'asc')
+      where("parentId", "==", parentId),
+      orderBy("name", "asc")
     );
 
     const snapshot = await getDocs(q);
@@ -291,7 +312,7 @@ export async function getSubGroupsByParent(parentId: string): Promise<SubGroup[]
 
     return subGroups;
   } catch (error) {
-    console.error('Error getting sub-groups:', error);
+    console.error("Error getting sub-groups:", error);
     throw error;
   }
 }
@@ -316,7 +337,7 @@ export async function getSubGroupById(id: string): Promise<SubGroup | null> {
 
     return null;
   } catch (error) {
-    console.error('Error getting sub-group by ID:', error);
+    console.error("Error getting sub-group by ID:", error);
     throw error;
   }
 }
@@ -325,7 +346,7 @@ export async function getSubGroupById(id: string): Promise<SubGroup | null> {
  * Create a new sub-group
  */
 export async function createSubGroup(
-  data: Omit<SubGroup, 'id' | 'createdAt' | 'updatedAt'>
+  data: Omit<SubGroup, "id" | "createdAt" | "updatedAt">
 ): Promise<string> {
   try {
     const batch = writeBatch(db);
@@ -355,7 +376,7 @@ export async function createSubGroup(
     await batch.commit();
     return subGroupRef.id;
   } catch (error) {
-    console.error('Error creating sub-group:', error);
+    console.error("Error creating sub-group:", error);
     throw error;
   }
 }
@@ -365,7 +386,7 @@ export async function createSubGroup(
  */
 export async function updateSubGroup(
   id: string,
-  data: Partial<Omit<SubGroup, 'id' | 'createdAt' | 'updatedAt' | 'parentId'>>
+  data: Partial<Omit<SubGroup, "id" | "createdAt" | "updatedAt" | "parentId">>
 ): Promise<void> {
   try {
     const batch = writeBatch(db);
@@ -375,7 +396,7 @@ export async function updateSubGroup(
     const subGroupSnap = await getDoc(subGroupRef);
 
     if (!subGroupSnap.exists()) {
-      throw new Error('Sub-group not found');
+      throw new Error("Sub-group not found");
     }
 
     const currentData = subGroupSnap.data() as SubGroup;
@@ -406,7 +427,7 @@ export async function updateSubGroup(
 
     await batch.commit();
   } catch (error) {
-    console.error('Error updating sub-group:', error);
+    console.error("Error updating sub-group:", error);
     throw error;
   }
 }
@@ -423,7 +444,7 @@ export async function deleteSubGroup(id: string): Promise<void> {
     const subGroupSnap = await getDoc(subGroupRef);
 
     if (!subGroupSnap.exists()) {
-      throw new Error('Sub-group not found');
+      throw new Error("Sub-group not found");
     }
 
     const subGroupData = subGroupSnap.data() as SubGroup;
@@ -442,14 +463,17 @@ export async function deleteSubGroup(id: string): Promise<void> {
       const parentData = parentSnap.data() as GroupParent;
       batch.update(parentRef, {
         totalSubGroups: Math.max(0, parentData.totalSubGroups - 1),
-        totalMembers: Math.max(0, parentData.totalMembers - subGroupData.memberIds.length),
+        totalMembers: Math.max(
+          0,
+          parentData.totalMembers - subGroupData.memberIds.length
+        ),
         updatedAt: serverTimestamp() as unknown as Timestamp,
       });
     }
 
     await batch.commit();
   } catch (error) {
-    console.error('Error deleting sub-group:', error);
+    console.error("Error deleting sub-group:", error);
     throw error;
   }
 }
@@ -458,14 +482,18 @@ export async function deleteSubGroup(id: string): Promise<void> {
  * Update multiple sub-groups members in a batch
  */
 export async function updateSubGroupsMembersBatch(
-  updates: { subGroupId: string; members: GroupMember[]; leaderId?: string | null }[]
+  updates: {
+    subGroupId: string;
+    members: GroupMember[];
+    leaderId?: string | null;
+  }[]
 ): Promise<void> {
   try {
     const batch = writeBatch(db);
 
     for (const update of updates) {
       const subGroupRef = doc(db, SUB_GROUPS_COLLECTION, update.subGroupId);
-      const memberIds = update.members.map(m => m.userId);
+      const memberIds = update.members.map((m) => m.userId);
 
       const updateData: Record<string, unknown> = {
         memberIds,
@@ -474,7 +502,8 @@ export async function updateSubGroupsMembersBatch(
       };
 
       if (update.leaderId !== undefined) {
-        updateData.leaderId = update.leaderId === null ? deleteField() : update.leaderId;
+        updateData.leaderId =
+          update.leaderId === null ? deleteField() : update.leaderId;
       }
 
       batch.update(subGroupRef, updateData);
@@ -482,7 +511,7 @@ export async function updateSubGroupsMembersBatch(
 
     await batch.commit();
   } catch (error) {
-    console.error('Error updating sub-groups batch:', error);
+    console.error("Error updating sub-groups batch:", error);
     throw error;
   }
 }
@@ -495,11 +524,15 @@ export async function updateSubGroupsMembersBatch(
 export async function calculateUserAttendance(
   userId: string,
   orPeriod: string
-): Promise<{ percentage: number; totalActivities: number; attendedActivities: number }> {
+): Promise<{
+  percentage: number;
+  totalActivities: number;
+  attendedActivities: number;
+}> {
   try {
     // Get all activities for the period
     const activities = await getActivities();
-    const periodActivities = activities.filter(a => a.orPeriod === orPeriod);
+    const periodActivities = activities.filter((a) => a.orPeriod === orPeriod);
     const totalActivities = periodActivities.length;
 
     if (totalActivities === 0) {
@@ -511,14 +544,14 @@ export async function calculateUserAttendance(
 
     // Count attended (present or late)
     const attendedActivities = attendances.filter(
-      a => a.status === 'present' || a.status === 'late'
+      (a) => a.status === "present" || a.status === "late"
     ).length;
 
     const percentage = (attendedActivities / totalActivities) * 100;
 
     return { percentage, totalActivities, attendedActivities };
   } catch (error) {
-    console.error('Error calculating user attendance:', error);
+    console.error("Error calculating user attendance:", error);
     return { percentage: 0, totalActivities: 0, attendedActivities: 0 };
   }
 }
@@ -526,23 +559,26 @@ export async function calculateUserAttendance(
 /**
  * Get caang users with attendance data, sorted by attendance percentage
  */
-export async function getCaangUsersWithAttendance(orPeriod: string): Promise<GroupMember[]> {
+export async function getCaangUsersWithAttendance(
+  orPeriod: string
+): Promise<GroupMember[]> {
   try {
     // Get all users
     const usersResult = await getUsers();
 
     if (!usersResult.success || !usersResult.data) {
-      throw new Error('Failed to get users');
+      throw new Error("Failed to get users");
     }
 
     // Get registrations for the specified period to filter users
     // Only users registered in this period should be considered
     const registrations = await getRegistrationsByOrPeriod(orPeriod);
-    const registeredUserIds = new Set(registrations.map(r => r.id));
+    const registeredUserIds = new Set(registrations.map((r) => r.id));
 
     // Filter caang users who are active AND registered in the specified period
     const caangUsers = usersResult.data.filter(
-      user => user.roles.isCaang && user.isActive && registeredUserIds.has(user.id)
+      (user) =>
+        user.roles.isCaang && user.isActive && registeredUserIds.has(user.id)
     );
 
     // Calculate attendance for each user
@@ -563,11 +599,13 @@ export async function getCaangUsersWithAttendance(orPeriod: string): Promise<Gro
     );
 
     // Sort by attendance percentage (descending)
-    usersWithAttendance.sort((a, b) => b.attendancePercentage - a.attendancePercentage);
+    usersWithAttendance.sort(
+      (a, b) => b.attendancePercentage - a.attendancePercentage
+    );
 
     return usersWithAttendance;
   } catch (error) {
-    console.error('Error getting caang users with attendance:', error);
+    console.error("Error getting caang users with attendance:", error);
     throw error;
   }
 }
@@ -575,8 +613,14 @@ export async function getCaangUsersWithAttendance(orPeriod: string): Promise<Gro
 /**
  * Distribute users into groups evenly
  */
-function distributeUsersIntoGroups(users: GroupMember[], numberOfGroups: number): GroupMember[][] {
-  const groups: GroupMember[][] = Array.from({ length: numberOfGroups }, () => []);
+function distributeUsersIntoGroups(
+  users: GroupMember[],
+  numberOfGroups: number
+): GroupMember[][] {
+  const groups: GroupMember[][] = Array.from(
+    { length: numberOfGroups },
+    () => []
+  );
 
   // Distribute users round-robin to balance groups
   users.forEach((user, index) => {
@@ -602,7 +646,7 @@ export async function generateGroupParent(
     const caangUsers = await getCaangUsersWithAttendance(orPeriod);
 
     if (caangUsers.length === 0) {
-      throw new Error('No caang users found for the specified period');
+      throw new Error("No caang users found for the specified period");
     }
 
     // Create group parent
@@ -615,7 +659,10 @@ export async function generateGroupParent(
     });
 
     // Distribute users into sub-groups
-    const groupedUsers = distributeUsersIntoGroups(caangUsers, numberOfSubGroups);
+    const groupedUsers = distributeUsersIntoGroups(
+      caangUsers,
+      numberOfSubGroups
+    );
 
     // Create sub-groups
     const batch = writeBatch(db);
@@ -623,7 +670,7 @@ export async function generateGroupParent(
 
     for (let i = 0; i < numberOfSubGroups; i++) {
       const groupMembers = groupedUsers[i];
-      const memberIds = groupMembers.map(m => m.userId);
+      const memberIds = groupMembers.map((m) => m.userId);
 
       const subGroupRef = doc(collection(db, SUB_GROUPS_COLLECTION));
       batch.set(subGroupRef, {
@@ -653,7 +700,7 @@ export async function generateGroupParent(
 
     return parentId;
   } catch (error) {
-    console.error('Error generating group parent:', error);
+    console.error("Error generating group parent:", error);
     throw error;
   }
 }

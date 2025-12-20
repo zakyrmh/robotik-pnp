@@ -15,7 +15,6 @@ import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
-  CheckCircle,
   FileCheck,
   User as UserIcon,
 } from "lucide-react";
@@ -31,9 +30,7 @@ interface CaangTableProps {
   handleSelectAll: (checked: boolean) => void;
   handleSelectUser: (userId: string, checked: boolean) => void;
   onOpenDetail: (user: User) => void;
-  onVerifyFormData: (regId: string) => void;
-  onVerifyDocuments: (regId: string) => void;
-  onVerifyPayment: (regId: string) => void;
+  onVerifyRegistration: (regId: string) => void;
 }
 
 export default function CaangTable({
@@ -43,9 +40,7 @@ export default function CaangTable({
   handleSelectAll,
   handleSelectUser,
   onOpenDetail,
-  onVerifyFormData,
-  onVerifyDocuments,
-  onVerifyPayment,
+  onVerifyRegistration,
 }: CaangTableProps) {
   // 1. State untuk konfigurasi sort
   const [sortConfig, setSortConfig] = useState<{
@@ -95,7 +90,7 @@ export default function CaangTable({
       case "formDataStatus":
         // Prioritas: Verified (2) > Pending (1) > Not Submitted (0)
         const getFormDataScore = (r: Registration | undefined) => {
-          if (r?.stepVerifications?.step1FormData?.verified) return 2;
+          if (r?.verification?.verified) return 2;
           if (r?.status && r.status !== "draft") return 1; // Sudah submit tapi belum verified
           return 0; // Draft
         };
@@ -268,111 +263,62 @@ export default function CaangTable({
                   <TableCell>
                     {/* Combined Status Column with Verification Buttons */}
                     <div className="space-y-2">
-                      {/* 1. Status Data Diri */}
                       <div className="flex items-center gap-2">
                         <div className="flex-1">
                           <p className="text-xs text-muted-foreground mb-1">
-                            Data Diri
+                            Status Pendaftaran
                           </p>
-                          {!reg ? (
-                            <Badge variant="outline" className="text-gray-500">
-                              Belum Daftar
-                            </Badge>
-                          ) : reg.stepVerifications?.step1FormData?.verified ? (
-                            <Badge className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200">
-                              ✓ Terverifikasi
-                            </Badge>
-                          ) : reg.status !== "draft" ? (
-                            <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 border-yellow-200">
-                              Menunggu Verifikasi
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-gray-500">
-                              Draft
-                            </Badge>
-                          )}
+                          {(() => {
+                            if (!reg)
+                              return (
+                                <Badge
+                                  variant="outline"
+                                  className="text-gray-500"
+                                >
+                                  Belum Daftar
+                                </Badge>
+                              );
+                            if (reg.status === "verified")
+                              return (
+                                <Badge className="bg-green-100 text-green-800 border-green-200">
+                                  ✓ Terverifikasi
+                                </Badge>
+                              );
+                            if (reg.status === "rejected")
+                              return (
+                                <Badge variant="destructive">Ditolak</Badge>
+                              );
+                            if (reg.status === "submitted")
+                              return (
+                                <Badge className="bg-yellow-100 text-yellow-800 border-yellow-200">
+                                  Menunggu Verifikasi
+                                </Badge>
+                              );
+                            return (
+                              <Badge variant="outline">{reg.status}</Badge>
+                            );
+                          })()}
                         </div>
                         {reg &&
-                          reg.status !== "draft" &&
-                          !reg.stepVerifications?.step1FormData?.verified && (
+                          (reg.status === "submitted" ||
+                            reg.status === "form_verified" ||
+                            reg.status === "documents_uploaded" ||
+                            reg.status === "payment_pending") &&
+                          // Note: We include partial statuses just in case legacy data exists,
+                          // but ideally only 'submitted' or 'verified' or 'rejected'.
+                          // The instruction says "Setelah submit... siap verifikasi".
+                          // If status is SUBMITTED, show Verify Button.
+                          (reg.status === "submitted" ? (
                             <Button
                               size="sm"
                               variant="outline"
                               className="h-7 text-xs text-blue-600 border-blue-300 hover:bg-blue-50"
-                              onClick={() => onVerifyFormData(reg.id)}
+                              onClick={() => onVerifyRegistration(reg.id)}
                             >
                               <FileCheck className="h-3 w-3 mr-1" />
                               Verifikasi
                             </Button>
-                          )}
-                      </div>
-
-                      {/* 2. Status Dokumen */}
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1">
-                          <p className="text-xs text-muted-foreground mb-1">
-                            Dokumen
-                          </p>
-                          {!reg?.documents?.allUploaded ? (
-                            <Badge variant="outline" className="text-gray-500">
-                              Belum Upload
-                            </Badge>
-                          ) : reg.stepVerifications?.step2Documents
-                              ?.verified ? (
-                            <Badge className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200">
-                              ✓ Terverifikasi
-                            </Badge>
-                          ) : (
-                            <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 border-yellow-200">
-                              Menunggu Verifikasi
-                            </Badge>
-                          )}
-                        </div>
-                        {reg?.documents?.allUploaded &&
-                          !reg.stepVerifications?.step2Documents?.verified && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-7 text-xs text-purple-600 border-purple-300 hover:bg-purple-50"
-                              onClick={() => onVerifyDocuments(reg.id)}
-                            >
-                              <FileCheck className="h-3 w-3 mr-1" />
-                              Verifikasi
-                            </Button>
-                          )}
-                      </div>
-
-                      {/* 3. Status Pembayaran */}
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1">
-                          <p className="text-xs text-muted-foreground mb-1">
-                            Pembayaran
-                          </p>
-                          {!reg?.payment?.proofUrl ? (
-                            <Badge variant="outline" className="text-gray-500">
-                              Belum Upload
-                            </Badge>
-                          ) : reg.payment?.verified ? (
-                            <Badge className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200">
-                              ✓ Lunas
-                            </Badge>
-                          ) : (
-                            <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 border-yellow-200">
-                              Menunggu Verifikasi
-                            </Badge>
-                          )}
-                        </div>
-                        {reg?.payment?.proofUrl && !reg.payment?.verified && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="h-7 text-xs text-green-600 border-green-300 hover:bg-green-50"
-                            onClick={() => onVerifyPayment(reg.id)}
-                          >
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Verifikasi
-                          </Button>
-                        )}
+                          ) : null)}
                       </div>
 
                       {/* 4. Status Seleksi (Info saja, tidak ada tombol verifikasi) */}

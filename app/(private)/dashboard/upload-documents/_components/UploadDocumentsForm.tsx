@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { User as FirebaseUser } from "firebase/auth";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import Image from "next/image";
 import {
   Upload,
   Image as ImageIcon,
@@ -21,13 +20,13 @@ import {
   validateFileSize,
   validateFileType,
   deleteFile,
-  getFileUrl,
 } from "@/lib/firebase/services/storage-service";
 import { updateRegistration } from "@/lib/firebase/services/registration-service";
 import { doc, updateDoc, Timestamp } from "firebase/firestore";
 import { db } from "@/lib/firebaseConfig";
 import { RegistrationStatus } from "@/types/registrations";
 import UploadProgressModal from "./UploadProgressModal";
+import FirebaseStorageImage from "@/components/FirebaseStorageImage";
 
 interface UploadDocumentsFormProps {
   user: FirebaseUser | null;
@@ -53,7 +52,6 @@ export default function UploadDocumentsForm({
   const [uploading, setUploading] = useState(false);
   const [showProgressModal, setShowProgressModal] = useState(false);
 
-  // State untuk file dan preview
   const [photoFile, setPhotoFile] = useState<DocumentFile>({
     file: null,
     preview: registration?.documents?.photoUrl || "",
@@ -90,65 +88,25 @@ export default function UploadDocumentsForm({
     },
   ]);
 
-  // Resolve preview URLs if they are storage paths
-  useEffect(() => {
-    const resolveUrls = async () => {
-      const checkAndResolve = async (
-        preview: string | undefined,
-        setter: React.Dispatch<React.SetStateAction<DocumentFile>>
-      ) => {
-        if (
-          preview &&
-          !preview.startsWith("http") &&
-          !preview.startsWith("blob:")
-        ) {
-          const url = await getFileUrl(preview);
-          if (url) setter((prev) => ({ ...prev, preview: url }));
-        }
-      };
-
-      await Promise.all([
-        checkAndResolve(registration?.documents?.photoUrl, setPhotoFile),
-        checkAndResolve(registration?.documents?.ktmUrl, setKtmFile),
-        checkAndResolve(
-          registration?.documents?.igRobotikFollowUrl,
-          setIgRobotikFile
-        ),
-        checkAndResolve(registration?.documents?.igMrcFollowUrl, setIgMrcFile),
-        checkAndResolve(
-          registration?.documents?.youtubeSubscribeUrl,
-          setYoutubeFile
-        ),
-      ]);
-    };
-
-    resolveUrls();
-  }, [registration]);
-
-  // Handler untuk memilih file dengan preview
   const handleFileSelect = (
     file: File,
     setter: React.Dispatch<React.SetStateAction<DocumentFile>>,
     maxSizeMB: number = 2
   ) => {
-    // Validasi ukuran file
     if (!validateFileSize(file, maxSizeMB)) {
       toast.error(`Ukuran file maksimal ${maxSizeMB}MB`);
       return;
     }
 
-    // Validasi tipe file
     if (!validateFileType(file, ["image/*"])) {
       toast.error("Hanya file gambar yang diperbolehkan");
       return;
     }
 
-    // Buat preview
     const preview = URL.createObjectURL(file);
     setter({ file, preview });
   };
 
-  // Handler untuk menghapus file
   const handleRemoveFile = (
     setter: React.Dispatch<React.SetStateAction<DocumentFile>>,
     preview: string
@@ -159,7 +117,6 @@ export default function UploadDocumentsForm({
     setter({ file: null, preview: "" });
   };
 
-  // Update progress step
   const updateStepProgress = (
     index: number,
     progress: number,
@@ -176,7 +133,6 @@ export default function UploadDocumentsForm({
     e.preventDefault();
     if (!user) return;
 
-    // Validation - KTM is optional for new students
     if (!photoFile.preview) {
       toast.error("Foto profil wajib diunggah");
       return;
@@ -194,11 +150,9 @@ export default function UploadDocumentsForm({
       return;
     }
 
-    // Tracking for transaction simulation
     const newlyUploadedPaths: string[] = [];
     const oldPathsToDelete: string[] = [];
 
-    // Add old paths if they are being replaced
     if (photoFile.file && registration?.documents?.photoUrl)
       oldPathsToDelete.push(registration.documents.photoUrl);
     if (ktmFile.file && registration?.documents?.ktmUrl)
@@ -227,10 +181,8 @@ export default function UploadDocumentsForm({
         youtubeSubscribeUrl: registration?.documents?.youtubeSubscribeUrl || "",
       };
 
-      // Helper to get extension
       const getExt = (file: File) => file.name.split(".").pop() || "jpg";
 
-      // 1. Upload Foto Profil
       updateStepProgress(0, 0, "uploading");
       if (photoFile.file) {
         const ext = getExt(photoFile.file);
@@ -245,7 +197,6 @@ export default function UploadDocumentsForm({
       }
       updateStepProgress(0, 100, "completed");
 
-      // 2. Upload Bukti Follow IG Robotik
       updateStepProgress(1, 0, "uploading");
       if (igRobotikFile.file) {
         const ext = getExt(igRobotikFile.file);
@@ -262,7 +213,6 @@ export default function UploadDocumentsForm({
       }
       updateStepProgress(1, 100, "completed");
 
-      // 3. Upload Bukti Follow IG MRC
       updateStepProgress(2, 0, "uploading");
       if (igMrcFile.file) {
         const ext = getExt(igMrcFile.file);
@@ -279,7 +229,6 @@ export default function UploadDocumentsForm({
       }
       updateStepProgress(2, 100, "completed");
 
-      // 4. Upload Bukti Subscribe YT Robotik
       updateStepProgress(3, 0, "uploading");
       if (youtubeFile.file) {
         const ext = getExt(youtubeFile.file);
@@ -296,7 +245,6 @@ export default function UploadDocumentsForm({
       }
       updateStepProgress(3, 100, "completed");
 
-      // Upload KTM jika ada
       if (ktmFile.file) {
         const ext = getExt(ktmFile.file);
         const path = `users/${user.uid}/ktm_${Date.now()}.${ext}`;
@@ -305,12 +253,6 @@ export default function UploadDocumentsForm({
         newlyUploadedPaths.push(result.path);
       }
 
-      // ------------------------------------------------------------------
-      // TRANSACTION SIMULATION
-      // ------------------------------------------------------------------
-
-      // A. Update Firestore (The Critical Point)
-      // Update Registration Document
       await updateRegistration(user.uid, {
         documents: {
           ...registration?.documents,
@@ -321,7 +263,6 @@ export default function UploadDocumentsForm({
         status: RegistrationStatus.DOCUMENTS_UPLOADED,
       });
 
-      // Update User Profile (photoUrl & ktmUrl)
       const userRef = doc(db, "users_new", user.uid);
       await updateDoc(userRef, {
         "profile.photoUrl": uploadedUrls.photoUrl,
@@ -329,34 +270,36 @@ export default function UploadDocumentsForm({
         updatedAt: Timestamp.now(),
       });
 
-      // B. Success Compensation: Delete OLD files
-      // We do this concurrently to not block UI too long, but failures here are non-blocking
-      Promise.all(oldPathsToDelete.map((path) => deleteFile(path))).catch(
-        (err) => console.error("Warning: Failed to cleanup old files:", err)
-      ); // Non-critical
+      if (oldPathsToDelete.length > 0) {
+        Promise.all(oldPathsToDelete.map((path) => deleteFile(path)))
+          .then(() => console.log("Old files cleaned up successfully"))
+          .catch((err) =>
+            console.warn("Failed to cleanup old files (non-critical):", err)
+          );
+      }
 
       toast.success("Semua dokumen berhasil diunggah", {
         description: "Menunggu verifikasi dari admin",
       });
 
-      // Redirect ke dashboard setelah 2 detik
       setTimeout(() => {
         router.push("/dashboard");
       }, 2000);
     } catch (error) {
       console.error("Error uploading documents (Rolling back):", error);
 
-      // C. Failure Compensation: Delete NEWLY uploaded files (Rollback)
       if (newlyUploadedPaths.length > 0) {
-        toast.info("Membatalkan upload...", { duration: 2000 });
+        toast.info("Terjadi kesalahan. Membatalkan perubahan...", {
+          duration: 2000,
+        });
         await Promise.all(
           newlyUploadedPaths.map((path) => deleteFile(path))
         ).catch((cleanupErr) =>
-          console.error("Critical: Failed to rollback files:", cleanupErr)
+          console.error("CRITICAL: Failed to rollback new files:", cleanupErr)
         );
       }
 
-      toast.error("Gagal menyimpan data. Upload dibatalkan.");
+      toast.error("Gagal menyimpan data. Silakan coba lagi.");
       setShowProgressModal(false);
     } finally {
       setUploading(false);
@@ -385,23 +328,13 @@ export default function UploadDocumentsForm({
           <div className="space-y-4">
             {photoFile.preview && (
               <div className="relative w-48 h-48 rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 group">
-                {photoFile.preview.startsWith("blob:") ? (
-                  <Image
-                    src={photoFile.preview}
-                    alt="Preview Foto Profil"
-                    className="w-full h-full object-cover"
-                    width={192}
-                    height={192}
-                  />
-                ) : (
-                  <Image
-                    src={photoFile.preview}
-                    alt="Preview Foto Profil"
-                    fill
-                    className="object-cover"
-                    sizes="192px"
-                  />
-                )}
+                <FirebaseStorageImage
+                  imagePath={photoFile.preview}
+                  alt="Preview Foto Profil"
+                  fill
+                  className="object-cover"
+                  sizes="192px"
+                />
                 <button
                   type="button"
                   onClick={() =>
@@ -454,23 +387,13 @@ export default function UploadDocumentsForm({
           <div className="space-y-4">
             {ktmFile.preview && (
               <div className="relative w-48 h-48 rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 group">
-                {ktmFile.preview.startsWith("blob:") ? (
-                  <Image
-                    src={ktmFile.preview}
-                    alt="Preview KTM"
-                    className="w-full h-full object-cover"
-                    width={192}
-                    height={192}
-                  />
-                ) : (
-                  <Image
-                    src={ktmFile.preview}
-                    alt="Preview KTM"
-                    fill
-                    className="object-cover"
-                    sizes="192px"
-                  />
-                )}
+                <FirebaseStorageImage
+                  imagePath={ktmFile.preview}
+                  alt="Preview KTM"
+                  fill
+                  className="object-cover"
+                  sizes="192px"
+                />
                 <button
                   type="button"
                   onClick={() => handleRemoveFile(setKtmFile, ktmFile.preview)}
@@ -520,27 +443,17 @@ export default function UploadDocumentsForm({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">
                 <Instagram className="w-4 h-4 inline mr-1" />
-                Screenshot Follow @robotika_undip *
+                Screenshot Follow @robotikpnp *
               </label>
               {igRobotikFile.preview && (
                 <div className="relative w-full max-w-md h-64 rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 mb-3 group">
-                  {igRobotikFile.preview.startsWith("blob:") ? (
-                    <Image
-                      src={igRobotikFile.preview}
-                      alt="Preview Bukti Follow IG Robotik"
-                      className="w-full h-full object-contain"
-                      width={192}
-                      height={192}
-                    />
-                  ) : (
-                    <Image
-                      src={igRobotikFile.preview}
-                      alt="Preview Bukti Follow IG Robotik"
-                      fill
-                      className="object-contain"
-                      sizes="(max-width: 768px) 100vw, 448px"
-                    />
-                  )}
+                  <FirebaseStorageImage
+                    imagePath={igRobotikFile.preview}
+                    alt="Preview Bukti Follow IG Robotik"
+                    fill
+                    className="object-contain"
+                    sizes="(max-width: 768px) 100vw, 448px"
+                  />
                   <button
                     type="button"
                     onClick={() =>
@@ -568,27 +481,17 @@ export default function UploadDocumentsForm({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">
                 <Instagram className="w-4 h-4 inline mr-1" />
-                Screenshot Follow @mrc_robotika_undip *
+                Screenshot Follow @mrcpnp *
               </label>
               {igMrcFile.preview && (
                 <div className="relative w-full max-w-md h-64 rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 mb-3 group">
-                  {igMrcFile.preview.startsWith("blob:") ? (
-                    <Image
-                      src={igMrcFile.preview}
-                      alt="Preview Bukti Follow IG MRC"
-                      className="w-full h-full object-contain"
-                      width={192}
-                      height={192}
-                    />
-                  ) : (
-                    <Image
-                      src={igMrcFile.preview}
-                      alt="Preview Bukti Follow IG MRC"
-                      fill
-                      className="object-contain"
-                      sizes="(max-width: 768px) 100vw, 448px"
-                    />
-                  )}
+                  <FirebaseStorageImage
+                    imagePath={igMrcFile.preview}
+                    alt="Preview Bukti Follow IG MRC"
+                    fill
+                    className="object-contain"
+                    sizes="(max-width: 768px) 100vw, 448px"
+                  />
                   <button
                     type="button"
                     onClick={() =>
@@ -616,27 +519,17 @@ export default function UploadDocumentsForm({
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2 dark:text-gray-300">
                 <Youtube className="w-4 h-4 inline mr-1" />
-                Screenshot Subscribe YouTube Robotika Undip *
+                Screenshot Subscribe YouTube Robotik PNP *
               </label>
               {youtubeFile.preview && (
                 <div className="relative w-full max-w-md h-64 rounded-xl overflow-hidden border-2 border-gray-200 dark:border-gray-700 mb-3 group">
-                  {youtubeFile.preview.startsWith("blob:") ? (
-                    <Image
-                      src={youtubeFile.preview}
-                      alt="Preview Bukti Subscribe YouTube"
-                      className="w-full h-full object-contain"
-                      width={192}
-                      height={192}
-                    />
-                  ) : (
-                    <Image
-                      src={youtubeFile.preview}
-                      alt="Preview Bukti Subscribe YouTube"
-                      fill
-                      className="object-contain"
-                      sizes="(max-width: 768px) 100vw, 448px"
-                    />
-                  )}
+                  <FirebaseStorageImage
+                    imagePath={youtubeFile.preview}
+                    alt="Preview Bukti Subscribe YouTube"
+                    fill
+                    className="object-contain"
+                    sizes="(max-width: 768px) 100vw, 448px"
+                  />
                   <button
                     type="button"
                     onClick={() =>

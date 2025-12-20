@@ -43,6 +43,11 @@ export interface RegistrationDocuments {
   youtubeSubscribeUrl?: string;
   uploadedAt?: Timestamp;
   allUploaded: boolean;
+
+  verified?: boolean;
+  verifiedBy?: string;
+  verifiedAt?: Timestamp;
+  rejectionReason?: string;
 }
 
 export interface PaymentData {

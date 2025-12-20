@@ -1,21 +1,21 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import Image, { ImageProps } from 'next/image';
-import { getStorage, ref, getDownloadURL } from 'firebase/storage';
-import { app } from '@/lib/firebaseConfig';
+import { useEffect, useState } from "react";
+import Image, { ImageProps } from "next/image";
+import { getStorage, ref, getDownloadURL } from "firebase/storage";
+import { app } from "@/lib/firebaseConfig";
+import { Skeleton } from "@/components/ui/skeleton";
 
-interface FirebaseImageProps extends Omit<ImageProps, 'src'> {
+interface FirebaseImageProps extends Omit<ImageProps, "src"> {
   path?: string;
   fallbackSrc?: string;
 }
 
-export default function FirebaseImage({ 
-  path, 
-  fallbackSrc = '/images/avatar.jpg', // Pastikan default pakai slash '/'
-  ...props 
+export default function FirebaseImage({
+  path,
+  fallbackSrc = "/images/avatar.jpg", // Pastikan default pakai slash '/'
+  ...props
 }: FirebaseImageProps) {
-  
   const [imgSrc, setImgSrc] = useState<string>(fallbackSrc);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -25,25 +25,25 @@ export default function FirebaseImage({
 
     // 2. Jika path kosong/undefined, pakai fallback
     if (!path) {
-        setImgSrc(fallbackSrc);
-        setIsLoading(false);
-        return;
+      setImgSrc(fallbackSrc);
+      setIsLoading(false);
+      return;
     }
 
     // --- PERBAIKAN LOGIKA DISINI ---
-    
+
     // KASUS A: Path Lokal (Diawali '/') -> Jangan panggil Firebase!
-    if (path.startsWith('/')) {
-        setImgSrc(path);
-        setIsLoading(false);
-        return;
+    if (path.startsWith("/")) {
+      setImgSrc(path);
+      setIsLoading(false);
+      return;
     }
 
     // KASUS B: URL Eksternal (http/https) -> Pakai langsung
-    if (path.startsWith('http')) {
-        setImgSrc(path);
-        setIsLoading(false);
-        return;
+    if (path.startsWith("http")) {
+      setImgSrc(path);
+      setIsLoading(false);
+      return;
     }
 
     // KASUS C: Path Firebase Storage (users/uid/...) -> Minta URL ke Firebase
@@ -62,14 +62,23 @@ export default function FirebaseImage({
     };
 
     fetchFirebaseUrl();
-
   }, [path, fallbackSrc]);
+
+  if (isLoading) {
+    return (
+      <Skeleton
+        className={`bg-gray-200 dark:bg-muted ${
+          props.className || "w-full h-full"
+        }`}
+      />
+    );
+  }
 
   return (
     <Image
       {...props}
-      src={isLoading ? '/images/avatar.jpg' : imgSrc} // Next.js Image src
-      alt={props.alt || 'User Image'}
+      src={imgSrc} // Next.js Image src
+      alt={props.alt || "User Image"}
       unoptimized={true} // Bypass Next.js Image Optimization to fix timeout issues
     />
   );

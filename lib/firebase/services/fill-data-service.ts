@@ -209,7 +209,7 @@ export const saveFillData = async (uid: string, data: FillDataFormValues) => {
       const initialData: Registration = {
         // Required fields from Registration interface
         id: uid,
-        orPeriod: settings.currentOrPeriod,
+        orPeriod: `OR ${settings.currentOrPeriod}`,
         orYear: settings.currentOrYear,
         registrationId: `CAANG-OR${settings.currentOrPeriod}-${settings.currentOrYear}-${nextSequence}`,
         status: RegistrationStatus.FORM_SUBMITTED,

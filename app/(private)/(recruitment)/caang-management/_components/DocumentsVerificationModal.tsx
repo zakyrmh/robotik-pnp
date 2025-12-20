@@ -13,8 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { User } from "@/types/users";
 import { Registration } from "@/types/registrations";
-import { format } from "date-fns";
-import { id } from "date-fns/locale";
 import FirebaseImage from "@/components/FirebaseImage";
 
 interface DocumentsVerificationModalProps {
@@ -42,27 +40,6 @@ export default function DocumentsVerificationModal({
   const [youtubeLoading, setYoutubeLoading] = useState(true);
 
   if (!user || !registration) return null;
-
-  const formatDate = (
-    timestamp:
-      | { toDate: () => Date }
-      | Date
-      | string
-      | number
-      | null
-      | undefined
-  ) => {
-    if (!timestamp) return "-";
-    try {
-      const date =
-        timestamp && typeof timestamp === "object" && "toDate" in timestamp
-          ? timestamp.toDate()
-          : new Date(timestamp as string | number | Date);
-      return format(date, "dd MMMM yyyy", { locale: id });
-    } catch {
-      return "-";
-    }
-  };
 
   const documents = registration.documents;
 
@@ -249,21 +226,6 @@ export default function DocumentsVerificationModal({
               )}
             </div>
           </div>
-
-          {/* Verification Info */}
-          {registration?.stepVerifications?.step2Documents?.verified && (
-            <div className="bg-green-50 p-3 rounded-md text-sm text-green-800 border border-green-200">
-              <p className="font-medium">
-                ⚠️ Dokumen ini sudah pernah diverifikasi
-              </p>
-              <p className="text-xs mt-1">
-                Diverifikasi pada:{" "}
-                {formatDate(
-                  registration.stepVerifications.step2Documents.verifiedAt
-                )}
-              </p>
-            </div>
-          )}
 
           {/* Warning */}
           <div className="bg-amber-50 p-3 rounded-md text-xs text-amber-800 border border-amber-200">

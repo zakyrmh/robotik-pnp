@@ -8,7 +8,12 @@ import { useAuth } from "@/hooks/useAuth";
 // --- SERVICES & TYPES ---
 import { RecruitmentService } from "@/lib/firebase/services/recruitmentService";
 import { User } from "@/types/users";
-import { Registration } from "@/types/registrations";
+import {
+  Registration,
+  VerificationData,
+  RegistrationDocuments,
+  PaymentData,
+} from "@/types/registrations";
 import { RegistrationStatus } from "@/types/enum";
 
 // --- COMPONENTS ---
@@ -17,9 +22,7 @@ import FilterToolbar from "./_components/FilterToolbar";
 import CaangTable from "./_components/CaangTable";
 import CaangDetailModal from "./_components/CaangDetailModal";
 import BlacklistDialog from "./_components/BlacklistDialog";
-import FormDataVerificationModal from "./_components/FormDataVerificationModal";
-import DocumentsVerificationModal from "./_components/DocumentsVerificationModal";
-import PaymentVerificationModal from "./_components/PaymentVerificationModal";
+import UnifiedVerificationModal from "./_components/UnifiedVerificationModal";
 
 // Tambahan Import UI untuk Konfirmasi
 import {
@@ -68,24 +71,11 @@ export default function CaangManagementPage() {
   const [isBulkVerifyOpen, setIsBulkVerifyOpen] = useState(false);
   const [isBulkVerifyLoading, setIsBulkVerifyLoading] = useState(false);
 
-  // --- STATE: FORM DATA VERIFICATION ---
-  const [isFormDataVerifyOpen, setIsFormDataVerifyOpen] = useState(false);
-  const [isFormDataVerifyLoading, setIsFormDataVerifyLoading] = useState(false);
-  const [selectedUserForFormVerify, setSelectedUserForFormVerify] =
+  // --- STATE: UNIFIED VERIFICATION ---
+  const [isUnifiedVerifyOpen, setIsUnifiedVerifyOpen] = useState(false);
+  const [selectedUserForVerify, setSelectedUserForVerify] =
     useState<User | null>(null);
-
-  // --- STATE: DOCUMENTS VERIFICATION ---
-  const [isDocumentsVerifyOpen, setIsDocumentsVerifyOpen] = useState(false);
-  const [isDocumentsVerifyLoading, setIsDocumentsVerifyLoading] =
-    useState(false);
-  const [selectedUserForDocsVerify, setSelectedUserForDocsVerify] =
-    useState<User | null>(null);
-
-  // --- STATE: PAYMENT VERIFICATION ---
-  const [isPaymentVerifyOpen, setIsPaymentVerifyOpen] = useState(false);
-  const [isPaymentVerifyLoading, setIsPaymentVerifyLoading] = useState(false);
-  const [selectedUserForPaymentVerify, setSelectedUserForPaymentVerify] =
-    useState<User | null>(null);
+  const [isUnifiedActionLoading, setIsUnifiedActionLoading] = useState(false);
 
   // --- 1. FETCH DATA ---
   useEffect(() => {
@@ -190,29 +180,6 @@ export default function CaangManagementPage() {
     if (checked) newSet.add(userId);
     else newSet.delete(userId);
     setSelectedUserIds(newSet);
-  };
-
-  const handleVerifyPayment = async (regId: string) => {
-    if (!confirm("Konfirmasi pembayaran ini valid?")) return;
-    try {
-      await RecruitmentService.verifyPayment(regId);
-      setRegistrations((prev) => {
-        const newMap = new Map(prev);
-        const current = newMap.get(regId);
-        if (current) {
-          newMap.set(regId, {
-            ...current,
-            payment: { ...current.payment, verified: true },
-            status: RegistrationStatus.VERIFIED,
-          });
-        }
-        return newMap;
-      });
-      toast.success("Pembayaran berhasil diverifikasi");
-    } catch (e) {
-      console.error(e);
-      toast.error("Gagal verifikasi");
-    }
   };
 
   // --- 5. BULK ACTIONS HANDLERS ---
@@ -392,26 +359,22 @@ export default function CaangManagementPage() {
     /* ... kode export csv tetap sama ... */
   };
 
-  const handleVerifyData = (regId: string) => {
-    // Find the user for this registration
-    const user = users.find((u) => u.id === regId);
-    if (!user) {
-      toast.error("User tidak ditemukan");
-      return;
+  const handleOpenVerifyModal = (regId: string) => {
+    const user = users.find((u) => u.id === regId); // Assuming user.id == reg.id or mapped. User Id maps to Reg Id in this system (1:1 and same ID).
+    // Actually in `fetchData`, regIds = users.map(u => u.id).
+    // And in `CaangTable` `reg = registrations.get(user.id)`. So user.id is the key.
+
+    if (user) {
+      setSelectedUserForVerify(user);
+      setIsUnifiedVerifyOpen(true);
     }
-    // Open the modal with user data
-    setSelectedUserForFormVerify(user);
-    setIsFormDataVerifyOpen(true);
   };
 
-  const handleConfirmFormDataVerify = async () => {
-    if (!currentUser || !selectedUserForFormVerify) return;
-
-    const regId = selectedUserForFormVerify.id;
-
+  const handleUnifiedVerify = async (regId: string) => {
+    if (!currentUser) return;
     try {
-      setIsFormDataVerifyLoading(true);
-      await RecruitmentService.verifyFormData(regId, currentUser.uid);
+      setIsUnifiedActionLoading(true);
+      await RecruitmentService.verifyRegistration(regId, currentUser.uid);
 
       // Update Local State
       setRegistrations((prev) => {
@@ -420,130 +383,104 @@ export default function CaangManagementPage() {
         if (current) {
           newMap.set(regId, {
             ...current,
-            stepVerifications: {
-              ...current.stepVerifications,
-              step1FormData: {
-                verified: true,
-                verifiedBy: currentUser.uid,
-                verifiedAt: Timestamp.now(),
-              },
-            },
-            status: RegistrationStatus.FORM_VERIFIED,
+            status: RegistrationStatus.VERIFIED, // or "verified"
+            canEdit: false,
+            verification: {
+              ...(current.verification || {}),
+              verified: true,
+              verifiedBy: currentUser.uid,
+              verifiedAt: Timestamp.now(),
+              rejectionReason: undefined,
+            } as VerificationData,
+            documents: {
+              ...current.documents,
+              verified: true,
+              verifiedBy: currentUser.uid,
+              verifiedAt: Timestamp.now(),
+              rejectionReason: undefined,
+            } as RegistrationDocuments,
+            payment: {
+              ...current.payment,
+              verified: true,
+              verifiedBy: currentUser.uid,
+              verifiedAt: Timestamp.now(),
+              rejectionReason: undefined,
+            } as PaymentData,
           });
         }
         return newMap;
       });
 
-      toast.success("Data diri berhasil diverifikasi");
-      setIsFormDataVerifyOpen(false);
-      setSelectedUserForFormVerify(null);
-    } catch (e) {
-      console.error(e);
-      toast.error("Gagal verifikasi data");
+      toast.success("Pendaftaran berhasil diverifikasi.");
+      setIsUnifiedVerifyOpen(false);
+    } catch (error) {
+      console.error("Verification failed", error);
+      toast.error("Gagal memverifikasi pendaftaran.");
     } finally {
-      setIsFormDataVerifyLoading(false);
+      setIsUnifiedActionLoading(false);
     }
   };
 
-  const handleVerifyDocuments = (regId: string) => {
-    const user = users.find((u) => u.id === regId);
-    if (!user) {
-      toast.error("User tidak ditemukan");
-      return;
-    }
-    setSelectedUserForDocsVerify(user);
-    setIsDocumentsVerifyOpen(true);
-  };
-
-  const handleConfirmDocumentsVerify = async () => {
-    if (!currentUser || !selectedUserForDocsVerify) return;
-
-    const regId = selectedUserForDocsVerify.id;
-
+  const handleUnifiedReject = async (
+    regId: string,
+    type: "data" | "documents" | "payment",
+    reason: string
+  ) => {
+    if (!currentUser) return;
     try {
-      setIsDocumentsVerifyLoading(true);
-      await RecruitmentService.verifyDocuments(regId, currentUser.uid);
+      setIsUnifiedActionLoading(true);
+      await RecruitmentService.rejectRegistration(
+        regId,
+        currentUser.uid,
+        type,
+        reason
+      );
 
       // Update Local State
       setRegistrations((prev) => {
         const newMap = new Map(prev);
         const current = newMap.get(regId);
         if (current) {
-          newMap.set(regId, {
+          const newData = {
             ...current,
-            stepVerifications: {
-              ...current.stepVerifications,
-              step2Documents: {
-                verified: true,
-                verifiedBy: currentUser.uid,
-                verifiedAt: Timestamp.now(),
-              },
-            },
-          });
+            status: RegistrationStatus.REJECTED,
+            canEdit: true,
+          };
+          // Update specific part
+          if (type === "data") {
+            newData.verification = {
+              ...(newData.verification || {}),
+              verified: false,
+              verifiedBy: currentUser.uid,
+              verifiedAt: Timestamp.now(),
+              rejectionReason: reason,
+            } as VerificationData;
+          } else if (type === "documents") {
+            newData.documents = {
+              ...newData.documents,
+              verified: false,
+              rejectionReason: reason,
+            } as RegistrationDocuments;
+          } else if (type === "payment") {
+            newData.payment = {
+              ...newData.payment,
+              verified: false,
+              rejectionReason: reason,
+            } as PaymentData;
+          }
+          newMap.set(regId, newData);
         }
         return newMap;
       });
 
-      toast.success("Dokumen berhasil diverifikasi");
-      setIsDocumentsVerifyOpen(false);
-      setSelectedUserForDocsVerify(null);
-    } catch (e) {
-      console.error(e);
-      toast.error("Gagal verifikasi dokumen");
+      toast.success(`Data berhasil ditolak (${type}).`);
+      // Maybe close modal or keep open? Prompt implies close.
+      setIsUnifiedVerifyOpen(false);
+    } catch (error) {
+      console.error("Rejection failed", error);
+      toast.error("Gagal menolak data.");
     } finally {
-      setIsDocumentsVerifyLoading(false);
-    }
-  };
-
-  const handleVerifyPaymentModal = (regId: string) => {
-    const user = users.find((u) => u.id === regId);
-    if (!user) {
-      toast.error("User tidak ditemukan");
-      return;
-    }
-    setSelectedUserForPaymentVerify(user);
-    setIsPaymentVerifyOpen(true);
-  };
-
-  const handleConfirmPaymentVerify = async () => {
-    if (!currentUser || !selectedUserForPaymentVerify) return;
-
-    const regId = selectedUserForPaymentVerify.id;
-
-    try {
-      setIsPaymentVerifyLoading(true);
-      await RecruitmentService.verifyPayment(regId);
-
-      // Update Local State
-      setRegistrations((prev) => {
-        const newMap = new Map(prev);
-        const current = newMap.get(regId);
-        if (current) {
-          newMap.set(regId, {
-            ...current,
-            payment: { ...current.payment, verified: true },
-            stepVerifications: {
-              ...current.stepVerifications,
-              step3Payment: {
-                verified: true,
-                verifiedBy: currentUser.uid,
-                verifiedAt: Timestamp.now(),
-              },
-            },
-            status: RegistrationStatus.VERIFIED,
-          });
-        }
-        return newMap;
-      });
-
-      toast.success("Pembayaran berhasil diverifikasi");
-      setIsPaymentVerifyOpen(false);
-      setSelectedUserForPaymentVerify(null);
-    } catch (e) {
-      console.error(e);
-      toast.error("Gagal verifikasi pembayaran");
-    } finally {
-      setIsPaymentVerifyLoading(false);
+      setIsUnifiedActionLoading(false);
     }
   };
 
@@ -585,9 +522,7 @@ export default function CaangManagementPage() {
           handleSelectAll={handleSelectAll}
           handleSelectUser={handleSelectUser}
           onOpenDetail={handleOpenDetail}
-          onVerifyFormData={handleVerifyData}
-          onVerifyDocuments={handleVerifyDocuments}
-          onVerifyPayment={handleVerifyPaymentModal}
+          onVerifyRegistration={handleOpenVerifyModal}
         />
       )}
 
@@ -601,8 +536,8 @@ export default function CaangManagementPage() {
             ? registrations.get(selectedUserForDetail.id)
             : null
         }
-        onVerifyPayment={handleVerifyPayment}
-        onVerifyData={handleVerifyData}
+        onVerifyPayment={(regId) => handleOpenVerifyModal(regId)} // Redirect to Unified Modal
+        onVerifyData={(regId) => handleOpenVerifyModal(regId)} // Redirect to Unified Modal
         onOpenBlacklist={() => {
           setIsBulkBlacklistMode(false); // Pastikan mode single
           setIsBlacklistConfirmOpen(true);
@@ -632,55 +567,18 @@ export default function CaangManagementPage() {
         }
       />
 
-      {/* COMPONENT: FORM DATA VERIFICATION MODAL */}
-      <FormDataVerificationModal
-        isOpen={isFormDataVerifyOpen}
-        onClose={() => {
-          setIsFormDataVerifyOpen(false);
-          setSelectedUserForFormVerify(null);
-        }}
-        loading={isFormDataVerifyLoading}
-        onConfirm={handleConfirmFormDataVerify}
-        user={selectedUserForFormVerify}
+      <UnifiedVerificationModal
+        isOpen={isUnifiedVerifyOpen}
+        onClose={() => setIsUnifiedVerifyOpen(false)}
+        user={selectedUserForVerify}
         registration={
-          selectedUserForFormVerify
-            ? registrations.get(selectedUserForFormVerify.id) || null
+          selectedUserForVerify
+            ? registrations.get(selectedUserForVerify.id)
             : null
         }
-      />
-
-      {/* COMPONENT: DOCUMENTS VERIFICATION MODAL */}
-      <DocumentsVerificationModal
-        isOpen={isDocumentsVerifyOpen}
-        onClose={() => {
-          setIsDocumentsVerifyOpen(false);
-          setSelectedUserForDocsVerify(null);
-        }}
-        loading={isDocumentsVerifyLoading}
-        onConfirm={handleConfirmDocumentsVerify}
-        user={selectedUserForDocsVerify}
-        registration={
-          selectedUserForDocsVerify
-            ? registrations.get(selectedUserForDocsVerify.id) || null
-            : null
-        }
-      />
-
-      {/* COMPONENT: PAYMENT VERIFICATION MODAL */}
-      <PaymentVerificationModal
-        isOpen={isPaymentVerifyOpen}
-        onClose={() => {
-          setIsPaymentVerifyOpen(false);
-          setSelectedUserForPaymentVerify(null);
-        }}
-        loading={isPaymentVerifyLoading}
-        onConfirm={handleConfirmPaymentVerify}
-        user={selectedUserForPaymentVerify}
-        registration={
-          selectedUserForPaymentVerify
-            ? registrations.get(selectedUserForPaymentVerify.id) || null
-            : null
-        }
+        onVerify={handleUnifiedVerify}
+        onReject={handleUnifiedReject}
+        loading={isUnifiedActionLoading}
       />
 
       {/* COMPONENT: BULK VERIFY CONFIRMATION */}

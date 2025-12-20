@@ -11,13 +11,16 @@ import {
   XCircle,
   Send,
   FileText,
+  AlertCircle,
 } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import Link from "next/link";
 import { RegistrationStatus } from "@/types/enum";
 import { Registration } from "@/types/registrations";
 import { useState } from "react";
 import { submitRegistration } from "@/lib/firebase/services/registration-service";
-import { useRouter } from "next/navigation";
+
+import { toast } from "sonner";
 
 interface StepRegistrationProps {
   registration: Registration | null;
@@ -26,7 +29,6 @@ interface StepRegistrationProps {
 export default function StepRegistration({
   registration,
 }: StepRegistrationProps) {
-  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showResume, setShowResume] = useState(false);
 
@@ -71,10 +73,17 @@ export default function StepRegistration({
       setIsSubmitting(true);
       await submitRegistration(registration.id);
       setShowResume(false);
-      router.refresh();
+      toast.success("Pendaftaran berhasil disubmit", {
+        duration: 2000,
+      });
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     } catch (error) {
       console.error("Error submitting registration:", error);
-      alert("Gagal mengirim pendaftaran. Silakan coba lagi.");
+      toast.error("Gagal mengirim pendaftaran. Silakan coba lagi.", {
+        duration: 2000,
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -102,6 +111,38 @@ export default function StepRegistration({
             ></div>
           </div>
         </div>
+
+        {isRejected && (
+          <div className="mb-6 space-y-2">
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Pendaftaran Dikembalikan</AlertTitle>
+              <AlertDescription>
+                Mohon perbaiki data berikut dan kirim ulang pendaftaran Anda:
+                <ul className="list-disc pl-5 mt-2 space-y-1">
+                  {registration?.verification?.rejectionReason && (
+                    <li>
+                      <strong>Data Diri:</strong>{" "}
+                      {registration.verification.rejectionReason}
+                    </li>
+                  )}
+                  {registration?.documents?.rejectionReason && (
+                    <li>
+                      <strong>Dokumen:</strong>{" "}
+                      {registration.documents.rejectionReason}
+                    </li>
+                  )}
+                  {registration?.payment?.rejectionReason && (
+                    <li>
+                      <strong>Pembayaran:</strong>{" "}
+                      {registration.payment.rejectionReason}
+                    </li>
+                  )}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* STEP 1: DATA DIRI */}

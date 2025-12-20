@@ -18,7 +18,6 @@ import { Timestamp } from "firebase/firestore";
 import {
   uploadFileWithProgress,
   deleteFile,
-  getFileUrl,
 } from "@/lib/firebase/services/storage-service";
 import UploadProgressModal from "../../upload-documents/_components/UploadProgressModal";
 import PaymentInstructions from "./PaymentInstructions";
@@ -83,21 +82,6 @@ export default function PaymentForm({ user, registration }: PaymentFormProps) {
       }
     };
   }, [previewUrl]);
-
-  // Resolve preview URL if it's a storage path
-  useEffect(() => {
-    const resolveUrl = async () => {
-      if (
-        registration?.payment?.proofUrl &&
-        !registration.payment.proofUrl.startsWith("http") &&
-        !registration.payment.proofUrl.startsWith("blob:")
-      ) {
-        const url = await getFileUrl(registration.payment.proofUrl);
-        if (url) setPreviewUrl(url);
-      }
-    };
-    resolveUrl();
-  }, [registration?.payment?.proofUrl]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -178,37 +162,51 @@ export default function PaymentForm({ user, registration }: PaymentFormProps) {
       }
     }
 
-    // Tracking for transaction simulation
-    let newUploadedUrl: string | null = null;
-    const oldProofUrl = registration?.payment?.proofUrl;
+    // ------------------------------------------------------------------
+    // TRANSACTION STRATEGY:
+    // 1. Identify "Old" path to delete (IF user uploaded a NEW file).
+    // 2. Upload "New" file -> Track it.
+    // 3. Update Firestore.
+    // 4. IF SUCCESS: Delete "Old" path.
+    // 5. IF FAIL: Delete "New" path (Rollback).
+    // ------------------------------------------------------------------
+
+    let newUploadedPath: string | null = null;
+    let oldPathToDelete: string | null = null;
+
+    // 1. Identify Old Path to Delete
+    // Only if we are uploading a NEW file (selectedFile is present) AND there was an existing one.
+    if (selectedFile && registration?.payment?.proofUrl) {
+      oldPathToDelete = registration.payment.proofUrl;
+    }
 
     try {
       setShowProgressModal(true);
 
-      let finalProofUrl = paymentData.proofUrl;
+      let finalProofPath = paymentData.proofUrl;
 
-      // Step 1: Upload Logic
+      // 2. Upload New File
       if (selectedFile) {
         updateStep(0, { status: "uploading", progress: 0 });
         updateStep(1, { status: "pending", progress: 0 });
 
-        // Note: uploadProof returns the Download URL
-        finalProofUrl = await uploadProof(selectedFile);
-        newUploadedUrl = finalProofUrl;
+        // uploadProof returns the storage path
+        finalProofPath = await uploadProof(selectedFile);
+        newUploadedPath = finalProofPath;
 
-        // Update local state
-        setPaymentData((prev) => ({ ...prev, proofUrl: finalProofUrl }));
+        // Update local state (optional, just to stay in sync)
+        setPaymentData((prev) => ({ ...prev, proofUrl: finalProofPath }));
       } else {
         // Skip upload step if reusing existing file
         updateStep(0, { status: "completed", progress: 100 });
       }
 
-      // Step 2: Save Data (Firestore Transaction Point)
+      // 3. Update Firestore (Transaction Point)
       updateStep(1, { status: "uploading", progress: 0 });
 
       const paymentUpdate: PaymentData = {
         method: paymentData.method,
-        proofUrl: finalProofUrl,
+        proofUrl: finalProofPath,
         proofUploadedAt: Timestamp.now(),
         verified: false,
       };
@@ -229,13 +227,16 @@ export default function PaymentForm({ user, registration }: PaymentFormProps) {
 
       updateStep(1, { status: "completed", progress: 100 });
 
-      // Step 3: Success Compensation (Delete OLD file)
-      // Only delete if we uploaded a NEW file and there was an OLD one
-      if (newUploadedUrl && oldProofUrl && newUploadedUrl !== oldProofUrl) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        deleteFile(oldProofUrl).catch((err: any) =>
-          console.warn("Failed to delete old payment proof:", err)
-        );
+      // 4. SUCCESS COMPENSATION: Delete OLD file
+      if (oldPathToDelete) {
+        deleteFile(oldPathToDelete)
+          .then(() => console.log("Old payment proof deleted successfully"))
+          .catch((err) =>
+            console.warn(
+              "Failed to delete old payment proof (non-critical):",
+              err
+            )
+          );
       }
 
       toast.success("Pembayaran berhasil diunggah", {
@@ -248,19 +249,20 @@ export default function PaymentForm({ user, registration }: PaymentFormProps) {
     } catch (error) {
       console.error("Error submitting payment (Rolling back):", error);
 
-      // Step 4: Failure Compensation (Rollback - Delete NEW file)
-      if (newUploadedUrl) {
-        toast.info("Membatalkan upload...", { duration: 2000 });
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        await deleteFile(newUploadedUrl).catch((cleanupErr: any) =>
+      // 5. FAILURE COMPENSATION: Delete NEW file (Rollback)
+      if (newUploadedPath) {
+        toast.info("Terjadi kesalahan. Membatalkan upload...", {
+          duration: 2000,
+        });
+        await deleteFile(newUploadedPath).catch((cleanupErr) =>
           console.error(
-            "Critical: Failed to rollback payment proof:",
+            "CRITICAL: Failed to rollback payment proof:",
             cleanupErr
           )
         );
       }
 
-      toast.error("Gagal memproses pembayaran");
+      toast.error("Gagal memproses pembayaran. Silakan coba lagi.");
       setShowProgressModal(false);
     }
   };
