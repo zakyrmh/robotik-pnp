@@ -1,248 +1,208 @@
 "use client";
 
-import React, { useEffect, useState, Suspense } from "react";
-import { motion } from "framer-motion";
-import { Mail, Lock, Eye, EyeOff, User, ArrowRight } from "lucide-react";
-import { toast, Toaster } from "sonner";
-import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { loginUser } from "@/lib/firebase/auth";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
+import Cookies from "js-cookie"; // Ensure you run: npm install js-cookie @types/js-cookie
+import { LoginSchema, LoginValues } from "@/schemas/auth";
+import { loginWithEmail } from "@/lib/firebase/auth";
 
-function LoginFormContent() {
+// Separation of Concerns:
+// This component handles the UI Presentation and Form State Management.
+// It delegates the actual business logic (authentication) to the service layer (@/lib/firebase/auth).
+
+export default function LoginForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const redirectTo = searchParams.get("redirect");
+  const [globalError, setGlobalError] = useState<string | null>(null);
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const form = useForm<LoginValues>({
+    resolver: zodResolver(LoginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+      rememberMe: false,
+    },
+  });
 
-  // Load saved email jika remember me aktif
-  useEffect(() => {
-    const savedEmail = localStorage.getItem("rememberedEmail");
-    const wasRemembered = localStorage.getItem("rememberMe") === "true";
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = form;
 
-    if (savedEmail && wasRemembered) {
-      setEmail(savedEmail);
-      setRememberMe(true);
-    }
-  }, []);
+  const onSubmit = async (data: LoginValues) => {
+    setGlobalError(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
+    // 1. Call Service Layer for Firebase Auth
+    const result = await loginWithEmail(data);
 
-    try {
-      // Validasi input
-      if (!email || !password) {
-        toast.error("Email dan password harus diisi!");
-        setIsLoading(false);
-        return;
+    if (result.success && result.user) {
+      // 2. Middleware Protection Fix: Set 'session' cookie
+      // We manually set the cookie because Firebase client-side auth doesn't do it automatically for Next.js Middleware.
+      try {
+        const token = await result.user.getIdToken();
+
+        // Define cookie options
+        // If "Remember Me" is checked, expire in 7 days, else 1 day (or session)
+        const cookieOptions = {
+          expires: data.rememberMe ? 7 : 1,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "strict" as const,
+        };
+
+        Cookies.set("session", token, cookieOptions);
+
+        // 3. Redirect
+        // Refresh router to ensure middleware and new cookie state are recognized
+        router.push("/dashboard");
+        router.refresh();
+      } catch (err) {
+        console.error("Failed to set session cookie:", err);
+        setGlobalError("Gagal menyimpan sesi login.");
       }
-
-      // Sign in dengan Login Helper
-      const result = await loginUser(email, password);
-
-      if (!result.success || !result.idToken) {
-        toast.error(result.error);
-        setIsLoading(false);
-        return;
-      }
-
-      // Kirim ID Token ke server untuk create session cookie
-      const response = await fetch("/api/auth/session", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ idToken: result.idToken, rememberMe }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        toast.error(errorData.error || "Gagal membuat session. Coba lagi.");
-        console.error("Session API error:", errorData);
-        throw new Error("Failed to create session");
-      }
-
-      // Handle remember me
-      if (rememberMe) {
-        localStorage.setItem("rememberedEmail", email);
-        localStorage.setItem("rememberMe", "true");
-      } else {
-        localStorage.removeItem("rememberedEmail");
-        localStorage.removeItem("rememberMe");
-      }
-
-      toast.success("Login berhasil!");
-
-      // Redirect langsung tanpa timeout/refresh untuk avoid race condition
-      router.push(redirectTo || "/dashboard");
-    } catch (error) {
-      console.error("Unexpected login error:", error);
-      toast.error("Terjadi kesalahan tidak terduga saat login.");
-    } finally {
-      setIsLoading(false);
+    } else {
+      // Show error handling from Service Layer
+      setGlobalError(result.error || "Login gagal.");
     }
   };
 
   return (
-    <div className="w-full max-w-md">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="text-center mb-8"
-      >
-        <div className="mx-auto w-16 h-16 bg-blue-600 dark:bg-blue-700 rounded-full flex items-center justify-center mb-4">
-          <User className="w-8 h-8 text-white dark:text-gray-100" />
-        </div>
-        <h1 className="text-2xl md:text-3xl font-bold text-white dark:text-gray-100 mb-2">
-          UKM Robotik PNP
-        </h1>
-        <p className="text-gray-300 dark:text-gray-400 text-sm">
-          Masuk ke dashboard
+    <div className="w-full max-w-md space-y-8 p-8 bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl shadow-xl">
+      <div className="text-center">
+        <h2 className="text-3xl font-extrabold text-white tracking-tight">
+          Selamat Datang
+        </h2>
+        <p className="mt-2 text-sm text-gray-400">
+          Masuk ke akun Robotik PNP Anda
         </p>
-      </motion.div>
+      </div>
 
-      {/* Form Container */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.2 }}
-        className="bg-white/10 dark:bg-gray-800/30 backdrop-blur-md rounded-2xl p-6 md:p-8 shadow-xl border border-white/20 dark:border-gray-700/30"
-      >
-        <form onSubmit={handleSubmit} className="space-y-6">
+      <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
+        {/* Global Error Alert */}
+        {globalError && (
+          <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-3">
+            <p className="text-sm text-red-400 text-center font-medium">
+              {globalError}
+            </p>
+          </div>
+        )}
+
+        <div className="space-y-4">
           {/* Email Field */}
           <div>
             <label
               htmlFor="email"
-              className="block text-sm font-medium text-gray-200 dark:text-gray-300 mb-2"
+              className="block text-sm font-medium text-gray-300 mb-1"
             >
-              Email
+              Email Address
             </label>
-            <div className="relative">
-              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                placeholder="nama@email.com"
-                className="w-full pl-10 pr-4 py-3 bg-white/5 dark:bg-gray-700/30 border border-white/20 dark:border-gray-600/50 rounded-lg text-white dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-all duration-200"
-              />
-            </div>
+            <input
+              id="email"
+              type="email"
+              autoComplete="email"
+              placeholder="nama@email.com"
+              className={`appearance-none relative block w-full px-4 py-3 border ${
+                errors.email ? "border-red-500" : "border-gray-600"
+              } bg-gray-800/50 text-white placeholder-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 sm:text-sm`}
+              {...register("email")}
+            />
+            {errors.email && (
+              <p className="mt-1 text-xs text-red-400">
+                {errors.email.message}
+              </p>
+            )}
           </div>
 
           {/* Password Field */}
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-gray-200 dark:text-gray-300 mb-2"
+              className="block text-sm font-medium text-gray-300 mb-1"
             >
               Password
             </label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500" />
+            <input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              placeholder="••••••••"
+              className={`appearance-none relative block w-full px-4 py-3 border ${
+                errors.password ? "border-red-500" : "border-gray-600"
+              } bg-gray-800/50 text-white placeholder-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 sm:text-sm`}
+              {...register("password")}
+            />
+            {errors.password && (
+              <p className="mt-1 text-xs text-red-400">
+                {errors.password.message}
+              </p>
+            )}
+          </div>
+
+          {/* Remember Me Checkbox */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
               <input
-                type={showPassword ? "text" : "password"}
-                id="password"
-                name="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                placeholder="Masukkan password"
-                className="w-full pl-10 pr-12 py-3 bg-white/5 dark:bg-gray-700/30 border border-white/20 dark:border-gray-600/50 rounded-lg text-white dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-all duration-200"
+                id="remember-me"
+                type="checkbox"
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-600 rounded bg-gray-700"
+                {...register("rememberMe")}
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-white dark:hover:text-gray-300 transition-colors"
+              <label
+                htmlFor="remember-me"
+                className="ml-2 block text-sm text-gray-300"
               >
-                {showPassword ? (
-                  <EyeOff className="w-5 h-5" />
-                ) : (
-                  <Eye className="w-5 h-5" />
-                )}
-              </button>
+                Ingat Saya
+              </label>
+            </div>
+
+            <div className="text-sm">
+              <a
+                href="#"
+                className="font-medium text-blue-500 hover:text-blue-400"
+              >
+                Lupa password?
+              </a>
             </div>
           </div>
+        </div>
 
-          {/* Remember Me */}
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="rememberMe"
-              name="rememberMe"
-              checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-              className="w-4 h-4 text-blue-600 dark:text-blue-500 bg-white/10 dark:bg-gray-600/50 border-white/30 dark:border-gray-500/50 rounded focus:ring-blue-500 dark:focus:ring-blue-400 focus:ring-2"
-            />
-            <label
-              htmlFor="rememberMe"
-              className="ml-2 text-sm text-gray-300 dark:text-gray-400"
-            >
-              Ingat saya
-            </label>
-          </div>
-
-          {/* Login Button */}
-          <motion.button
+        <div>
+          <button
             type="submit"
-            disabled={isLoading}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 text-white font-semibold py-3 px-4 rounded-lg hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-800 dark:hover:to-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-transparent transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
+            disabled={isSubmitting}
+            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
           >
-            {isLoading ? (
-              <div className="w-5 h-5 border-2 border-white/30 dark:border-white/20 border-t-white dark:border-t-gray-100 rounded-full animate-spin" />
+            {isSubmitting ? (
+              <span className="flex items-center">
+                <svg
+                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                Processing...
+              </span>
             ) : (
-              <>
-                Masuk
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </>
+              "Sign In"
             )}
-          </motion.button>
-
-          {/* Forgot Password */}
-          <div className="text-center">
-            <Link
-              href="/forgot-password"
-              className="text-sm text-blue-400 dark:text-blue-300 hover:text-blue-300 dark:hover:text-blue-200 transition-colors duration-200"
-            >
-              Lupa password?
-            </Link>
-          </div>
-        </form>
-      </motion.div>
-
-      {/* Footer */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6, delay: 0.4 }}
-        className="text-center mt-8"
-      >
-        <p className="text-gray-400 dark:text-gray-500 text-xs">
-          © 2024 UKM Robotik Politeknik Negeri Padang
-        </p>
-      </motion.div>
-    </div>
-  );
-}
-
-export default function LoginForm() {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-slate-900 to-blue-800 dark:from-gray-900 dark:via-slate-900 dark:to-gray-800 flex items-center justify-center p-4">
-      <Suspense fallback={<div className="text-white">Loading...</div>}>
-        <LoginFormContent />
-      </Suspense>
-      <Toaster richColors position="top-right" />
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

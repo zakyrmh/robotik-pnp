@@ -3,9 +3,7 @@
 import { useState, useEffect } from "react";
 import { getFileUrl } from "@/lib/firebase/services/storage-service";
 import { Timestamp } from "firebase/firestore";
-import { User } from "@/types/users";
 import { Registration } from "@/types/registrations";
-import { Gender } from "@/types/enum";
 
 import {
   Dialog,
@@ -30,6 +28,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { AlertCircle, CheckCircle2 } from "lucide-react";
 import FirebaseImage from "@/components/FirebaseImage";
+import { User } from "@/schemas/users";
 
 const formatDate = (timestamp?: Timestamp) => {
   if (!timestamp) return "-";
@@ -162,9 +161,7 @@ export default function UnifiedVerificationModal({
                 <InfoRow
                   label="Jenis Kelamin"
                   value={
-                    user.profile.gender === Gender.MALE
-                      ? "Laki-laki"
-                      : "Perempuan"
+                    user.profile.gender === "male" ? "Laki-laki" : "Perempuan"
                   }
                 />
                 <InfoRow

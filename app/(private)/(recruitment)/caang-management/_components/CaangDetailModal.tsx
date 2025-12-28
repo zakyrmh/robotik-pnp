@@ -2,9 +2,7 @@
 
 import Image from "next/image";
 import { Timestamp } from "firebase/firestore";
-import { User } from "@/types/users";
 import { Registration } from "@/types/registrations";
-import { Gender } from "@/types/enum"; // Sesuaikan path enum
 
 import {
   Dialog,
@@ -20,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { School } from "lucide-react";
 import FirebaseImage from "@/components/FirebaseImage";
+import { User } from "@/schemas/users";
 
 // Helper function untuk tanggal
 const formatDate = (timestamp?: Timestamp) => {
@@ -105,9 +104,7 @@ export default function CaangDetailModal({
               <InfoRow
                 label="Jenis Kelamin"
                 value={
-                  user.profile.gender === Gender.MALE
-                    ? "Laki-laki"
-                    : "Perempuan"
+                  user.profile.gender === "male" ? "Laki-laki" : "Perempuan"
                 }
               />
               <InfoRow

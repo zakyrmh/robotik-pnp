@@ -5,21 +5,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import {
-  Mail,
-  Lock,
-  User,
-  Eye,
-  EyeOff,
-  ArrowRight,
-  Loader2,
-} from "lucide-react";
 import { toast } from "sonner";
-
 import { registerUser } from "@/lib/firebase/auth";
 import Link from "next/link";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const registerSchema = z
   .object({
@@ -36,8 +24,6 @@ const registerSchema = z
 export default function RegisterForm() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
 
   const {
@@ -65,8 +51,12 @@ export default function RegisterForm() {
     });
 
     if (result.success) {
-      toast.success("Registrasi berhasil! Silakan cek email Anda.");
-      router.push("/verification-pending");
+      toast.success("Registrasi berhasil! Mengalihkan...");
+      // Redirect to dashboard as requested, or verification page if that was the intent.
+      // User requested: "Redirect user menggunakan router.push('/dashboard') (atau halaman verifikasi yang sesuai)."
+      // I will use /dashboard as the primary instruction example, or verification if preferred.
+      // Given the previous code had /verification-pending, I'll switch to /dashboard as explicitly suggested in the prompt "Redirect user menggunakan router.push('/dashboard')".
+      router.push("/dashboard");
     } else {
       const errMsg = result.error || "Gagal melakukan registrasi";
       setError(errMsg);
@@ -75,212 +65,174 @@ export default function RegisterForm() {
     }
   }
 
-  // Styles reused from LoginForm logic
-  const inputContainerClass = "relative";
-  const iconClass =
-    "absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-gray-500";
-  const inputClass =
-    "w-full pl-10 pr-4 py-3 bg-white/5 dark:bg-gray-700/30 border border-white/20 dark:border-gray-600/50 rounded-lg text-white dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:border-transparent transition-all duration-200";
-  const labelClass =
-    "block text-sm font-medium text-gray-200 dark:text-gray-300 mb-2";
-  const errorClass = "text-red-400 text-xs mt-1 ml-1";
-
   return (
-    <div className="w-full max-w-md">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="text-center mb-8"
-      >
-        <div className="mx-auto w-16 h-16 bg-blue-600 dark:bg-blue-700 rounded-full flex items-center justify-center mb-4">
-          <User className="w-8 h-8 text-white dark:text-gray-100" />
-        </div>
-        <h1 className="text-2xl md:text-3xl font-bold text-white dark:text-gray-100 mb-2">
-          UKM Robotik PNP
-        </h1>
-        <p className="text-gray-300 dark:text-gray-400 text-sm">
-          Daftar calon anggota baru
+    <div className="w-full max-w-md space-y-8 p-8 bg-white/5 backdrop-blur-lg border border-white/10 rounded-2xl shadow-xl">
+      <div className="text-center">
+        <h2 className="text-3xl font-extrabold text-white tracking-tight">
+          Daftar Akun
+        </h2>
+        <p className="mt-2 text-sm text-gray-400">
+          Bergabung dengan UKM Robotik PNP
         </p>
-      </motion.div>
+      </div>
 
-      {/* Form Container */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.2 }}
-        className="bg-white/10 dark:bg-gray-800/30 backdrop-blur-md rounded-2xl p-6 md:p-8 shadow-xl border border-white/20 dark:border-gray-700/30"
-      >
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          {error && (
-            <Alert
-              variant="destructive"
-              className="bg-red-500/10 border-red-500/50 text-red-200"
-            >
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
+      <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
+        {/* Global Error Alert */}
+        {error && (
+          <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-3">
+            <p className="text-sm text-red-400 text-center font-medium">
+              {error}
+            </p>
+          </div>
+        )}
 
+        <div className="space-y-4">
           {/* Full Name */}
           <div>
-            <label htmlFor="fullName" className={labelClass}>
+            <label
+              htmlFor="fullName"
+              className="block text-sm font-medium text-gray-300 mb-1"
+            >
               Nama Lengkap
             </label>
-            <div className={inputContainerClass}>
-              <User className={iconClass} />
-              <input
-                id="fullName"
-                type="text"
-                placeholder="Nama Lengkap Anda"
-                className={`${inputClass} ${
-                  errors.fullName ? "border-red-500 ring-red-500" : ""
-                }`}
-                {...register("fullName")}
-              />
-            </div>
+            <input
+              id="fullName"
+              type="text"
+              placeholder="Nama Lengkap Anda"
+              className={`appearance-none relative block w-full px-4 py-3 border ${
+                errors.fullName ? "border-red-500" : "border-gray-600"
+              } bg-gray-800/50 text-white placeholder-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 sm:text-sm`}
+              {...register("fullName")}
+            />
             {errors.fullName && (
-              <p className={errorClass}>{errors.fullName.message}</p>
+              <p className="mt-1 text-xs text-red-400">
+                {errors.fullName.message}
+              </p>
             )}
           </div>
 
           {/* Email */}
           <div>
-            <label htmlFor="email" className={labelClass}>
-              Email
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-300 mb-1"
+            >
+              Email Address
             </label>
-            <div className={inputContainerClass}>
-              <Mail className={iconClass} />
-              <input
-                id="email"
-                type="email"
-                placeholder="nama@email.com"
-                className={`${inputClass} ${
-                  errors.email ? "border-red-500 ring-red-500" : ""
-                }`}
-                {...register("email")}
-              />
-            </div>
+            <input
+              id="email"
+              type="email"
+              autoComplete="email"
+              placeholder="nama@email.com"
+              className={`appearance-none relative block w-full px-4 py-3 border ${
+                errors.email ? "border-red-500" : "border-gray-600"
+              } bg-gray-800/50 text-white placeholder-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 sm:text-sm`}
+              {...register("email")}
+            />
             {errors.email && (
-              <p className={errorClass}>{errors.email.message}</p>
+              <p className="mt-1 text-xs text-red-400">
+                {errors.email.message}
+              </p>
             )}
           </div>
 
           {/* Password */}
           <div>
-            <label htmlFor="password" className={labelClass}>
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-300 mb-1"
+            >
               Password
             </label>
-            <div className={inputContainerClass}>
-              <Lock className={iconClass} />
-              <input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                placeholder="••••••"
-                className={`${inputClass} pr-12 ${
-                  errors.password ? "border-red-500 ring-red-500" : ""
-                }`}
-                {...register("password")}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-white dark:hover:text-gray-300 transition-colors"
-                tabIndex={-1}
-              >
-                {showPassword ? (
-                  <EyeOff className="w-5 h-5" />
-                ) : (
-                  <Eye className="w-5 h-5" />
-                )}
-              </button>
-            </div>
+            <input
+              id="password"
+              type="password"
+              placeholder="••••••••"
+              className={`appearance-none relative block w-full px-4 py-3 border ${
+                errors.password ? "border-red-500" : "border-gray-600"
+              } bg-gray-800/50 text-white placeholder-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 sm:text-sm`}
+              {...register("password")}
+            />
             {errors.password && (
-              <p className={errorClass}>{errors.password.message}</p>
+              <p className="mt-1 text-xs text-red-400">
+                {errors.password.message}
+              </p>
             )}
           </div>
 
           {/* Confirm Password */}
           <div>
-            <label htmlFor="confirmPassword" className={labelClass}>
+            <label
+              htmlFor="confirmPassword"
+              className="block text-sm font-medium text-gray-300 mb-1"
+            >
               Konfirmasi Password
             </label>
-            <div className={inputContainerClass}>
-              <Lock className={iconClass} />
-              <input
-                id="confirmPassword"
-                type={showConfirmPassword ? "text" : "password"}
-                placeholder="••••••"
-                className={`${inputClass} pr-12 ${
-                  errors.confirmPassword ? "border-red-500 ring-red-500" : ""
-                }`}
-                {...register("confirmPassword")}
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 hover:text-white dark:hover:text-gray-300 transition-colors"
-                tabIndex={-1}
-              >
-                {showConfirmPassword ? (
-                  <EyeOff className="w-5 h-5" />
-                ) : (
-                  <Eye className="w-5 h-5" />
-                )}
-              </button>
-            </div>
+            <input
+              id="confirmPassword"
+              type="password"
+              placeholder="••••••••"
+              className={`appearance-none relative block w-full px-4 py-3 border ${
+                errors.confirmPassword ? "border-red-500" : "border-gray-600"
+              } bg-gray-800/50 text-white placeholder-gray-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 sm:text-sm`}
+              {...register("confirmPassword")}
+            />
             {errors.confirmPassword && (
-              <p className={errorClass}>{errors.confirmPassword.message}</p>
+              <p className="mt-1 text-xs text-red-400">
+                {errors.confirmPassword.message}
+              </p>
             )}
           </div>
+        </div>
 
-          {/* Submit Button */}
-          <motion.button
+        <div>
+          <button
             type="submit"
             disabled={isLoading}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 dark:from-blue-700 dark:to-blue-800 text-white font-semibold py-3 px-4 rounded-lg hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-800 dark:hover:to-blue-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 focus:ring-offset-2 focus:ring-offset-transparent transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center"
+            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-bold rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
           >
             {isLoading ? (
-              <div className="flex items-center">
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              <span className="flex items-center">
+                <svg
+                  className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
                 Processing...
-              </div>
+              </span>
             ) : (
-              <>
-                Daftar
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </>
+              "Daftar"
             )}
-          </motion.button>
+          </button>
+        </div>
 
-          {/* Login Link */}
-          <div className="text-center">
-            <p className="text-sm text-gray-300 dark:text-gray-400">
-              Sudah punya akun?{" "}
-              <Link
-                href="/login"
-                className="text-blue-400 dark:text-blue-300 hover:text-blue-300 dark:hover:text-blue-200 font-medium transition-colors duration-200"
-              >
-                Login disini
-              </Link>
-            </p>
-          </div>
-        </form>
-      </motion.div>
-
-      {/* Footer */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.6, delay: 0.4 }}
-        className="text-center mt-8"
-      >
-        <p className="text-gray-400 dark:text-gray-500 text-xs">
-          © 2024 UKM Robotik Politeknik Negeri Padang
-        </p>
-      </motion.div>
+        <div className="text-center">
+          <p className="text-sm text-gray-300">
+            Sudah punya akun?{" "}
+            <Link
+              href="/login"
+              className="font-medium text-blue-500 hover:text-blue-400"
+            >
+              Login disini
+            </Link>
+          </p>
+        </div>
+      </form>
     </div>
   );
 }

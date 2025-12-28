@@ -173,14 +173,6 @@ export enum AnnouncementCategory {
 }
 
 /**
- * Gender
- */
-export enum Gender {
-  MALE = "male",
-  FEMALE = "female",
-}
-
-/**
  * Divisi UKM
  */
 export enum Division {
