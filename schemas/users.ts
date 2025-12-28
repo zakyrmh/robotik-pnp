@@ -97,8 +97,8 @@ const UserProfileSchema = z.object({
   department: z.string().optional(),
   entryYear: z.number().int().optional(),
 
-  photoUrl: z.string().url().optional(),
-  ktmUrl: z.string().url().optional(),
+  photoUrl: z.string().optional(),
+  ktmUrl: z.string().optional(),
 });
 
 const UserMembershipSchema = z.object({
