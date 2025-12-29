@@ -58,18 +58,18 @@ export function Header() {
   const breadcrumbs = generateBreadcrumbs();
 
   return (
-    <header className="sticky top-0 z-20 flex h-[72px] items-center justify-between border-b border-gray-200 bg-white/80 px-6 backdrop-blur-md transition-all">
+    <header className="sticky top-0 z-20 flex h-[72px] items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-950/80 px-6 backdrop-blur-md transition-colors duration-300">
       <div className="flex items-center gap-4">
         {/* Mobile Hamburger */}
         <button
           onClick={toggleSidebar}
-          className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 lg:hidden focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="rounded-lg p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 lg:hidden focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
           <Menu className="h-6 w-6" />
         </button>
 
         {/* Breadcrumbs */}
-        <nav className="flex items-center text-sm font-medium text-gray-500 max-sm:hidden">
+        <nav className="flex items-center text-sm font-medium text-slate-500 dark:text-slate-400 max-sm:hidden">
           <Link
             href="/dashboard"
             className="flex items-center hover:text-blue-600 transition-colors"
@@ -78,13 +78,13 @@ export function Header() {
           </Link>
 
           {breadcrumbs.length > 0 && (
-            <ChevronRight className="w-4 h-4 mx-2 text-gray-300" />
+            <ChevronRight className="w-4 h-4 mx-2 text-slate-300 dark:text-slate-700" />
           )}
 
           {breadcrumbs.map((crumb) => (
             <Fragment key={crumb.href}>
               {crumb.isLast ? (
-                <span className="text-gray-900 font-semibold cursor-default">
+                <span className="text-slate-900 dark:text-slate-100 font-semibold cursor-default">
                   {crumb.label}
                 </span>
               ) : (
@@ -96,14 +96,14 @@ export function Header() {
                 </Link>
               )}
               {!crumb.isLast && (
-                <ChevronRight className="w-4 h-4 mx-2 text-gray-300" />
+                <ChevronRight className="w-4 h-4 mx-2 text-slate-300 dark:text-slate-700" />
               )}
             </Fragment>
           ))}
         </nav>
 
         {/* Mobile Title Replacement (Simple) */}
-        <div className="lg:hidden sm:hidden font-semibold text-gray-800">
+        <div className="lg:hidden sm:hidden font-semibold text-slate-800 dark:text-slate-100">
           {breadcrumbs.length > 0
             ? breadcrumbs[breadcrumbs.length - 1].label
             : "Robotik PNP"}

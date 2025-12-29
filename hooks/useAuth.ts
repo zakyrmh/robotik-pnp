@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Cookies from "js-cookie";
 import {
   signInWithEmailAndPassword,
   signOut as firebaseSignOut,
@@ -171,7 +172,6 @@ export function useAuth() {
     try {
       if (auth.currentUser) {
         // Menggunakan dynamic import untuk menghindari circular dependency
-        // Pastikan path ini benar sesuai struktur folder Anda
         try {
           const { setUserOffline } = await import(
             "@/lib/firebase/services/user-status"
@@ -184,6 +184,11 @@ export function useAuth() {
 
       await firebaseSignOut(auth);
 
+      // Remove session cookie
+      Cookies.remove("session");
+
+      // Optional: Hit API if needed (commented out as it causes issues if route doesn't exist)
+      /* 
       try {
         await fetch("/api/auth/logout", {
           method: "POST",
@@ -191,6 +196,7 @@ export function useAuth() {
       } catch (sessionErr) {
         console.warn("Logout session API failed:", sessionErr);
       }
+      */
 
       router.push("/login");
       router.refresh();

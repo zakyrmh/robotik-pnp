@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -23,18 +23,13 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UserSystemRoles } from "@/schemas/users";
-import { auth, db } from "@/lib/firebase/config";
-import { doc, getDoc } from "firebase/firestore";
 import Image from "next/image";
 import { useSidebarContext } from "@/components/sidebar-context";
+import { useDashboard } from "@/components/dashboard/dashboard-context";
 
 // =========================================================
 // TYPES
 // =========================================================
-
-interface SidebarProps {
-  userRoles: UserSystemRoles;
-}
 
 type MenuItem = {
   href: string;
@@ -203,17 +198,27 @@ function SidebarInner({
 
   // Permission Logic
   const hasPermission = (item: MenuItem) => {
-    if (item.checkVerified && !isCaangVerified) return false;
+    // 1. Cek verifikasi terlebih dahulu
+    if (item.checkVerified) {
+      if (!isCaangVerified) {
+        return false;
+      }
+    }
+
+    // 2. Cek role
     if (!item.requiredRoles || item.requiredRoles.length === 0) return true;
-    return item.requiredRoles.some((role) => userRoles[role] === true);
+
+    const hasRole = item.requiredRoles.some((role) => userRoles[role] === true);
+
+    return hasRole;
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 border-r border-slate-200">
+    <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 transition-colors duration-300">
       {/* Header / Logo */}
       <div
         className={cn(
-          "h-[72px] flex items-center border-b border-slate-200 transition-all duration-300 relative",
+          "h-[72px] flex items-center border-b border-slate-200 dark:border-slate-800 transition-all duration-300 relative",
           isCollapsed ? "justify-center px-0" : "justify-between px-4"
         )}
       >
@@ -231,7 +236,7 @@ function SidebarInner({
               className="object-contain"
             />
           </div>
-          <span className="font-bold text-lg text-slate-800 tracking-tight whitespace-nowrap">
+          <span className="font-bold text-lg text-slate-800 dark:text-slate-100 tracking-tight whitespace-nowrap">
             Robotik PNP
           </span>
         </div>
@@ -241,7 +246,7 @@ function SidebarInner({
           <button
             onClick={toggleCollapse}
             className={cn(
-              "p-1.5 rounded-lg hover:bg-slate-200 text-slate-500 transition-colors z-20",
+              "p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors z-20",
               isCollapsed ? "mx-auto" : ""
             )}
             title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
@@ -272,7 +277,7 @@ function SidebarInner({
                 </div>
               )}
               {isCollapsed && group.groupLabel && (
-                <div className="w-8 h-0.5 bg-slate-200 rounded-full my-3 mx-auto" />
+                <div className="w-8 h-0.5 bg-slate-200 dark:bg-slate-800 rounded-full my-3 mx-auto" />
               )}
 
               {/* Items */}
@@ -289,8 +294,8 @@ function SidebarInner({
                     className={cn(
                       "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative",
                       isActive
-                        ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
-                        : "text-slate-600 hover:bg-white hover:text-blue-600 hover:shadow-sm",
+                        ? "bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400"
+                        : "text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200",
                       isCollapsed && "justify-center px-0"
                     )}
                   >
@@ -299,8 +304,8 @@ function SidebarInner({
                         "shrink-0 transition-all duration-200",
                         isCollapsed ? "w-6 h-6" : "w-5 h-5",
                         isActive
-                          ? "text-white"
-                          : "text-slate-500 group-hover:text-blue-600"
+                          ? "text-blue-600 dark:text-blue-400"
+                          : "text-slate-500 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300"
                       )}
                     />
 
@@ -332,34 +337,12 @@ function SidebarInner({
 // MAIN SIDEBAR COMPONENT
 // =========================================================
 
-export function Sidebar({ userRoles }: SidebarProps) {
+export function Sidebar() {
   const { isOpen, isMobile, closeSidebar } = useSidebarContext();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isCaangVerified, setIsCaangVerified] = useState(false);
 
-  // Verification Logic
-  useEffect(() => {
-    if (userRoles.isCaang) {
-      const checkVerification = async () => {
-        const user = auth.currentUser;
-        if (!user) return;
-        try {
-          const regRef = doc(db, "registrations", user.uid);
-          const regSnap = await getDoc(regRef);
-          if (regSnap.exists()) {
-            const data = regSnap.data();
-            const verified =
-              data.status === "verified" &&
-              data.verification?.verified === true;
-            setIsCaangVerified(verified);
-          }
-        } catch (error) {
-          console.error("Error checking verification:", error);
-        }
-      };
-      checkVerification();
-    }
-  }, [userRoles.isCaang]);
+  // Get data from dashboard context
+  const { roles, isCaangVerified } = useDashboard();
 
   const sidebarVariants = {
     expanded: { width: "16rem" },
@@ -367,6 +350,18 @@ export function Sidebar({ userRoles }: SidebarProps) {
   };
 
   const toggleCollapse = () => setIsCollapsed(!isCollapsed);
+
+  // Graceful fallback if roles are null
+  const safeRoles = roles || {
+    isSuperAdmin: false,
+    isKestari: false,
+    isKomdis: false,
+    isRecruiter: false,
+    isKRIMember: false,
+    isOfficialMember: false,
+    isCaang: false,
+    isAlumni: false,
+  };
 
   return (
     <>
@@ -386,14 +381,14 @@ export function Sidebar({ userRoles }: SidebarProps) {
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed left-0 top-0 bottom-0 w-72 z-50 bg-white shadow-2xl lg:hidden"
+              className="fixed left-0 top-0 bottom-0 w-72 z-50 bg-white dark:bg-slate-900 shadow-2xl lg:hidden"
             >
               <SidebarInner
                 isCollapsed={false}
                 toggleCollapse={toggleCollapse}
                 isMobile={true}
                 closeSidebar={closeSidebar}
-                userRoles={userRoles}
+                userRoles={safeRoles}
                 isCaangVerified={isCaangVerified}
               />
             </motion.aside>
@@ -407,7 +402,7 @@ export function Sidebar({ userRoles }: SidebarProps) {
         animate={isCollapsed ? "collapsed" : "expanded"}
         variants={sidebarVariants}
         className={cn(
-          "hidden lg:flex flex-col h-screen sticky top-0 z-30 shrink-0 shadow-sm border-r bg-slate-50"
+          "hidden lg:flex flex-col h-screen sticky top-0 z-30 shrink-0 shadow-sm border-r border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 transition-colors duration-300"
         )}
       >
         <SidebarInner
@@ -415,7 +410,7 @@ export function Sidebar({ userRoles }: SidebarProps) {
           toggleCollapse={toggleCollapse}
           isMobile={false}
           closeSidebar={closeSidebar}
-          userRoles={userRoles}
+          userRoles={safeRoles}
           isCaangVerified={isCaangVerified}
         />
       </motion.aside>

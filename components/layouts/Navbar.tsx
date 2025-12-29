@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Menu, X, User, LogOut } from "lucide-react";
 import { animate } from "framer-motion";
 import Link from "next/link";
@@ -12,8 +12,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { auth } from "@/lib/firebase/config";
-import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
 import { useAuth } from "@/hooks/useAuth";
 
 const navItems = [
@@ -38,19 +36,8 @@ function scrollToSection(id: string) {
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const [user, setUser] = useState<FirebaseUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-  const { logout, loading } = useAuth();
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      setIsLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
+  const { user, logout, loading } = useAuth();
 
   const handleLogin = () => {
     router.push("/login");
@@ -86,7 +73,7 @@ export default function Navbar() {
             ))}
 
             {/* Auth Button/Dropdown */}
-            {isLoading ? (
+            {loading ? (
               <div className="w-20 h-9 bg-slate-200 dark:bg-slate-700 animate-pulse rounded-md">
                 <span className="sr-only">Memuat status login...</span>
               </div>
@@ -164,7 +151,7 @@ export default function Navbar() {
 
             {/* Mobile Auth Button */}
             <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
-              {isLoading ? (
+              {loading ? (
                 <div className="w-20 h-9 bg-slate-200 dark:bg-slate-700 animate-pulse rounded-md">
                   <span className="sr-only">Memuat status login...</span>
                 </div>
