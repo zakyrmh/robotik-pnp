@@ -9,7 +9,7 @@ interface PageLoaderProps {
 
 export function PageLoader({ message = "Memuat data..." }: PageLoaderProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-linear-to-br from-slate-50 via-slate-100 to-slate-200 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-5 dark:opacity-10">
         <div
@@ -42,7 +42,7 @@ export function PageLoader({ message = "Memuat data..." }: PageLoaderProps) {
         >
           {/* Glow Effect */}
           <div className="absolute inset-0 blur-3xl opacity-30">
-            <div className="w-24 h-24 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full" />
+            <div className="w-24 h-24 bg-linear-to-r from-blue-500 to-indigo-600 rounded-full" />
           </div>
 
           {/* Logo */}
@@ -82,7 +82,7 @@ export function PageLoader({ message = "Memuat data..." }: PageLoaderProps) {
           {/* Progress Bar Container */}
           <div className="h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
             <motion.div
-              className="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-blue-500 rounded-full"
+              className="h-full bg-linear-to-r from-blue-500 via-indigo-500 to-blue-500 rounded-full"
               style={{ backgroundSize: "200% 100%" }}
               animate={{
                 backgroundPosition: ["0% 0%", "100% 0%", "0% 0%"],

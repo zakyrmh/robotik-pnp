@@ -21,9 +21,9 @@ export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Cek apakah user memiliki session cookie
-  // Firebase session cookie biasanya bernama '__session' atau custom name
+  // Firebase session cookie yang di-set dari /api/auth/session
   const sessionCookie = request.cookies.get("session")?.value;
-  const isAuthenticated = !!sessionCookie;
+  const hasSessionCookie = !!sessionCookie;
 
   // Cek apakah halaman yang diakses adalah protected route
   const isProtectedRoute = protectedRoutes.some((route) =>
@@ -33,16 +33,27 @@ export function proxy(request: NextRequest) {
   // Cek apakah halaman yang diakses adalah auth route
   const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
 
-  // CASE 1: Sama, tapi tambah logging
-  if (isProtectedRoute && !isAuthenticated) {
+  // CASE 1: Protected route tanpa session cookie → redirect ke login
+  // Catatan: Ini TIDAK menjamin user masih authenticated di Firebase
+  // Validasi sebenarnya terjadi di client-side via onAuthStateChanged
+  if (isProtectedRoute && !hasSessionCookie) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
-    console.log("Middleware: Redirecting to login with redirect=", pathname); // Logging server-side
+    console.log(
+      "[Middleware] No session cookie, redirecting to login. redirect=",
+      pathname
+    );
     return NextResponse.redirect(loginUrl);
   }
-  // CASE 2: Ubah agar respect param redirect jika ada (untuk avoid override)
-  if (isAuthRoute && isAuthenticated) {
+
+  // CASE 2: Auth route dengan session cookie → redirect ke dashboard
+  // Catatan: Jika session sudah expired tapi cookie masih ada,
+  // client-side useAuth akan handle dengan menghapus cookie dan redirect
+  if (isAuthRoute && hasSessionCookie) {
     const redirectParam = request.nextUrl.searchParams.get("redirect");
+    console.log(
+      "[Middleware] Has session cookie on auth route, redirecting to dashboard/redirect param"
+    );
     return NextResponse.redirect(
       new URL(redirectParam || "/dashboard", request.url)
     );

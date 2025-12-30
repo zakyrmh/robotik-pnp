@@ -96,6 +96,39 @@ export function useAuth() {
           setError("Gagal mengambil data user");
         }
       } else {
+        // PERBAIKAN: Sinkronisasi cookie dengan auth state
+        // Jika user null tapi cookie session masih ada, hapus cookie tersebut
+        // Ini mengatasi masalah "ghost session" dimana cookie masih ada tapi auth state sudah expired
+        const sessionCookie = Cookies.get("session");
+        if (sessionCookie) {
+          console.warn(
+            "Auth state is null but session cookie exists. Removing stale cookie..."
+          );
+          Cookies.remove("session");
+
+          // Redirect ke login jika sedang di protected route
+          const currentPath = window.location.pathname;
+          const protectedRoutes = [
+            "/dashboard",
+            "/caang-management",
+            "/activity-management",
+            "/attendance-management",
+            "/group-management",
+            "/timeline",
+            "/presence",
+            "/material",
+            "/group",
+          ];
+
+          const isOnProtectedRoute = protectedRoutes.some((route) =>
+            currentPath.startsWith(route)
+          );
+
+          if (isOnProtectedRoute) {
+            router.push(`/login?redirect=${encodeURIComponent(currentPath)}`);
+          }
+        }
+
         setUserData(null);
       }
 
@@ -103,7 +136,7 @@ export function useAuth() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [router]);
 
   // Login function
   const login = async (
