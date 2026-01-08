@@ -37,6 +37,7 @@ export function Header() {
         presence: "Presensi Saya",
         recruitment: "Recruitment",
         members: "Anggota",
+        trash: "Tempat Sampah",
       };
 
       return (

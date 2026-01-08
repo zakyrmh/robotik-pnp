@@ -76,7 +76,7 @@ export const ActivitySchema = z.object({
   isActive: z.boolean().default(true), // Untuk soft disable
 
   // Soft Delete
-  deletedAt: TimestampSchema.optional(),
+  deletedAt: TimestampSchema.nullable().optional(),
   deletedBy: z.string().optional(),
 
   // Metadata
@@ -94,3 +94,59 @@ export type ActivityMode = z.infer<typeof ActivityModeEnum>;
 export type ActivityStatus = z.infer<typeof ActivityStatusEnum>;
 
 export type Activity = z.infer<typeof ActivitySchema>;
+
+// ---------------------------------------------------------
+// 5. FORM SCHEMA (Untuk Create/Edit Form)
+// ---------------------------------------------------------
+
+export const ActivityFormSchema = z.object({
+  title: z.string().min(3, "Judul aktivitas minimal 3 karakter"),
+  description: z.string(),
+  orPeriod: z.string(),
+
+  // Schedule - use string for form input (datetime-local format)
+  startDate: z.string().min(1, "Tanggal mulai wajib diisi"),
+  startTime: z.string().min(1, "Jam mulai wajib diisi"),
+  endDate: z.string().min(1, "Tanggal selesai wajib diisi"),
+  endTime: z.string().min(1, "Jam selesai wajib diisi"),
+
+  // Mode & Location
+  mode: ActivityModeEnum,
+  location: z.string(),
+  onlineLink: z.string(),
+
+  // Attendance
+  attendanceEnabled: z.boolean(),
+  lateTolerance: z.number().int().nonnegative(),
+
+  // Status
+  status: ActivityStatusEnum,
+});
+
+export type ActivityFormValues = z.infer<typeof ActivityFormSchema>;
+
+// ---------------------------------------------------------
+// 6. SERVICE INPUT TYPES
+// ---------------------------------------------------------
+
+export type CreateActivityInput = {
+  type: ActivityType;
+  title: string;
+  description?: string;
+  orPeriod?: string;
+  startDateTime: Date;
+  endDateTime: Date;
+  mode: ActivityMode;
+  location?: string;
+  onlineLink?: string;
+  attendanceEnabled: boolean;
+  lateTolerance?: number;
+  status: ActivityStatus;
+  createdBy: string;
+};
+
+export type UpdateActivityInput = Partial<
+  Omit<CreateActivityInput, "createdBy" | "type">
+> & {
+  id: string;
+};

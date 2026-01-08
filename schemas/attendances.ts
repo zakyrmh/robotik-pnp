@@ -77,7 +77,7 @@ export const AttendanceSchema = z.object({
   points: z.number().int().default(0),
 
   // Soft delete
-  deletedAt: TimestampSchema.optional(),
+  deletedAt: TimestampSchema.nullable().optional(),
   deletedBy: z.string().optional(),
 
   // Metadata

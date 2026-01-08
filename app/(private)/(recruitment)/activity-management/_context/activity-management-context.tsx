@@ -9,65 +9,69 @@ import {
 } from "react";
 import { useDashboard } from "@/components/dashboard/dashboard-context";
 import {
-  getAllCaangUsers,
-  calculateCaangStats,
-  CaangData,
-  CaangStats,
-} from "@/lib/firebase/services/caang-service";
+  getRecruitmentActivities,
+  getDeletedRecruitmentActivities,
+  calculateActivityStats,
+  ActivityStats,
+} from "@/lib/firebase/services/activity-service";
+import { Activity } from "@/schemas/activities";
 import { UserSystemRoles } from "@/schemas/users";
 
 // =========================================================
 // TYPES
 // =========================================================
 
-interface CaangManagementContextType {
+interface ActivityManagementContextType {
   // Loading states
   isLoading: boolean;
   isAuthorized: boolean;
 
   // Data
-  caangList: CaangData[];
-  stats: CaangStats;
+  activities: Activity[];
+  stats: ActivityStats;
   roles: UserSystemRoles | null;
+  deletedCount: number;
 
   // Actions
   refreshData: () => Promise<void>;
 }
 
-const CaangManagementContext = createContext<
-  CaangManagementContextType | undefined
+const ActivityManagementContext = createContext<
+  ActivityManagementContextType | undefined
 >(undefined);
 
 // =========================================================
 // PROVIDER
 // =========================================================
 
-interface CaangManagementProviderProps {
+interface ActivityManagementProviderProps {
   children: ReactNode;
 }
 
-export function CaangManagementProvider({
+export function ActivityManagementProvider({
   children,
-}: CaangManagementProviderProps) {
+}: ActivityManagementProviderProps) {
   // Get roles from parent DashboardContext (already loaded by layout)
   const { roles, isLoading: dashboardLoading } = useDashboard();
 
   const [isLoading, setIsLoading] = useState(true);
-  const [caangList, setCaangList] = useState<CaangData[]>([]);
-  const [stats, setStats] = useState<CaangStats>({
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [deletedCount, setDeletedCount] = useState(0);
+  const [stats, setStats] = useState<ActivityStats>({
     total: 0,
-    pendingVerification: 0,
-    verified: 0,
-    blacklisted: 0,
+    upcoming: 0,
+    ongoing: 0,
+    completed: 0,
+    cancelled: 0,
   });
 
-  // Check authorization
+  // Check authorization (Recruiter or SuperAdmin)
   const isAuthorized =
     roles?.isRecruiter === true || roles?.isSuperAdmin === true;
 
-  // Fetch caang data once roles are loaded and authorized
+  // Fetch activities once roles are loaded and authorized
   useEffect(() => {
-    const fetchCaangData = async () => {
+    const fetchActivities = async () => {
       // Wait for dashboard context to finish loading
       if (dashboardLoading) return;
 
@@ -79,17 +83,21 @@ export function CaangManagementProvider({
 
       try {
         setIsLoading(true);
-        const data = await getAllCaangUsers();
-        setCaangList(data);
-        setStats(calculateCaangStats(data));
+        const [data, deletedData] = await Promise.all([
+          getRecruitmentActivities(),
+          getDeletedRecruitmentActivities(),
+        ]);
+        setActivities(data);
+        setStats(calculateActivityStats(data));
+        setDeletedCount(deletedData.length);
       } catch (err) {
-        console.error("Error fetching caang data:", err);
+        console.error("Error fetching activities:", err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchCaangData();
+    fetchActivities();
   }, [roles, dashboardLoading]);
 
   const refreshData = async () => {
@@ -97,29 +105,34 @@ export function CaangManagementProvider({
 
     try {
       setIsLoading(true);
-      const data = await getAllCaangUsers();
-      setCaangList(data);
-      setStats(calculateCaangStats(data));
+      const [data, deletedData] = await Promise.all([
+        getRecruitmentActivities(),
+        getDeletedRecruitmentActivities(),
+      ]);
+      setActivities(data);
+      setStats(calculateActivityStats(data));
+      setDeletedCount(deletedData.length);
     } catch (err) {
-      console.error("Error refreshing data:", err);
+      console.error("Error refreshing activities:", err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const value: CaangManagementContextType = {
+  const value: ActivityManagementContextType = {
     isLoading: dashboardLoading || isLoading,
     isAuthorized,
-    caangList,
+    activities,
     stats,
     roles,
+    deletedCount,
     refreshData,
   };
 
   return (
-    <CaangManagementContext.Provider value={value}>
+    <ActivityManagementContext.Provider value={value}>
       {children}
-    </CaangManagementContext.Provider>
+    </ActivityManagementContext.Provider>
   );
 }
 
@@ -127,11 +140,11 @@ export function CaangManagementProvider({
 // HOOK
 // =========================================================
 
-export function useCaangManagement() {
-  const context = useContext(CaangManagementContext);
+export function useActivityManagement() {
+  const context = useContext(ActivityManagementContext);
   if (context === undefined) {
     throw new Error(
-      "useCaangManagement must be used within a CaangManagementProvider"
+      "useActivityManagement must be used within an ActivityManagementProvider"
     );
   }
   return context;
