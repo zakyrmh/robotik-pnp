@@ -18,3 +18,9 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Management of tasks and scores for prospective members for open recruitment.
 - Management of prospective member attendance for open recruitment.
 - System for dividing prospective members into groups for open recruitment.
+
+## [1.1.0] - 2026-01-09
+
+### Added
+
+- Settings page for editing personal data.
