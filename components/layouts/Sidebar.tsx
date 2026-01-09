@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard,
@@ -26,6 +26,7 @@ import { UserSystemRoles } from "@/schemas/users";
 import Image from "next/image";
 import { useSidebarContext } from "@/components/sidebar-context";
 import { useDashboard } from "@/components/dashboard/dashboard-context";
+import { useUnsavedChanges } from "@/components/unsaved-changes-context";
 
 // =========================================================
 // TYPES
@@ -184,6 +185,7 @@ interface SidebarInnerProps {
   closeSidebar: () => void;
   userRoles: UserSystemRoles;
   isCaangVerified: boolean;
+  confirmNavigation: (callback: () => void) => void;
 }
 
 function SidebarInner({
@@ -193,8 +195,10 @@ function SidebarInner({
   closeSidebar,
   userRoles,
   isCaangVerified,
+  confirmNavigation,
 }: SidebarInnerProps) {
   const pathname = usePathname();
+  const router = useRouter();
 
   // Permission Logic
   const hasPermission = (item: MenuItem) => {
@@ -211,6 +215,24 @@ function SidebarInner({
     const hasRole = item.requiredRoles.some((role) => userRoles[role] === true);
 
     return hasRole;
+  };
+
+  // Handle navigation with unsaved changes check
+  const handleNavigation = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    href: string
+  ) => {
+    e.preventDefault();
+
+    // If clicking on the same page, do nothing
+    if (pathname === href) return;
+
+    confirmNavigation(() => {
+      router.push(href);
+      if (isMobile) {
+        closeSidebar();
+      }
+    });
   };
 
   return (
@@ -290,7 +312,7 @@ function SidebarInner({
                   <Link
                     key={item.href}
                     href={item.href}
-                    onClick={isMobile ? closeSidebar : undefined}
+                    onClick={(e) => handleNavigation(e, item.href)}
                     className={cn(
                       "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative",
                       isActive
@@ -344,6 +366,9 @@ export function Sidebar() {
   // Get data from dashboard context
   const { roles, isCaangVerified } = useDashboard();
 
+  // Get unsaved changes context
+  const { confirmNavigation } = useUnsavedChanges();
+
   const sidebarVariants = {
     expanded: { width: "16rem" },
     collapsed: { width: "4.5rem" },
@@ -390,6 +415,7 @@ export function Sidebar() {
                 closeSidebar={closeSidebar}
                 userRoles={safeRoles}
                 isCaangVerified={isCaangVerified}
+                confirmNavigation={confirmNavigation}
               />
             </motion.aside>
           </>
@@ -412,6 +438,7 @@ export function Sidebar() {
           closeSidebar={closeSidebar}
           userRoles={safeRoles}
           isCaangVerified={isCaangVerified}
+          confirmNavigation={confirmNavigation}
         />
       </motion.aside>
     </>

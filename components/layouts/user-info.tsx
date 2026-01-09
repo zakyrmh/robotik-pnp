@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, LogOut, Settings, User } from "lucide-react";
+import { ChevronDown, LogOut, Settings } from "lucide-react";
 import FirebaseImage from "@/components/FirebaseImage";
 import { useAuth } from "@/hooks/useAuth";
 import { useDashboard } from "@/components/dashboard/dashboard-context";
@@ -77,21 +77,11 @@ export function UserInfo() {
         <DropdownMenuSeparator className="bg-gray-100 dark:bg-slate-800" />
 
         <DropdownMenuItem
-          onClick={() => router.push("/account/settings")}
+          onClick={() => router.push("/settings")}
           className="cursor-pointer rounded-lg focus:bg-blue-50 dark:focus:bg-blue-950/30 focus:text-blue-700 dark:focus:text-blue-400 py-2.5"
         >
           <Settings className="mr-2 h-4 w-4 text-gray-500 dark:text-slate-400" />
           <span className="font-medium">Account Settings</span>
-        </DropdownMenuItem>
-
-        <DropdownMenuItem
-          disabled
-          className="cursor-not-allowed opacity-50 rounded-lg py-2.5 dark:focus:bg-slate-900"
-        >
-          <User className="mr-2 h-4 w-4 text-gray-500 dark:text-slate-400" />
-          <span className="font-medium text-slate-700 dark:text-slate-300">
-            Profile Public
-          </span>
         </DropdownMenuItem>
 
         <DropdownMenuSeparator className="bg-gray-100 dark:bg-slate-800" />
