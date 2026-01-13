@@ -30,3 +30,7 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 ### Added
 
 - OR settings page and system.
+
+### Fixed
+
+- Dashboard for caang.
