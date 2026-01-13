@@ -20,6 +20,7 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
+  SlidersHorizontal,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UserSystemRoles } from "@/schemas/users";
@@ -57,6 +58,12 @@ const MENU_GROUPS: MenuGroup[] = [
   {
     groupLabel: "Pendidikan & Seleksi",
     items: [
+      {
+        href: "/recruitment/settings",
+        label: "Pengaturan OR",
+        icon: SlidersHorizontal,
+        requiredRoles: ["isRecruiter", "isSuperAdmin"],
+      },
       {
         href: "/caang-management",
         label: "Data Caang",

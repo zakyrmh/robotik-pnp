@@ -24,3 +24,9 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 ### Added
 
 - Settings page for editing personal data.
+
+## [1.2.0] - 2026-01-13
+
+### Added
+
+- OR settings page and system.
