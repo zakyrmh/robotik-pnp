@@ -1,31 +1,39 @@
+"use client";
+
+import { useDashboard } from "@/components/dashboard/dashboard-context";
+import { OverviewDashboardCard } from "@/components/dashboard/cards/overview-card";
+import { OverviewCard as CaangOverviewCard } from "@/components/dashboard/caang/overview-card";
+import { RegistrationStatusCard } from "@/components/dashboard/caang/registration-status-card";
+import { Loader2 } from "lucide-react";
+
 export default function OverviewPage() {
-  return (
-    <div className="h-full bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-gray-800">Overview</h2>
-        <span className="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">
-          General
-        </span>
+  const { roles, isLoading } = useDashboard();
+
+  if (isLoading) {
+    return (
+      <div className="w-full h-64 flex items-center justify-center text-muted-foreground">
+        <Loader2 className="h-8 w-8 animate-spin" />
       </div>
-      <p className="text-gray-600">
-        Selamat datang di Sistem Informasi Robotik PNP. Ini adalah panel
-        ikhtisar umum yang dapat dilihat oleh semua anggota yang login.
-      </p>
-      {/* Placeholder Widget */}
-      <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-          <p className="text-sm text-gray-500">Total Kegiatan</p>
-          <p className="text-2xl font-bold text-gray-900">12</p>
+    );
+  }
+
+  // KHUSUS CAANG: Gunakan overview yang ada sekarang dengan berbagai informasi
+  if (roles?.isCaang) {
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Card 1: Overview (Takes 2 columns on large screens) */}
+        <div className="lg:col-span-2 space-y-6">
+          <CaangOverviewCard />
         </div>
-        <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-          <p className="text-sm text-gray-500">Status Akun</p>
-          <p className="text-2xl font-bold text-green-600">Aktif</p>
-        </div>
-        <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-          <p className="text-sm text-gray-500">Pengumuman Baru</p>
-          <p className="text-2xl font-bold text-gray-900">3</p>
+
+        {/* Card 2: Status Pendaftaran (Takes 1 column) */}
+        <div className="lg:col-span-1 space-y-6">
+          <RegistrationStatusCard />
         </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  // NON CAANG (Member, Admin, etc): Kembalikan overview lama (kegiatan hari ini, status akun, dll)
+  return <OverviewDashboardCard />;
 }

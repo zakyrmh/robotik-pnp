@@ -2,29 +2,28 @@
 
 import { ReactNode } from "react";
 import { useDashboard } from "@/components/dashboard/dashboard-context";
-import {
-  OverviewDashboardCard,
-  ManagementDashboardCard,
-  KriDashboardCard,
-  OfficialDashboardCard,
-  KomdisDashboardCard,
-  RecruitmentDashboardCard,
-  KestariDashboardCard,
-  CaangDashboardCard,
-} from "@/components/dashboard/cards";
+import {} from "@/components/dashboard/cards";
 
 interface DashboardContentProps {
   children: ReactNode;
-  // Legacy slots (kept for backward compatibility)
-  kri?: ReactNode;
-  official?: ReactNode;
-  komdis?: ReactNode;
-  recruitment?: ReactNode;
-  management?: ReactNode;
-  overview?: ReactNode;
+  // Parallel Slot Props
+  kri: ReactNode;
+  official: ReactNode;
+  komdis: ReactNode;
+  recruitment: ReactNode;
+  management: ReactNode;
+  overview: ReactNode;
 }
 
-export function DashboardContent({ children }: DashboardContentProps) {
+export function DashboardContent({
+  children,
+  overview,
+  management,
+  kri,
+  official,
+  komdis,
+  recruitment,
+}: DashboardContentProps) {
   const {
     roles,
     userProfile,
@@ -65,59 +64,31 @@ export function DashboardContent({ children }: DashboardContentProps) {
       </div>
 
       {/* OVERVIEW SECTION (Always Top) */}
-      <div className="mb-6 w-full">
-        <OverviewDashboardCard />
-      </div>
+      <div className="mb-6 w-full">{overview}</div>
 
       {/* MANAGEMENT PANEL (Full Width - for Admin, Kestari, Presidium) */}
       {(roles?.isSuperAdmin || roles?.isKestari || isPresidium) && (
-        <div className="mb-6 w-full">
-          <ManagementDashboardCard />
-        </div>
+        <div className="mb-6 w-full">{management}</div>
       )}
 
       {/* DYNAMIC GRID BASED ON ROLES & ASSIGNMENTS */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {/* Caang Card - untuk calon anggota */}
-        {roles?.isCaang && (
-          <div className="col-span-1 md:col-span-2 xl:col-span-1">
-            <CaangDashboardCard />
-          </div>
-        )}
-
         {/* KRI Card - untuk anggota tim kompetisi */}
-        {hasCompetitionAccess && (
-          <div className="col-span-1">
-            <KriDashboardCard />
-          </div>
-        )}
+        {hasCompetitionAccess && <div className="col-span-1">{kri}</div>}
 
         {/* Official Card - untuk anggota dengan departemen/struktural */}
         {(hasDepartmentAccess || isPresidium) && (
-          <div className="col-span-1">
-            <OfficialDashboardCard />
-          </div>
-        )}
-
-        {/* Kestari Card - untuk kesekretariatan */}
-        {(roles?.isKestari || roles?.isSuperAdmin) && (
-          <div className="col-span-1">
-            <KestariDashboardCard />
-          </div>
+          <div className="col-span-1">{official}</div>
         )}
 
         {/* Komdis Card - untuk komisi disiplin */}
         {(roles?.isKomdis || roles?.isSuperAdmin) && (
-          <div className="col-span-1">
-            <KomdisDashboardCard />
-          </div>
+          <div className="col-span-1">{komdis}</div>
         )}
 
         {/* Recruitment Card - untuk panitia OR */}
         {(roles?.isRecruiter || roles?.isSuperAdmin) && (
-          <div className="col-span-1">
-            <RecruitmentDashboardCard />
-          </div>
+          <div className="col-span-1">{recruitment}</div>
         )}
       </div>
 
