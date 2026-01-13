@@ -192,6 +192,16 @@ export const UserSchema = z.object({
   isActive: z.boolean().default(true),
   blacklistInfo: BlacklistDataSchema.optional(),
 
+  // Verification & Security
+  verification: z
+    .object({
+      emailVerified: z.boolean().default(false),
+      resendAttempts: z.number().default(0),
+      lastResendAt: TimestampSchema.nullable().optional(),
+      blockResendUntil: TimestampSchema.nullable().optional(), // 1x24 hours block
+    })
+    .optional(),
+
   // Audit Logs (Soft Delete)
   deletedAt: TimestampSchema.optional(),
   deletedBy: z.string().optional(),

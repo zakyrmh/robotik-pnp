@@ -217,6 +217,8 @@ export function useAuth() {
 
       await firebaseSignOut(auth);
 
+      router.push("/login");
+
       // Remove session cookie
       Cookies.remove("session");
 
@@ -231,7 +233,6 @@ export function useAuth() {
       }
       */
 
-      router.push("/login");
       router.refresh();
 
       setUser(null);
