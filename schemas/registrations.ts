@@ -28,15 +28,24 @@ const TimestampSchema = z
 // ---------------------------------------------------------
 
 export const RegistrationStatusEnum = z.enum([
-  "draft",
-  "form_submitted",
-  "form_verified",
-  "documents_uploaded",
-  "payment_pending",
-  "submitted",
-  "verified",
-  "rejected",
+  "draft", // Data diri sudah diisi, dokumen/pembayaran belum lengkap
+  "in_progress", // Sedang mengisi dokumen/pembayaran
+  "submitted", // Sudah submit, menunggu verifikasi admin
+  "verified", // Diterima oleh admin
+  "rejected", // Ditolak oleh admin (tidak memenuhi syarat)
 ]);
+
+// Progress tracking untuk setiap step pendaftaran
+export const RegistrationProgressSchema = z.object({
+  personalDataCompleted: z.boolean().default(false),
+  personalDataAt: TimestampSchema.optional(),
+
+  documentsUploaded: z.boolean().default(false),
+  documentsUploadedAt: TimestampSchema.optional(),
+
+  paymentUploaded: z.boolean().default(false),
+  paymentUploadedAt: TimestampSchema.optional(),
+});
 
 export const PaymentMethodEnum = z.enum(["transfer", "e_wallet", "cash"]);
 
@@ -110,9 +119,10 @@ export const RegistrationSchema = z.object({
   orYear: z.string(), // e.g., "2025-2026"
   registrationId: z.string(), // e.g., "REG-001"
   status: RegistrationStatusEnum,
+  progress: RegistrationProgressSchema.optional(),
 
-  documents: RegistrationDocumentsSchema,
-  payment: PaymentDataSchema,
+  documents: RegistrationDocumentsSchema.optional(),
+  payment: PaymentDataSchema.optional(),
   verification: VerificationDataSchema.optional(),
 
   motivation: z.string().default(""),
@@ -133,6 +143,7 @@ export const RegistrationSchema = z.object({
 export type RegistrationStatus = z.infer<typeof RegistrationStatusEnum>;
 export type PaymentMethod = z.infer<typeof PaymentMethodEnum>;
 
+export type RegistrationProgress = z.infer<typeof RegistrationProgressSchema>;
 export type RegistrationDocuments = z.infer<typeof RegistrationDocumentsSchema>;
 export type PaymentData = z.infer<typeof PaymentDataSchema>;
 export type VerificationData = z.infer<typeof VerificationDataSchema>;

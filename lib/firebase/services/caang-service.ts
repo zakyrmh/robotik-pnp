@@ -95,11 +95,7 @@ export function calculateCaangStats(caangList: CaangData[]): CaangStats {
     if (caang.registration) {
       if (caang.registration.status === "verified") {
         verified++;
-      } else if (
-        caang.registration.status === "submitted" ||
-        caang.registration.status === "documents_uploaded" ||
-        caang.registration.status === "payment_pending"
-      ) {
+      } else if (caang.registration.status === "submitted") {
         pendingVerification++;
       }
     }
@@ -117,7 +113,7 @@ export function calculateCaangStats(caangList: CaangData[]): CaangStats {
  * Mengambil detail Caang berdasarkan user ID
  */
 export async function getCaangDetail(
-  userId: string
+  userId: string,
 ): Promise<CaangData | null> {
   try {
     // Fetch user
@@ -161,7 +157,7 @@ export async function getCaangDetail(
 export async function blacklistCaang(
   userId: string,
   reason: string,
-  bannedBy: string
+  bannedBy: string,
 ): Promise<void> {
   try {
     const userRef = doc(db, "users_new", userId);
