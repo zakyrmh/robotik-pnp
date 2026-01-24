@@ -466,6 +466,7 @@ export function StepPayment() {
                         Bukti pembayaran terupload
                       </span>
                     </div>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={proofUrl}
                       alt="Bukti Pembayaran"

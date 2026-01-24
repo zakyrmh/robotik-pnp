@@ -9,23 +9,14 @@ import {
   ChevronRight,
   ChevronLeft,
   Upload,
-  Image,
+  ImageIcon,
   ExternalLink,
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormField, FormItem } from "@/components/ui/form";
 import {
   Card,
   CardContent,
@@ -124,7 +115,7 @@ function DocumentUploadCard({
           {value ? (
             <CheckCircle2 className="w-6 h-6" />
           ) : (
-            <Image className="w-6 h-6" />
+            <ImageIcon className="w-6 h-6" />
           )}
         </div>
 
@@ -195,9 +186,10 @@ function DocumentUploadCard({
       {value && (
         <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
           <p className="text-xs text-muted-foreground mb-2">Preview:</p>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={value}
-            alt="Preview"
+            alt={`Preview ${label}`}
             className="max-h-32 rounded-lg object-cover"
           />
         </div>
@@ -211,8 +203,7 @@ function DocumentUploadCard({
 // =========================================================
 
 export function StepDocuments() {
-  const { updateDocuments, isSaving, registration, setCurrentStep } =
-    useRegistrationForm();
+  const { updateDocuments, isSaving, setCurrentStep } = useRegistrationForm();
   const { user } = useDashboard();
   const [isLoading, setIsLoading] = useState(true);
 

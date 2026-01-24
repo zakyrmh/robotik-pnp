@@ -250,7 +250,6 @@ export function StepVerification() {
         <div className="space-y-3">
           <p className="text-sm font-medium">Ringkasan Data:</p>
           {summaryItems.map((item) => {
-            const Icon = item.icon;
             return (
               <div
                 key={item.id}
