@@ -7,6 +7,37 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-01-27
+
+### Added
+
+- **Cloud Functions for Registration (Atomic & Secure)**
+  - New `functions/` directory for Firebase Cloud Functions.
+  - Cloud Function `registerUser` that handles:
+    - Server-side data validation using Zod schema.
+    - Firebase Authentication account creation.
+    - Default role assignment (`isCaang: true`).
+    - Firestore database storage in `users_new` collection.
+    - Automatic rollback if any step fails.
+  - Client service `cloud-functions.ts` using `httpsCallable` for secure function invocation.
+
+### Changed
+
+- Migrated registration logic from client-side (`lib/firebase/services/auth.ts`) to server-side (Cloud Functions).
+- Updated `register-form.tsx` to call Cloud Function instead of direct Firebase Auth SDK.
+
+### Security
+
+- Sensitive operations (account creation, role assignment, database writes) now run entirely on server.
+- Reduced attack surface by removing direct Firebase Auth SDK calls from client.
+- Implemented atomic transaction pattern: all operations succeed or all are rolled back.
+
+### Technical Details
+
+- Cloud Functions region: `asia-southeast2` (Jakarta).
+- Functions SDK: `firebase-functions` v6.3.0 with `firebase-admin` v13.0.0.
+- Compatible with Firebase SDK v12 and Next.js 16.
+
 ## [1.0.0] - 2026-01-08
 
 ### Added

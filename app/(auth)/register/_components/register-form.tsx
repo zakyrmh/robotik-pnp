@@ -5,13 +5,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { RegisterSchema, RegisterValues } from "@/schemas/auth";
-import { registerUser } from "@/lib/firebase/services/auth";
-import { toast } from "sonner"; // Assuming sonner is used, or I'll use simple alerts if not installed, but "toast" was requested. I will try to use a generic toast approach or just console/alert if standard lib not clear. Re-checking user prompt: "Tampilkan toast". I will assume a toast library is available or implement a simple one. The login form used globalError state. I will use globalError for errors and router push for success after toast.
-// The user has `sonner` or `react-hot-toast` likely. I will check package.json or just use a simple alert if not sure, but request specifically asked for toast.
-// I'll check if there's a toast component in the codebase.
-// For now I'll use the same `globalError` pattern for errors, and for success I'll set a success message or just redirect.
-// Wait, the prompt says "Tampilkan toast... lalu redirect".
-// I'll check for a toast library first.
+import { callRegisterUser } from "@/lib/firebase/services/cloud-functions";
+import { toast } from "sonner";
 
 import Link from "next/link";
 import { RecruitmentSettings } from "@/schemas/recruitment-settings";
@@ -45,10 +40,12 @@ export default function RegisterForm({ settings }: RegisterFormProps) {
   const onSubmit = async (data: RegisterValues) => {
     setGlobalError(null);
 
-    const result = await registerUser(data);
+    const result = await callRegisterUser(data);
 
     if (result.success) {
-      toast.success("Akun sudah dibuat. Cek email untuk verifikasi.");
+      toast.success(
+        result.message || "Akun sudah dibuat. Cek email untuk verifikasi.",
+      );
       router.push("/verify-email");
     } else {
       setGlobalError(result.error || "Registrasi gagal.");
