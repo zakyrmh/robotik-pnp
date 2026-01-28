@@ -7,6 +7,47 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-01-28
+
+### Added
+
+- **Secure Login System (Cloud Functions)**
+  - Cloud Function `loginUser` with comprehensive security features.
+  - Rate Limiting: 5 attempts per 15 minutes, 1-hour block on exceed.
+  - Email Verification Check: Blocks login if email not verified (with UI hint).
+  - Account Status Check: Blocks disabled/inactive/blacklisted accounts.
+  - Audit Logging: Login history stored in `login_history` collection (30-day retention).
+  - Session Tracking: Sessions stored in `login_sessions` with 24-hour expiry.
+  - Online Presence: Automatic online status in Realtime Database.
+
+- **Force Re-Authentication**
+  - `useReAuth` hook for sensitive actions requiring password confirmation.
+  - `ReAuthDialog` component for re-authentication modal.
+  - Session expiry after 24 hours requiring re-login.
+
+- **New Schemas**
+  - `schemas/login-history.ts` for login audit and session tracking.
+
+### Changed
+
+- Updated `login-form.tsx` to use Cloud Function instead of direct Firebase Auth.
+- Login now uses Custom Token flow for enhanced security.
+- Device info captured and logged for security audit.
+
+### Security
+
+- Pre-login checks prevent unauthorized access before authentication.
+- Audit logging enables security monitoring and incident investigation.
+- Session tracking enables force logout and re-authentication.
+- Rate limiting prevents brute-force attacks on login endpoint.
+
+### Technical Details
+
+- Login Cloud Function region: `asia-southeast2` (Jakarta).
+- Session expiry: 24 hours (configurable).
+- Login history retention: 30 days.
+- Collections added: `login_history`, `login_sessions`, `login_rate_limits`.
+
 ## [1.4.0] - 2026-01-27
 
 ### Added

@@ -118,12 +118,168 @@ export async function callRegisterUser(
   }
 }
 
+// ============================================
+// LOGIN FUNCTIONS
+// ============================================
+
+export interface LoginUserInput {
+  email: string;
+  password: string;
+  device?: string;
+  rememberMe?: boolean;
+}
+
+export interface LoginUserResponse {
+  success: boolean;
+  message?: string;
+  error?: string;
+  code?: string;
+  // Flow baru: Validasi sukses, silakan lanjut login di client
+  canProceed?: boolean;
+  // Flow lama (deprecated but kept for types):
+  customToken?: string;
+  user?: {
+    uid: string;
+    email: string;
+    displayName: string | undefined;
+    emailVerified: boolean;
+    roles: Record<string, boolean>;
+  };
+  sessionId?: string;
+  requiresEmailVerification?: boolean;
+  email?: string;
+}
+
 /**
- * Memanggil Cloud Function untuk operasi lain (template)
- * Tambahkan lebih banyak function sesuai kebutuhan
+ * Memanggil Cloud Function untuk login user.
+ *
+ * Fitur keamanan:
+ * - Rate Limiting (5x per 15 menit)
+ * - Email Verification Check
+ * - Account Status Check (disabled/blacklisted)
+ * - Audit Logging
+ * - Session Tracking (24 jam expiry)
+ *
+ * @param values - Data login (email, password, device, rememberMe)
+ * @returns Promise<CloudFunctionResult<LoginUserResponse>>
  */
-// export async function callAnotherFunction(data: SomeType): Promise<CloudFunctionResult> {
-//   const fn = httpsCallable(functions, "anotherFunction");
-//   const result = await fn(data);
-//   return result.data as CloudFunctionResult;
-// }
+export async function callLoginUser(
+  values: LoginUserInput,
+): Promise<CloudFunctionResult<LoginUserResponse>> {
+  try {
+    const loginUserFn = httpsCallable<LoginUserInput, LoginUserResponse>(
+      functions,
+      "loginUser",
+    );
+
+    const result = await loginUserFn(values);
+
+    if (result.data.success) {
+      return {
+        success: true,
+        message: result.data.message,
+        data: result.data,
+      };
+    } else {
+      return {
+        success: false,
+        error: result.data.error || "Login gagal.",
+        data: result.data,
+      };
+    }
+  } catch (error: unknown) {
+    const functionsError = error as {
+      code?: string;
+      message?: string;
+    };
+
+    console.error("Login Cloud Function Error:", functionsError);
+
+    let errorMessage = "Terjadi kesalahan saat login.";
+    const errorCode = functionsError.code || "";
+
+    if (errorCode.includes("unavailable")) {
+      errorMessage = "Layanan sedang tidak tersedia. Coba lagi nanti.";
+    } else if (errorCode.includes("internal")) {
+      errorMessage = "Terjadi kesalahan internal. Coba lagi nanti.";
+    } else if (functionsError.message) {
+      errorMessage = functionsError.message;
+    }
+
+    return {
+      success: false,
+      error: errorMessage,
+    };
+  }
+}
+
+// ============================================
+// SESSION FUNCTIONS
+// ============================================
+
+/**
+ * Cek apakah session masih valid (belum expired 24 jam)
+ * Digunakan untuk force re-authentication
+ *
+ * @param sessionId - Session ID dari login
+ * @returns Promise<boolean>
+ */
+export async function checkSessionValid(
+  sessionId: string,
+): Promise<{ valid: boolean; message?: string }> {
+  try {
+    // Untuk sekarang, cek via localStorage
+    // Di production, bisa cek ke Firestore
+    const sessionData = localStorage.getItem("session_data");
+
+    if (!sessionData) {
+      return { valid: false, message: "Sesi tidak ditemukan." };
+    }
+
+    const parsed = JSON.parse(sessionData);
+
+    if (parsed.sessionId !== sessionId) {
+      return { valid: false, message: "Sesi tidak valid." };
+    }
+
+    const expiresAt = new Date(parsed.expiresAt).getTime();
+    const now = Date.now();
+
+    if (now > expiresAt) {
+      return {
+        valid: false,
+        message: "Sesi telah expired. Silakan login kembali.",
+      };
+    }
+
+    return { valid: true };
+  } catch {
+    return { valid: false, message: "Gagal memvalidasi sesi." };
+  }
+}
+
+/**
+ * Simpan session data ke localStorage
+ */
+export function saveSessionData(data: {
+  sessionId: string;
+  userId: string;
+  expiresAt: Date;
+}): void {
+  localStorage.setItem(
+    "session_data",
+    JSON.stringify({
+      sessionId: data.sessionId,
+      userId: data.userId,
+      expiresAt: data.expiresAt.toISOString(),
+      createdAt: new Date().toISOString(),
+    }),
+  );
+}
+
+/**
+ * Hapus session data dari localStorage
+ */
+export function clearSessionData(): void {
+  localStorage.removeItem("session_data");
+}
