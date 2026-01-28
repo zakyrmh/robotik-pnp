@@ -36,6 +36,163 @@ const adminAuth = getAuth();
 const adminDb = getFirestore();
 
 // ============================================
+// RATE LIMITING CONFIGURATION
+// ============================================
+
+/**
+ * Konfigurasi Rate Limiting untuk mencegah spam/brute-force
+ * - MAX_ATTEMPTS: Maksimal percobaan registrasi per identifier
+ * - WINDOW_MS: Jendela waktu dalam milidetik (15 menit)
+ * - BLOCK_DURATION_MS: Durasi block jika melebihi limit (1 jam)
+ */
+const RATE_LIMIT_CONFIG = {
+  MAX_ATTEMPTS: 5,
+  WINDOW_MS: 15 * 60 * 1000, // 15 menit
+  BLOCK_DURATION_MS: 60 * 60 * 1000, // 1 jam
+  COLLECTION: "rate_limits",
+};
+
+/**
+ * Interface untuk data rate limit di Firestore
+ */
+interface RateLimitData {
+  attempts: number;
+  firstAttemptAt: FirebaseFirestore.Timestamp;
+  blockedUntil?: FirebaseFirestore.Timestamp;
+  lastAttemptAt: FirebaseFirestore.Timestamp;
+}
+
+/**
+ * Mengecek dan memperbarui rate limit untuk identifier (IP/email)
+ * @param identifier - IP address atau email yang akan dicek
+ * @returns Object dengan status isBlocked dan info tambahan
+ */
+async function checkRateLimit(identifier: string): Promise<{
+  isBlocked: boolean;
+  remainingAttempts: number;
+  blockedUntil?: Date;
+  message?: string;
+}> {
+  const docRef = adminDb
+    .collection(RATE_LIMIT_CONFIG.COLLECTION)
+    .doc(identifier);
+  const now = Timestamp.now();
+  const nowMs = now.toMillis();
+
+  try {
+    const doc = await docRef.get();
+
+    if (!doc.exists) {
+      // First attempt, create new record
+      await docRef.set({
+        attempts: 1,
+        firstAttemptAt: now,
+        lastAttemptAt: now,
+      });
+      return {
+        isBlocked: false,
+        remainingAttempts: RATE_LIMIT_CONFIG.MAX_ATTEMPTS - 1,
+      };
+    }
+
+    const data = doc.data() as RateLimitData;
+
+    // Check if currently blocked
+    if (data.blockedUntil) {
+      const blockedUntilMs = data.blockedUntil.toMillis();
+      if (nowMs < blockedUntilMs) {
+        return {
+          isBlocked: true,
+          remainingAttempts: 0,
+          blockedUntil: data.blockedUntil.toDate(),
+          message: `Terlalu banyak percobaan. Coba lagi setelah ${Math.ceil((blockedUntilMs - nowMs) / 60000)} menit.`,
+        };
+      } else {
+        // Block expired, reset
+        await docRef.set({
+          attempts: 1,
+          firstAttemptAt: now,
+          lastAttemptAt: now,
+        });
+        return {
+          isBlocked: false,
+          remainingAttempts: RATE_LIMIT_CONFIG.MAX_ATTEMPTS - 1,
+        };
+      }
+    }
+
+    // Check if window has expired
+    const firstAttemptMs = data.firstAttemptAt.toMillis();
+    if (nowMs - firstAttemptMs > RATE_LIMIT_CONFIG.WINDOW_MS) {
+      // Window expired, reset counter
+      await docRef.set({
+        attempts: 1,
+        firstAttemptAt: now,
+        lastAttemptAt: now,
+      });
+      return {
+        isBlocked: false,
+        remainingAttempts: RATE_LIMIT_CONFIG.MAX_ATTEMPTS - 1,
+      };
+    }
+
+    // Within window, check attempts
+    const newAttempts = data.attempts + 1;
+
+    if (newAttempts > RATE_LIMIT_CONFIG.MAX_ATTEMPTS) {
+      // Exceeded limit, block
+      const blockedUntil = Timestamp.fromMillis(
+        nowMs + RATE_LIMIT_CONFIG.BLOCK_DURATION_MS,
+      );
+      await docRef.update({
+        attempts: newAttempts,
+        lastAttemptAt: now,
+        blockedUntil: blockedUntil,
+      });
+      return {
+        isBlocked: true,
+        remainingAttempts: 0,
+        blockedUntil: blockedUntil.toDate(),
+        message: `Terlalu banyak percobaan. Coba lagi dalam ${RATE_LIMIT_CONFIG.BLOCK_DURATION_MS / 60000} menit.`,
+      };
+    }
+
+    // Still within limit
+    await docRef.update({
+      attempts: newAttempts,
+      lastAttemptAt: now,
+    });
+
+    return {
+      isBlocked: false,
+      remainingAttempts: RATE_LIMIT_CONFIG.MAX_ATTEMPTS - newAttempts,
+    };
+  } catch (error) {
+    console.error("Rate limit check error:", error);
+    // On error, allow the request but log it
+    return {
+      isBlocked: false,
+      remainingAttempts: RATE_LIMIT_CONFIG.MAX_ATTEMPTS,
+    };
+  }
+}
+
+/**
+ * Membersihkan rate limit setelah registrasi berhasil
+ * @param identifier - IP address atau email yang akan dihapus
+ */
+async function clearRateLimit(identifier: string): Promise<void> {
+  try {
+    await adminDb
+      .collection(RATE_LIMIT_CONFIG.COLLECTION)
+      .doc(identifier)
+      .delete();
+  } catch (error) {
+    console.error("Failed to clear rate limit:", error);
+  }
+}
+
+// ============================================
 // SCHEMAS (Server-side validation)
 // ============================================
 
@@ -130,6 +287,27 @@ export const registerUser = onCall(
     const { data } = request;
 
     // ----------------------------------------
+    // Step 0: Rate Limiting Check (Anti-Spam)
+    // ----------------------------------------
+    // Gunakan IP address atau email sebagai identifier
+    // rawRequest.ip tersedia di Firebase Functions v2
+    const clientIp = request.rawRequest?.ip || "unknown";
+    const rateLimitIdentifier = `reg_${clientIp}`;
+
+    const rateLimit = await checkRateLimit(rateLimitIdentifier);
+
+    if (rateLimit.isBlocked) {
+      throw new HttpsError(
+        "resource-exhausted",
+        rateLimit.message || "Terlalu banyak percobaan. Coba lagi nanti.",
+        {
+          blockedUntil: rateLimit.blockedUntil?.toISOString(),
+          remainingAttempts: 0,
+        },
+      );
+    }
+
+    // ----------------------------------------
     // Step 1: Validasi Input
     // ----------------------------------------
     const validationResult = RegisterInputSchema.safeParse(data);
@@ -222,6 +400,11 @@ export const registerUser = onCall(
           url: `${process.env.NEXT_PUBLIC_APP_URL || "https://robotik-pnp.vercel.app"}/login`,
         },
       );
+
+      // ----------------------------------------
+      // Step 8: Clear Rate Limit (registrasi berhasil)
+      // ----------------------------------------
+      await clearRateLimit(rateLimitIdentifier);
 
       // ----------------------------------------
       // Return Success Response

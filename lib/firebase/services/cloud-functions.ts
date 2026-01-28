@@ -104,6 +104,11 @@ export async function callRegisterUser(
       errorMessage = "Sesi tidak valid. Silakan refresh halaman.";
     } else if (errorCode.includes("unavailable")) {
       errorMessage = "Layanan sedang tidak tersedia. Coba lagi nanti.";
+    } else if (errorCode.includes("resource-exhausted")) {
+      // Rate limit exceeded
+      errorMessage =
+        functionsError.message ||
+        "Terlalu banyak percobaan. Silakan coba lagi nanti.";
     }
 
     return {

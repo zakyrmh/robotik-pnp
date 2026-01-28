@@ -21,6 +21,12 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
     - Automatic rollback if any step fails.
   - Client service `cloud-functions.ts` using `httpsCallable` for secure function invocation.
 
+- **Rate Limiting (Anti-Spam Protection)**
+  - Maximum 5 registration attempts per IP address within 15 minutes.
+  - Automatic 1-hour block when limit is exceeded.
+  - Rate limit data stored in Firestore `rate_limits` collection.
+  - Rate limit cleared after successful registration.
+
 ### Changed
 
 - Migrated registration logic from client-side (`lib/firebase/services/auth.ts`) to server-side (Cloud Functions).
@@ -31,12 +37,14 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Sensitive operations (account creation, role assignment, database writes) now run entirely on server.
 - Reduced attack surface by removing direct Firebase Auth SDK calls from client.
 - Implemented atomic transaction pattern: all operations succeed or all are rolled back.
+- **Rate Limiting**: Prevents brute-force and spam attacks on registration endpoint.
 
 ### Technical Details
 
 - Cloud Functions region: `asia-southeast2` (Jakarta).
 - Functions SDK: `firebase-functions` v6.3.0 with `firebase-admin` v13.0.0.
 - Compatible with Firebase SDK v12 and Next.js 16.
+- Rate limit config: 5 attempts / 15 min window / 1 hour block.
 
 ## [1.0.0] - 2026-01-08
 
