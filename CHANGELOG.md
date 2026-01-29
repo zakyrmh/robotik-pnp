@@ -7,6 +7,14 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+### Fixed
+
+- **Logout Not Redirecting Issue**:
+  - Fixed logout function not redirecting to login page without manual browser refresh.
+  - Reordered logout execution: state reset → cookie removal → Firebase sign out → redirect.
+  - Changed `router.push()` to `router.replace()` to prevent back navigation to protected routes.
+  - Ensured `router.refresh()` is called after redirect for proper server state update.
+
 ## [1.5.2] - 2026-01-29
 
 ### Changed

@@ -102,7 +102,7 @@ export function useAuth() {
         const sessionCookie = Cookies.get("session");
         if (sessionCookie) {
           console.warn(
-            "Auth state is null but session cookie exists. Removing stale cookie..."
+            "Auth state is null but session cookie exists. Removing stale cookie...",
           );
           Cookies.remove("session");
 
@@ -121,7 +121,7 @@ export function useAuth() {
           ];
 
           const isOnProtectedRoute = protectedRoutes.some((route) =>
-            currentPath.startsWith(route)
+            currentPath.startsWith(route),
           );
 
           if (isOnProtectedRoute) {
@@ -142,7 +142,7 @@ export function useAuth() {
   const login = async (
     email: string,
     password: string,
-    redirectTo?: string
+    redirectTo?: string,
   ) => {
     setLoading(true);
     setError(null);
@@ -151,7 +151,7 @@ export function useAuth() {
       const userCredential = await signInWithEmailAndPassword(
         auth,
         email,
-        password
+        password,
       );
 
       // Dapatkan ID Token
@@ -184,10 +184,10 @@ export function useAuth() {
           err.code === "auth/user-not-found"
             ? "User tidak ditemukan"
             : err.code === "auth/wrong-password"
-            ? "Password salah"
-            : err.code === "auth/invalid-email"
-            ? "Email tidak valid"
-            : "Terjadi kesalahan saat login";
+              ? "Password salah"
+              : err.code === "auth/invalid-email"
+                ? "Email tidak valid"
+                : "Terjadi kesalahan saat login";
 
         setError(errorMessage);
         throw err;
@@ -203,40 +203,31 @@ export function useAuth() {
     setError(null);
 
     try {
+      // 1. Set offline status sebelum logout
       if (auth.currentUser) {
-        // Menggunakan dynamic import untuk menghindari circular dependency
         try {
-          const { setUserOffline } = await import(
-            "@/lib/firebase/services/user-status"
-          );
+          const { setUserOffline } =
+            await import("@/lib/firebase/services/user-status");
           await setUserOffline(auth.currentUser.uid);
         } catch (statusErr) {
           console.warn("Failed to set offline status:", statusErr);
         }
       }
 
-      await firebaseSignOut(auth);
-
-      router.push("/login");
-
-      // Remove session cookie
-      Cookies.remove("session");
-
-      // Optional: Hit API if needed (commented out as it causes issues if route doesn't exist)
-      /* 
-      try {
-        await fetch("/api/auth/logout", {
-          method: "POST",
-        });
-      } catch (sessionErr) {
-        console.warn("Logout session API failed:", sessionErr);
-      }
-      */
-
-      router.refresh();
-
+      // 2. Reset state terlebih dahulu
       setUser(null);
       setUserData(null);
+
+      // 3. Hapus session cookie
+      Cookies.remove("session");
+
+      // 4. Sign out dari Firebase
+      await firebaseSignOut(auth);
+
+      // 5. Redirect ke halaman login menggunakan replace (tidak bisa back)
+      // dan refresh untuk memastikan server state terupdate
+      router.replace("/login");
+      router.refresh();
     } catch (err) {
       if (err instanceof FirebaseError) {
         setError("Terjadi kesalahan saat logout");
