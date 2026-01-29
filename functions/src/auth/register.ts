@@ -392,14 +392,11 @@ export const registerUser = onCall(
         .set(validatedUserData);
 
       // ----------------------------------------
-      // Step 7: Generate Email Verification Link
+      // Step 7: Generate Custom Token
       // ----------------------------------------
-      const verificationLink = await adminAuth.generateEmailVerificationLink(
-        email,
-        {
-          url: `${process.env.NEXT_PUBLIC_APP_URL || "https://robotik-pnp.vercel.app"}/login`,
-        },
-      );
+      // Kita butuh client untuk mengirim email verifikasi (karena Admin SDK tidak bisa kirim email native Firebase)
+      // Jadi kita kembalikan Custom Token agar client bisa login sementara untuk trigger sendEmailVerification
+      const customToken = await adminAuth.createCustomToken(userRecord.uid);
 
       // ----------------------------------------
       // Step 8: Clear Rate Limit (registrasi berhasil)
@@ -411,9 +408,9 @@ export const registerUser = onCall(
       // ----------------------------------------
       return {
         success: true,
-        message: "Akun berhasil dibuat. Cek email untuk verifikasi.",
+        message: "Akun berhasil dibuat.",
         userId: userRecord.uid,
-        verificationLink, // Untuk development/testing, hapus di production jika tidak diperlukan
+        customToken, // Token untuk login sementara di client
       };
     } catch (error: unknown) {
       // ----------------------------------------
