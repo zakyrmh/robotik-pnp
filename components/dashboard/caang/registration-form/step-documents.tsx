@@ -75,22 +75,50 @@ function DocumentUploadCard({
 }: DocumentUploadCardProps) {
   const [isUploading, setIsUploading] = useState(false);
 
-  // Simulate file upload - In real app, this would upload to Firebase Storage
+  // Handle file upload with compression
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setIsUploading(true);
 
-    // Simulate upload delay
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      // Dynamic import to avoid SSR issues with browser-only library
+      const imageCompression = (await import("browser-image-compression"))
+        .default;
 
-    // In real app, upload to Firebase Storage and get URL
-    // For now, create a local object URL for preview
-    const url = URL.createObjectURL(file);
-    onChange(url);
+      const options = {
+        maxSizeMB: 0.3, // Compress to < 300KB
+        maxWidthOrHeight: 1920,
+        useWebWorker: true,
+        fileType: "image/jpeg",
+      };
 
-    setIsUploading(false);
+      // Compress ONLY if image is larger than 300KB
+      let uploadFile = file;
+      if (file.size > 300 * 1024) {
+        console.log(`Original size: ${(file.size / 1024).toFixed(2)} KB`);
+        uploadFile = await imageCompression(file, options);
+        console.log(
+          `Compressed size: ${(uploadFile.size / 1024).toFixed(2)} KB`,
+        );
+      }
+
+      // Simulate upload delay
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      // In real app, upload [uploadFile] to Firebase Storage and get URL
+      // For now, create a local object URL for preview using the COMPRESSED file
+      const url = URL.createObjectURL(uploadFile);
+      onChange(url);
+    } catch (error) {
+      console.error("Compression error:", error);
+      // Fallback to original file if compression fails
+      const url = URL.createObjectURL(file);
+      onChange(url);
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (

@@ -17,6 +17,7 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
   - Added `instagramRobotikUrl`, `instagramMrcUrl`, and `youtubeRobotikUrl` to `ExternalLinksSchema` for managing social media links.
   - Updated `settings-service.ts` to support saving and retrieving `activeYear` and new social media links.
   - Updated `step-documents.tsx` to fetch social media links from global `recruitment_settings` in Firestore instead of using hardcoded values.
+  - Implemented client-side image compression (< 300KB, .jpeg) for document and payment proof uploads to optimize storage and bandwidth.
 
 ## [1.5.1] - 2026-01-29
 
