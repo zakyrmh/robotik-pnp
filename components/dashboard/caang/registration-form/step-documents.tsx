@@ -218,14 +218,45 @@ export function StepDocuments() {
     },
   });
 
-  // Load existing documents
+  // State for dynamic social media links
+  const [socialLinks, setSocialLinks] = useState<{
+    instagramRobotikUrl: string;
+    instagramMrcUrl: string;
+    youtubeRobotikUrl: string;
+  }>({
+    instagramRobotikUrl: "https://instagram.com/ukmrobotikpnp", // Fallback
+    instagramMrcUrl: "https://instagram.com/mrcukmrobotik", // Fallback
+    youtubeRobotikUrl: "https://youtube.com/@UKMRobotikPNP", // Fallback
+  });
+
+  // Load existing documents & settings
   useEffect(() => {
-    async function loadExistingDocs() {
+    async function init() {
       if (!user?.uid) return;
 
       setIsLoading(true);
 
       try {
+        // 1. Load Settings
+        const { getRecruitmentSettings } =
+          await import("@/lib/firebase/services/settings-service");
+        const settings = await getRecruitmentSettings();
+
+        if (settings?.externalLinks) {
+          setSocialLinks({
+            instagramRobotikUrl:
+              settings.externalLinks.instagramRobotikUrl ||
+              "https://instagram.com/ukmrobotikpnp",
+            instagramMrcUrl:
+              settings.externalLinks.instagramMrcUrl ||
+              "https://instagram.com/mrcukmrobotik",
+            youtubeRobotikUrl:
+              settings.externalLinks.youtubeRobotikUrl ||
+              "https://youtube.com/@UKMRobotikPNP",
+          });
+        }
+
+        // 2. Load Documents
         const regRef = doc(db, "registrations", user.uid);
         const regSnap = await getDoc(regRef);
 
@@ -240,13 +271,13 @@ export function StepDocuments() {
           form.setValue("youtubeSubscribeUrl", docs.youtubeSubscribeUrl || "");
         }
       } catch (error) {
-        console.error("Error loading documents:", error);
+        console.error("Error initializing documents step:", error);
       } finally {
         setIsLoading(false);
       }
     }
 
-    loadExistingDocs();
+    init();
   }, [user?.uid, form]);
 
   const onSubmit = async (data: DocumentsFormValues) => {
@@ -337,7 +368,7 @@ export function StepDocuments() {
                       required
                       value={field.value}
                       onChange={field.onChange}
-                      externalLink="https://instagram.com/ukmrobotikpnp"
+                      externalLink={socialLinks.instagramRobotikUrl}
                       externalLinkLabel="Buka Instagram Robotik"
                       error={fieldState.error?.message}
                     />
@@ -357,7 +388,7 @@ export function StepDocuments() {
                       required
                       value={field.value}
                       onChange={field.onChange}
-                      externalLink="https://instagram.com/mrcukmrobotik"
+                      externalLink={socialLinks.instagramMrcUrl}
                       externalLinkLabel="Buka Instagram MRC"
                       error={fieldState.error?.message}
                     />
@@ -377,7 +408,7 @@ export function StepDocuments() {
                       required
                       value={field.value}
                       onChange={field.onChange}
-                      externalLink="https://youtube.com/@UKMRobotikPNP"
+                      externalLink={socialLinks.youtubeRobotikUrl}
                       externalLinkLabel="Buka YouTube Robotik"
                       error={fieldState.error?.message}
                     />
