@@ -53,10 +53,18 @@ export const ContactPersonSchema = z.object({
     .regex(/^[0-9+]+$/, "Nomor WhatsApp hanya boleh berisi angka"),
 });
 
-export const PaymentMethodSchema = z.object({
+// [BARU] Schema untuk Akun Bank
+export const BankAccountSchema = z.object({
   bankName: z.string().min(1, "Nama bank wajib diisi"),
   accountNumber: z.string().min(1, "Nomor rekening wajib diisi"),
   accountHolder: z.string().min(1, "Nama pemilik rekening wajib diisi"),
+});
+
+// [BARU] Schema untuk E-Wallet
+export const EWalletSchema = z.object({
+  provider: z.string().min(1, "Nama e-wallet wajib diisi"), // e.g. OVO, DANA
+  number: z.string().min(1, "Nomor e-wallet wajib diisi"),
+  accountHolder: z.string().min(1, "Nama pemilik e-wallet wajib diisi"),
 });
 
 // [BARU] Schema untuk Link Eksternal (Grup WA, Guidebook)
@@ -100,7 +108,10 @@ export const RecruitmentSettingsSchema = z.object({
 
   // Keuangan
   registrationFee: z.number().min(0).default(0),
-  paymentMethods: z.array(PaymentMethodSchema).default([]),
+
+  // Metode Pembayaran (Multiple)
+  bankAccounts: z.array(BankAccountSchema).default([]),
+  eWallets: z.array(EWalletSchema).default([]),
 
   // Jadwal
   schedule: ScheduleSchema,
@@ -165,15 +176,12 @@ export const RecruitmentSettingsFormSchema = z
       youtubeRobotikUrl: z.string().optional(),
     }),
 
-    paymentMethods: z
-      .array(
-        z.object({
-          bankName: z.string().min(1, "Nama bank wajib diisi"),
-          accountNumber: z.string().min(1, "Nomor rekening wajib diisi"),
-          accountHolder: z.string().min(1, "Nama pemilik rekening wajib diisi"),
-        }),
-      )
-      .min(1, "Minimal satu metode pembayaran harus ditambahkan"),
+    // Bank Accounts (array of objects)
+    bankAccounts: z.array(BankAccountSchema).default([]),
+    // .min(1, "Minimal satu akun bank harus ditambahkan"), // Optional: bisa juga kosong jika e-wallet ada
+
+    // E-Wallets (array of objects)
+    eWallets: z.array(EWalletSchema).default([]),
 
     isRegistrationOpen: z.boolean(),
 
@@ -196,8 +204,9 @@ export const RecruitmentSettingsFormSchema = z
 
 export type Schedule = z.infer<typeof ScheduleSchema>;
 export type ContactPerson = z.infer<typeof ContactPersonSchema>;
-export type PaymentMethod = z.infer<typeof PaymentMethodSchema>;
-export type ExternalLinks = z.infer<typeof ExternalLinksSchema>; // Type baru
+export type BankAccount = z.infer<typeof BankAccountSchema>;
+export type EWallet = z.infer<typeof EWalletSchema>;
+export type ExternalLinks = z.infer<typeof ExternalLinksSchema>;
 export type RecruitmentSettings = z.infer<typeof RecruitmentSettingsSchema>;
 export type RecruitmentSettingsFormData = z.infer<
   typeof RecruitmentSettingsFormSchema
@@ -229,10 +238,17 @@ export const DEFAULT_RECRUITMENT_SETTINGS: RecruitmentSettingsFormData = {
     instagramMrcUrl: "",
     youtubeRobotikUrl: "",
   },
-  paymentMethods: [
+  bankAccounts: [
     {
       bankName: "",
       accountNumber: "",
+      accountHolder: "",
+    },
+  ],
+  eWallets: [
+    {
+      provider: "",
+      number: "",
       accountHolder: "",
     },
   ],

@@ -49,6 +49,8 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { useDashboard } from "@/components/dashboard/dashboard-context";
 import { cn } from "@/lib/utils";
+import { getRecruitmentSettings } from "@/lib/firebase/services/settings-service";
+import { RecruitmentSettings } from "@/schemas/recruitment-settings";
 
 // =========================================================
 // SCHEMA
@@ -86,24 +88,6 @@ const paymentSchema = z
   });
 
 type PaymentFormValues = z.infer<typeof paymentSchema>;
-
-// =========================================================
-// PAYMENT INFO (TODO: Get from settings)
-// =========================================================
-
-const PAYMENT_INFO = {
-  amount: 50000,
-  bank: {
-    name: "Bank BRI",
-    accountNumber: "0123456789012345",
-    accountName: "UKM ROBOTIK PNP",
-  },
-  ewallet: {
-    provider: "OVO/DANA/GoPay",
-    number: "081234567890",
-    name: "UKM ROBOTIK PNP",
-  },
-};
 
 // =========================================================
 // HELPER COMPONENTS
@@ -196,6 +180,7 @@ export function StepPayment() {
   const [uploadStage, setUploadStage] = useState<"compressing" | "uploading">(
     "compressing",
   );
+  const [settings, setSettings] = useState<RecruitmentSettings | null>(null);
 
   const userId = user?.uid || "";
   const period = registration?.orPeriod || "OR_xx";
@@ -216,14 +201,19 @@ export function StepPayment() {
   const selectedMethod = form.watch("method");
   const proofUrl = form.watch("proofUrl");
 
-  // Load existing payment data
+  // Load existing payment data & settings
   useEffect(() => {
-    async function loadExistingPayment() {
+    async function init() {
       if (!user?.uid) return;
 
       setIsLoading(true);
 
       try {
+        // 1. Get Settings
+        const settingsData = await getRecruitmentSettings();
+        setSettings(settingsData);
+
+        // 2. Get Registration Data
         const regRef = doc(db, "registrations", user.uid);
         const regSnap = await getDoc(regRef);
 
@@ -240,13 +230,13 @@ export function StepPayment() {
           form.setValue("proofUrl", payment.proofUrl || "");
         }
       } catch (error) {
-        console.error("Error loading payment:", error);
+        console.error("Error initializing payment step:", error);
       } finally {
         setIsLoading(false);
       }
     }
 
-    loadExistingPayment();
+    init();
   }, [user?.uid, form]);
 
   // Handle file upload with compression and storage service
@@ -281,7 +271,6 @@ export function StepPayment() {
       // Optional: Show error toast
     } finally {
       setIsUploading(false);
-      // Reset input
       e.target.value = "";
     }
   };
@@ -351,7 +340,8 @@ export function StepPayment() {
                 <AlertTitle>Biaya Pendaftaran</AlertTitle>
                 <AlertDescription>
                   <span className="text-2xl font-bold text-primary">
-                    Rp {PAYMENT_INFO.amount.toLocaleString("id-ID")}
+                    Rp{" "}
+                    {(settings?.registrationFee || 0).toLocaleString("id-ID")}
                   </span>
                 </AlertDescription>
               </Alert>
@@ -395,34 +385,33 @@ export function StepPayment() {
               {selectedMethod === "transfer" && (
                 <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border space-y-4">
                   <h4 className="font-medium">Detail Transfer Bank</h4>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">
-                        Bank
-                      </span>
-                      <span className="font-medium">
-                        {PAYMENT_INFO.bank.name}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">
-                        No. Rekening
-                      </span>
-                      <div className="flex items-center gap-1">
-                        <span className="font-mono font-medium">
-                          {PAYMENT_INFO.bank.accountNumber}
-                        </span>
-                        <CopyButton text={PAYMENT_INFO.bank.accountNumber} />
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">
-                        Atas Nama
-                      </span>
-                      <span className="font-medium">
-                        {PAYMENT_INFO.bank.accountName}
-                      </span>
-                    </div>
+                  <div className="space-y-4">
+                    {settings?.bankAccounts &&
+                    settings.bankAccounts.length > 0 ? (
+                      settings.bankAccounts.map((bank, index) => (
+                        <div
+                          key={index}
+                          className="p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-semibold">
+                              {bank.bankName}
+                            </span>
+                            <CopyButton text={bank.accountNumber} />
+                          </div>
+                          <p className="font-mono text-lg tracking-wide mb-1">
+                            {bank.accountNumber}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            a.n. {bank.accountHolder}
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground italic">
+                        Belum ada informasi rekening bank.
+                      </p>
+                    )}
                   </div>
 
                   {/* Bank Name Input */}
@@ -448,34 +437,32 @@ export function StepPayment() {
               {selectedMethod === "e_wallet" && (
                 <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border space-y-4">
                   <h4 className="font-medium">Detail E-Wallet</h4>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">
-                        Provider
-                      </span>
-                      <span className="font-medium">
-                        {PAYMENT_INFO.ewallet.provider}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">
-                        Nomor
-                      </span>
-                      <div className="flex items-center gap-1">
-                        <span className="font-mono font-medium">
-                          {PAYMENT_INFO.ewallet.number}
-                        </span>
-                        <CopyButton text={PAYMENT_INFO.ewallet.number} />
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">
-                        Atas Nama
-                      </span>
-                      <span className="font-medium">
-                        {PAYMENT_INFO.ewallet.name}
-                      </span>
-                    </div>
+                  <div className="space-y-4">
+                    {settings?.eWallets && settings.eWallets.length > 0 ? (
+                      settings.eWallets.map((wallet, index) => (
+                        <div
+                          key={index}
+                          className="p-3 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700"
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-semibold">
+                              {wallet.provider}
+                            </span>
+                            <CopyButton text={wallet.number} />
+                          </div>
+                          <p className="font-mono text-lg tracking-wide mb-1">
+                            {wallet.number}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            a.n. {wallet.accountHolder}
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-muted-foreground italic">
+                        Belum ada informasi E-Wallet.
+                      </p>
+                    )}
                   </div>
 
                   {/* E-Wallet Provider Input */}

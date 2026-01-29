@@ -1,6 +1,5 @@
 import {
   ref,
-  uploadBytes,
   uploadBytesResumable,
   getDownloadURL,
   deleteObject,

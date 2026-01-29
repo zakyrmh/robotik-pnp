@@ -59,10 +59,15 @@ function formDataToFirestore(
       instagramMrcUrl: data.externalLinks?.instagramMrcUrl || "",
       youtubeRobotikUrl: data.externalLinks?.youtubeRobotikUrl || "",
     },
-    paymentMethods: data.paymentMethods.map((method) => ({
-      bankName: method.bankName,
-      accountNumber: method.accountNumber,
-      accountHolder: method.accountHolder,
+    bankAccounts: data.bankAccounts.map((acc) => ({
+      bankName: acc.bankName,
+      accountNumber: acc.accountNumber,
+      accountHolder: acc.accountHolder,
+    })),
+    eWallets: data.eWallets.map((wallet) => ({
+      provider: wallet.provider,
+      number: wallet.number,
+      accountHolder: wallet.accountHolder,
     })),
     isRegistrationOpen: data.isRegistrationOpen,
     announcementMessage: data.announcementMessage || "",
@@ -188,9 +193,10 @@ export async function isRegistrationCurrentlyOpen(): Promise<boolean> {
  *
  * @returns PaymentMethod[] | null
  */
-export async function getActivePaymentMethods(): Promise<
-  RecruitmentSettings["paymentMethods"] | null
-> {
+export async function getActivePaymentMethods(): Promise<{
+  bankAccounts: RecruitmentSettings["bankAccounts"];
+  eWallets: RecruitmentSettings["eWallets"];
+} | null> {
   try {
     const settings = await getRecruitmentSettings();
 
@@ -198,7 +204,10 @@ export async function getActivePaymentMethods(): Promise<
       return null;
     }
 
-    return settings.paymentMethods;
+    return {
+      bankAccounts: settings.bankAccounts,
+      eWallets: settings.eWallets,
+    };
   } catch (error) {
     console.error("[SettingsService] Error fetching payment methods:", error);
     return null;

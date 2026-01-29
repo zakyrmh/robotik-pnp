@@ -19,10 +19,11 @@ import {
   XCircle,
   RefreshCw,
   Link2,
+  Wallet,
+  Banknote,
 } from "lucide-react";
 import { toast } from "sonner";
 
-// UI Components
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,11 +44,9 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 
-// Context & Hooks
 import { useDashboard } from "@/components/dashboard/dashboard-context";
 import { useUnsavedChanges } from "@/components/unsaved-changes-context";
 
-// Services & Schemas
 import {
   getRecruitmentSettings,
   updateRecruitmentSettings,
@@ -60,24 +59,16 @@ import {
 
 import { cn } from "@/lib/utils";
 
-// =========================================================
-// PAGE SKELETON
-// =========================================================
-
 function SettingsPageSkeleton() {
   return (
     <div className="flex flex-col h-full space-y-6 pt-6 pb-10">
-      {/* Header Skeleton */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1">
         <div className="space-y-2">
           <div className="h-8 w-56 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
           <div className="h-5 w-80 bg-slate-200 dark:bg-slate-800 rounded animate-pulse" />
         </div>
       </div>
-
       <Separator />
-
-      {/* Cards Skeleton */}
       <div className="grid gap-6 md:grid-cols-2">
         {[1, 2, 3, 4].map((i) => (
           <div
@@ -96,10 +87,6 @@ function SettingsPageSkeleton() {
   );
 }
 
-// =========================================================
-// ACCESS DENIED COMPONENT
-// =========================================================
-
 function AccessDenied() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
@@ -117,10 +104,6 @@ function AccessDenied() {
   );
 }
 
-// =========================================================
-// MAIN PAGE COMPONENT
-// =========================================================
-
 export default function RecruitmentSettingsPage() {
   const { roles, isLoading: dashboardLoading, user } = useDashboard();
   const { setHasUnsavedChanges } = useUnsavedChanges();
@@ -129,10 +112,9 @@ export default function RecruitmentSettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [hasExistingData, setHasExistingData] = useState(false);
 
-  // Form setup dengan react-hook-form + zod
   const form = useForm<RecruitmentSettingsFormData>({
     resolver: zodResolver(
-      RecruitmentSettingsFormSchema
+      RecruitmentSettingsFormSchema,
     ) as Resolver<RecruitmentSettingsFormData>,
     defaultValues: DEFAULT_RECRUITMENT_SETTINGS,
     mode: "onChange",
@@ -147,13 +129,24 @@ export default function RecruitmentSettingsPage() {
     formState: { errors, isDirty },
   } = form;
 
-  // useFieldArray untuk payment methods
-  const { fields, append, remove } = useFieldArray({
+  const {
+    fields: bankFields,
+    append: appendBank,
+    remove: removeBank,
+  } = useFieldArray({
     control,
-    name: "paymentMethods",
+    name: "bankAccounts",
   });
 
-  // useFieldArray untuk contact person
+  const {
+    fields: eWalletFields,
+    append: appendEWallet,
+    remove: removeEWallet,
+  } = useFieldArray({
+    control,
+    name: "eWallets",
+  });
+
   const {
     fields: contactFields,
     append: appendContact,
@@ -163,27 +156,22 @@ export default function RecruitmentSettingsPage() {
     name: "contactPerson",
   });
 
-  // Watch values untuk display
   const isRegistrationOpen = watch("isRegistrationOpen");
   const scheduleOpenDate = watch("schedule.openDate");
   const scheduleCloseDate = watch("schedule.closeDate");
 
-  // Access check
   const hasAccess = roles?.isSuperAdmin || roles?.isRecruiter;
 
-  // Sync dirty state dengan unsaved changes context
   useEffect(() => {
     setHasUnsavedChanges(isDirty);
   }, [isDirty, setHasUnsavedChanges]);
 
-  // Clear unsaved changes on unmount
   useEffect(() => {
     return () => {
       setHasUnsavedChanges(false);
     };
   }, [setHasUnsavedChanges]);
 
-  // Fetch existing settings
   const fetchSettings = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -193,6 +181,7 @@ export default function RecruitmentSettingsPage() {
         setHasExistingData(true);
         reset({
           activePeriod: settings.activePeriod,
+          activeYear: settings.activeYear || "",
           registrationFee: settings.registrationFee,
           schedule: {
             openDate: settings.schedule.openDate,
@@ -206,11 +195,19 @@ export default function RecruitmentSettingsPage() {
             groupChatUrl: settings.externalLinks?.groupChatUrl || "",
             guidebookUrl: settings.externalLinks?.guidebookUrl || "",
             faqUrl: settings.externalLinks?.faqUrl || "",
+            instagramRobotikUrl:
+              settings.externalLinks?.instagramRobotikUrl || "",
+            instagramMrcUrl: settings.externalLinks?.instagramMrcUrl || "",
+            youtubeRobotikUrl: settings.externalLinks?.youtubeRobotikUrl || "",
           },
-          paymentMethods:
-            settings.paymentMethods.length > 0
-              ? settings.paymentMethods
+          bankAccounts:
+            settings.bankAccounts?.length > 0
+              ? settings.bankAccounts
               : [{ bankName: "", accountNumber: "", accountHolder: "" }],
+          eWallets:
+            settings.eWallets?.length > 0
+              ? settings.eWallets
+              : [{ provider: "", number: "", accountHolder: "" }],
           isRegistrationOpen: settings.isRegistrationOpen,
           announcementMessage: settings.announcementMessage || "",
         });
@@ -233,7 +230,6 @@ export default function RecruitmentSettingsPage() {
     }
   }, [dashboardLoading, hasAccess, fetchSettings]);
 
-  // Handle form submission
   const onSubmit = async (data: RecruitmentSettingsFormData) => {
     if (!user?.uid) {
       toast.error("User tidak ditemukan");
@@ -243,11 +239,8 @@ export default function RecruitmentSettingsPage() {
     try {
       setIsSaving(true);
       await updateRecruitmentSettings(data, user.uid);
-
       toast.success("Pengaturan berhasil disimpan");
       setHasExistingData(true);
-
-      // Reset form state to mark as clean
       reset(data);
     } catch (error) {
       console.error("Error saving settings:", error);
@@ -257,7 +250,6 @@ export default function RecruitmentSettingsPage() {
     }
   };
 
-  // Handle beforeunload event
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (isDirty) {
@@ -267,26 +259,22 @@ export default function RecruitmentSettingsPage() {
         return e.returnValue;
       }
     };
-
     window.addEventListener("beforeunload", handleBeforeUnload);
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, [isDirty]);
 
-  // Loading state
   if (dashboardLoading || isLoading) {
     return <SettingsPageSkeleton />;
   }
 
-  // Access denied
   if (!hasAccess) {
     return <AccessDenied />;
   }
 
   return (
     <div className="flex flex-col h-full space-y-6 pt-6 pb-10">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-1">
         <div className="space-y-1">
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-3">
@@ -335,14 +323,13 @@ export default function RecruitmentSettingsPage() {
 
       <Separator />
 
-      {/* Status Banner */}
       {hasExistingData && (
         <div
           className={cn(
             "flex items-center gap-3 p-4 rounded-lg border",
             isRegistrationOpen
               ? "bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-900"
-              : "bg-slate-50 border-slate-200 dark:bg-slate-900 dark:border-slate-800"
+              : "bg-slate-50 border-slate-200 dark:bg-slate-900 dark:border-slate-800",
           )}
         >
           {isRegistrationOpen ? (
@@ -365,10 +352,8 @@ export default function RecruitmentSettingsPage() {
         </div>
       )}
 
-      {/* Form */}
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <div className="grid gap-6 md:grid-cols-2">
-          {/* Card 1: Periode & Jadwal */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -380,16 +365,24 @@ export default function RecruitmentSettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Active Period */}
               <div className="space-y-2">
                 <Label htmlFor="activePeriod">
                   Periode Aktif <span className="text-red-500">*</span>
                 </Label>
-                <Input
-                  id="activePeriod"
-                  placeholder="Contoh: OR 21"
-                  {...register("activePeriod")}
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="activePeriod"
+                    placeholder="Contoh: OR 21"
+                    {...register("activePeriod")}
+                    className="flex-1"
+                  />
+                  <Input
+                    id="activeYear"
+                    placeholder="Contoh: 2024-2025"
+                    {...register("activeYear")}
+                    className="w-1/3"
+                  />
+                </div>
                 {errors.activePeriod && (
                   <p className="text-xs text-red-500 flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" />
@@ -398,7 +391,6 @@ export default function RecruitmentSettingsPage() {
                 )}
               </div>
 
-              {/* Open Date */}
               <div className="space-y-2">
                 <Label>
                   Tanggal Buka <span className="text-red-500">*</span>
@@ -409,7 +401,7 @@ export default function RecruitmentSettingsPage() {
                       variant="outline"
                       className={cn(
                         "w-full justify-start text-left font-normal",
-                        !scheduleOpenDate && "text-muted-foreground"
+                        !scheduleOpenDate && "text-muted-foreground",
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
@@ -442,7 +434,6 @@ export default function RecruitmentSettingsPage() {
                 )}
               </div>
 
-              {/* Close Date */}
               <div className="space-y-2">
                 <Label>
                   Tanggal Tutup <span className="text-red-500">*</span>
@@ -453,7 +444,7 @@ export default function RecruitmentSettingsPage() {
                       variant="outline"
                       className={cn(
                         "w-full justify-start text-left font-normal",
-                        !scheduleCloseDate && "text-muted-foreground"
+                        !scheduleCloseDate && "text-muted-foreground",
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
@@ -489,7 +480,6 @@ export default function RecruitmentSettingsPage() {
                 )}
               </div>
 
-              {/* Master Switch */}
               <div className="flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
                 <div className="space-y-0.5">
                   <Label
@@ -515,7 +505,6 @@ export default function RecruitmentSettingsPage() {
             </CardContent>
           </Card>
 
-          {/* Card 2: Biaya & Pembayaran */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -523,11 +512,10 @@ export default function RecruitmentSettingsPage() {
                 Biaya & Pembayaran
               </CardTitle>
               <CardDescription>
-                Atur biaya pendaftaran dan rekening pembayaran
+                Atur biaya pendaftaran, rekening bank, dan e-wallet
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Registration Fee */}
+            <CardContent className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="registrationFee">
                   Biaya Pendaftaran (Rp) <span className="text-red-500">*</span>
@@ -546,18 +534,20 @@ export default function RecruitmentSettingsPage() {
                 )}
               </div>
 
-              {/* Payment Methods */}
+              <Separator />
+
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <Label>
-                    Metode Pembayaran <span className="text-red-500">*</span>
+                  <Label className="flex items-center gap-2 text-base">
+                    <Banknote className="w-4 h-4 text-slate-500" />
+                    Rekening Bank
                   </Label>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     onClick={() =>
-                      append({
+                      appendBank({
                         bankName: "",
                         accountNumber: "",
                         accountHolder: "",
@@ -569,15 +559,8 @@ export default function RecruitmentSettingsPage() {
                   </Button>
                 </div>
 
-                {errors.paymentMethods?.root && (
-                  <p className="text-xs text-red-500 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3" />
-                    {errors.paymentMethods.root.message}
-                  </p>
-                )}
-
                 <div className="space-y-3">
-                  {fields.map((field, index) => (
+                  {bankFields.map((field, index) => (
                     <div
                       key={field.id}
                       className="p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30 space-y-3"
@@ -586,12 +569,12 @@ export default function RecruitmentSettingsPage() {
                         <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                           Rekening #{index + 1}
                         </span>
-                        {fields.length > 1 && (
+                        {bankFields.length > 1 && (
                           <Button
                             type="button"
                             variant="ghost"
                             size="sm"
-                            onClick={() => remove(index)}
+                            onClick={() => removeBank(index)}
                             className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -601,38 +584,116 @@ export default function RecruitmentSettingsPage() {
 
                       <div className="grid gap-3">
                         <Input
-                          placeholder="Nama Bank (e.g., BCA, Mandiri)"
-                          {...register(`paymentMethods.${index}.bankName`)}
+                          placeholder="Nama Bank (e.g., BRI, Mandiri)"
+                          {...register(`bankAccounts.${index}.bankName`)}
                         />
-                        {errors.paymentMethods?.[index]?.bankName && (
+                        {errors.bankAccounts?.[index]?.bankName && (
                           <p className="text-xs text-red-500">
-                            {errors.paymentMethods[index]?.bankName?.message}
+                            {errors.bankAccounts[index]?.bankName?.message}
                           </p>
                         )}
 
                         <Input
                           placeholder="Nomor Rekening"
-                          {...register(`paymentMethods.${index}.accountNumber`)}
+                          {...register(`bankAccounts.${index}.accountNumber`)}
                         />
-                        {errors.paymentMethods?.[index]?.accountNumber && (
+                        {errors.bankAccounts?.[index]?.accountNumber && (
                           <p className="text-xs text-red-500">
-                            {
-                              errors.paymentMethods[index]?.accountNumber
-                                ?.message
-                            }
+                            {errors.bankAccounts[index]?.accountNumber?.message}
                           </p>
                         )}
 
                         <Input
-                          placeholder="Nama Pemilik Rekening"
-                          {...register(`paymentMethods.${index}.accountHolder`)}
+                          placeholder="Atas Nama"
+                          {...register(`bankAccounts.${index}.accountHolder`)}
                         />
-                        {errors.paymentMethods?.[index]?.accountHolder && (
+                        {errors.bankAccounts?.[index]?.accountHolder && (
                           <p className="text-xs text-red-500">
-                            {
-                              errors.paymentMethods[index]?.accountHolder
-                                ?.message
-                            }
+                            {errors.bankAccounts[index]?.accountHolder?.message}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <Separator />
+
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-2 text-base">
+                    <Wallet className="w-4 h-4 text-slate-500" />
+                    E-Wallet / Dompet Digital
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      appendEWallet({
+                        provider: "",
+                        number: "",
+                        accountHolder: "",
+                      })
+                    }
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Tambah
+                  </Button>
+                </div>
+
+                <div className="space-y-3">
+                  {eWalletFields.map((field, index) => (
+                    <div
+                      key={field.id}
+                      className="p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30 space-y-3"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                          E-Wallet #{index + 1}
+                        </span>
+                        {eWalletFields.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeEWallet(index)}
+                            className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+
+                      <div className="grid gap-3">
+                        <Input
+                          placeholder="Provider (e.g., OVO, DANA)"
+                          {...register(`eWallets.${index}.provider`)}
+                        />
+                        {errors.eWallets?.[index]?.provider && (
+                          <p className="text-xs text-red-500">
+                            {errors.eWallets[index]?.provider?.message}
+                          </p>
+                        )}
+
+                        <Input
+                          placeholder="Nomor HP / ID"
+                          {...register(`eWallets.${index}.number`)}
+                        />
+                        {errors.eWallets?.[index]?.number && (
+                          <p className="text-xs text-red-500">
+                            {errors.eWallets[index]?.number?.message}
+                          </p>
+                        )}
+
+                        <Input
+                          placeholder="Atas Nama"
+                          {...register(`eWallets.${index}.accountHolder`)}
+                        />
+                        {errors.eWallets?.[index]?.accountHolder && (
+                          <p className="text-xs text-red-500">
+                            {errors.eWallets[index]?.accountHolder?.message}
                           </p>
                         )}
                       </div>
@@ -643,7 +704,6 @@ export default function RecruitmentSettingsPage() {
             </CardContent>
           </Card>
 
-          {/* Card 3: Kontak */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -688,8 +748,6 @@ export default function RecruitmentSettingsPage() {
                       </Button>
                     )}
                   </div>
-
-                  {/* Contact Name */}
                   <div className="space-y-2">
                     <Label htmlFor={`contactPerson.${index}.name`}>
                       Nama <span className="text-red-500">*</span>
@@ -706,8 +764,6 @@ export default function RecruitmentSettingsPage() {
                       </p>
                     )}
                   </div>
-
-                  {/* WhatsApp */}
                   <div className="space-y-2">
                     <Label htmlFor={`contactPerson.${index}.whatsapp`}>
                       Nomor WhatsApp <span className="text-red-500">*</span>
@@ -732,7 +788,6 @@ export default function RecruitmentSettingsPage() {
             </CardContent>
           </Card>
 
-          {/* Card 4: Link Penting */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -744,7 +799,6 @@ export default function RecruitmentSettingsPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {/* Group Chat URL */}
               <div className="space-y-2">
                 <Label htmlFor="externalLinks.groupChatUrl">
                   Link Grup WhatsApp
@@ -755,15 +809,8 @@ export default function RecruitmentSettingsPage() {
                   placeholder="https://chat.whatsapp.com/..."
                   {...register("externalLinks.groupChatUrl")}
                 />
-                {errors.externalLinks?.groupChatUrl && (
-                  <p className="text-xs text-red-500 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3" />
-                    {errors.externalLinks.groupChatUrl.message}
-                  </p>
-                )}
               </div>
 
-              {/* Guidebook URL */}
               <div className="space-y-2">
                 <Label htmlFor="externalLinks.guidebookUrl">
                   Link Guidebook
@@ -774,15 +821,8 @@ export default function RecruitmentSettingsPage() {
                   placeholder="https://drive.google.com/..."
                   {...register("externalLinks.guidebookUrl")}
                 />
-                {errors.externalLinks?.guidebookUrl && (
-                  <p className="text-xs text-red-500 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3" />
-                    {errors.externalLinks.guidebookUrl.message}
-                  </p>
-                )}
               </div>
 
-              {/* FAQ URL */}
               <div className="space-y-2">
                 <Label htmlFor="externalLinks.faqUrl">Link FAQ</Label>
                 <Input
@@ -791,21 +831,53 @@ export default function RecruitmentSettingsPage() {
                   placeholder="https://..."
                   {...register("externalLinks.faqUrl")}
                 />
-                {errors.externalLinks?.faqUrl && (
-                  <p className="text-xs text-red-500 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3" />
-                    {errors.externalLinks.faqUrl.message}
-                  </p>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  Link ini akan ditampilkan kepada pendaftar yang sudah
-                  terverifikasi
-                </p>
+              </div>
+
+              <div className="pt-2">
+                <Separator />
+              </div>
+              <p className="text-xs mt-2 font-medium">
+                Link Media Sosial (untuk validasi upload)
+              </p>
+
+              <div className="space-y-2">
+                <Label htmlFor="externalLinks.instagramRobotikUrl">
+                  Instagram Robotik
+                </Label>
+                <Input
+                  id="externalLinks.instagramRobotikUrl"
+                  type="url"
+                  placeholder="https://instagram.com/robotikpnp"
+                  {...register("externalLinks.instagramRobotikUrl")}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="externalLinks.instagramMrcUrl">
+                  Instagram MRC
+                </Label>
+                <Input
+                  id="externalLinks.instagramMrcUrl"
+                  type="url"
+                  placeholder="https://instagram.com/mrcpnp"
+                  {...register("externalLinks.instagramMrcUrl")}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="externalLinks.youtubeRobotikUrl">
+                  YouTube Robotik
+                </Label>
+                <Input
+                  id="externalLinks.youtubeRobotikUrl"
+                  type="url"
+                  placeholder="https://youtube.com/@robotikpnp"
+                  {...register("externalLinks.youtubeRobotikUrl")}
+                />
               </div>
             </CardContent>
           </Card>
 
-          {/* Card 5: Pengumuman */}
           <Card className="md:col-span-2">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -831,7 +903,6 @@ export default function RecruitmentSettingsPage() {
           </Card>
         </div>
 
-        {/* Save Button (Mobile) */}
         <div className="md:hidden">
           <Button
             type="submit"
