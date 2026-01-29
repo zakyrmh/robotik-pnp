@@ -236,6 +236,10 @@ export function StepVerification() {
   }
 
   // DEFAULT STATE - Ready to Submit
+  // Check if this is a revision request (has rejection reason but not rejected status)
+  const isRevisionRequest =
+    registration?.verification?.rejectionReason && !isRejected;
+
   return (
     <Card className="border-none shadow-lg">
       <CardHeader>
@@ -246,6 +250,30 @@ export function StepVerification() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Revision Notice */}
+        {isRevisionRequest && (
+          <Alert className="bg-amber-50 border-amber-300 dark:bg-amber-950/30 dark:border-amber-700">
+            <AlertTriangle className="h-4 w-4 text-amber-600" />
+            <AlertTitle className="text-amber-700 dark:text-amber-400">
+              Perlu Revisi
+            </AlertTitle>
+            <AlertDescription className="text-amber-600 dark:text-amber-500">
+              <p className="mb-2">
+                Admin meminta Anda untuk memperbaiki data pendaftaran:
+              </p>
+              <div className="p-3 bg-white dark:bg-slate-900 rounded-lg border border-amber-200 dark:border-amber-800">
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  &ldquo;{registration?.verification?.rejectionReason}&rdquo;
+                </p>
+              </div>
+              <p className="mt-2 text-sm">
+                Silakan perbaiki data yang diminta, lalu ajukan verifikasi
+                ulang.
+              </p>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Summary */}
         <div className="space-y-3">
           <p className="text-sm font-medium">Ringkasan Data:</p>

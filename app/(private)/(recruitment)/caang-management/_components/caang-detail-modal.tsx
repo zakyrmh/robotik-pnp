@@ -331,7 +331,7 @@ export function CaangDetailModal({
 
       {/* Verification Confirmation Modal */}
       {showVerifyConfirm && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setShowVerifyConfirm(false)}
@@ -394,7 +394,7 @@ export function CaangDetailModal({
 
       {/* Rejection Confirmation Modal */}
       {showRejectConfirm && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => {

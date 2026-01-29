@@ -19,6 +19,10 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
   - Added `verifyRegistration()`, `rejectRegistration()`, and `requestRevision()` service functions in `caang-service.ts`.
   - Rejection reason is stored in `verification.rejectionReason` field.
 
+- **Revision Notice for Caang**:
+  - Added revision alert in `step-verification.tsx` when caang's registration is returned for revision.
+  - Displays admin's revision reason/notes prominently before resubmission.
+
 ### Fixed
 
 - **Logout Not Redirecting Issue**:
