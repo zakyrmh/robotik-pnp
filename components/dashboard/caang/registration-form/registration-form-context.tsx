@@ -198,6 +198,20 @@ export function RegistrationFormProvider({
     setIsSaving(true);
 
     try {
+      // 1. Fetch Global Settings
+      const { getRecruitmentSettings } =
+        await import("@/lib/firebase/services/settings-service");
+      const settings = await getRecruitmentSettings();
+
+      if (!settings) {
+        console.warn(
+          "Recruitment settings not found. Using default values for period/year.",
+        );
+      }
+
+      const activePeriod = settings?.activePeriod || "OR 21"; // Fallback to avoid hard failure
+      const activeYear = settings?.activeYear || "2024-2025"; // Fallback
+
       const now = Timestamp.now();
       const regRef = doc(db, "registrations", user.uid);
       const userRef = doc(db, "users_new", user.uid);
@@ -209,8 +223,8 @@ export function RegistrationFormProvider({
         // Create new registration
         await setDoc(regRef, {
           id: user.uid,
-          orPeriod: "OR 22", // TODO: Get from settings
-          orYear: "2025-2026", // TODO: Get from settings
+          orPeriod: activePeriod,
+          orYear: activeYear,
           registrationId: `REG-${Date.now()}`,
           status: "draft",
           progress: {
@@ -228,6 +242,7 @@ export function RegistrationFormProvider({
         });
       } else {
         // Update existing registration
+        // Note: orPeriod/orYear usually don't change once created, so we don't update them here
         await updateDoc(regRef, {
           "progress.personalDataCompleted": true,
           "progress.personalDataAt": now,

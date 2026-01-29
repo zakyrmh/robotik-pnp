@@ -36,10 +36,11 @@ function dateToTimestamp(date: Date): Timestamp {
  */
 function formDataToFirestore(
   data: RecruitmentSettingsFormData,
-  userId: string
+  userId: string,
 ): Record<string, unknown> {
   return {
     activePeriod: data.activePeriod,
+    activeYear: data.activeYear,
     registrationFee: data.registrationFee,
     schedule: {
       openDate: dateToTimestamp(data.schedule.openDate),
@@ -100,7 +101,7 @@ export async function getRecruitmentSettings(): Promise<RecruitmentSettings | nu
     if (!parseResult.success) {
       console.error(
         "[SettingsService] Invalid data format:",
-        parseResult.error.flatten()
+        parseResult.error.flatten(),
       );
       return null;
     }
@@ -109,7 +110,7 @@ export async function getRecruitmentSettings(): Promise<RecruitmentSettings | nu
   } catch (error) {
     console.error(
       "[SettingsService] Error fetching recruitment settings:",
-      error
+      error,
     );
     throw error;
   }
@@ -125,7 +126,7 @@ export async function getRecruitmentSettings(): Promise<RecruitmentSettings | nu
  */
 export async function updateRecruitmentSettings(
   data: RecruitmentSettingsFormData,
-  userId: string
+  userId: string,
 ): Promise<void> {
   try {
     const docRef = doc(db, COLLECTION_NAME, DOCUMENT_ID);
@@ -138,7 +139,7 @@ export async function updateRecruitmentSettings(
   } catch (error) {
     console.error(
       "[SettingsService] Error updating recruitment settings:",
-      error
+      error,
     );
     throw error;
   }
@@ -172,7 +173,7 @@ export async function isRegistrationCurrentlyOpen(): Promise<boolean> {
   } catch (error) {
     console.error(
       "[SettingsService] Error checking registration status:",
-      error
+      error,
     );
     return false;
   }

@@ -81,6 +81,7 @@ export const ExternalLinksSchema = z.object({
 export const RecruitmentSettingsSchema = z.object({
   // Identitas Periode
   activePeriod: z.string().min(1, "Periode aktif wajib diisi"),
+  activeYear: z.string().min(1, "Tahun aktif wajib diisi"),
 
   // Keuangan
   registrationFee: z.number().min(0).default(0),
@@ -116,6 +117,7 @@ export const RecruitmentSettingsSchema = z.object({
 export const RecruitmentSettingsFormSchema = z
   .object({
     activePeriod: z.string().min(1, "Periode aktif wajib diisi"),
+    activeYear: z.string().min(1, "Tahun aktif wajib diisi"),
 
     // Gunakan coerce agar string "10000" dari input form otomatis jadi number 10000
     registrationFee: z.coerce.number().min(0, "Biaya tidak boleh negatif"),
@@ -134,7 +136,7 @@ export const RecruitmentSettingsFormSchema = z
             .string()
             .min(10, "Nomor WhatsApp minimal 10 karakter")
             .regex(/^[0-9+]+$/, "Nomor WhatsApp hanya boleh berisi angka"),
-        })
+        }),
       )
       .min(1, "Minimal satu kontak person harus ditambahkan"),
 
@@ -151,7 +153,7 @@ export const RecruitmentSettingsFormSchema = z
           bankName: z.string().min(1, "Nama bank wajib diisi"),
           accountNumber: z.string().min(1, "Nomor rekening wajib diisi"),
           accountHolder: z.string().min(1, "Nama pemilik rekening wajib diisi"),
-        })
+        }),
       )
       .min(1, "Minimal satu metode pembayaran harus ditambahkan"),
 
@@ -189,6 +191,7 @@ export type RecruitmentSettingsFormData = z.infer<
 
 export const DEFAULT_RECRUITMENT_SETTINGS: RecruitmentSettingsFormData = {
   activePeriod: "",
+  activeYear: "",
   registrationFee: 0,
   schedule: {
     openDate: new Date(),
