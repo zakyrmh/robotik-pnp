@@ -7,6 +7,18 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [1.5.1] - 2026-01-29
+
+### Fixed
+
+- **Critical Security Fix in Registration Flow**:
+  - Replaced unsafe server-side email verification link generation with secure Custom Token flow.
+  - Mitigated risk of account hijacking via leaked verification links.
+  - Server now returns a time-limited `customToken` which the client uses to sign in securely.
+  - Client-side (`register-form.tsx`) updated to handle `signInWithCustomToken` and trigger `sendEmailVerification` via official SDK.
+  - Cloud Function (`functions/src/auth/register.ts`) updated to generate and return `customToken` instead of raw link.
+  - Resolved `iam.serviceAccounts.signBlob` permission error by guiding IAM role assignment.
+
 ## [1.5.0] - 2026-01-28
 
 ### Added

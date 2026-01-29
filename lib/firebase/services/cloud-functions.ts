@@ -42,7 +42,7 @@ export interface RegisterUserResponse {
   success: boolean;
   message: string;
   userId?: string;
-  verificationLink?: string;
+  customToken?: string;
 }
 
 // ============================================

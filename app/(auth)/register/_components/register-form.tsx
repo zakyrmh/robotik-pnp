@@ -40,15 +40,43 @@ export default function RegisterForm({ settings }: RegisterFormProps) {
   const onSubmit = async (data: RegisterValues) => {
     setGlobalError(null);
 
-    const result = await callRegisterUser(data);
+    try {
+      // 1. Panggil Cloud Function (Atomic Registration)
+      const result = await callRegisterUser(data);
 
-    if (result.success) {
+      if (!result.success || !result.data?.customToken) {
+        throw new Error(result.error || "Registrasi gagal.");
+      }
+
+      // 2. Login menggunakan Custom Token yang dikembalikan server
+      // Ini aman karena token valid dan user baru saja dibuat via server
+      const { signInWithCustomToken, sendEmailVerification, getAuth } =
+        await import("firebase/auth");
+      const { app } = await import("@/lib/firebase/config");
+      const auth = getAuth(app);
+
+      const userCredential = await signInWithCustomToken(
+        auth,
+        result.data.customToken,
+      );
+
+      // 3. Trigger pengiriman email verifikasi dari Client SDK
+      // (Memanfaatkan template email Auth Firebase yang gratis & reliable)
+      await sendEmailVerification(userCredential.user);
+
       toast.success(
-        result.message || "Akun sudah dibuat. Cek email untuk verifikasi.",
+        "Akun berhasil dibuat. Silakan cek email Anda untuk verifikasi.",
       );
       router.push("/verify-email");
-    } else {
-      setGlobalError(result.error || "Registrasi gagal.");
+    } catch (error: unknown) {
+      console.error("Registration error:", error);
+      let errorMessage = "Terjadi kesalahan saat registrasi.";
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === "string") {
+        errorMessage = error;
+      }
+      setGlobalError(errorMessage);
     }
   };
 

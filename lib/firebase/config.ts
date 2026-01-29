@@ -4,6 +4,7 @@ import { getAnalytics, Analytics } from "firebase/analytics";
 import { getAuth } from "firebase/auth";
 import { getDatabase } from "firebase/database";
 import { getStorage } from "firebase/storage";
+import { getFunctions } from "firebase/functions";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -21,6 +22,7 @@ export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const database = getDatabase(app);
 export const storage = getStorage(app);
+export const functions = getFunctions(app, "asia-southeast2");
 
 export let analytics: Analytics | undefined;
 if (typeof window !== "undefined") {
