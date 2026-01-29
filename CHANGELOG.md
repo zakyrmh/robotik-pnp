@@ -14,7 +14,8 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - **Dynamic Recruitment Period Data**:
   - `RegistrationFormContext` now fetches `activePeriod` and `activeYear` from global `recruitment_settings` in Firestore instead of using hardcoded values.
   - Added `activeYear` field to `RecruitmentSettingsSchema` and `RecruitmentSettingsFormSchema`.
-  - Updated `settings-service.ts` to support saving and retrieving `activeYear`.
+  - Added `instagramRobotikUrl`, `instagramMrcUrl`, and `youtubeRobotikUrl` to `ExternalLinksSchema` for managing social media links.
+  - Updated `settings-service.ts` to support saving and retrieving `activeYear` and new social media links.
 
 ## [1.5.1] - 2026-01-29
 

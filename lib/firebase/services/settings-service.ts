@@ -55,6 +55,9 @@ function formDataToFirestore(
       groupChatUrl: data.externalLinks?.groupChatUrl || "",
       guidebookUrl: data.externalLinks?.guidebookUrl || "",
       faqUrl: data.externalLinks?.faqUrl || "",
+      instagramRobotikUrl: data.externalLinks?.instagramRobotikUrl || "",
+      instagramMrcUrl: data.externalLinks?.instagramMrcUrl || "",
+      youtubeRobotikUrl: data.externalLinks?.youtubeRobotikUrl || "",
     },
     paymentMethods: data.paymentMethods.map((method) => ({
       bankName: method.bankName,

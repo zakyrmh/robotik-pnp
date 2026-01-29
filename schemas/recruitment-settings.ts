@@ -72,6 +72,21 @@ export const ExternalLinksSchema = z.object({
     .optional()
     .or(z.literal("")),
   faqUrl: z.string().url("Link FAQ tidak valid").optional().or(z.literal("")),
+  instagramRobotikUrl: z
+    .string()
+    .url("Link Instagram tidak valid")
+    .optional()
+    .or(z.literal("")),
+  instagramMrcUrl: z
+    .string()
+    .url("Link Instagram MRC tidak valid")
+    .optional()
+    .or(z.literal("")),
+  youtubeRobotikUrl: z
+    .string()
+    .url("Link YouTube tidak valid")
+    .optional()
+    .or(z.literal("")),
 });
 
 // ---------------------------------------------------------
@@ -145,6 +160,9 @@ export const RecruitmentSettingsFormSchema = z
       groupChatUrl: z.string().optional(),
       guidebookUrl: z.string().optional(),
       faqUrl: z.string().optional(),
+      instagramRobotikUrl: z.string().optional(),
+      instagramMrcUrl: z.string().optional(),
+      youtubeRobotikUrl: z.string().optional(),
     }),
 
     paymentMethods: z
@@ -207,6 +225,9 @@ export const DEFAULT_RECRUITMENT_SETTINGS: RecruitmentSettingsFormData = {
     groupChatUrl: "",
     guidebookUrl: "",
     faqUrl: "",
+    instagramRobotikUrl: "",
+    instagramMrcUrl: "",
+    youtubeRobotikUrl: "",
   },
   paymentMethods: [
     {
