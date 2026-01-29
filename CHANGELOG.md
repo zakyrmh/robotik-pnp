@@ -7,6 +7,18 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+### Added
+
+- **Registration Verification & Rejection in Caang Management**:
+  - Added "Verifikasi" and "Reject" buttons in caang detail modal footer when registration status is `submitted`.
+  - Verification confirmation modal with caang info preview before approving.
+  - Rejection modal with 3 action options:
+    - **Minta Revisi**: Return to `in_progress` status, allowing caang to edit and resubmit.
+    - **Tolak Permanen**: Set status to `rejected` with no further editing allowed.
+    - **Batal**: Cancel the action.
+  - Added `verifyRegistration()`, `rejectRegistration()`, and `requestRevision()` service functions in `caang-service.ts`.
+  - Rejection reason is stored in `verification.rejectionReason` field.
+
 ### Fixed
 
 - **Logout Not Redirecting Issue**:

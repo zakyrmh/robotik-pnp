@@ -194,3 +194,82 @@ export async function unblacklistCaang(userId: string): Promise<void> {
     throw error;
   }
 }
+
+/**
+ * Verifikasi registrasi caang (status: submitted -> verified)
+ */
+export async function verifyRegistration(
+  userId: string,
+  verifiedBy: string,
+): Promise<void> {
+  try {
+    const regRef = doc(db, "registrations", userId);
+
+    await updateDoc(regRef, {
+      status: "verified",
+      "verification.verified": true,
+      "verification.verifiedBy": verifiedBy,
+      "verification.verifiedAt": Timestamp.now(),
+      canEdit: false,
+      updatedAt: Timestamp.now(),
+    });
+  } catch (error) {
+    console.error("Error verifying registration:", error);
+    throw error;
+  }
+}
+
+/**
+ * Reject registrasi caang (status: submitted -> rejected)
+ */
+export async function rejectRegistration(
+  userId: string,
+  rejectedBy: string,
+  reason: string,
+): Promise<void> {
+  try {
+    const regRef = doc(db, "registrations", userId);
+
+    await updateDoc(regRef, {
+      status: "rejected",
+      "verification.verified": false,
+      "verification.verifiedBy": rejectedBy,
+      "verification.verifiedAt": Timestamp.now(),
+      "verification.rejectionReason": reason,
+      canEdit: false,
+      updatedAt: Timestamp.now(),
+    });
+  } catch (error) {
+    console.error("Error rejecting registration:", error);
+    throw error;
+  }
+}
+
+/**
+ * Request revision - Kembalikan ke caang untuk diperbaiki (status: submitted -> in_progress)
+ * Caang akan bisa mengedit datanya kembali
+ */
+export async function requestRevision(
+  userId: string,
+  reviewedBy: string,
+  reason: string,
+): Promise<void> {
+  try {
+    const regRef = doc(db, "registrations", userId);
+
+    await updateDoc(regRef, {
+      status: "in_progress",
+      "verification.verified": false,
+      "verification.verifiedBy": reviewedBy,
+      "verification.verifiedAt": Timestamp.now(),
+      "verification.rejectionReason": reason,
+      "verification.notes":
+        "Perlu revisi - silakan perbaiki data dan submit ulang",
+      canEdit: true,
+      updatedAt: Timestamp.now(),
+    });
+  } catch (error) {
+    console.error("Error requesting revision:", error);
+    throw error;
+  }
+}
