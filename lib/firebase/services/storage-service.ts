@@ -1,6 +1,7 @@
 import {
   ref,
   uploadBytes,
+  uploadBytesResumable,
   getDownloadURL,
   deleteObject,
 } from "firebase/storage";
@@ -86,43 +87,56 @@ export function getStoragePath(
 // --- Main Functions ---
 
 /**
- * Upload gambar ke Firebase Storage dengan compression dan delete old file
- * @param file - File asli dari input
- * @param type - Jenis file untuk penentuan path
- * @param userId - ID User
- * @param period - Periode OR (e.g. "OR 22")
- * @param oldUrl - URL file lama (untuk dihapus)
+ * Upload gambar ke Firebase Storage dengan compression, progress, dan delete old file
  */
-export async function uploadRegistrationImage(
+export function uploadRegistrationImage(
   file: File,
   type: StorageFileType,
   userId: string,
   period: string,
   oldUrl?: string,
+  onProgress?: (progress: number, stage: "compressing" | "uploading") => void,
 ): Promise<string> {
-  // 1. Compress Image
-  const fileToUpload = await compressImage(file);
-
-  // 2. Determine Path
-  const path = getStoragePath(type, userId, period);
-
-  // 3. Delete Old File (if exists and is valid storage URL)
-  if (oldUrl && oldUrl.includes("firebasestorage.googleapis.com")) {
+  // Return Promise agar bisa async await
+  return new Promise(async (resolve, reject) => {
     try {
-      const oldRef = ref(storage, oldUrl);
-      await deleteObject(oldRef);
-      console.log("[Storage] Old file deleted");
+      // 1. Delete Old File (Fire & Forget)
+      if (oldUrl && oldUrl.includes("firebasestorage.googleapis.com")) {
+        deleteObject(ref(storage, oldUrl)).catch((err) =>
+          console.warn("[Storage] Failed to delete old file:", err),
+        );
+      }
+
+      // 2. Compress
+      if (onProgress) onProgress(0, "compressing");
+      const fileToUpload = await compressImage(file);
+
+      // 3. Upload New File
+      if (onProgress) onProgress(0, "uploading");
+      const path = getStoragePath(type, userId, period);
+      const storageRef = ref(storage, path);
+
+      const uploadTask = uploadBytesResumable(storageRef, fileToUpload);
+
+      uploadTask.on(
+        "state_changed",
+        (snapshot) => {
+          const progress =
+            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          if (onProgress) onProgress(progress, "uploading");
+        },
+        (error) => {
+          console.error("[Storage] Upload failed:", error);
+          reject(error);
+        },
+        async () => {
+          const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+          console.log(`[Storage] Upload success: ${path}`);
+          resolve(downloadUrl);
+        },
+      );
     } catch (error) {
-      // Ignore "object not found" error, log others
-      console.warn("[Storage] Failed to delete old file:", error);
+      reject(error);
     }
-  }
-
-  // 4. Upload New File
-  const storageRef = ref(storage, path);
-  await uploadBytes(storageRef, fileToUpload);
-  const downloadUrl = await getDownloadURL(storageRef);
-
-  console.log(`[Storage] Upload success: ${path}`);
-  return downloadUrl;
+  });
 }

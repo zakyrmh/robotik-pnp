@@ -18,6 +18,13 @@ import {
   AlertCircle,
 } from "lucide-react";
 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -185,6 +192,10 @@ export function StepPayment() {
   const { user } = useDashboard();
   const [isLoading, setIsLoading] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStage, setUploadStage] = useState<"compressing" | "uploading">(
+    "compressing",
+  );
 
   const userId = user?.uid || "";
   const period = registration?.orPeriod || "OR_xx";
@@ -244,6 +255,8 @@ export function StepPayment() {
     if (!file) return;
 
     setIsUploading(true);
+    setUploadProgress(0);
+    setUploadStage("compressing");
 
     try {
       const { uploadRegistrationImage } =
@@ -256,6 +269,10 @@ export function StepPayment() {
         userId,
         period,
         proofUrl, // Pass old URL to delete
+        (progress, stage) => {
+          setUploadProgress(progress);
+          setUploadStage(stage);
+        },
       );
 
       form.setValue("proofUrl", downloadUrl);
@@ -264,6 +281,8 @@ export function StepPayment() {
       // Optional: Show error toast
     } finally {
       setIsUploading(false);
+      // Reset input
+      e.target.value = "";
     }
   };
 
@@ -286,209 +305,265 @@ export function StepPayment() {
   }
 
   return (
-    <Card className="border-none shadow-lg">
-      <CardHeader>
-        <CardTitle className="text-xl">Pembayaran Pendaftaran</CardTitle>
-        <CardDescription>
-          Lakukan pembayaran biaya pendaftaran dan upload bukti pembayaran.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Payment Amount */}
-            <Alert className="bg-primary/5 border-primary/20">
-              <CreditCard className="h-4 w-4" />
-              <AlertTitle>Biaya Pendaftaran</AlertTitle>
-              <AlertDescription>
-                <span className="text-2xl font-bold text-primary">
-                  Rp {PAYMENT_INFO.amount.toLocaleString("id-ID")}
-                </span>
-              </AlertDescription>
-            </Alert>
+    <>
+      <Dialog open={isUploading} onOpenChange={() => {}}>
+        <DialogContent
+          className="sm:max-w-md"
+          onInteractOutside={(e) => e.preventDefault()}
+        >
+          <DialogHeader>
+            <DialogTitle>Mengupload Bukti Pembayaran</DialogTitle>
+            <DialogDescription>
+              {uploadStage === "compressing"
+                ? "Sedang mengompresi gambar..."
+                : `Sedang mengupload... ${Math.round(uploadProgress)}%`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary transition-all duration-300 ease-in-out"
+                style={{
+                  width: `${uploadStage === "compressing" ? 10 : uploadProgress}%`,
+                }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground text-center">
+              Mohon jangan tutup halaman ini.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
 
-            {/* Payment Method Selection */}
-            <FormField
-              control={form.control}
-              name="method"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Metode Pembayaran *</FormLabel>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-2">
-                    <PaymentMethodCard
-                      selected={field.value === "transfer"}
-                      icon={<Banknote className="w-5 h-5" />}
-                      label="Transfer Bank"
-                      description="BRI, BNI, Mandiri"
-                      onClick={() => field.onChange("transfer")}
-                    />
-                    <PaymentMethodCard
-                      selected={field.value === "e_wallet"}
-                      icon={<Wallet className="w-5 h-5" />}
-                      label="E-Wallet"
-                      description="OVO, DANA, GoPay"
-                      onClick={() => field.onChange("e_wallet")}
-                    />
-                    <PaymentMethodCard
-                      selected={field.value === "cash"}
-                      icon={<CreditCard className="w-5 h-5" />}
-                      label="Tunai"
-                      description="Bayar langsung"
-                      onClick={() => field.onChange("cash")}
-                    />
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Payment Details based on method */}
-            {selectedMethod === "transfer" && (
-              <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border space-y-4">
-                <h4 className="font-medium">Detail Transfer Bank</h4>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Bank</span>
-                    <span className="font-medium">
-                      {PAYMENT_INFO.bank.name}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">
-                      No. Rekening
-                    </span>
-                    <div className="flex items-center gap-1">
-                      <span className="font-mono font-medium">
-                        {PAYMENT_INFO.bank.accountNumber}
-                      </span>
-                      <CopyButton text={PAYMENT_INFO.bank.accountNumber} />
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">
-                      Atas Nama
-                    </span>
-                    <span className="font-medium">
-                      {PAYMENT_INFO.bank.accountName}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Bank Name Input */}
-                <FormField
-                  control={form.control}
-                  name="bankName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nama Bank Pengirim *</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Contoh: BRI, BNI, Mandiri"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            )}
-
-            {selectedMethod === "e_wallet" && (
-              <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border space-y-4">
-                <h4 className="font-medium">Detail E-Wallet</h4>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">
-                      Provider
-                    </span>
-                    <span className="font-medium">
-                      {PAYMENT_INFO.ewallet.provider}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Nomor</span>
-                    <div className="flex items-center gap-1">
-                      <span className="font-mono font-medium">
-                        {PAYMENT_INFO.ewallet.number}
-                      </span>
-                      <CopyButton text={PAYMENT_INFO.ewallet.number} />
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">
-                      Atas Nama
-                    </span>
-                    <span className="font-medium">
-                      {PAYMENT_INFO.ewallet.name}
-                    </span>
-                  </div>
-                </div>
-
-                {/* E-Wallet Provider Input */}
-                <FormField
-                  control={form.control}
-                  name="ewalletProvider"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nama E-Wallet Pengirim *</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Contoh: OVO, DANA, GoPay"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            )}
-
-            {selectedMethod === "cash" && (
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Pembayaran Tunai</AlertTitle>
+      <Card className="border-none shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-xl">Pembayaran Pendaftaran</CardTitle>
+          <CardDescription>
+            Lakukan pembayaran biaya pendaftaran dan upload bukti pembayaran.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* Payment Amount */}
+              <Alert className="bg-primary/5 border-primary/20">
+                <CreditCard className="h-4 w-4" />
+                <AlertTitle>Biaya Pendaftaran</AlertTitle>
                 <AlertDescription>
-                  Untuk pembayaran tunai, silakan hubungi panitia OR terlebih
-                  dahulu untuk mengatur jadwal dan lokasi pembayaran. Setelah
-                  membayar, upload foto bukti penerimaan dari panitia.
+                  <span className="text-2xl font-bold text-primary">
+                    Rp {PAYMENT_INFO.amount.toLocaleString("id-ID")}
+                  </span>
                 </AlertDescription>
               </Alert>
-            )}
 
-            {/* Proof Upload */}
-            <div className="space-y-2">
-              <Label>
-                Bukti Pembayaran <span className="text-red-500">*</span>
-              </Label>
-              <p className="text-sm text-muted-foreground">
-                Upload screenshot atau foto bukti pembayaran yang jelas
-              </p>
-
-              <div
-                className={cn(
-                  "mt-2 p-4 rounded-xl border-2 border-dashed transition-all",
-                  proofUrl
-                    ? "border-green-300 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20"
-                    : "border-slate-200 dark:border-slate-700",
+              {/* Payment Method Selection */}
+              <FormField
+                control={form.control}
+                name="method"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Metode Pembayaran *</FormLabel>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-2">
+                      <PaymentMethodCard
+                        selected={field.value === "transfer"}
+                        icon={<Banknote className="w-5 h-5" />}
+                        label="Transfer Bank"
+                        description="BRI, BNI, Mandiri"
+                        onClick={() => field.onChange("transfer")}
+                      />
+                      <PaymentMethodCard
+                        selected={field.value === "e_wallet"}
+                        icon={<Wallet className="w-5 h-5" />}
+                        label="E-Wallet"
+                        description="OVO, DANA, GoPay"
+                        onClick={() => field.onChange("e_wallet")}
+                      />
+                      <PaymentMethodCard
+                        selected={field.value === "cash"}
+                        icon={<CreditCard className="w-5 h-5" />}
+                        label="Tunai"
+                        description="Bayar langsung"
+                        onClick={() => field.onChange("cash")}
+                      />
+                    </div>
+                    <FormMessage />
+                  </FormItem>
                 )}
-              >
-                {proofUrl ? (
+              />
+
+              {/* Payment Details based on method */}
+              {selectedMethod === "transfer" && (
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border space-y-4">
+                  <h4 className="font-medium">Detail Transfer Bank</h4>
                   <div className="space-y-3">
-                    <div className="flex items-center gap-2 text-green-600">
-                      <CheckCircle2 className="w-5 h-5" />
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">
+                        Bank
+                      </span>
                       <span className="font-medium">
-                        Bukti pembayaran terupload
+                        {PAYMENT_INFO.bank.name}
                       </span>
                     </div>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={proofUrl}
-                      alt="Bukti Pembayaran"
-                      className="max-h-48 rounded-lg object-cover"
-                    />
-                    <label className="cursor-pointer">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">
+                        No. Rekening
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <span className="font-mono font-medium">
+                          {PAYMENT_INFO.bank.accountNumber}
+                        </span>
+                        <CopyButton text={PAYMENT_INFO.bank.accountNumber} />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">
+                        Atas Nama
+                      </span>
+                      <span className="font-medium">
+                        {PAYMENT_INFO.bank.accountName}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Bank Name Input */}
+                  <FormField
+                    control={form.control}
+                    name="bankName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nama Bank Pengirim *</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Contoh: BRI, BNI, Mandiri"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
+
+              {selectedMethod === "e_wallet" && (
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border space-y-4">
+                  <h4 className="font-medium">Detail E-Wallet</h4>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">
+                        Provider
+                      </span>
+                      <span className="font-medium">
+                        {PAYMENT_INFO.ewallet.provider}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">
+                        Nomor
+                      </span>
+                      <div className="flex items-center gap-1">
+                        <span className="font-mono font-medium">
+                          {PAYMENT_INFO.ewallet.number}
+                        </span>
+                        <CopyButton text={PAYMENT_INFO.ewallet.number} />
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">
+                        Atas Nama
+                      </span>
+                      <span className="font-medium">
+                        {PAYMENT_INFO.ewallet.name}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* E-Wallet Provider Input */}
+                  <FormField
+                    control={form.control}
+                    name="ewalletProvider"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nama E-Wallet Pengirim *</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Contoh: OVO, DANA, GoPay"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
+
+              {selectedMethod === "cash" && (
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Pembayaran Tunai</AlertTitle>
+                  <AlertDescription>
+                    Untuk pembayaran tunai, silakan hubungi panitia OR terlebih
+                    dahulu untuk mengatur jadwal dan lokasi pembayaran. Setelah
+                    membayar, upload foto bukti penerimaan dari panitia.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Proof Upload */}
+              <div className="space-y-2">
+                <Label>
+                  Bukti Pembayaran <span className="text-red-500">*</span>
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Upload screenshot atau foto bukti pembayaran yang jelas
+                </p>
+
+                <div
+                  className={cn(
+                    "mt-2 p-4 rounded-xl border-2 border-dashed transition-all",
+                    proofUrl
+                      ? "border-green-300 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20"
+                      : "border-slate-200 dark:border-slate-700",
+                  )}
+                >
+                  {proofUrl ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 text-green-600">
+                        <CheckCircle2 className="w-5 h-5" />
+                        <span className="font-medium">
+                          Bukti pembayaran terupload
+                        </span>
+                      </div>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={proofUrl}
+                        alt="Bukti Pembayaran"
+                        className="max-h-48 rounded-lg object-cover"
+                      />
+                      <label className="cursor-pointer">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleFileChange}
+                          disabled={isUploading}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          asChild
+                        >
+                          <span>
+                            <Upload className="mr-2 h-4 w-4" />
+                            Ganti Bukti
+                          </span>
+                        </Button>
+                      </label>
+                    </div>
+                  ) : (
+                    <label className="cursor-pointer flex flex-col items-center py-6">
                       <input
                         type="file"
                         accept="image/*"
@@ -496,75 +571,59 @@ export function StepPayment() {
                         onChange={handleFileChange}
                         disabled={isUploading}
                       />
-                      <Button type="button" variant="outline" size="sm" asChild>
-                        <span>
-                          <Upload className="mr-2 h-4 w-4" />
-                          Ganti Bukti
-                        </span>
-                      </Button>
+                      <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3">
+                        {isUploading ? (
+                          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                        ) : (
+                          <Upload className="w-6 h-6 text-muted-foreground" />
+                        )}
+                      </div>
+                      <p className="font-medium">
+                        {isUploading ? "Uploading..." : "Klik untuk upload"}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        JPG, PNG, atau WebP (maks. 5MB)
+                      </p>
                     </label>
-                  </div>
-                ) : (
-                  <label className="cursor-pointer flex flex-col items-center py-6">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleFileChange}
-                      disabled={isUploading}
-                    />
-                    <div className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3">
-                      {isUploading ? (
-                        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-                      ) : (
-                        <Upload className="w-6 h-6 text-muted-foreground" />
-                      )}
-                    </div>
-                    <p className="font-medium">
-                      {isUploading ? "Uploading..." : "Klik untuk upload"}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      JPG, PNG, atau WebP (maks. 5MB)
-                    </p>
-                  </label>
+                  )}
+                </div>
+                {form.formState.errors.proofUrl && (
+                  <p className="text-sm text-red-500">
+                    {form.formState.errors.proofUrl.message}
+                  </p>
                 )}
               </div>
-              {form.formState.errors.proofUrl && (
-                <p className="text-sm text-red-500">
-                  {form.formState.errors.proofUrl.message}
-                </p>
-              )}
-            </div>
 
-            {/* Navigation Buttons */}
-            <div className="flex flex-col-reverse sm:flex-row justify-between gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setCurrentStep(2)}
-                disabled={isSaving}
-              >
-                <ChevronLeft className="mr-2 h-4 w-4" />
-                Kembali
-              </Button>
+              {/* Navigation Buttons */}
+              <div className="flex flex-col-reverse sm:flex-row justify-between gap-3 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setCurrentStep(2)}
+                  disabled={isSaving}
+                >
+                  <ChevronLeft className="mr-2 h-4 w-4" />
+                  Kembali
+                </Button>
 
-              <Button type="submit" size="lg" disabled={isSaving}>
-                {isSaving ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Menyimpan...
-                  </>
-                ) : (
-                  <>
-                    Simpan & Lanjutkan
-                    <ChevronRight className="ml-2 h-4 w-4" />
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+                <Button type="submit" size="lg" disabled={isSaving}>
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Menyimpan...
+                    </>
+                  ) : (
+                    <>
+                      Simpan & Lanjutkan
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    </>
   );
 }

@@ -15,6 +15,13 @@ import {
   AlertCircle,
 } from "lucide-react";
 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Form, FormField, FormItem } from "@/components/ui/form";
 import {
@@ -82,6 +89,10 @@ function DocumentUploadCard({
   fileType,
 }: DocumentUploadCardProps) {
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStage, setUploadStage] = useState<"compressing" | "uploading">(
+    "compressing",
+  );
 
   // Handle file upload with storage service
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,6 +100,8 @@ function DocumentUploadCard({
     if (!file) return;
 
     setIsUploading(true);
+    setUploadProgress(0);
+    setUploadStage("compressing");
 
     try {
       const { uploadRegistrationImage } =
@@ -101,6 +114,10 @@ function DocumentUploadCard({
         userId,
         period,
         value, // Pass old URL to delete
+        (progress, stage) => {
+          setUploadProgress(progress);
+          setUploadStage(stage);
+        },
       );
 
       onChange(downloadUrl);
@@ -109,111 +126,144 @@ function DocumentUploadCard({
       // Optional: Show toast error
     } finally {
       setIsUploading(false);
+      // Reset input value to allow re-uploading the same file
+      e.target.value = "";
     }
   };
 
   return (
-    <div
-      className={`p-4 rounded-xl border-2 border-dashed transition-all ${
-        value
-          ? "border-green-300 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20"
-          : error
-            ? "border-red-300 bg-red-50/50 dark:border-red-800 dark:bg-red-950/20"
-            : "border-slate-200 dark:border-slate-700 hover:border-primary/50"
-      }`}
-    >
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-        {/* Icon */}
-        <div
-          className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${
-            value
-              ? "bg-green-500 text-white"
-              : "bg-slate-100 dark:bg-slate-800 text-slate-500"
-          }`}
+    <>
+      <Dialog open={isUploading} onOpenChange={() => {}}>
+        <DialogContent
+          className="sm:max-w-md"
+          onInteractOutside={(e) => e.preventDefault()}
         >
-          {value ? (
-            <CheckCircle2 className="w-6 h-6" />
-          ) : (
-            <ImageIcon className="w-6 h-6" />
-          )}
+          <DialogHeader>
+            <DialogTitle>Mengupload File</DialogTitle>
+            <DialogDescription>
+              {uploadStage === "compressing"
+                ? "Sedang mengompresi gambar..."
+                : `Sedang mengupload... ${Math.round(uploadProgress)}%`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="h-2 w-full bg-secondary rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary transition-all duration-300 ease-in-out"
+                style={{
+                  width: `${uploadStage === "compressing" ? 10 : uploadProgress}%`,
+                }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground text-center">
+              Mohon jangan tutup halaman ini.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <div
+        className={`p-4 rounded-xl border-2 border-dashed transition-all ${
+          value
+            ? "border-green-300 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20"
+            : error
+              ? "border-red-300 bg-red-50/50 dark:border-red-800 dark:bg-red-950/20"
+              : "border-slate-200 dark:border-slate-700 hover:border-primary/50"
+        }`}
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          {/* Icon */}
+          <div
+            className={`w-12 h-12 rounded-full flex items-center justify-center shrink-0 ${
+              value
+                ? "bg-green-500 text-white"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+            }`}
+          >
+            {value ? (
+              <CheckCircle2 className="w-6 h-6" />
+            ) : (
+              <ImageIcon className="w-6 h-6" />
+            )}
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            <p className="font-medium">
+              {label}
+              {required && <span className="text-red-500 ml-1">*</span>}
+            </p>
+            <p className="text-sm text-muted-foreground">{description}</p>
+
+            {externalLink && (
+              <a
+                href={externalLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-sm text-primary hover:underline mt-1"
+              >
+                <ExternalLink className="w-3 h-3" />
+                {externalLinkLabel || "Buka link"}
+              </a>
+            )}
+
+            {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
+          </div>
+
+          {/* Upload Button */}
+          <div className="shrink-0">
+            <label className="cursor-pointer">
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileChange}
+                disabled={isUploading}
+              />
+              <Button
+                type="button"
+                variant={value ? "outline" : "default"}
+                size="sm"
+                disabled={isUploading}
+                asChild
+              >
+                <span>
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Uploading...
+                    </>
+                  ) : value ? (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Ganti
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Upload
+                    </>
+                  )}
+                </span>
+              </Button>
+            </label>
+          </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          <p className="font-medium">
-            {label}
-            {required && <span className="text-red-500 ml-1">*</span>}
-          </p>
-          <p className="text-sm text-muted-foreground">{description}</p>
-
-          {externalLink && (
-            <a
-              href={externalLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1 text-sm text-primary hover:underline mt-1"
-            >
-              <ExternalLink className="w-3 h-3" />
-              {externalLinkLabel || "Buka link"}
-            </a>
-          )}
-
-          {error && <p className="text-sm text-red-500 mt-1">{error}</p>}
-        </div>
-
-        {/* Upload Button */}
-        <div className="shrink-0">
-          <label className="cursor-pointer">
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleFileChange}
-              disabled={isUploading}
+        {/* Preview */}
+        {value && (
+          <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+            <p className="text-xs text-muted-foreground mb-2">Preview:</p>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={value}
+              alt={`Preview ${label}`}
+              className="max-h-32 rounded-lg object-cover"
             />
-            <Button
-              type="button"
-              variant={value ? "outline" : "default"}
-              size="sm"
-              disabled={isUploading}
-              asChild
-            >
-              <span>
-                {isUploading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Uploading...
-                  </>
-                ) : value ? (
-                  <>
-                    <Upload className="mr-2 h-4 w-4" />
-                    Ganti
-                  </>
-                ) : (
-                  <>
-                    <Upload className="mr-2 h-4 w-4" />
-                    Upload
-                  </>
-                )}
-              </span>
-            </Button>
-          </label>
-        </div>
+          </div>
+        )}
       </div>
-
-      {/* Preview */}
-      {value && (
-        <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
-          <p className="text-xs text-muted-foreground mb-2">Preview:</p>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={value}
-            alt={`Preview ${label}`}
-            className="max-h-32 rounded-lg object-cover"
-          />
-        </div>
-      )}
-    </div>
+    </>
   );
 }
 
