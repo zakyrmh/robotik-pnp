@@ -29,6 +29,7 @@ import { useRegistrationForm } from "./registration-form-context";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { useDashboard } from "@/components/dashboard/dashboard-context";
+import { StorageFileType } from "@/lib/firebase/services/storage-service";
 
 // =========================================================
 // SCHEMA
@@ -52,6 +53,7 @@ type DocumentsFormValues = z.infer<typeof documentsSchema>;
 // HELPER COMPONENT - Document Upload Card
 // =========================================================
 
+// New props for storage
 interface DocumentUploadCardProps {
   label: string;
   description: string;
@@ -61,6 +63,9 @@ interface DocumentUploadCardProps {
   externalLink?: string;
   externalLinkLabel?: string;
   error?: string;
+  userId: string;
+  period: string;
+  fileType: StorageFileType;
 }
 
 function DocumentUploadCard({
@@ -72,10 +77,13 @@ function DocumentUploadCard({
   externalLink,
   externalLinkLabel,
   error,
+  userId,
+  period,
+  fileType,
 }: DocumentUploadCardProps) {
   const [isUploading, setIsUploading] = useState(false);
 
-  // Handle file upload with compression
+  // Handle file upload with storage service
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -83,39 +91,22 @@ function DocumentUploadCard({
     setIsUploading(true);
 
     try {
-      // Dynamic import to avoid SSR issues with browser-only library
-      const imageCompression = (await import("browser-image-compression"))
-        .default;
+      const { uploadRegistrationImage } =
+        await import("@/lib/firebase/services/storage-service");
 
-      const options = {
-        maxSizeMB: 0.3, // Compress to < 300KB
-        maxWidthOrHeight: 1920,
-        useWebWorker: true,
-        fileType: "image/jpeg",
-      };
+      // Upload using service (handles compression & delete old)
+      const downloadUrl = await uploadRegistrationImage(
+        file,
+        fileType,
+        userId,
+        period,
+        value, // Pass old URL to delete
+      );
 
-      // Compress ONLY if image is larger than 300KB
-      let uploadFile = file;
-      if (file.size > 300 * 1024) {
-        console.log(`Original size: ${(file.size / 1024).toFixed(2)} KB`);
-        uploadFile = await imageCompression(file, options);
-        console.log(
-          `Compressed size: ${(uploadFile.size / 1024).toFixed(2)} KB`,
-        );
-      }
-
-      // Simulate upload delay
-      await new Promise((resolve) => setTimeout(resolve, 800));
-
-      // In real app, upload [uploadFile] to Firebase Storage and get URL
-      // For now, create a local object URL for preview using the COMPRESSED file
-      const url = URL.createObjectURL(uploadFile);
-      onChange(url);
+      onChange(downloadUrl);
     } catch (error) {
-      console.error("Compression error:", error);
-      // Fallback to original file if compression fails
-      const url = URL.createObjectURL(file);
-      onChange(url);
+      console.error("Upload failed:", error);
+      // Optional: Show toast error
     } finally {
       setIsUploading(false);
     }
@@ -231,9 +222,14 @@ function DocumentUploadCard({
 // =========================================================
 
 export function StepDocuments() {
-  const { updateDocuments, isSaving, setCurrentStep } = useRegistrationForm();
+  const { updateDocuments, isSaving, setCurrentStep, registration } =
+    useRegistrationForm();
   const { user } = useDashboard();
   const [isLoading, setIsLoading] = useState(true);
+
+  // Get period from registration data or use default
+  const period = registration?.orPeriod || "OR_xx";
+  const userId = user?.uid || "";
 
   const form = useForm<DocumentsFormValues>({
     resolver: zodResolver(documentsSchema),
@@ -362,6 +358,9 @@ export function StepDocuments() {
                       value={field.value}
                       onChange={field.onChange}
                       error={fieldState.error?.message}
+                      fileType="photo"
+                      userId={userId}
+                      period={period}
                     />
                   </FormItem>
                 )}
@@ -379,6 +378,9 @@ export function StepDocuments() {
                       value={field.value}
                       onChange={field.onChange}
                       error={fieldState.error?.message}
+                      fileType="ktm"
+                      userId={userId}
+                      period={period}
                     />
                   </FormItem>
                 )}
@@ -399,6 +401,9 @@ export function StepDocuments() {
                       externalLink={socialLinks.instagramRobotikUrl}
                       externalLinkLabel="Buka Instagram Robotik"
                       error={fieldState.error?.message}
+                      fileType="ig_robotik"
+                      userId={userId}
+                      period={period}
                     />
                   </FormItem>
                 )}
@@ -419,6 +424,9 @@ export function StepDocuments() {
                       externalLink={socialLinks.instagramMrcUrl}
                       externalLinkLabel="Buka Instagram MRC"
                       error={fieldState.error?.message}
+                      fileType="ig_mrc"
+                      userId={userId}
+                      period={period}
                     />
                   </FormItem>
                 )}
@@ -439,6 +447,9 @@ export function StepDocuments() {
                       externalLink={socialLinks.youtubeRobotikUrl}
                       externalLinkLabel="Buka YouTube Robotik"
                       error={fieldState.error?.message}
+                      fileType="yt_subscribe"
+                      userId={userId}
+                      period={period}
                     />
                   </FormItem>
                 )}
