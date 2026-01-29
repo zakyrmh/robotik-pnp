@@ -248,9 +248,9 @@ export function StepDocuments() {
     instagramMrcUrl: string;
     youtubeRobotikUrl: string;
   }>({
-    instagramRobotikUrl: "https://instagram.com/ukmrobotikpnp", // Fallback
-    instagramMrcUrl: "https://instagram.com/mrcukmrobotik", // Fallback
-    youtubeRobotikUrl: "https://youtube.com/@UKMRobotikPNP", // Fallback
+    instagramRobotikUrl: "https://instagram.com/robotikpnp", // Fallback
+    instagramMrcUrl: "https://instagram.com/mrcpnp", // Fallback
+    youtubeRobotikUrl: "https://youtube.com/@robotikpnp", // Fallback
   });
 
   // Load existing documents & settings
@@ -270,13 +270,13 @@ export function StepDocuments() {
           setSocialLinks({
             instagramRobotikUrl:
               settings.externalLinks.instagramRobotikUrl ||
-              "https://instagram.com/ukmrobotikpnp",
+              "https://instagram.com/robotikpnp",
             instagramMrcUrl:
               settings.externalLinks.instagramMrcUrl ||
-              "https://instagram.com/mrcukmrobotik",
+              "https://instagram.com/mrcpnp",
             youtubeRobotikUrl:
               settings.externalLinks.youtubeRobotikUrl ||
-              "https://youtube.com/@UKMRobotikPNP",
+              "https://youtube.com/@robotikpnp",
           });
         }
 
