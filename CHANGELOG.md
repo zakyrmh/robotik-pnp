@@ -31,6 +31,16 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
   - Changed `router.push()` to `router.replace()` to prevent back navigation to protected routes.
   - Ensured `router.refresh()` is called after redirect for proper server state update.
 
+- **Dashboard Caang Code Cleanup & Optimization**:
+  - Removed empty import statement in `dashboard-content.tsx`.
+  - Consolidated registration data fetch into `DashboardContext` to eliminate duplicate network requests.
+  - Added `registration` and `registrationLoading` to `DashboardContext` for centralized registration state management.
+  - Added `refetchRegistration()` method to context for manual data refresh when needed.
+  - Fixed potential race condition by using single source of truth (`isCaangVerified` from context) for verification status.
+  - Added proper loading state check in `DashboardContent` component.
+  - Improved registration header info to show contextual messages for all statuses (`draft`, `in_progress`, `rejected`).
+  - Removed unused `CaangDashboardCard` component (functionality already covered by `CaangOverviewCard` and `RegistrationStatusCard`).
+
 ## [1.5.2] - 2026-01-29
 
 ### Changed

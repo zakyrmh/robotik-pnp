@@ -2,7 +2,7 @@
 
 import { ReactNode } from "react";
 import { useDashboard } from "@/components/dashboard/dashboard-context";
-import {} from "@/components/dashboard/cards";
+import { Loader2 } from "lucide-react";
 
 interface DashboardContentProps {
   children: ReactNode;
@@ -30,7 +30,18 @@ export function DashboardContent({
     hasCompetitionAccess,
     hasDepartmentAccess,
     isPresidium,
+    isLoading,
   } = useDashboard();
+
+  // Show loading state while data is being fetched
+  if (isLoading) {
+    return (
+      <div className="min-h-[50vh] flex flex-col items-center justify-center">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <p className="mt-4 text-muted-foreground">Memuat dashboard...</p>
+      </div>
+    );
+  }
 
   const userName = userProfile?.fullName || "User";
 

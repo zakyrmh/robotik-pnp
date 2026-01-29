@@ -6,10 +6,12 @@ import {
   useState,
   useEffect,
   ReactNode,
+  useCallback,
 } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { getUserRolesAndAssignments } from "@/lib/firebase/services/user-service";
 import { UserSystemRoles, UserAssignments } from "@/schemas/users";
+import { Registration } from "@/schemas/registrations";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 
@@ -29,12 +31,14 @@ interface DashboardContextType {
   authLoading: boolean;
   dataLoading: boolean;
   profileLoading: boolean;
+  registrationLoading: boolean;
 
   // Data
   roles: UserSystemRoles | null;
   assignments: UserAssignments | null;
   userProfile: UserProfile | null;
   isCaangVerified: boolean;
+  registration: Registration | null;
 
   // User from auth
   user: ReturnType<typeof useAuth>["user"];
@@ -44,10 +48,13 @@ interface DashboardContextType {
   hasDepartmentAccess: boolean;
   hasStructuralAccess: boolean;
   isPresidium: boolean;
+
+  // Methods
+  refetchRegistration: () => Promise<void>;
 }
 
 const DashboardContext = createContext<DashboardContextType | undefined>(
-  undefined
+  undefined,
 );
 
 // =========================================================
@@ -70,7 +77,9 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [profileLoading, setProfileLoading] = useState(true);
 
-  // State for Caang Verification
+  // State for Caang Registration & Verification
+  const [registration, setRegistration] = useState<Registration | null>(null);
+  const [registrationLoading, setRegistrationLoading] = useState(true);
   const [isCaangVerified, setIsCaangVerified] = useState(false);
 
   // 1. Fetch User Roles & Assignments
@@ -91,7 +100,7 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
         console.log("[DashboardContext] Fetched Roles:", data.roles);
         console.log(
           "[DashboardContext] Fetched Assignments:",
-          data.assignments
+          data.assignments,
         );
         setRoles(data.roles);
         setAssignments(data.assignments);
@@ -152,42 +161,51 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     fetchProfile();
   }, [user, authLoading]);
 
-  // 3. Check Caang Verification
-  useEffect(() => {
+  // 3. Fetch Caang Registration & Check Verification
+  const fetchRegistration = useCallback(async () => {
     if (!roles || !user) {
+      setRegistration(null);
       setIsCaangVerified(false);
+      setRegistrationLoading(false);
       return;
     }
 
     if (roles.isCaang) {
-      const checkVerification = async () => {
-        try {
-          const regRef = doc(db, "registrations", user.uid);
-          const regSnap = await getDoc(regRef);
+      try {
+        setRegistrationLoading(true);
+        const regRef = doc(db, "registrations", user.uid);
+        const regSnap = await getDoc(regRef);
 
-          if (regSnap.exists()) {
-            const data = regSnap.data();
-            const verified =
-              data.status === "verified" &&
-              data.verification?.verified === true;
-            setIsCaangVerified(verified);
-          } else {
-            setIsCaangVerified(false);
-          }
-        } catch (error) {
-          console.error(
-            "[DashboardContext] Error checking verification:",
-            error
-          );
+        if (regSnap.exists()) {
+          const data = regSnap.data();
+          const regData = { id: regSnap.id, ...data } as Registration;
+          setRegistration(regData);
+
+          // Check if verified
+          const verified =
+            data.status === "verified" && data.verification?.verified === true;
+          setIsCaangVerified(verified);
+        } else {
+          setRegistration(null);
           setIsCaangVerified(false);
         }
-      };
-
-      checkVerification();
+      } catch (error) {
+        console.error("[DashboardContext] Error fetching registration:", error);
+        setRegistration(null);
+        setIsCaangVerified(false);
+      } finally {
+        setRegistrationLoading(false);
+      }
     } else {
+      setRegistration(null);
       setIsCaangVerified(false);
+      setRegistrationLoading(false);
     }
   }, [roles, user]);
+
+  useEffect(() => {
+    fetchRegistration();
+  }, [fetchRegistration]);
 
   // =========================================================
   // COMPUTED VALUES
@@ -225,24 +243,32 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
       "bendahara_2",
     ].includes(assignments.structural.title);
 
-  // Compute overall loading state
-  const isLoading = authLoading || dataLoading || profileLoading;
+  // Compute overall loading state (include registrationLoading for caang)
+  const isLoading =
+    authLoading ||
+    dataLoading ||
+    profileLoading ||
+    (roles?.isCaang ? registrationLoading : false);
 
   const value: DashboardContextType = {
     isLoading,
     authLoading,
     dataLoading,
     profileLoading,
+    registrationLoading,
     roles,
     assignments,
     userProfile,
     isCaangVerified,
+    registration,
     user,
     // Computed
     hasCompetitionAccess,
     hasDepartmentAccess,
     hasStructuralAccess,
     isPresidium,
+    // Methods
+    refetchRegistration: fetchRegistration,
   };
 
   return (

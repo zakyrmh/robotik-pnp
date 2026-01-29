@@ -5,4 +5,3 @@ export { RecruitmentDashboardCard } from "./recruitment-card";
 export { ManagementDashboardCard } from "./management-card";
 export { OverviewDashboardCard } from "./overview-card";
 export { KestariDashboardCard } from "./kestari-card";
-export { CaangDashboardCard } from "./caang-card";
