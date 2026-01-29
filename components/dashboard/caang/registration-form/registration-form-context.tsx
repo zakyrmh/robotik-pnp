@@ -285,6 +285,7 @@ export function RegistrationFormProvider({
     try {
       const now = Timestamp.now();
       const regRef = doc(db, "registrations", user.uid);
+      const userRef = doc(db, "users_new", user.uid);
 
       await updateDoc(regRef, {
         documents: {
@@ -299,6 +300,13 @@ export function RegistrationFormProvider({
         "progress.documentsUploaded": true,
         "progress.documentsUploadedAt": now,
         status: "in_progress",
+        updatedAt: now,
+      });
+
+      // Sync photo and KTM to user profile
+      await updateDoc(userRef, {
+        "profile.photoUrl": data.photoUrl,
+        "profile.ktmUrl": data.ktmUrl || "",
         updatedAt: now,
       });
 

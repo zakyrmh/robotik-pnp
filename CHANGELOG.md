@@ -20,6 +20,7 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
   - Implemented client-side image compression (< 300KB, .jpeg) for document and payment proof uploads to optimize storage and bandwidth.
   - Integrated Firebase Storage with structured paths (`users/{uid}` and `registration_docs/{period}/{uid}`) and automatic old file deletion upon replacement.
   - Added visual upload progress dialog (compression & upload status) for better user feedback.
+  - Fixed synchronization issue where user photo and KTM URLs were not saving to the user profile (`users_new`) during document upload.
 
 ## [1.5.1] - 2026-01-29
 
