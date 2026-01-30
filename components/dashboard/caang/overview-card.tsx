@@ -16,13 +16,19 @@ import {
   Activity,
   Lock,
   Loader2,
+  Phone,
+  Users,
+  MessageCircle,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useDashboard } from "@/components/dashboard/dashboard-context";
 import { getCaangAnnouncements } from "@/lib/firebase/services/announcement-service";
 import { getRecruitmentActivities } from "@/lib/firebase/services/activity-service";
+import { getRecruitmentSettings } from "@/lib/firebase/services/settings-service";
 import { Announcement } from "@/schemas/announcements";
 import { Activity as ActivityType } from "@/schemas/activities";
+import { ContactPerson, ExternalLinks } from "@/schemas/recruitment-settings";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 
@@ -42,6 +48,19 @@ function isToday(date: Date): boolean {
   );
 }
 
+/**
+ * Format WhatsApp number to clickable link
+ */
+function formatWhatsAppLink(number: string): string {
+  // Remove non-numeric characters except +
+  const cleaned = number.replace(/[^0-9+]/g, "");
+  // Remove leading 0 and add 62 if starts with 0
+  const formatted = cleaned.startsWith("0")
+    ? "62" + cleaned.slice(1)
+    : cleaned.replace("+", "");
+  return `https://wa.me/${formatted}`;
+}
+
 // =========================================================
 // COMPONENT
 // =========================================================
@@ -54,6 +73,10 @@ export function OverviewCard() {
   const [userIsActive, setUserIsActive] = useState(true);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [todayActivities, setTodayActivities] = useState<ActivityType[]>([]);
+  const [contactPersons, setContactPersons] = useState<ContactPerson[]>([]);
+  const [externalLinks, setExternalLinks] = useState<ExternalLinks | null>(
+    null,
+  );
 
   // Fetch data
   useEffect(() => {
@@ -82,6 +105,13 @@ export function OverviewCard() {
             isToday(new Date(act.startDateTime)),
           );
           setTodayActivities(todayActs);
+        }
+
+        // 4. Fetch recruitment settings for contact persons and links
+        const settings = await getRecruitmentSettings();
+        if (settings) {
+          setContactPersons(settings.contactPerson || []);
+          setExternalLinks(settings.externalLinks || null);
         }
       } catch (error) {
         console.error("Error fetching overview data:", error);
@@ -192,6 +222,81 @@ export function OverviewCard() {
           )}
         </div>
 
+        {/* Kontak Person */}
+        <div className="flex flex-col space-y-3 p-4 rounded-xl bg-white dark:bg-slate-900 border shadow-sm">
+          <div className="flex items-center gap-2 text-muted-foreground mb-1">
+            <Phone className="w-4 h-4" />
+            <span className="text-sm font-medium">Kontak Panitia</span>
+          </div>
+          {contactPersons.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Belum ada kontak tersedia.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {contactPersons.slice(0, 2).map((cp, idx) => (
+                <a
+                  key={idx}
+                  href={formatWhatsAppLink(cp.whatsapp)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group"
+                >
+                  <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                    <MessageCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{cp.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {cp.whatsapp}
+                    </p>
+                  </div>
+                  <ExternalLink className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                </a>
+              ))}
+              {contactPersons.length > 2 && (
+                <p className="text-xs text-muted-foreground text-center">
+                  +{contactPersons.length - 2} kontak lainnya
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Link Grup WhatsApp */}
+        <div className="flex flex-col space-y-3 p-4 rounded-xl bg-white dark:bg-slate-900 border shadow-sm">
+          <div className="flex items-center gap-2 text-muted-foreground mb-1">
+            <Users className="w-4 h-4" />
+            <span className="text-sm font-medium">Grup WhatsApp</span>
+          </div>
+          {externalLinks?.groupChatUrl ? (
+            <a
+              href={externalLinks.groupChatUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors group"
+            >
+              <div className="w-10 h-10 rounded-full bg-green-500 flex items-center justify-center">
+                <MessageCircle className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-green-700 dark:text-green-400">
+                  Gabung Grup Caang
+                </p>
+                <p className="text-xs text-green-600 dark:text-green-500">
+                  Klik untuk bergabung ke grup
+                </p>
+              </div>
+              <ExternalLink className="w-5 h-5 text-green-600 dark:text-green-400 group-hover:translate-x-1 transition-transform" />
+            </a>
+          ) : (
+            <div className="flex items-center gap-2 text-muted-foreground p-3 rounded-lg bg-slate-50 dark:bg-slate-800">
+              <Lock className="w-4 h-4" />
+              <p className="text-sm">Link grup belum tersedia</p>
+            </div>
+          )}
+        </div>
+
         {/* Pengumuman Baru */}
         <div className="col-span-2 flex flex-col space-y-3 p-4 rounded-xl bg-white dark:bg-slate-900 border shadow-sm">
           <div className="flex items-center justify-between">
@@ -237,9 +342,6 @@ export function OverviewCard() {
             )}
           </div>
         </div>
-
-        {/* Note: Aktivitas Terbaru section removed as it's not useful for caang 
-             since they are directed step-by-step through the registration form */}
       </CardContent>
     </Card>
   );

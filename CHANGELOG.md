@@ -9,6 +9,15 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [1.5.3] - 2026-01-30
 
+### Added
+
+- **Contact Person & WhatsApp Group Link in Caang Dashboard**:
+  - Added "Kontak Panitia" section displaying contact persons with clickable WhatsApp links.
+  - Added "Grup WhatsApp" section with prominent join button linking to `externalLinks.groupChatUrl`.
+  - Added `formatWhatsAppLink()` helper to convert local phone numbers (e.g., 08xx) to wa.me links.
+  - Fetches data dynamically from `recruitment_settings` in Firestore.
+  - Displays fallback messages when contact persons or group link are not available.
+
 ### Fixed
 
 - **"Diajukan pada: Invalid Date" Bug**:
