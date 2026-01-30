@@ -5,8 +5,6 @@ All significant changes to this project will be documented in this file.
 This format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
 ## [1.5.3] - 2026-01-30
 
 ### Added
@@ -91,7 +89,7 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Added
 
-- **Secure Login System (Cloud Functions)**
+- **Secure Login System (Cloud Functions)**:
   - Cloud Function `loginUser` with comprehensive security features.
   - Rate Limiting: 5 attempts per 15 minutes, 1-hour block on exceed.
   - Email Verification Check: Blocks login if email not verified (with UI hint).
@@ -100,12 +98,12 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
   - Session Tracking: Sessions stored in `login_sessions` with 24-hour expiry.
   - Online Presence: Automatic online status in Realtime Database.
 
-- **Force Re-Authentication**
+- **Force Re-Authentication**:
   - `useReAuth` hook for sensitive actions requiring password confirmation.
   - `ReAuthDialog` component for re-authentication modal.
   - Session expiry after 24 hours requiring re-login.
 
-- **New Schemas**
+- **New Schemas**:
   - `schemas/login-history.ts` for login audit and session tracking.
 
 ### Changed
@@ -132,7 +130,7 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Added
 
-- **Cloud Functions for Registration (Atomic & Secure)**
+- **Cloud Functions for Registration (Atomic & Secure)**:
   - New `functions/` directory for Firebase Cloud Functions.
   - Cloud Function `registerUser` that handles:
     - Server-side data validation using Zod schema.
@@ -142,7 +140,7 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
     - Automatic rollback if any step fails.
   - Client service `cloud-functions.ts` using `httpsCallable` for secure function invocation.
 
-- **Rate Limiting (Anti-Spam Protection)**
+- **Rate Limiting (Anti-Spam Protection)**:
   - Maximum 5 registration attempts per IP address within 15 minutes.
   - Automatic 1-hour block when limit is exceeded.
   - Rate limit data stored in Firestore `rate_limits` collection.
@@ -167,34 +165,6 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Compatible with Firebase SDK v12 and Next.js 16.
 - Rate limit config: 5 attempts / 15 min window / 1 hour block.
 
-## [1.0.0] - 2026-01-08
-
-### Added
-
-- Management of prospective members for open recruitment.
-- Management of prospective member activities for open recruitment.
-- Management of prospective member attendance for open recruitment.
-- Management of learning materials for prospective members for open recruitment.
-- Management of tasks and scores for prospective members for open recruitment.
-- Management of prospective member attendance for open recruitment.
-- System for dividing prospective members into groups for open recruitment.
-
-## [1.1.0] - 2026-01-09
-
-### Added
-
-- Settings page for editing personal data.
-
-## [1.2.0] - 2026-01-13
-
-### Added
-
-- OR settings page and system.
-
-### Fixed
-
-- Dashboard for caang.
-
 ## [1.3.0] - 2026-01-25
 
 ### Added
@@ -213,3 +183,30 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 - Unused import warnings in registration form components.
 - useEffect dependency warning in registration form context.
+
+## [1.2.0] - 2026-01-13
+
+### Added
+
+- OR settings page and system.
+
+### Fixed
+
+- Dashboard for caang.
+
+## [1.1.0] - 2026-01-09
+
+### Added
+
+- Settings page for editing personal data.
+
+## [1.0.0] - 2026-01-08
+
+### Added
+
+- Management of prospective members for open recruitment.
+- Management of prospective member activities for open recruitment.
+- Management of prospective member attendance for open recruitment.
+- Management of learning materials for prospective members for open recruitment.
+- Management of tasks and scores for prospective members for open recruitment.
+- System for dividing prospective members into groups for open recruitment.
