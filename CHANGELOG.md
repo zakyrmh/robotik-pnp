@@ -18,6 +18,26 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
   - Fetches data dynamically from `recruitment_settings` in Firestore.
   - Displays fallback messages when contact persons or group link are not available.
 
+- **Learning Page (`/learning`) for Caang Users**:
+  - New page at `/learning` to display materials and tasks for prospective members.
+  - **Materials Tab**: Displays learning materials (file, link, article) with type badges and view counts.
+  - **Tasks Tab**: Displays published tasks separated by active/completed status.
+  - Deadline indicators: "Segera Berakhir" (within 48 hours) and "Berakhir" (past deadline).
+  - Search functionality across materials and tasks.
+  - Material type filter (file, link, article).
+  - Logs material access (view/download) for analytics.
+  - Responsive grid layout with hover effects and clickable cards.
+
+- **Presence Page (`/presence`) for Caang Users**:
+  - New page at `/presence` to display attendance history for prospective members.
+  - **Stats Cards**: Summary of attendance counts (Hadir, Terlambat, Sakit, Izin, Alfa) with percentages.
+  - **Visual Chart**: Stacked progress bar showing attendance distribution with legend.
+  - **Attendance Rate**: Overall attendance percentage (Hadir + Terlambat).
+  - **Activity Cards**: Collapsible cards showing activity details and attendance status.
+  - Upcoming vs Past activities separation.
+  - Automatically marks as "Alfa" if no attendance record exists for completed activities.
+  - Fetches activities from `activities` collection and attendances from `attendances` collection.
+
 ### Fixed
 
 - **"Diajukan pada: Invalid Date" Bug**:
