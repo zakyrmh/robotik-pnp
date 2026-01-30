@@ -20,7 +20,7 @@ export function UserInfo() {
 
   const userName = userProfile?.fullName || "User";
   const userEmail = userProfile?.email || "unknown@email.com";
-  const imgPath = userProfile?.photoUrl || "/images/avatar.jpg";
+  const imgPath = userProfile?.photoUrl || "";
 
   return (
     <DropdownMenu>

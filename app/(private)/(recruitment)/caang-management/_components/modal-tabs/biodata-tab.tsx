@@ -68,7 +68,6 @@ export function BiodataTab({ caang }: BiodataTabProps) {
           <div className="relative w-32 h-32 mx-auto rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700 ring-4 ring-white dark:ring-slate-700 shadow-lg">
             <FirebaseImage
               path={profile?.photoUrl || registration?.documents?.photoUrl}
-              fallbackSrc="/images/avatar.jpg"
               width={128}
               height={128}
               alt={profile?.fullName || "Avatar"}
@@ -117,8 +116,8 @@ export function BiodataTab({ caang }: BiodataTabProps) {
                 profile?.gender === "male"
                   ? "Laki-laki"
                   : profile?.gender === "female"
-                  ? "Perempuan"
-                  : "-"
+                    ? "Perempuan"
+                    : "-"
               }
             />
             <InfoRow

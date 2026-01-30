@@ -5,28 +5,34 @@ import Image, { ImageProps } from "next/image";
 import { getStorage, ref, getDownloadURL } from "firebase/storage";
 import { app } from "@/lib/firebase/config";
 import { Skeleton } from "@/components/ui/skeleton";
+import { User } from "lucide-react";
 
 interface FirebaseImageProps extends Omit<ImageProps, "src"> {
   path?: string;
   fallbackSrc?: string;
+  showIconFallback?: boolean; // If true, show User icon instead of fallback image
 }
 
 export default function FirebaseImage({
   path,
-  fallbackSrc = "/images/avatar.jpg", // Pastikan default pakai slash '/'
+  fallbackSrc,
+  showIconFallback = true, // Default to showing icon fallback
   ...props
 }: FirebaseImageProps) {
-  const [imgSrc, setImgSrc] = useState<string>(fallbackSrc);
+  const [imgSrc, setImgSrc] = useState<string | null>(fallbackSrc || null);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     // 1. Reset loading state setiap path berubah
     setIsLoading(true);
+    setHasError(false);
 
-    // 2. Jika path kosong/undefined, pakai fallback
+    // 2. Jika path kosong/undefined, pakai fallback atau icon
     if (!path) {
-      setImgSrc(fallbackSrc);
+      setImgSrc(fallbackSrc || null);
       setIsLoading(false);
+      if (!fallbackSrc) setHasError(true);
       return;
     }
 
@@ -55,7 +61,11 @@ export default function FirebaseImage({
         setImgSrc(url);
       } catch (error) {
         console.error(`Gagal load gambar: ${path}`, error);
-        setImgSrc(fallbackSrc);
+        if (fallbackSrc) {
+          setImgSrc(fallbackSrc);
+        } else {
+          setHasError(true);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -74,12 +84,40 @@ export default function FirebaseImage({
     );
   }
 
+  // Show default user icon if no image source or has error
+  if (hasError || !imgSrc) {
+    if (showIconFallback) {
+      return (
+        <div
+          className={`flex items-center justify-center bg-slate-200 dark:bg-slate-700 ${
+            props.className || "w-full h-full"
+          }`}
+        >
+          <User className="w-1/2 h-1/2 text-slate-400 dark:text-slate-500" />
+        </div>
+      );
+    }
+    // If no icon fallback and no fallback src, still show a placeholder
+    return (
+      <div
+        className={`flex items-center justify-center bg-slate-200 dark:bg-slate-700 ${
+          props.className || "w-full h-full"
+        }`}
+      >
+        <User className="w-1/2 h-1/2 text-slate-400 dark:text-slate-500" />
+      </div>
+    );
+  }
+
   return (
     <Image
       {...props}
       src={imgSrc} // Next.js Image src
       alt={props.alt || "User Image"}
       unoptimized={true} // Bypass Next.js Image Optimization to fix timeout issues
+      onError={() => {
+        setHasError(true);
+      }}
     />
   );
 }

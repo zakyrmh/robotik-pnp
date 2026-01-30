@@ -25,95 +25,10 @@ import { Announcement } from "@/schemas/announcements";
 import { Activity as ActivityType } from "@/schemas/activities";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
-import { Registration } from "@/schemas/registrations";
-
-// =========================================================
-// TYPES
-// =========================================================
-
-interface DerivedActivity {
-  id: string;
-  label: string;
-  timestamp: Date;
-}
 
 // =========================================================
 // HELPER FUNCTIONS
 // =========================================================
-
-/**
- * Derive aktivitas terbaru dari data registrasi
- */
-function deriveActivitiesFromRegistration(
-  registration: Registration | null,
-): DerivedActivity[] {
-  const activities: DerivedActivity[] = [];
-
-  if (!registration) return activities;
-
-  // Personal data completed
-  if (registration.progress?.personalDataAt) {
-    activities.push({
-      id: "personal_data",
-      label: "Mengisi data diri",
-      timestamp: new Date(registration.progress.personalDataAt),
-    });
-  }
-
-  // Documents uploaded
-  if (registration.progress?.documentsUploadedAt) {
-    activities.push({
-      id: "documents",
-      label: "Upload berkas dokumen",
-      timestamp: new Date(registration.progress.documentsUploadedAt),
-    });
-  }
-
-  // Payment uploaded
-  if (registration.progress?.paymentUploadedAt) {
-    activities.push({
-      id: "payment",
-      label: "Upload bukti pembayaran",
-      timestamp: new Date(registration.progress.paymentUploadedAt),
-    });
-  }
-
-  // Submitted for verification
-  if (registration.submittedAt) {
-    activities.push({
-      id: "submitted",
-      label: "Mengirim verifikasi",
-      timestamp: new Date(registration.submittedAt),
-    });
-  }
-
-  // Sort by timestamp descending (newest first)
-  activities.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-
-  return activities;
-}
-
-/**
- * Format relative time in Indonesian
- */
-function formatRelativeTime(date: Date): string {
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / (1000 * 60));
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-  if (diffMins < 1) return "Baru saja";
-  if (diffMins < 60) return `${diffMins} menit yang lalu`;
-  if (diffHours < 24) return `${diffHours} jam yang lalu`;
-  if (diffDays < 7) return `${diffDays} hari yang lalu`;
-
-  return date.toLocaleDateString("id-ID", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
 
 /**
  * Check if activity is today
@@ -139,9 +54,6 @@ export function OverviewCard() {
   const [userIsActive, setUserIsActive] = useState(true);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [todayActivities, setTodayActivities] = useState<ActivityType[]>([]);
-  const [derivedActivities, setDerivedActivities] = useState<DerivedActivity[]>(
-    [],
-  );
 
   // Fetch data
   useEffect(() => {
@@ -170,15 +82,6 @@ export function OverviewCard() {
             isToday(new Date(act.startDateTime)),
           );
           setTodayActivities(todayActs);
-        }
-
-        // 4. Fetch registration for derived activities
-        const regRef = doc(db, "registrations", user.uid);
-        const regSnap = await getDoc(regRef);
-        if (regSnap.exists()) {
-          const regData = { id: regSnap.id, ...regSnap.data() } as Registration;
-          const derived = deriveActivitiesFromRegistration(regData);
-          setDerivedActivities(derived);
         }
       } catch (error) {
         console.error("Error fetching overview data:", error);
@@ -335,38 +238,8 @@ export function OverviewCard() {
           </div>
         </div>
 
-        {/* Aktivitas Terbaru (Derived from Registration) */}
-        <div className="col-span-2 flex flex-col space-y-3 p-4 rounded-xl bg-white dark:bg-slate-900 border shadow-sm">
-          <div className="flex items-center gap-2 text-muted-foreground mb-1">
-            <Activity className="w-4 h-4" />
-            <span className="text-sm font-medium">Aktivitas Terbaru</span>
-          </div>
-          {derivedActivities.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Belum ada aktivitas. Mulai dengan mengisi data diri.
-            </p>
-          ) : (
-            <div className="relative pl-4 border-l border-slate-200 dark:border-slate-800 space-y-4">
-              {derivedActivities.slice(0, 4).map((activity, index) => (
-                <div key={activity.id} className="relative text-sm">
-                  <span
-                    className={`absolute -left-[21px] top-1 h-2.5 w-2.5 rounded-full ring-4 ring-white dark:ring-slate-950 ${
-                      index === 0
-                        ? "bg-primary"
-                        : "bg-slate-200 dark:bg-slate-800"
-                    }`}
-                  />
-                  <p className="font-medium text-foreground">
-                    {activity.label}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {formatRelativeTime(activity.timestamp)}
-                  </p>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Note: Aktivitas Terbaru section removed as it's not useful for caang 
+             since they are directed step-by-step through the registration form */}
       </CardContent>
     </Card>
   );

@@ -214,7 +214,6 @@ export function CaangTable({
                               caang.user.profile?.photoUrl ||
                               caang.registration?.documents?.photoUrl
                             }
-                            fallbackSrc="/images/avatar.jpg"
                             width={40}
                             height={40}
                             alt={caang.user.profile?.fullName || "Avatar"}

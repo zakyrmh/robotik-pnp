@@ -40,6 +40,43 @@ import { useRegistrationForm } from "./registration-form-context";
 import { cn } from "@/lib/utils";
 
 // =========================================================
+// HELPER FUNCTIONS
+// =========================================================
+
+/**
+ * Safely format a date value that could be Firebase Timestamp, Date, or string
+ */
+function formatSubmittedDate(value: unknown): string {
+  if (!value) return "-";
+
+  let date: Date;
+
+  // Check if it's a Firebase Timestamp (has toDate method)
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "toDate" in value &&
+    typeof (value as { toDate: () => Date }).toDate === "function"
+  ) {
+    date = (value as { toDate: () => Date }).toDate();
+  } else if (value instanceof Date) {
+    date = value;
+  } else if (typeof value === "string") {
+    date = new Date(value);
+  } else {
+    return "-";
+  }
+
+  return date.toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+// =========================================================
 // COMPONENT
 // =========================================================
 
@@ -219,16 +256,7 @@ export function StepVerification() {
           </div>
 
           <p className="text-xs text-muted-foreground text-center pt-2">
-            Diajukan pada:{" "}
-            {registration?.submittedAt
-              ? new Date(registration.submittedAt).toLocaleDateString("id-ID", {
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })
-              : "-"}
+            Diajukan pada: {formatSubmittedDate(registration?.submittedAt)}
           </p>
         </CardContent>
       </Card>

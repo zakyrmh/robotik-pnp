@@ -7,39 +7,28 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
-### Added
-
-- **Registration Verification & Rejection in Caang Management**:
-  - Added "Verifikasi" and "Reject" buttons in caang detail modal footer when registration status is `submitted`.
-  - Verification confirmation modal with caang info preview before approving.
-  - Rejection modal with 3 action options:
-    - **Minta Revisi**: Return to `in_progress` status, allowing caang to edit and resubmit.
-    - **Tolak Permanen**: Set status to `rejected` with no further editing allowed.
-    - **Batal**: Cancel the action.
-  - Added `verifyRegistration()`, `rejectRegistration()`, and `requestRevision()` service functions in `caang-service.ts`.
-  - Rejection reason is stored in `verification.rejectionReason` field.
-
-- **Revision Notice for Caang**:
-  - Added revision alert in `step-verification.tsx` when caang's registration is returned for revision.
-  - Displays admin's revision reason/notes prominently before resubmission.
+## [1.5.3] - 2026-01-30
 
 ### Fixed
 
-- **Logout Not Redirecting Issue**:
-  - Fixed logout function not redirecting to login page without manual browser refresh.
-  - Reordered logout execution: state reset → cookie removal → Firebase sign out → redirect.
-  - Changed `router.push()` to `router.replace()` to prevent back navigation to protected routes.
-  - Ensured `router.refresh()` is called after redirect for proper server state update.
+- **"Diajukan pada: Invalid Date" Bug**:
+  - Fixed date formatting issue in `step-verification.tsx` where Firebase Timestamp was not properly converted to Date.
+  - Added `formatSubmittedDate()` helper function to safely handle Firebase Timestamp, Date object, or string values.
+  - Uses TypeScript-safe type checking with `"toDate" in value` pattern.
 
-- **Dashboard Caang Code Cleanup & Optimization**:
-  - Removed empty import statement in `dashboard-content.tsx`.
-  - Consolidated registration data fetch into `DashboardContext` to eliminate duplicate network requests.
-  - Added `registration` and `registrationLoading` to `DashboardContext` for centralized registration state management.
-  - Added `refetchRegistration()` method to context for manual data refresh when needed.
-  - Fixed potential race condition by using single source of truth (`isCaangVerified` from context) for verification status.
-  - Added proper loading state check in `DashboardContent` component.
-  - Improved registration header info to show contextual messages for all statuses (`draft`, `in_progress`, `rejected`).
-  - Removed unused `CaangDashboardCard` component (functionality already covered by `CaangOverviewCard` and `RegistrationStatusCard`).
+- **Avatar 404 Error**:
+  - Fixed broken avatar image fallback that referenced non-existent `/images/avatar.jpg`.
+  - Updated `FirebaseImage.tsx` to show a default User icon (from lucide-react) when no photo is available.
+  - Added `showIconFallback` prop (default: `true`) for customizable fallback behavior.
+  - Added `onError` handler to catch image loading failures and display icon fallback.
+  - Removed hardcoded `/images/avatar.jpg` fallback from `user-info.tsx`, `caang-table.tsx`, and `biodata-tab.tsx`.
+
+### Removed
+
+- **Removed "Aktivitas Terbaru" Section from Caang Overview**:
+  - Removed the "Aktivitas Terbaru" (Recent Activities) section from `overview-card.tsx` for caang users.
+  - This section was not useful as caang users are directed step-by-step through the registration form.
+  - Cleaned up related unused code: `DerivedActivity` type, `deriveActivitiesFromRegistration()`, `formatRelativeTime()`, and `derivedActivities` state.
 
 ## [1.5.2] - 2026-01-29
 
