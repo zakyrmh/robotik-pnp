@@ -5,6 +5,34 @@ All significant changes to this project will be documented in this file.
 This format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-02-02
+
+### Added
+
+- **Research Logbook Feature (`/research-logbook`)**:
+  - New page for KRI team members to document research and development activities.
+  - Team-based access control: Users can only view logbooks from their assigned KRI team (KRAI, KRSBI-H, KRSBI-B, KRSTI, KRSRI).
+  - Access restricted to users with `isKRIMember` role.
+  - Statistics dashboard showing total entries, total hours, pending reviews, and approved entries.
+  - Activity categories: Design, Fabrication, Assembly, Programming, Testing, Debugging, Documentation, Meeting, Training, Competition Prep, Other.
+  - Status tracking: Draft, Submitted (awaiting review), Needs Revision, Approved.
+  - Filter and search functionality by status, category, and keyword.
+  - Created `schemas/research-logbook.ts` with Zod schemas for logbook data validation.
+  - Created `lib/firebase/services/logbook-service.ts` for Firestore operations.
+  - Helper functions for displaying human-readable labels and badge colors.
+
+- **Sidebar Navigation Update**:
+  - Added new menu group "Riset & Pengembangan" (Research & Development).
+  - Added "Logbook Riset" menu item for KRI team members.
+  - Menu is visible to users with `isKRIMember` or `isSuperAdmin` roles.
+
+### Technical Details
+
+- Collection: `research_logbooks` in Firestore.
+- Supports soft delete with `deletedAt` and `deletedBy` fields.
+- Activity date-based ordering (most recent first).
+- Client-side filtering for flexible search without requiring composite indexes.
+
 ## [1.5.3] - 2026-01-30
 
 ### Added
