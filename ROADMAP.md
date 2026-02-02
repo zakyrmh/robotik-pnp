@@ -26,10 +26,10 @@ Dokumen ini berisi daftar fitur yang akan dikembangkan untuk sistem Robotik PNP.
 
 Modul untuk mengelola kegiatan riset dan pengembangan tim robotik.
 
-#### 1.1 Jurnal/Logbook Riset
+#### 1.1 Logbook Riset
 
-- [ ] Halaman daftar jurnal riset
-- [ ] Form input jurnal riset harian/mingguan
+- [ ] Halaman daftar logbook riset
+- [ ] Form input logbook riset harian/mingguan
 - [ ] Upload dokumentasi (foto, video, dokumen)
 - [ ] Kategorisasi berdasarkan proyek/tim
 - [ ] Timeline progress riset
