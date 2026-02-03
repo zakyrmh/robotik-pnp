@@ -5,6 +5,36 @@ All significant changes to this project will be documented in this file.
 This format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-02-03
+
+### Added
+
+- **Research Logbook Form Modal**:
+  - New modal popup form for creating research logbook entries.
+  - Form fields based on `schemas/research-logbook.ts` schema:
+    - Judul Kegiatan (required)
+    - Tanggal Kegiatan with date picker (required)
+    - Kategori Aktivitas dropdown (required)
+    - Durasi Kegiatan in hours (optional)
+    - Deskripsi Kegiatan (required)
+    - Hasil yang Dicapai (optional)
+    - Kendala yang Dihadapi (optional)
+    - Rencana Selanjutnya (optional)
+  - Two submission modes:
+    - "Simpan Draft": Save as draft for later editing
+    - "Ajukan Review": Submit for supervisor review
+  - Form validation using Zod schema and React Hook Form.
+  - Auto-refresh logbook list and statistics after successful creation.
+  - Responsive modal design for mobile and desktop.
+
+### Technical Details
+
+- Created `app/(private)/research-logbook/_components/logbook-form-modal.tsx`.
+- Integrated with `createLogbook()` service from `logbook-service.ts`.
+- Uses existing UI components: Dialog, Form, Select, Calendar, Input, Textarea.
+- Author information (ID and name) automatically populated from user context.
+- Team information automatically populated from user's active KRI team assignment.
+
 ## [1.6.0] - 2026-02-02
 
 ### Added

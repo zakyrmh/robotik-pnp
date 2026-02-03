@@ -52,6 +52,7 @@ import {
   getActivityCategoryLabel,
   getActivityCategoryBadgeColor,
 } from "@/schemas/research-logbook";
+import { LogbookFormModal } from "./_components/logbook-form-modal";
 import {
   KriTeam,
   getTeamDisplayName,
@@ -246,7 +247,7 @@ function LogbookCard({ logbook, onView }: LogbookCardProps) {
 // =========================================================
 
 export default function ResearchLogbookPage() {
-  const { assignments } = useDashboard();
+  const { assignments, userProfile, user } = useDashboard();
 
   const [logbooks, setLogbooks] = useState<ResearchLogbook[]>([]);
   const [stats, setStats] = useState<LogbookStats | null>(null);
@@ -254,6 +255,7 @@ export default function ResearchLogbookPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
 
   // Get user's assigned KRI team
   const userTeam = useMemo((): KriTeam | null => {
@@ -305,8 +307,23 @@ export default function ResearchLogbookPage() {
 
   // Handle create new logbook
   const handleCreateLogbook = () => {
-    // TODO: Navigate to logbook form page
-    toast.info("Fitur buat logbook akan segera hadir");
+    setIsFormModalOpen(true);
+  };
+
+  // Handle successful logbook creation
+  const handleLogbookCreated = async () => {
+    // Refetch data after creating new logbook
+    if (userTeam) {
+      try {
+        const logbooksData = await getLogbooks({ team: userTeam });
+        setLogbooks(logbooksData);
+
+        const statsData = await getLogbookStats(userTeam);
+        setStats(statsData);
+      } catch (error) {
+        console.error("Error refetching logbook data:", error);
+      }
+    }
   };
 
   // Filter logbooks
@@ -493,6 +510,18 @@ export default function ResearchLogbookPage() {
             />
           ))}
         </div>
+      )}
+
+      {/* Logbook Form Modal */}
+      {userTeam && userProfile && user && (
+        <LogbookFormModal
+          open={isFormModalOpen}
+          onOpenChange={setIsFormModalOpen}
+          userTeam={userTeam}
+          authorId={user.uid}
+          authorName={userProfile.fullName}
+          onSuccess={handleLogbookCreated}
+        />
       )}
     </div>
   );
