@@ -10,16 +10,21 @@ import {
   orderBy,
   Timestamp,
   DocumentData,
+  arrayUnion,
 } from "firebase/firestore";
 import { db } from "../config";
 import {
   ResearchLogbook,
   ResearchActivityCategory,
   LogbookStatus,
+  LogbookHistory,
+  LogbookChangeField,
+  LogbookHistoryAction,
 } from "@/schemas/research-logbook";
 import { KriTeam } from "@/schemas/users";
 
 const COLLECTION_NAME = "research_logbooks";
+const HISTORY_SUBCOLLECTION = "history";
 
 // ---------------------------------------------------------
 // HELPER FUNCTIONS
@@ -35,6 +40,7 @@ function docToLogbook(doc: DocumentData): ResearchLogbook {
     team: data.team,
     authorId: data.authorId,
     authorName: data.authorName,
+    collaboratorIds: data.collaboratorIds || [],
     activityDate: data.activityDate?.toDate() || new Date(),
     title: data.title,
     category: data.category,
@@ -67,6 +73,62 @@ function docToLogbook(doc: DocumentData): ResearchLogbook {
   };
 }
 
+/**
+ * Generate differences between old and new data
+ */
+function generateDiff(
+  oldData: ResearchLogbook,
+  newData: UpdateLogbookData,
+): LogbookChangeField[] {
+  const changes: LogbookChangeField[] = [];
+  const fieldsToCheck: (keyof UpdateLogbookData)[] = [
+    "title",
+    "category",
+    "description",
+    "achievements",
+    "challenges",
+    "nextPlan",
+    "durationHours",
+    "status",
+    "activityDate",
+  ];
+
+  fieldsToCheck.forEach((field) => {
+    // Skip if field is not in newData (undefined)
+    if (newData[field] === undefined) return;
+
+    const oldValue = oldData[field];
+    const newValue = newData[field];
+
+    // Handle Date comparison specifically
+    if (field === "activityDate") {
+      if (
+        oldValue instanceof Date &&
+        newValue instanceof Date &&
+        oldValue.getTime() !== newValue.getTime()
+      ) {
+        changes.push({
+          field,
+          oldValue: oldValue.toISOString(),
+          newValue: newValue.toISOString(),
+        });
+      }
+      return;
+    }
+
+    // Handle primitive comparison
+    if (oldValue !== newValue) {
+      changes.push({
+        field,
+        oldValue,
+        newValue,
+      });
+    }
+  });
+
+  return changes;
+}
+
 // ---------------------------------------------------------
 // READ OPERATIONS
 // ---------------------------------------------------------
@@ -79,6 +141,9 @@ export interface GetLogbooksParams {
   startDate?: Date;
   endDate?: Date;
   limitCount?: number;
+  // Access Control Params
+  currentUserId?: string;
+  userRolePosition?: string; // 'ketua_tim', 'wakil_ketua_tim', etc.
 }
 
 /**
@@ -101,6 +166,32 @@ export async function getLogbooks(
 
     const snapshot = await getDocs(q);
     let logbooks = snapshot.docs.map(docToLogbook);
+
+    // Apply Access Control Filtering
+    if (params.currentUserId) {
+      logbooks = logbooks.filter((log) => {
+        const isAuthor = log.authorId === params.currentUserId;
+        const isCollaborator = log.collaboratorIds?.includes(
+          params.currentUserId!,
+        );
+        const isLeader = ["chairman", "vice_chairman"].includes(
+          params.userRolePosition || "",
+        );
+
+        // Determine if user has access
+        if (isAuthor || isCollaborator) return true;
+
+        if (isLeader) {
+          // Leaders see everything except draft (unless they are author/collaborator)
+          return ["submitted", "needs_revision", "approved"].includes(
+            log.status,
+          );
+        }
+
+        // Regular members only see approved logs of others
+        return log.status === "approved";
+      });
+    }
 
     // Apply client-side filtering for optional parameters
     if (params.status) {
@@ -164,6 +255,36 @@ export async function getLogbookById(
   }
 }
 
+/**
+ * Get history of a logbook
+ */
+export async function getLogbookHistory(
+  logbookId: string,
+): Promise<LogbookHistory[]> {
+  try {
+    const historyRef = collection(
+      db,
+      COLLECTION_NAME,
+      logbookId,
+      HISTORY_SUBCOLLECTION,
+    );
+    const q = query(historyRef, orderBy("timestamp", "desc"));
+    const snapshot = await getDocs(q);
+
+    return snapshot.docs.map(
+      (doc) =>
+        ({
+          id: doc.id,
+          ...doc.data(),
+          timestamp: doc.data().timestamp?.toDate(),
+        }) as LogbookHistory,
+    );
+  } catch (error) {
+    console.error("Error fetching logbook history:", error);
+    throw error;
+  }
+}
+
 // ---------------------------------------------------------
 // WRITE OPERATIONS
 // ---------------------------------------------------------
@@ -172,6 +293,7 @@ export interface CreateLogbookData {
   team: KriTeam;
   authorId: string;
   authorName: string;
+  collaboratorIds?: string[];
   activityDate: Date;
   title: string;
   category: ResearchActivityCategory;
@@ -189,9 +311,11 @@ export interface CreateLogbookData {
 export async function createLogbook(data: CreateLogbookData): Promise<string> {
   try {
     const now = Timestamp.now();
+    const collaboratorIds = data.collaboratorIds || [];
 
     const logbookData = {
       ...data,
+      collaboratorIds,
       activityDate: Timestamp.fromDate(data.activityDate),
       status: data.status || "draft",
       attachments: [],
@@ -202,7 +326,24 @@ export async function createLogbook(data: CreateLogbookData): Promise<string> {
       deletedBy: null,
     };
 
+    // Create main document
     const docRef = await addDoc(collection(db, COLLECTION_NAME), logbookData);
+
+    // Add initial history entry
+    const historyEntry = {
+      logbookId: docRef.id,
+      authorId: data.authorId,
+      authorName: data.authorName,
+      timestamp: now,
+      action: "create",
+      description: "Logbook created",
+    };
+
+    await addDoc(
+      collection(db, COLLECTION_NAME, docRef.id, HISTORY_SUBCOLLECTION),
+      historyEntry,
+    );
+
     return docRef.id;
   } catch (error) {
     console.error("Error creating logbook:", error);
@@ -220,17 +361,26 @@ export interface UpdateLogbookData {
   nextPlan?: string;
   durationHours?: number;
   status?: LogbookStatus;
+  collaboratorIds?: string[];
 }
 
 /**
- * Update an existing logbook entry
+ * Update an existing logbook entry with history logging
  */
 export async function updateLogbook(
   id: string,
   data: UpdateLogbookData,
+  updatedBy: { id: string; name: string },
 ): Promise<void> {
   try {
     const docRef = doc(db, COLLECTION_NAME, id);
+    const oldDocSnap = await getDoc(docRef);
+
+    if (!oldDocSnap.exists()) {
+      throw new Error("Logbook not found");
+    }
+
+    const oldData = docToLogbook(oldDocSnap);
 
     const updateData: Record<string, unknown> = {
       ...data,
@@ -242,9 +392,81 @@ export async function updateLogbook(
       updateData.activityDate = Timestamp.fromDate(data.activityDate);
     }
 
-    await updateDoc(docRef, updateData);
+    // Determine action type
+    let action: LogbookHistoryAction = "update";
+    if (data.status && data.status !== oldData.status) {
+      action = "status_change";
+    }
+
+    // Generate diff
+    const changes = generateDiff(oldData, data);
+
+    // Only update and log if there are changes or specific fields are updated/added
+    if (
+      changes.length > 0 ||
+      (data.collaboratorIds &&
+        JSON.stringify(data.collaboratorIds) !==
+          JSON.stringify(oldData.collaboratorIds))
+    ) {
+      await updateDoc(docRef, updateData);
+
+      // Create history entry
+      const historyEntry = {
+        logbookId: id,
+        authorId: updatedBy.id,
+        authorName: updatedBy.name,
+        timestamp: Timestamp.now(),
+        action,
+        changes: changes.length > 0 ? changes : undefined,
+        description:
+          action === "status_change"
+            ? `Status changed from ${oldData.status} to ${data.status}`
+            : "Logbook updated",
+      };
+
+      await addDoc(
+        collection(db, COLLECTION_NAME, id, HISTORY_SUBCOLLECTION),
+        historyEntry,
+      );
+    }
   } catch (error) {
     console.error("Error updating logbook:", error);
+    throw error;
+  }
+}
+
+/**
+ * Invite a collaborator to a logbook
+ */
+export async function inviteCollaborator(
+  logbookId: string,
+  collaboratorId: string,
+  invitedBy: { id: string; name: string },
+): Promise<void> {
+  try {
+    const docRef = doc(db, COLLECTION_NAME, logbookId);
+
+    await updateDoc(docRef, {
+      collaboratorIds: arrayUnion(collaboratorId),
+      updatedAt: Timestamp.now(),
+    });
+
+    // Add history entry
+    const historyEntry = {
+      logbookId,
+      authorId: invitedBy.id,
+      authorName: invitedBy.name,
+      timestamp: Timestamp.now(),
+      action: "invite",
+      description: `Invited collaborator (ID: ${collaboratorId})`,
+    };
+
+    await addDoc(
+      collection(db, COLLECTION_NAME, logbookId, HISTORY_SUBCOLLECTION),
+      historyEntry,
+    );
+  } catch (error) {
+    console.error("Error inviting collaborator:", error);
     throw error;
   }
 }

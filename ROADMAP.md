@@ -2,21 +2,21 @@
 
 Dokumen ini berisi daftar fitur yang akan dikembangkan untuk sistem Robotik PNP.
 
-> **Terakhir diperbarui**: 30 Januari 2026
+> **Terakhir diperbarui**: 10 Februari 2026
 
 ---
 
 ## 📊 Ringkasan Prioritas
 
-| Prioritas | Modul                       | Status     |
-| --------- | --------------------------- | ---------- |
-| 🔴 Tinggi | Riset & Pengembangan (R&D)  | ⏳ Planned |
-| 🔴 Tinggi | Inventaris (Lab Management) | ⏳ Planned |
-| 🟡 Sedang | Kesekretariatan (Expanded)  | ⏳ Planned |
-| 🟡 Sedang | Keuangan (Treasury)         | ⏳ Planned |
-| 🟢 Normal | Komisi Disiplin             | ⏳ Planned |
-| 🟢 Normal | Sistem (Manajemen User)     | ⏳ Planned |
-| 🔵 Rendah | Notifikasi                  | ⏳ Planned |
+| Prioritas | Modul                       | Status         |
+| --------- | --------------------------- | -------------- |
+| 🔴 Tinggi | Riset & Pengembangan (R&D)  | 🚧 In Progress |
+| 🔴 Tinggi | Inventaris (Lab Management) | ⏳ Planned     |
+| 🟡 Sedang | Kesekretariatan (Expanded)  | ⏳ Planned     |
+| 🟡 Sedang | Keuangan (Treasury)         | ⏳ Planned     |
+| 🟢 Normal | Komisi Disiplin             | ⏳ Planned     |
+| 🟢 Normal | Sistem (Manajemen User)     | ⏳ Planned     |
+| 🔵 Rendah | Notifikasi                  | ⏳ Planned     |
 
 ---
 
@@ -28,8 +28,9 @@ Modul untuk mengelola kegiatan riset dan pengembangan tim robotik.
 
 #### 1.1 Logbook Riset
 
-- [ ] Halaman daftar logbook riset
-- [ ] Form input logbook riset harian/mingguan
+- [x] Halaman daftar logbook riset (termasuk fitur lihat detail dan edit)
+- [x] Form input logbook riset harian/mingguan
+- [x] Daftar anggota tim sesama divisi dengan pangkat dan role
 - [ ] Upload dokumentasi (foto, video, dokumen)
 - [ ] Kategorisasi berdasarkan proyek/tim
 - [ ] Timeline progress riset

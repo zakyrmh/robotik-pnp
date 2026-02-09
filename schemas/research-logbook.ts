@@ -113,9 +113,43 @@ export const ResearchLogbookSchema = z.object({
   createdAt: TimestampSchema,
   updatedAt: TimestampSchema,
 
+  // Collaborator IDs (user IDs)
+  collaboratorIds: z.array(z.string()).default([]),
+
   // Soft delete
   deletedAt: TimestampSchema.optional(),
   deletedBy: z.string().optional(),
+});
+
+// ---------------------------------------------------------
+// HISTORY SCHEMA
+// ---------------------------------------------------------
+
+// Perubahan field individual
+const LogbookChangeFieldSchema = z.object({
+  field: z.string(),
+  oldValue: z.any().optional(),
+  newValue: z.any().optional(),
+});
+
+// History perubahan logbook
+export const LogbookHistoryActionEnum = z.enum([
+  "create",
+  "update",
+  "status_change",
+  "invite",
+  "remove_collaborator",
+]);
+
+export const LogbookHistorySchema = z.object({
+  id: z.string(),
+  logbookId: z.string(),
+  authorId: z.string(), // User yang melakukan aksi
+  authorName: z.string(),
+  timestamp: TimestampSchema,
+  action: LogbookHistoryActionEnum,
+  changes: z.array(LogbookChangeFieldSchema).optional(),
+  description: z.string().optional(), // Optional message/note
 });
 
 // ---------------------------------------------------------
@@ -129,6 +163,9 @@ export type ResearchActivityCategory = z.infer<
 >;
 export type Attachment = z.infer<typeof AttachmentSchema>;
 export type LogbookComment = z.infer<typeof LogbookCommentSchema>;
+export type LogbookHistory = z.infer<typeof LogbookHistorySchema>;
+export type LogbookChangeField = z.infer<typeof LogbookChangeFieldSchema>;
+export type LogbookHistoryAction = z.infer<typeof LogbookHistoryActionEnum>;
 
 // ---------------------------------------------------------
 // HELPER FUNCTIONS

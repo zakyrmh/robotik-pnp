@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -51,18 +51,17 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-// import { Badge } from "@/components/ui/badge"; // Removed unused
 
 import { cn } from "@/lib/utils";
 import {
-  createLogbook,
-  CreateLogbookData,
+  updateLogbook,
+  UpdateLogbookData,
 } from "@/lib/firebase/services/logbook-service";
 import {
+  ResearchLogbook,
   ResearchActivityCategoryEnum,
   getActivityCategoryLabel,
 } from "@/schemas/research-logbook";
-import { KriTeam } from "@/schemas/users";
 import {
   getTeamMembers,
   TeamMember,
@@ -111,27 +110,27 @@ const CATEGORY_OPTIONS = ResearchActivityCategoryEnum.options.map((cat) => ({
 // COMPONENT PROPS
 // =========================================================
 
-interface LogbookFormModalProps {
+interface LogbookEditModalProps {
+  logbook: ResearchLogbook | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  userTeam: KriTeam;
-  authorId: string;
-  authorName: string;
   onSuccess?: () => void;
+  currentUserId?: string;
+  currentUserName?: string;
 }
 
 // =========================================================
 // MAIN COMPONENT
 // =========================================================
 
-export function LogbookFormModal({
+export function LogbookEditModal({
+  logbook,
   open,
   onOpenChange,
-  userTeam,
-  authorId,
-  authorName,
   onSuccess,
-}: LogbookFormModalProps) {
+  currentUserId,
+  currentUserName,
+}: LogbookEditModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [isLoadingMembers, setIsLoadingMembers] = useState(false);
@@ -139,13 +138,13 @@ export function LogbookFormModal({
   // Fetch team members
   useEffect(() => {
     async function fetchMembers() {
-      if (!open || !userTeam) return;
+      if (!open || !logbook) return;
 
       setIsLoadingMembers(true);
       try {
-        const members = await getTeamMembers(userTeam);
-        // Filter out current user
-        setTeamMembers(members.filter((m) => m.id !== authorId));
+        const members = await getTeamMembers(logbook.team);
+        // Filter out author (cannot collaborate with self)
+        setTeamMembers(members.filter((m) => m.id !== logbook.authorId));
       } catch (error) {
         console.error("Error fetching team members:", error);
         toast.error("Gagal memuat anggota tim");
@@ -157,7 +156,7 @@ export function LogbookFormModal({
     if (open) {
       fetchMembers();
     }
-  }, [open, userTeam, authorId]);
+  }, [open, logbook]);
 
   const form = useForm<LogbookFormValues>({
     resolver: zodResolver(LogbookFormSchema),
@@ -174,18 +173,39 @@ export function LogbookFormModal({
     },
   });
 
+  // Update form values when logbook changes
+  useEffect(() => {
+    if (logbook && open) {
+      const activityDate =
+        logbook.activityDate instanceof Date
+          ? logbook.activityDate
+          : new Date();
+
+      form.reset({
+        title: logbook.title,
+        activityDate,
+        category: logbook.category,
+        description: logbook.description,
+        achievements: logbook.achievements || "",
+        challenges: logbook.challenges || "",
+        nextPlan: logbook.nextPlan || "",
+        durationHours: logbook.durationHours,
+        collaboratorIds: logbook.collaboratorIds || [],
+      });
+    }
+  }, [logbook, open, form]);
+
   // Handle form submission
   const handleSubmit = async (
     values: LogbookFormValues,
     status: "draft" | "submitted",
   ) => {
+    if (!logbook || !currentUserId || !currentUserName) return;
+
     setIsSubmitting(true);
 
     try {
-      const logbookData: CreateLogbookData = {
-        team: userTeam,
-        authorId,
-        authorName,
+      const updateData: UpdateLogbookData = {
         activityDate: values.activityDate,
         title: values.title,
         category: values.category,
@@ -198,21 +218,22 @@ export function LogbookFormModal({
         collaboratorIds: values.collaboratorIds,
       };
 
-      await createLogbook(logbookData);
+      await updateLogbook(logbook.id, updateData, {
+        id: currentUserId,
+        name: currentUserName,
+      });
 
       toast.success(
         status === "draft"
-          ? "Logbook berhasil disimpan sebagai draft"
+          ? "Logbook berhasil diperbarui"
           : "Logbook berhasil diajukan untuk review",
       );
 
-      // Reset form and close modal
-      form.reset();
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {
-      console.error("Error creating logbook:", error);
-      toast.error("Gagal menyimpan logbook. Silakan coba lagi.");
+      console.error("Error updating logbook:", error);
+      toast.error("Gagal memperbarui logbook. Silakan coba lagi.");
     } finally {
       setIsSubmitting(false);
     }
@@ -231,14 +252,14 @@ export function LogbookFormModal({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0 gap-0 overflow-hidden">
-        <DialogHeader className="p-6 pb-2 border-b bg-background z-10">
+        <DialogHeader className="p-6 pb-4 border-b shrink-0 bg-background z-10">
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
-            Buat Logbook Riset Baru
+            Edit Logbook Riset
           </DialogTitle>
           <DialogDescription>
-            Catat kegiatan riset dan pengembangan yang telah dilakukan. Isi
-            semua field yang wajib untuk menyimpan logbook.
+            Perbarui informasi logbook riset Anda. Pastikan semua informasi
+            sudah benar sebelum menyimpan.
           </DialogDescription>
         </DialogHeader>
 
@@ -326,7 +347,7 @@ export function LogbookFormModal({
                       </FormLabel>
                       <Select
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>

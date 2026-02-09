@@ -5,6 +5,55 @@ All significant changes to this project will be documented in this file.
 This format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2026-02-10
+
+### Added
+
+- **Logbook Detail View**:
+  - New modal component (`LogbookDetailModal`) to view full details of a logbook entry.
+  - Displays title, status badges, category, date, duration, author, description, achievements, challenges, and next plan.
+  - Shows creation and update timestamps.
+  - Accessible by clicking on a logbook card.
+
+- **Logbook Edit Feature**:
+  - New modal form (`LogbookEditModal`) to edit existing logbook entries.
+  - Pre-fills form with existing data.
+  - Allows editing all fields: title, date, category, duration, description, achievements, challenges, next plan.
+  - Supports saving as "Draft" or "Submitted" for review.
+  - Only allows editing if the logbook status is "Draft".
+  - Refreshes logbook list and statistics automatically after update.
+
+### Technical Details
+
+- Added `LogbookDetailSheet` and `LogbookEditModal` components.
+- Integrated detail and edit flow in `ResearchLogbookPage`.
+- Added `ScrollArea` and `Sheet` UI components from Shadcn UI.
+- Implemented state management for viewing and editing logbooks.
+- Refactored `fetchData` with `useCallback` for better hook dependency management.
+
+## [1.8.0] - 2026-02-10
+
+### Added
+
+- **Team Members List in Research Logbook**:
+  - New card component displaying list of fellow team members in the same division.
+  - Shows member information: name, photo, management position (ketua tim, wakil, sekretaris, bendahara, anggota), and technical role (elektrikal, mekanikal, programmer).
+  - Members are automatically filtered based on the user's active KRI team assignment.
+  - Sorted by management position hierarchy (chairman first, vice chairman second, etc.).
+  - Visual indicators with color-coded badges for positions and roles.
+  - Avatar display with fallback initials.
+  - Loading skeleton animation for better UX.
+  - Responsive design matching existing Research Logbook page aesthetics.
+
+### Technical Details
+
+- Created `lib/firebase/services/team-member-service.ts` with functions:
+  - `getTeamMembers()`: Fetches team members from Firestore with automatic filtering and sorting.
+  - Helper functions for labels and badge colors for positions and roles.
+- Created `app/(private)/research-logbook/_components/team-members-card.tsx`: Reusable card component with loading states.
+- Integrated into Research Logbook page below stats cards.
+- Query optimization: Single Firestore query with client-side filtering for team assignment.
+
 ## [1.7.0] - 2026-02-03
 
 ### Added

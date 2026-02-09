@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import {
   BookMarked,
   Plus,
@@ -53,6 +53,9 @@ import {
   getActivityCategoryBadgeColor,
 } from "@/schemas/research-logbook";
 import { LogbookFormModal } from "./_components/logbook-form-modal";
+import { TeamMembersCard } from "./_components/team-members-card";
+import { LogbookDetailModal } from "./_components/logbook-detail-modal";
+import { LogbookEditModal } from "./_components/logbook-edit-modal";
 import {
   KriTeam,
   getTeamDisplayName,
@@ -257,6 +260,18 @@ export default function ResearchLogbookPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
 
+  // State for detail view
+  const [selectedLogbookId, setSelectedLogbookId] = useState<string | null>(
+    null,
+  );
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+
+  // State for edit
+  const [editingLogbook, setEditingLogbook] = useState<ResearchLogbook | null>(
+    null,
+  );
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
   // Get user's assigned KRI team
   const userTeam = useMemo((): KriTeam | null => {
     if (!assignments?.competitions) return null;
@@ -269,40 +284,66 @@ export default function ResearchLogbookPage() {
     return activeAssignment?.team || null;
   }, [assignments]);
 
-  // Fetch data
+  // Fetch data function
+  const fetchData = useCallback(async () => {
+    if (!userTeam || !user || !userProfile || !assignments) return;
+
+    try {
+      // Find current user's role in this team
+      const teamAssignment = assignments.competitions?.find(
+        (comp: CompetitionAssignment) =>
+          comp.team === userTeam && comp.isActive,
+      );
+      const userRolePosition = teamAssignment?.managementPosition;
+
+      // Fetch logbooks for user's team
+      const logbooksData = await getLogbooks({
+        team: userTeam,
+        currentUserId: user.uid,
+        userRolePosition,
+      });
+      setLogbooks(logbooksData);
+
+      // Fetch stats
+      const statsData = await getLogbookStats(userTeam);
+      setStats(statsData);
+    } catch (error) {
+      console.error("Error fetching logbook data:", error);
+      throw error;
+    }
+  }, [userTeam, user, userProfile, assignments]);
+
+  // Fetch data on mount
   useEffect(() => {
-    async function fetchData() {
-      if (!userTeam) {
+    async function initData() {
+      if (!userTeam || !user) {
         setIsLoading(false);
         return;
       }
 
       setIsLoading(true);
       try {
-        // Fetch logbooks for user's team
-        const logbooksData = await getLogbooks({
-          team: userTeam,
-        });
-        setLogbooks(logbooksData);
-
-        // Fetch stats
-        const statsData = await getLogbookStats(userTeam);
-        setStats(statsData);
-      } catch (error) {
-        console.error("Error fetching logbook data:", error);
+        await fetchData();
+      } catch {
         toast.error("Gagal memuat data logbook");
       } finally {
         setIsLoading(false);
       }
     }
 
-    fetchData();
-  }, [userTeam]);
+    initData();
+  }, [fetchData, userTeam, user]);
 
   // Handle logbook view
   const handleViewLogbook = (logbook: ResearchLogbook) => {
-    // TODO: Navigate to logbook detail page
-    toast.info(`Detail logbook: ${logbook.title}`);
+    setSelectedLogbookId(logbook.id);
+    setIsDetailModalOpen(true);
+  };
+
+  // Handle logbook edit
+  const handleEditLogbook = (logbook: ResearchLogbook) => {
+    setEditingLogbook(logbook);
+    setIsEditModalOpen(true);
   };
 
   // Handle create new logbook
@@ -310,20 +351,9 @@ export default function ResearchLogbookPage() {
     setIsFormModalOpen(true);
   };
 
-  // Handle successful logbook creation
-  const handleLogbookCreated = async () => {
-    // Refetch data after creating new logbook
-    if (userTeam) {
-      try {
-        const logbooksData = await getLogbooks({ team: userTeam });
-        setLogbooks(logbooksData);
-
-        const statsData = await getLogbookStats(userTeam);
-        setStats(statsData);
-      } catch (error) {
-        console.error("Error refetching logbook data:", error);
-      }
-    }
+  // Handle successful logbook creation/update
+  const handleDataUpdate = async () => {
+    await fetchData();
   };
 
   // Filter logbooks
@@ -419,6 +449,9 @@ export default function ResearchLogbookPage() {
       {/* Stats Cards */}
       {stats && <StatsCards stats={stats} />}
 
+      {/* Team Members Card */}
+      <TeamMembersCard team={userTeam} />
+
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
         {/* Search */}
@@ -512,7 +545,7 @@ export default function ResearchLogbookPage() {
         </div>
       )}
 
-      {/* Logbook Form Modal */}
+      {/* Logbook Form Modal (Create) */}
       {userTeam && userProfile && user && (
         <LogbookFormModal
           open={isFormModalOpen}
@@ -520,9 +553,27 @@ export default function ResearchLogbookPage() {
           userTeam={userTeam}
           authorId={user.uid}
           authorName={userProfile.fullName}
-          onSuccess={handleLogbookCreated}
+          onSuccess={handleDataUpdate}
         />
       )}
+
+      {/* Logbook Detail Modal */}
+      <LogbookDetailModal
+        logbookId={selectedLogbookId}
+        open={isDetailModalOpen}
+        onOpenChange={setIsDetailModalOpen}
+        onEdit={handleEditLogbook}
+      />
+
+      {/* Logbook Edit Modal */}
+      <LogbookEditModal
+        logbook={editingLogbook}
+        open={isEditModalOpen}
+        onOpenChange={setIsEditModalOpen}
+        onSuccess={handleDataUpdate}
+        currentUserId={user?.uid}
+        currentUserName={userProfile?.fullName}
+      />
     </div>
   );
 }
