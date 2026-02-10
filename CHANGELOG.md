@@ -5,12 +5,42 @@ All significant changes to this project will be documented in this file.
 This format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.0] - 2026-02-11
+
+### Added
+
+- **Research Logbook Review System**:
+  - Implemented approval workflow for KRI Team Leaders and Vice Leaders.
+  - Leaders can now "Approve" (Setujui) or "Request Revision" (Minta Revisi) on submitted logbooks.
+  - Added revision note input when requesting changes.
+  - Status updates are reflected in the logbook history and UI.
+
+- **Trash Management for Logbooks**:
+  - **Soft Delete**: Users can move logbooks to trash instead of immediate permanent deletion.
+  - **Trash Page (`/research-logbook/trash`)**: Dedicated view for managing deleted logbooks.
+  - **Restore**: Recovery option to bring logbooks back to the active list.
+  - **Permanent Delete**: Option to permanently remove logbooks from the trash.
+  - Visual indicators and distinct styling for trashed items.
+
+- **Enhanced Logbook Details**:
+  - Added scrollable content area in `LogbookDetailModal` to handle long descriptions and history logs.
+  - Display of collaborator names (resolved from IDs) in the detail view.
+
+### Changed
+
+- **Refactoring**:
+  - Extracted `LogbookCard` into a reusable component (`_components/logbook-card.tsx`) shared between active and trash views.
+  - Updated `ResearchLogbookPage` to support navigation to the new Trash page.
+- **Security**:
+  - Updated Firestore Security Rules to enforce role-based access for creating, reviewing, and deleting logbooks.
+  - Strict schema validation and ownership checks.
+
 ## [1.9.0] - 2026-02-10
 
 ### Added
 
 - **Logbook Detail View**:
-  - New modal component (`LogbookDetailModal`) to view full details of a logbook entry.
+  - Newmodal component (`LogbookDetailModal`) to view full details of a logbook entry.
   - Displays title, status badges, category, date, duration, author, description, achievements, challenges, and next plan.
   - Shows creation and update timestamps.
   - Accessible by clicking on a logbook card.

@@ -9,26 +9,17 @@ import {
   Filter,
   Search,
   FileText,
-  ChevronRight,
   Loader2,
-  Users,
+  Trash2,
   AlertCircle,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { format } from "date-fns";
-import { id as idLocale } from "date-fns/locale";
-import { Timestamp } from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -43,15 +34,10 @@ import { useDashboard } from "@/components/dashboard/dashboard-context";
 import {
   getLogbooks,
   getLogbookStats,
+  deleteLogbook,
   LogbookStats,
 } from "@/lib/firebase/services/logbook-service";
-import {
-  ResearchLogbook,
-  getLogbookStatusLabel,
-  getLogbookStatusBadgeColor,
-  getActivityCategoryLabel,
-  getActivityCategoryBadgeColor,
-} from "@/schemas/research-logbook";
+import { ResearchLogbook } from "@/schemas/research-logbook";
 import { LogbookFormModal } from "./_components/logbook-form-modal";
 import { TeamMembersCard } from "./_components/team-members-card";
 import { LogbookDetailModal } from "./_components/logbook-detail-modal";
@@ -61,27 +47,11 @@ import {
   getTeamDisplayName,
   CompetitionAssignment,
 } from "@/schemas/users";
+import { LogbookCard } from "./_components/logbook-card";
 
 // =========================================================
 // HELPER FUNCTIONS
 // =========================================================
-
-const toDate = (value: Date | Timestamp): Date => {
-  if (value instanceof Timestamp) {
-    return value.toDate();
-  }
-  return value;
-};
-
-const formatDate = (date: Date | Timestamp) => {
-  return format(toDate(date), "d MMM yyyy", { locale: idLocale });
-};
-
-const formatDuration = (hours: number | undefined): string => {
-  if (!hours) return "-";
-  if (hours < 1) return `${Math.round(hours * 60)} menit`;
-  return `${hours} jam`;
-};
 
 // =========================================================
 // SUB-COMPONENTS
@@ -169,87 +139,12 @@ function StatsCards({ stats }: StatsCardProps) {
   );
 }
 
-interface LogbookCardProps {
-  logbook: ResearchLogbook;
-  onView: (logbook: ResearchLogbook) => void;
-}
-
-function LogbookCard({ logbook, onView }: LogbookCardProps) {
-  return (
-    <Card
-      className="h-full flex flex-col hover:shadow-md transition-all hover:border-primary/30 dark:bg-slate-950/50 group cursor-pointer"
-      onClick={() => onView(logbook)}
-    >
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between gap-2 mb-2">
-          <Badge
-            variant="secondary"
-            className={`text-xs font-normal ${getActivityCategoryBadgeColor(logbook.category)} border-0`}
-          >
-            {getActivityCategoryLabel(logbook.category)}
-          </Badge>
-          <Badge
-            variant="outline"
-            className={`text-xs ${getLogbookStatusBadgeColor(logbook.status)}`}
-          >
-            {getLogbookStatusLabel(logbook.status)}
-          </Badge>
-        </div>
-        <CardTitle className="text-lg line-clamp-2 group-hover:text-primary transition-colors">
-          {logbook.title}
-        </CardTitle>
-      </CardHeader>
-
-      <CardContent className="flex-1 pb-3">
-        <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-2 mb-4 min-h-[40px]">
-          {logbook.description}
-        </p>
-
-        <div className="space-y-2 text-sm">
-          <div className="flex items-center text-slate-600 dark:text-slate-300">
-            <Calendar className="mr-2 h-4 w-4 text-slate-400" />
-            <span>Tanggal:</span>
-            <span className="ml-auto font-medium">
-              {formatDate(logbook.activityDate)}
-            </span>
-          </div>
-          {logbook.durationHours && (
-            <div className="flex items-center text-slate-600 dark:text-slate-300">
-              <Clock className="mr-2 h-4 w-4 text-slate-400" />
-              <span>Durasi:</span>
-              <span className="ml-auto font-medium">
-                {formatDuration(logbook.durationHours)}
-              </span>
-            </div>
-          )}
-        </div>
-      </CardContent>
-
-      <CardFooter className="pt-3 border-t bg-slate-50/50 dark:bg-slate-900/20">
-        <div className="flex justify-between items-center w-full">
-          <span className="flex items-center gap-2 text-xs text-slate-500">
-            <Users className="h-3 w-3" />
-            {logbook.authorName}
-          </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="text-primary group-hover:bg-primary/10"
-          >
-            Detail
-            <ChevronRight className="h-4 w-4 ml-1" />
-          </Button>
-        </div>
-      </CardFooter>
-    </Card>
-  );
-}
-
 // =========================================================
 // MAIN PAGE COMPONENT
 // =========================================================
 
 export default function ResearchLogbookPage() {
+  const router = useRouter();
   const { assignments, userProfile, user } = useDashboard();
 
   const [logbooks, setLogbooks] = useState<ResearchLogbook[]>([]);
@@ -272,7 +167,6 @@ export default function ResearchLogbookPage() {
   );
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // Get user's assigned KRI team
   const userTeam = useMemo((): KriTeam | null => {
     if (!assignments?.competitions) return null;
 
@@ -284,23 +178,30 @@ export default function ResearchLogbookPage() {
     return activeAssignment?.team || null;
   }, [assignments]);
 
+  // Get user role position
+  const userRolePosition = useMemo(() => {
+    if (!userTeam || !assignments?.competitions) return null;
+    const teamAssignment = assignments.competitions.find(
+      (comp: CompetitionAssignment) => comp.team === userTeam && comp.isActive,
+    );
+    return teamAssignment?.managementPosition || null;
+  }, [userTeam, assignments]);
+
+  const isLeader = useMemo(() => {
+    return ["chairman", "vice_chairman"].includes(userRolePosition || "");
+  }, [userRolePosition]);
+
   // Fetch data function
   const fetchData = useCallback(async () => {
     if (!userTeam || !user || !userProfile || !assignments) return;
 
     try {
-      // Find current user's role in this team
-      const teamAssignment = assignments.competitions?.find(
-        (comp: CompetitionAssignment) =>
-          comp.team === userTeam && comp.isActive,
-      );
-      const userRolePosition = teamAssignment?.managementPosition;
-
       // Fetch logbooks for user's team
       const logbooksData = await getLogbooks({
         team: userTeam,
         currentUserId: user.uid,
-        userRolePosition,
+        userRolePosition: userRolePosition || undefined,
+        trashed: false,
       });
       setLogbooks(logbooksData);
 
@@ -311,7 +212,7 @@ export default function ResearchLogbookPage() {
       console.error("Error fetching logbook data:", error);
       throw error;
     }
-  }, [userTeam, user, userProfile, assignments]);
+  }, [userTeam, user, userProfile, assignments, userRolePosition]);
 
   // Fetch data on mount
   useEffect(() => {
@@ -333,6 +234,24 @@ export default function ResearchLogbookPage() {
 
     initData();
   }, [fetchData, userTeam, user]);
+
+  // Handle Soft Delete
+  const handleSoftDelete = async (logbook: ResearchLogbook) => {
+    if (!confirm("Apakah Anda yakin ingin memindahkan logbook ini ke sampah?"))
+      return;
+
+    try {
+      await deleteLogbook(logbook.id, {
+        id: user!.uid,
+        name: userProfile!.fullName,
+      });
+      toast.success("Logbook dipindahkan ke sampah");
+      fetchData();
+    } catch (error) {
+      toast.error("Gagal menghapus logbook");
+      console.error(error);
+    }
+  };
 
   // Handle logbook view
   const handleViewLogbook = (logbook: ResearchLogbook) => {
@@ -438,18 +357,31 @@ export default function ResearchLogbookPage() {
           </p>
         </div>
 
-        <Button onClick={handleCreateLogbook} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Buat Logbook
-        </Button>
+        <div className="flex flex-col-reverse sm:flex-row item-center justify-center gap-3">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => router.push("/research-logbook/trash")}
+              size="sm"
+              className="text-muted-foreground hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Sampah
+            </Button>
+          </div>
+          <Button onClick={handleCreateLogbook} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Buat Logbook
+          </Button>
+        </div>
       </div>
 
       <Separator />
 
-      {/* Stats Cards */}
+      {/* Stats Cards - Only show in active view */}
       {stats && <StatsCards stats={stats} />}
 
-      {/* Team Members Card */}
+      {/* Team Members Card - Only show in active view */}
       <TeamMembersCard team={userTeam} />
 
       {/* Filters */}
@@ -540,6 +472,7 @@ export default function ResearchLogbookPage() {
               key={logbook.id}
               logbook={logbook}
               onView={handleViewLogbook}
+              onSoftDelete={handleSoftDelete}
             />
           ))}
         </div>
@@ -563,6 +496,14 @@ export default function ResearchLogbookPage() {
         open={isDetailModalOpen}
         onOpenChange={setIsDetailModalOpen}
         onEdit={handleEditLogbook}
+        currentUser={
+          user && userProfile
+            ? { uid: user.uid, displayName: userProfile.fullName }
+            : null
+        }
+        isLeader={isLeader}
+        userTeam={userTeam}
+        onUpdate={handleDataUpdate}
       />
 
       {/* Logbook Edit Modal */}
