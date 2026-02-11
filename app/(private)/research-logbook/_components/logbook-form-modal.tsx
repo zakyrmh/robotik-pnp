@@ -203,7 +203,7 @@ export function LogbookFormModal({
       toast.success(
         status === "draft"
           ? "Logbook berhasil disimpan sebagai draft"
-          : "Logbook berhasil diajukan untuk review",
+          : "Logbook berhasil dipublish",
       );
 
       // Reset form and close modal
@@ -223,8 +223,8 @@ export function LogbookFormModal({
     form.handleSubmit((values) => handleSubmit(values, "draft"))();
   };
 
-  // Submit for review
-  const handleSubmitForReview = () => {
+  // Publish
+  const handlePublish = () => {
     form.handleSubmit((values) => handleSubmit(values, "submitted"))();
   };
 
@@ -570,7 +570,7 @@ export function LogbookFormModal({
           </Button>
           <Button
             type="button"
-            onClick={handleSubmitForReview}
+            onClick={handlePublish}
             disabled={isSubmitting}
             className="w-full sm:w-auto"
           >
@@ -579,7 +579,7 @@ export function LogbookFormModal({
             ) : (
               <Send className="mr-2 h-4 w-4" />
             )}
-            Ajukan Review
+            Publish
           </Button>
         </DialogFooter>
       </DialogContent>

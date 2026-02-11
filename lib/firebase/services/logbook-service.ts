@@ -188,25 +188,12 @@ export async function getLogbooks(
         const isCollaborator = log.collaboratorIds?.includes(
           params.currentUserId!,
         );
-        const isLeader = ["chairman", "vice_chairman"].includes(
-          params.userRolePosition || "",
-        );
 
         // Determine if user has access
         if (isAuthor || isCollaborator) return true;
 
-        if (isLeader) {
-          // If in trash, leaders should probably see deleted items if they had access before?
-          // Or maybe distinct logic for trash. Currently keeping same logic.
-          // Leaders see submitted/revision/approved.
-          // If trashed, they might want to see what was deleted.
-          return ["submitted", "needs_revision", "approved"].includes(
-            log.status,
-          );
-        }
-
-        // Regular members only see approved logs of others
-        return log.status === "approved";
+        // Everyone else sees submitted (published) logbooks
+        return log.status === "submitted";
       });
     }
 
@@ -585,59 +572,6 @@ export async function permanentDeleteLogbook(id: string): Promise<void> {
   }
 }
 
-/**
- * Review a logbook (Approve or Request Revision)
- */
-export async function reviewLogbook(
-  id: string,
-  status: "approved" | "needs_revision",
-  reviewer: { id: string; name: string },
-  notes?: string,
-): Promise<void> {
-  try {
-    const docRef = doc(db, COLLECTION_NAME, id);
-
-    await updateDoc(docRef, {
-      status,
-      updatedAt: Timestamp.now(),
-    });
-
-    // Add history entry
-    const historyEntry = {
-      logbookId: id,
-      authorId: reviewer.id,
-      authorName: reviewer.name,
-      timestamp: Timestamp.now(),
-      action: "status_change",
-      description:
-        status === "approved"
-          ? "Logbook approved"
-          : `Revision requested: ${notes || "No notes"}`,
-    };
-
-    await addDoc(
-      collection(db, COLLECTION_NAME, id, HISTORY_SUBCOLLECTION),
-      historyEntry,
-    );
-
-    // If notes exist, add as comment
-    if (notes) {
-      await updateDoc(docRef, {
-        comments: arrayUnion({
-          id: crypto.randomUUID(),
-          authorId: reviewer.id,
-          authorName: reviewer.name,
-          content: notes,
-          createdAt: Timestamp.now(),
-        }),
-      });
-    }
-  } catch (error) {
-    console.error("Error reviewing logbook:", error);
-    throw error;
-  }
-}
-
 // ---------------------------------------------------------
 // STATISTICS
 // ---------------------------------------------------------
@@ -661,8 +595,6 @@ export async function getLogbookStats(team: KriTeam): Promise<LogbookStats> {
       entriesByStatus: {
         draft: 0,
         submitted: 0,
-        needs_revision: 0,
-        approved: 0,
       },
       entriesByCategory: {
         design: 0,

@@ -17,10 +17,8 @@ const TimestampSchema = z.custom<Timestamp | Date>(
 
 // Status logbook entry
 export const LogbookStatusEnum = z.enum([
-  "draft", // Draft, belum di-submit
-  "submitted", // Sudah di-submit, menunggu review
-  "needs_revision", // Perlu revisi
-  "approved", // Disetujui pembimbing
+  "draft", // Draft, belum di-publish
+  "submitted", // Sudah di-publish, dapat dilihat oleh tim
 ]);
 
 // Kategori aktivitas riset
@@ -177,9 +175,7 @@ export type LogbookHistoryAction = z.infer<typeof LogbookHistoryActionEnum>;
 export function getLogbookStatusLabel(status: LogbookStatus): string {
   const labels: Record<LogbookStatus, string> = {
     draft: "Draft",
-    submitted: "Menunggu Review",
-    needs_revision: "Perlu Revisi",
-    approved: "Disetujui",
+    submitted: "Published",
   };
   return labels[status];
 }
@@ -191,10 +187,6 @@ export function getLogbookStatusBadgeColor(status: LogbookStatus): string {
   const colors: Record<LogbookStatus, string> = {
     draft: "bg-slate-100 text-slate-800 dark:bg-slate-800 dark:text-slate-200",
     submitted:
-      "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300",
-    needs_revision:
-      "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300",
-    approved:
       "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300",
   };
   return colors[status];

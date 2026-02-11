@@ -5,6 +5,35 @@ All significant changes to this project will be documented in this file.
 This format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.0] - 2026-02-11
+
+### Added
+
+- **Collaborative Logbook Editing**:
+  - Implemented **Safe Collaborative Edit** system to prevent data overwrites.
+  - **Real-time Conflict Detection**: Users receive an alert if the logbook they are editing is updated by someone else.
+  - **Partial Updates**: Only modified fields are sent to the server, preserving concurrent changes to other fields.
+  - Added "Refresh Data" capability in the edit form to sync with the latest server version.
+
+### Changed
+
+- **Simplified Logbook Workflow**:
+  - Removed "Needs Revision" and "Approved" statuses.
+  - Streamlined workflow to **Draft** -> **Published** (previously "Submitted").
+  - Removed approval requirement; Published logbooks are immediately visible to the team.
+  - Updated UI text from "Ajukan Review" to **"Publish"**.
+- **Access Control**:
+  - "Published" logbooks are now readable by all team members without waiting for leader approval.
+- **UI/UX Improvements**:
+  - Fixed scrolling issues within the Logbook Detail modal for better readability.
+  - Refactored `LogbookEditModal` to use the new conflict-aware form component.
+
+### Removed
+
+- **Review System**:
+  - Removed `reviewLogbook` service function and related UI components (Approve/Reject buttons).
+  - Cleaned up unused status enums and validation logic related to approvals.
+
 ## [1.10.0] - 2026-02-11
 
 ### Added

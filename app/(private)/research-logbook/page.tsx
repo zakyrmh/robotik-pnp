@@ -4,7 +4,6 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import {
   BookMarked,
   Plus,
-  Calendar,
   Clock,
   Filter,
   Search,
@@ -100,36 +99,36 @@ function StatsCards({ stats }: StatsCardProps) {
         </CardContent>
       </Card>
 
-      <Card className="bg-linear-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/50 dark:to-amber-900/30 border-amber-200/50">
+      <Card className="bg-linear-to-br from-slate-50 to-slate-100/50 dark:from-slate-950/50 dark:to-slate-900/30 border-slate-200/50">
         <CardContent className="pt-4 pb-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-amber-500/10 rounded-lg">
-              <Calendar className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            <div className="p-2 bg-slate-500/10 rounded-lg">
+              <FileText className="h-5 w-5 text-slate-600 dark:text-slate-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">
-                {stats.entriesByStatus.submitted}
+              <p className="text-2xl font-bold text-slate-700 dark:text-slate-300">
+                {stats.entriesByStatus.draft}
               </p>
-              <p className="text-xs text-amber-600/70 dark:text-amber-400/70">
-                Menunggu Review
+              <p className="text-xs text-slate-600/70 dark:text-slate-400/70">
+                Draft
               </p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <Card className="bg-linear-to-br from-purple-50 to-purple-100/50 dark:from-purple-950/50 dark:to-purple-900/30 border-purple-200/50">
+      <Card className="bg-linear-to-br from-indigo-50 to-indigo-100/50 dark:from-indigo-950/50 dark:to-indigo-900/30 border-indigo-200/50">
         <CardContent className="pt-4 pb-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-500/10 rounded-lg">
-              <FileText className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            <div className="p-2 bg-indigo-500/10 rounded-lg">
+              <FileText className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">
-                {stats.entriesByStatus.approved}
+              <p className="text-2xl font-bold text-indigo-700 dark:text-indigo-300">
+                {stats.entriesByStatus.submitted}
               </p>
-              <p className="text-xs text-purple-600/70 dark:text-purple-400/70">
-                Disetujui
+              <p className="text-xs text-indigo-600/70 dark:text-indigo-400/70">
+                Published
               </p>
             </div>
           </div>
@@ -186,10 +185,6 @@ export default function ResearchLogbookPage() {
     );
     return teamAssignment?.managementPosition || null;
   }, [userTeam, assignments]);
-
-  const isLeader = useMemo(() => {
-    return ["chairman", "vice_chairman"].includes(userRolePosition || "");
-  }, [userRolePosition]);
 
   // Fetch data function
   const fetchData = useCallback(async () => {
@@ -407,9 +402,7 @@ export default function ResearchLogbookPage() {
             <SelectContent>
               <SelectItem value="all">Semua Status</SelectItem>
               <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="submitted">Menunggu Review</SelectItem>
-              <SelectItem value="needs_revision">Perlu Revisi</SelectItem>
-              <SelectItem value="approved">Disetujui</SelectItem>
+              <SelectItem value="submitted">Published</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -501,9 +494,7 @@ export default function ResearchLogbookPage() {
             ? { uid: user.uid, displayName: userProfile.fullName }
             : null
         }
-        isLeader={isLeader}
         userTeam={userTeam}
-        onUpdate={handleDataUpdate}
       />
 
       {/* Logbook Edit Modal */}
