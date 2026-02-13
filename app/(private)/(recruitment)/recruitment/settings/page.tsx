@@ -157,8 +157,11 @@ export default function RecruitmentSettingsPage() {
   });
 
   const isRegistrationOpen = watch("isRegistrationOpen");
+  const isInternshipOpen = watch("isInternshipOpen");
   const scheduleOpenDate = watch("schedule.openDate");
   const scheduleCloseDate = watch("schedule.closeDate");
+  const internshipOpenDate = watch("internshipSchedule.openDate");
+  const internshipCloseDate = watch("internshipSchedule.closeDate");
 
   const hasAccess = roles?.isSuperAdmin || roles?.isRecruiter;
 
@@ -187,6 +190,12 @@ export default function RecruitmentSettingsPage() {
             openDate: settings.schedule.openDate,
             closeDate: settings.schedule.closeDate,
           },
+          internshipSchedule: {
+            openDate: settings.internshipSchedule?.openDate || new Date(),
+            closeDate:
+              settings.internshipSchedule?.closeDate ||
+              new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          },
           contactPerson:
             settings.contactPerson.length > 0
               ? settings.contactPerson
@@ -209,6 +218,7 @@ export default function RecruitmentSettingsPage() {
               ? settings.eWallets
               : [{ provider: "", number: "", accountHolder: "" }],
           isRegistrationOpen: settings.isRegistrationOpen,
+          isInternshipOpen: settings.isInternshipOpen || false,
           announcementMessage: settings.announcementMessage || "",
         });
       } else {
@@ -501,6 +511,113 @@ export default function RecruitmentSettingsPage() {
                     })
                   }
                 />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Pengaturan Magang */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CalendarIcon className="w-5 h-5 text-purple-600" />
+                Pengaturan Magang
+              </CardTitle>
+              <CardDescription>
+                Atur jadwal dan status pendaftaran magang
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                <div className="space-y-0.5">
+                  <Label htmlFor="isInternshipOpen" className="cursor-pointer">
+                    Buka Magang
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    Switch untuk membuka/menutup pendaftaran magang
+                  </p>
+                </div>
+                <Switch
+                  id="isInternshipOpen"
+                  checked={isInternshipOpen}
+                  onCheckedChange={(checked) =>
+                    setValue("isInternshipOpen", checked, {
+                      shouldDirty: true,
+                    })
+                  }
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Tanggal Buka Magang</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !internshipOpenDate && "text-muted-foreground",
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {internshipOpenDate ? (
+                        format(internshipOpenDate, "PPP", { locale: localeId })
+                      ) : (
+                        <span>Pilih tanggal</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={internshipOpenDate}
+                      onSelect={(date) =>
+                        date &&
+                        setValue("internshipSchedule.openDate", date, {
+                          shouldDirty: true,
+                        })
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Tanggal Tutup Magang</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !internshipCloseDate && "text-muted-foreground",
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {internshipCloseDate ? (
+                        format(internshipCloseDate, "PPP", { locale: localeId })
+                      ) : (
+                        <span>Pilih tanggal</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={internshipCloseDate}
+                      onSelect={(date) =>
+                        date &&
+                        setValue("internshipSchedule.closeDate", date, {
+                          shouldDirty: true,
+                        })
+                      }
+                      disabled={(date) =>
+                        internshipOpenDate ? date < internshipOpenDate : false
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
             </CardContent>
           </Card>

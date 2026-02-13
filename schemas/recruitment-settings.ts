@@ -124,11 +124,17 @@ export const RecruitmentSettingsSchema = z.object({
 
   // Kontrol Sistem
   isRegistrationOpen: z.boolean().default(false),
+  // [BARU] Kontrol Magang
+  isInternshipOpen: z.boolean().default(false),
+
   announcementMessage: z.string().optional().default(""),
 
   // Audit
   updatedAt: OptionalTimestampSchema,
   updatedBy: z.string().optional(),
+
+  // [BARU] Jadwal Magang (Optional agar backward compatible)
+  internshipSchedule: ScheduleSchema.optional(),
 });
 
 // ---------------------------------------------------------
@@ -150,6 +156,12 @@ export const RecruitmentSettingsFormSchema = z
 
     schedule: z.object({
       // Gunakan coerce agar string "2024-01-01" dari datepicker otomatis jadi Date object
+      openDate: z.coerce.date(),
+      closeDate: z.coerce.date(),
+    }),
+
+    // [BARU] Jadwal Magang
+    internshipSchedule: z.object({
       openDate: z.coerce.date(),
       closeDate: z.coerce.date(),
     }),
@@ -184,6 +196,8 @@ export const RecruitmentSettingsFormSchema = z
     eWallets: z.array(EWalletSchema).default([]),
 
     isRegistrationOpen: z.boolean(),
+    // [BARU] Toggle Magang
+    isInternshipOpen: z.boolean(),
 
     announcementMessage: z.string().optional(),
   })
@@ -194,6 +208,15 @@ export const RecruitmentSettingsFormSchema = z
         code: z.ZodIssueCode.custom,
         message: "Tanggal tutup tidak boleh sebelum tanggal buka",
         path: ["schedule", "closeDate"],
+      });
+    }
+
+    // [BARU] Validasi tanggal magang
+    if (data.internshipSchedule.closeDate < data.internshipSchedule.openDate) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Tanggal tutup magang tidak boleh sebelum tanggal buka",
+        path: ["internshipSchedule", "closeDate"],
       });
     }
   });
@@ -221,6 +244,10 @@ export const DEFAULT_RECRUITMENT_SETTINGS: RecruitmentSettingsFormData = {
   activeYear: "",
   registrationFee: 0,
   schedule: {
+    openDate: new Date(),
+    closeDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+  },
+  internshipSchedule: {
     openDate: new Date(),
     closeDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
   },
@@ -253,5 +280,6 @@ export const DEFAULT_RECRUITMENT_SETTINGS: RecruitmentSettingsFormData = {
     },
   ],
   isRegistrationOpen: false,
+  isInternshipOpen: false,
   announcementMessage: "",
 };

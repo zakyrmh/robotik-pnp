@@ -1,0 +1,64 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // =========================================================
+    // 1. HELPER FUNCTIONS
+    // =========================================================
+    
+    // Cek apakah user sudah login
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Menggunakan Custom Claims (Token) - Lebih cepat & hemat biaya
+    // Konsisten dengan firestore.rules
+    function isSuperAdmin() {
+      return isAuthenticated() && request.auth.token.isSuperAdmin == true;
+    }
+    
+    function isRecruiter() {
+      return isAuthenticated() && request.auth.token.isRecruiter == true;
+    }
+
+    // Cek apakah user adalah pemilik folder (berdasarkan userId di path)
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Gabungan
+    function isAdminOrRecruiter() {
+      return isSuperAdmin() || isRecruiter();
+    }
+
+    // =========================================================
+    // 2. MATCH RULES
+    // =========================================================
+
+    // Profile Photos & KTM
+    // Path: users/{userId}/...
+    match /users/{userId}/{allPaths=**} {
+      // READ: Authenticated users (untuk direktori)
+      allow read: if isAuthenticated();
+      // WRITE: Owner atau Admin
+      allow write: if isOwner(userId) || isSuperAdmin();
+    }
+    
+    // Materials (Materi)
+    match /materials/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAdminOrRecruiter();
+    }
+    
+    // Registration Docs & Logbooks
+    // Path: registration_docs/{period}/{userId}/...
+    // Logbook menggunakan period "LOGBOOK"
+    match /registration_docs/{period}/{userId}/{allPaths=**} {
+      // READ: Owner atau Admin/Recruiter
+      allow read: if isOwner(userId) || isAdminOrRecruiter();
+      
+      // WRITE: Owner (Upload/Delete own files) atau Admin/Recruiter
+      allow write: if isOwner(userId) || isAdminOrRecruiter();
+    }
+  }
+}

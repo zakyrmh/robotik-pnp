@@ -139,3 +139,13 @@ export function uploadRegistrationImage(
     }
   });
 }
+export async function deleteStorageFile(url: string): Promise<void> {
+  try {
+    const fileRef = ref(storage, url);
+    await deleteObject(fileRef);
+    console.log(`[Storage] Deleted file: ${url}`);
+  } catch (error) {
+    console.warn(`[Storage] Failed to delete file ${url}:`, error);
+    // Ignore error if file not found, etc.
+  }
+}

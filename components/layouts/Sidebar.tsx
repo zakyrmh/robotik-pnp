@@ -101,6 +101,12 @@ const MENU_GROUPS: MenuGroup[] = [
         icon: UsersRound,
         requiredRoles: ["isRecruiter", "isSuperAdmin"],
       },
+      {
+        href: "/internship-management",
+        label: "Magang",
+        icon: Briefcase,
+        requiredRoles: ["isRecruiter", "isSuperAdmin"],
+      },
       // Student Access
       {
         href: "/learning",

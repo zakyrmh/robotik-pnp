@@ -70,6 +70,12 @@ function formDataToFirestore(
       accountHolder: wallet.accountHolder,
     })),
     isRegistrationOpen: data.isRegistrationOpen,
+    // [BARU] Mapped to Firestore
+    isInternshipOpen: data.isInternshipOpen,
+    internshipSchedule: {
+      openDate: dateToTimestamp(data.internshipSchedule.openDate),
+      closeDate: dateToTimestamp(data.internshipSchedule.closeDate),
+    },
     announcementMessage: data.announcementMessage || "",
     updatedAt: serverTimestamp(),
     updatedBy: userId,

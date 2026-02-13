@@ -14,27 +14,42 @@ import {
   type DepartmentInternshipRegistration,
 } from "@/schemas/internship";
 
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
+import { getRecruitmentSettings } from "@/lib/firebase/services/settings-service";
+import { RecruitmentSettings } from "@/schemas/recruitment-settings";
+import { Clock, Lock } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+
 export default function InternshipPage() {
   const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = React.useState(true);
 
-  // State to track registration progress
+  // State
   const [hasRolling, setHasRolling] = React.useState(false);
   const [hasDepartment, setHasDepartment] = React.useState(false);
+  const [settings, setSettings] = React.useState<RecruitmentSettings | null>(
+    null,
+  );
 
-  // Fetch internship status on load
+  // Fetch Data
   React.useEffect(() => {
-    async function checkStatus() {
-      if (!user) return; // Wait for auth
+    async function fetchData() {
+      if (!user) return;
       try {
-        const status = await internshipService.checkRegistrationStatus(
-          user.uid,
-        );
+        const [status, fetchedSettings] = await Promise.all([
+          internshipService.checkRegistrationStatus(user.uid),
+          getRecruitmentSettings(),
+        ]);
+
         setHasRolling(status.hasRolling);
         setHasDepartment(status.hasDepartment);
+        setSettings(fetchedSettings);
       } catch (error) {
-        console.error("Error fetching internship status:", error);
-        toast.error("Gagal memuat status magang.");
+        console.error("Error fetching internship data:", error);
+        toast.error("Gagal memuat data magang.");
       } finally {
         setLoading(false);
       }
@@ -42,14 +57,14 @@ export default function InternshipPage() {
 
     if (!authLoading) {
       if (user) {
-        checkStatus();
+        fetchData();
       } else {
-        setLoading(false); // No user, stop loading (middleware handles protection usually)
+        setLoading(false);
       }
     }
   }, [user, authLoading]);
 
-  // Handle Rolling Internship Submission
+  // Handle Submissions
   const handleRollingSubmit = async (
     data: Omit<
       RollingInternshipRegistration,
@@ -61,14 +76,12 @@ export default function InternshipPage() {
       await internshipService.submitRollingInternship(user.uid, data);
       toast.success("Pendaftaran Magang Divisi Rolling berhasil!");
       setHasRolling(true);
-      // Automatically show next form
     } catch (error) {
       console.error(error);
-      throw error; // Re-throw to be caught by form
+      throw error;
     }
   };
 
-  // Handle Department Internship Submission
   const handleDepartmentSubmit = async (
     data: Omit<
       DepartmentInternshipRegistration,
@@ -80,13 +93,13 @@ export default function InternshipPage() {
       await internshipService.submitDepartmentInternship(user.uid, data);
       toast.success("Pendaftaran Magang Departemen berhasil!");
       setHasDepartment(true);
-      // Automatically show logbook
     } catch (error) {
       console.error(error);
       throw error;
     }
   };
 
+  // Loading State
   if (authLoading || loading) {
     return (
       <div className="container py-8 space-y-8">
@@ -96,8 +109,63 @@ export default function InternshipPage() {
     );
   }
 
-  // 1. If both registered, show Logbook
-  if (hasRolling && hasDepartment) {
+  // LOGIC: Check Registration Status
+  // If user has completed ANY registration step, show Logbook/Dashboard
+  // Or if they are in the middle of the process (Rolling done, Dept not done)
+  // we should check if they can proceed.
+  // However, user requirement: "Jika pendaftaran tutup dan user sudah daftar magang -> tampilkan halaman logbook"
+  // Interpret: "Sudah daftar" = hasRolling (at least).
+  const isRegistered = hasRolling;
+
+  if (isRegistered) {
+    // If they have Rolling but not Department, effectively they are in the "Logbook" view
+    // where they usually see their progress.
+    // If Department form is part of the flow, we should usually show it.
+    // But if closed, we fall back to Logbook/Status view.
+
+    // Check if Department registration is still possible (open)
+    // If open -> Show Department Form (if !hasDepartment)
+    // If closed -> Show Logbook (Status only)
+
+    // For now, let's keep simple: Show Logbook if both done, or show Department form if pending.
+    // BUT we must check if registration is closed for Department form.
+
+    // Let's rely on the requested logic: "If registration closed AND user already registered -> Logbook".
+    // Is "user registered" = hasRolling? Yes.
+
+    // Logic for "Registration Closed":
+    // 1. settings.isInternshipOpen is false
+    // 2. OR now > specific Close Date
+
+    const now = new Date();
+    const isOpen = settings?.isInternshipOpen ?? false;
+    const openDate = settings?.internshipSchedule?.openDate
+      ? settings.internshipSchedule.openDate
+      : null;
+    const closeDate = settings?.internshipSchedule?.closeDate
+      ? settings.internshipSchedule.closeDate
+      : null;
+
+    const isClosed =
+      !isOpen || (closeDate && now > closeDate) || (openDate && now < openDate);
+
+    // Specific case: Rolling done, Dept pending, but Closed -> Logbook
+    // Specific case: Rolling done, Dept pending, Open -> Dept Form
+    if (hasRolling && !hasDepartment && !isClosed) {
+      return (
+        <div className="container py-8 flex flex-col items-center">
+          <div className="mb-8 text-center space-y-2">
+            <h1 className="text-3xl font-bold">Pendaftaran Magang</h1>
+            <p className="text-muted-foreground">
+              Langkah 2 dari 2: Magang Departemen
+            </p>
+          </div>
+          <DepartmentInternshipForm onSubmit={handleDepartmentSubmit} />
+        </div>
+      );
+    }
+
+    // Default for registered users (Complete or Closed-Pending): Logbook
     return (
       <div className="container py-8">
         <InternshipLogbook />
@@ -105,35 +173,114 @@ export default function InternshipPage() {
     );
   }
 
-  // 2. If rolling not registered, show Rolling Form
-  if (!hasRolling) {
+  // LOGIC: User NOT Registered (No Rolling)
+  // Check Dates and Toggle
+  const now = new Date();
+  const isOpen = settings?.isInternshipOpen ?? false;
+  // Fallback dates if not set (should be set if Schema is followed)
+  const openDate = settings?.internshipSchedule?.openDate;
+  const closeDate = settings?.internshipSchedule?.closeDate;
+
+  // Case 1: Not Open Yet (Future Date)
+  if (openDate && now < openDate) {
     return (
-      <div className="container py-8 flex flex-col items-center">
-        <div className="mb-8 text-center space-y-2">
-          <h1 className="text-3xl font-bold">Pendaftaran Magang</h1>
-          <p className="text-muted-foreground">
-            Langkah 1 dari 2: Magang Divisi Rolling
-          </p>
+      <div className="container py-16 flex flex-col items-center justify-center min-h-[60vh]">
+        <div className="max-w-md w-full text-center space-y-6">
+          <div className="mx-auto w-20 h-20 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+            <Clock className="w-10 h-10 text-blue-600 dark:text-blue-400" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold">Pendaftaran Belum Dibuka</h1>
+            <p className="text-muted-foreground">
+              Mohon bersabar, pendaftaran magang akan segera dibuka. Catat
+              tanggalnya!
+            </p>
+          </div>
+          <Card className="border-dashed">
+            <CardContent className="pt-6">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="space-y-1">
+                  <p className="text-muted-foreground">Dibuka</p>
+                  <p className="font-semibold">
+                    {format(openDate, "dd MMMM yyyy", { locale: id })}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {format(openDate, "HH:mm")} WIB
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-muted-foreground">Ditutup</p>
+                  <p className="font-semibold">
+                    {closeDate
+                      ? format(closeDate, "dd MMMM yyyy", { locale: id })
+                      : "-"}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {closeDate ? format(closeDate, "HH:mm") + " WIB" : ""}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Button asChild variant="outline">
+            <Link href="/dashboard">Kembali ke Dashboard</Link>
+          </Button>
         </div>
-        <RollingInternshipForm onSubmit={handleRollingSubmit} />
       </div>
     );
   }
 
-  // 3. If rolling registered but department not, show Department Form
-  if (hasRolling && !hasDepartment) {
+  // Case 2: Closed (Past Date OR Manually Closed)
+  // Note: If isOpen is FALSE, we treat as Closed regardless of date (Master Switch)
+  // OR if Date has passed.
+  if (!isOpen || (closeDate && now > closeDate)) {
     return (
-      <div className="container py-8 flex flex-col items-center">
-        <div className="mb-8 text-center space-y-2">
-          <h1 className="text-3xl font-bold">Pendaftaran Magang</h1>
-          <p className="text-muted-foreground">
-            Langkah 2 dari 2: Magang Departemen
-          </p>
+      <div className="container py-16 flex flex-col items-center justify-center min-h-[60vh]">
+        <div className="max-w-md w-full text-center space-y-6">
+          <div className="mx-auto w-20 h-20 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center">
+            <Lock className="w-10 h-10 text-amber-600 dark:text-amber-400" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold">Pendaftaran Ditutup</h1>
+            <p className="text-muted-foreground leading-relaxed">
+              Mohon maaf, pendaftaran magang saat ini telah ditutup. Apabila
+              Anda memiliki kendala atau pertanyaan lebih lanjut, silakan
+              hubungi admin atau narahubung terkait.
+            </p>
+          </div>
+          <div className="flex flex-col gap-2 w-full">
+            {settings?.contactPerson?.[0] && (
+              <Button
+                asChild
+                className="w-full bg-green-600 hover:bg-green-700"
+              >
+                <Link
+                  href={`https://wa.me/${settings.contactPerson[0].whatsapp}`}
+                  target="_blank"
+                >
+                  Hubungi Admin ({settings.contactPerson[0].name})
+                </Link>
+              </Button>
+            )}
+            <Button asChild variant="outline" className="w-full">
+              <Link href="/dashboard">Kembali ke Dashboard</Link>
+            </Button>
+          </div>
         </div>
-        <DepartmentInternshipForm onSubmit={handleDepartmentSubmit} />
       </div>
     );
   }
 
-  return null;
+  // Case 3: Open and Not Registered -> Show Rolling Form
+  return (
+    <div className="container py-8 flex flex-col items-center">
+      <div className="mb-8 text-center space-y-2">
+        <h1 className="text-3xl font-bold">Pendaftaran Magang</h1>
+        <p className="text-muted-foreground">
+          Langkah 1 dari 2: Magang Divisi Rolling
+        </p>
+      </div>
+      <RollingInternshipForm onSubmit={handleRollingSubmit} />
+    </div>
+  );
 }

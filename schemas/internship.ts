@@ -144,15 +144,28 @@ export const DepartmentInternshipRegistrationSchema = z.object({
 // ---------------------------------------------------------
 
 export const InternshipLogbookEntrySchema = z.object({
-  id: z.string(),
+  id: z.string().optional(),
   userId: z.string(),
   internshipType: z.enum(["rolling", "department", "fixed"]),
 
-  date: TimestampSchema,
-  activity: z.string().min(10, "Aktivitas harus dideskripsikan"),
-  documentationUrl: z.string().url().optional(), // URL foto/link
+  // [BARU] Konteks & Detail
+  targetDivision: z.string().min(1, "Divisi kegiatan wajib diisi"),
+  activityType: z.string().min(1, "Jenis kegiatan wajib diisi"), // e.g., "Mekanik", "Wiring", "Programming"
 
-  status: z.enum(["pending", "approved", "rejected"]).default("pending"),
+  date: TimestampSchema,
+  duration: z.coerce.number().min(1, "Durasi (menit) wajib diisi"),
+
+  activity: z.string().min(10, "Uraian kegiatan wajib diisi (min 10 karakter)"),
+  outcome: z.string().min(5, "Hasil/Capaian wajib diisi"),
+
+  documentationUrls: z
+    .array(z.string().url())
+    .min(1, "Minimal 1 foto dokumentasi")
+    .max(5, "Maksimal 5 foto dokumentasi"),
+
+  status: z
+    .enum(["draft", "submitted", "approved", "rejected"])
+    .default("draft"),
   statusReason: z.string().optional(),
 
   createdAt: TimestampSchema,

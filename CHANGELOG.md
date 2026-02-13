@@ -5,6 +5,23 @@ All significant changes to this project will be documented in this file.
 This format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-02-13
+
+### Added
+
+- **Internship Logbook System**:
+  - **Complete Feature**: Creation, editing, and deletion of logbook entries (CRUD).
+  - **Evidence Upload**: Image uploading with client-side compression.
+  - **Security**: Firestore and Storage rules for user data protection.
+  - **UX**: Deletion confirmation via `AlertDialog` and status badges.
+
+### Fixed
+
+- **System Stability**:
+  - Configured `next.config.ts` for secure image loading (`remotePatterns`).
+  - Resolved type schema mismatches (Date/Timestamp).
+  - Fixed permission errors.
+
 ## [1.6.0] - 2026-02-13
 
 ### Added

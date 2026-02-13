@@ -1,10 +1,24 @@
-import { doc, getDoc, setDoc, QueryDocumentSnapshot } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  addDoc,
+  collection,
+  getDocs,
+  query,
+  where,
+  QueryDocumentSnapshot,
+  Timestamp,
+  deleteDoc,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
+import { deleteStorageFile } from "@/lib/firebase/services/storage-service";
 import {
   RollingInternshipRegistrationSchema,
   DepartmentInternshipRegistrationSchema,
   type RollingInternshipRegistration,
   type DepartmentInternshipRegistration,
+  type InternshipLogbookEntry,
 } from "@/schemas/internship";
 
 const ROLLING_COLLECTION = "internship_rolling_registrations";
@@ -144,5 +158,83 @@ export const internshipService = {
       rollingData: rolling,
       departmentData: department,
     };
+  },
+
+  /**
+   * Get ALL Rolling Internship Registrations
+   */
+  async getAllRollingInternships(): Promise<RollingInternshipRegistration[]> {
+    const ref = collection(db, ROLLING_COLLECTION).withConverter(
+      rollingConverter,
+    );
+    const snap = await getDocs(ref);
+    return snap.docs.map((doc) => doc.data());
+  },
+
+  /**
+   * Get ALL Department Internship Registrations
+   */
+  async getAllDepartmentInternships(): Promise<
+    DepartmentInternshipRegistration[]
+  > {
+    const ref = collection(db, DEPT_COLLECTION).withConverter(deptConverter);
+    const snap = await getDocs(ref);
+    return snap.docs.map((doc) => doc.data());
+  },
+
+  /**
+   * Add Logbook Entry
+   */
+  async addLogbookEntry(
+    entry: Omit<InternshipLogbookEntry, "id">,
+  ): Promise<InternshipLogbookEntry> {
+    const ref = collection(db, "internship_logbooks");
+    const docRef = await addDoc(ref, entry);
+    // update with ID
+    await setDoc(docRef, { ...entry, id: docRef.id });
+    return { ...entry, id: docRef.id };
+  },
+
+  /**
+   * Delete Logbook Entry
+   */
+  async deleteLogbookEntry(
+    logbookId: string,
+    documentationUrls: string[],
+  ): Promise<void> {
+    if (documentationUrls?.length) {
+      await Promise.all(documentationUrls.map((url) => deleteStorageFile(url)));
+    }
+    const ref = doc(db, "internship_logbooks", logbookId);
+    await deleteDoc(ref);
+  },
+
+  /**
+   * Get User Logbook Entries
+   */
+  async getLogbookEntries(userId: string): Promise<InternshipLogbookEntry[]> {
+    const ref = collection(db, "internship_logbooks");
+    const q = query(ref, where("userId", "==", userId));
+    const snap = await getDocs(q);
+
+    // Need to parse/convert timestamps manually or use converter
+    return snap.docs.map((doc) => {
+      const data = doc.data() as unknown as InternshipLogbookEntry & {
+        date: Timestamp;
+        createdAt: Timestamp;
+        updatedAt: Timestamp;
+      };
+      return {
+        id: doc.id,
+        ...data,
+        date: data.date?.toDate ? data.date.toDate() : new Date(data.date),
+        createdAt: data.createdAt?.toDate
+          ? data.createdAt.toDate()
+          : new Date(data.createdAt),
+        updatedAt: data.updatedAt?.toDate
+          ? data.updatedAt.toDate()
+          : new Date(data.updatedAt),
+      } as InternshipLogbookEntry;
+    });
   },
 };
