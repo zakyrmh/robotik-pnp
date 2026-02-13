@@ -5,6 +5,32 @@ All significant changes to this project will be documented in this file.
 This format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-02-13
+
+### Added
+
+- **Internship Registration System**:
+  - Implemented comprehensive internship registration flow for Caang members.
+  - **Rolling Division Internship**:
+    - Interactive drag-and-drop form (`RollingInternshipForm`) for prioritizing role choices (Mechanic, Wiring, Programmer).
+    - Validation ensuring unique role selection and distinct division choices.
+    - Zod schema `RollingInternshipRegistrationSchema` for robust data validation.
+  - **Department Internship**:
+    - Form (`DepartmentInternshipForm`) for selecting department fields (Kestari, Metrolap, Infokom, etc.).
+    - Zod schema `DepartmentInternshipRegistrationSchema` for validation.
+  - **Internship Logbook**:
+    - Placeholder component `InternshipLogbook` for future logbook feature.
+  - **Internship Service**:
+    - `internship-service.ts` to handle Firestore operations (submit, get status) for both registration types.
+    - Firestore Security Rules updated to secure `internship_rolling_registrations` and `internship_department_registrations` collections.
+
+### Security
+
+- **Firestore Rules**:
+  - Added specific rules for `internship_rolling_registrations` and `internship_department_registrations`.
+  - Enforced `isOwner` check for create/read/update operations, ensuring users can only access their own data.
+  - Restricted delete operations to Admins/Recruiters only.
+
 ## [1.5.3] - 2026-01-30
 
 ### Added

@@ -21,6 +21,7 @@ import {
   ChevronLeft,
   ChevronRight,
   SlidersHorizontal,
+  Briefcase,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { UserSystemRoles } from "@/schemas/users";
@@ -112,6 +113,13 @@ const MENU_GROUPS: MenuGroup[] = [
         href: "/presence",
         label: "Presensi Saya",
         icon: UserCheck,
+        requiredRoles: ["isCaang"],
+        checkVerified: true,
+      },
+      {
+        href: "/internship",
+        label: "Magang",
+        icon: Briefcase,
         requiredRoles: ["isCaang"],
         checkVerified: true,
       },
@@ -227,7 +235,7 @@ function SidebarInner({
   // Handle navigation with unsaved changes check
   const handleNavigation = (
     e: React.MouseEvent<HTMLAnchorElement>,
-    href: string
+    href: string,
   ) => {
     e.preventDefault();
 
@@ -248,13 +256,13 @@ function SidebarInner({
       <div
         className={cn(
           "h-[72px] flex items-center border-b border-slate-200 dark:border-slate-800 transition-all duration-300 relative",
-          isCollapsed ? "justify-center px-0" : "justify-between px-4"
+          isCollapsed ? "justify-center px-0" : "justify-between px-4",
         )}
       >
         <div
           className={cn(
             "flex items-center gap-3 overflow-hidden transition-all duration-300",
-            isCollapsed ? "w-0 opacity-0 hidden" : "w-auto opacity-100"
+            isCollapsed ? "w-0 opacity-0 hidden" : "w-auto opacity-100",
           )}
         >
           <div className="relative w-8 h-8 shrink-0">
@@ -276,7 +284,7 @@ function SidebarInner({
             onClick={toggleCollapse}
             className={cn(
               "p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-colors z-20",
-              isCollapsed ? "mx-auto" : ""
+              isCollapsed ? "mx-auto" : "",
             )}
             title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
           >
@@ -325,7 +333,7 @@ function SidebarInner({
                       isActive
                         ? "bg-blue-50 text-blue-600 dark:bg-blue-950/50 dark:text-blue-400"
                         : "text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200",
-                      isCollapsed && "justify-center px-0"
+                      isCollapsed && "justify-center px-0",
                     )}
                   >
                     <item.icon
@@ -334,7 +342,7 @@ function SidebarInner({
                         isCollapsed ? "w-6 h-6" : "w-5 h-5",
                         isActive
                           ? "text-blue-600 dark:text-blue-400"
-                          : "text-slate-500 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300"
+                          : "text-slate-500 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300",
                       )}
                     />
 
@@ -435,7 +443,7 @@ export function Sidebar() {
         animate={isCollapsed ? "collapsed" : "expanded"}
         variants={sidebarVariants}
         className={cn(
-          "hidden lg:flex flex-col h-screen sticky top-0 z-30 shrink-0 shadow-sm border-r border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 transition-colors duration-300"
+          "hidden lg:flex flex-col h-screen sticky top-0 z-30 shrink-0 shadow-sm border-r border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 transition-colors duration-300",
         )}
       >
         <SidebarInner
