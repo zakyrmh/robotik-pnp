@@ -139,6 +139,71 @@ export function uploadRegistrationImage(
     }
   });
 }
+/**
+ * Upload logbook documentation image to Firebase Storage
+ * Path: internship/documentations/{userId}/{timestamp}.jpg
+ */
+export async function uploadInternshipDocumentation(
+  file: File,
+  userId: string,
+  onProgress?: (progress: number, stage: "compressing" | "uploading") => void,
+): Promise<string> {
+  return new Promise(async (resolve, reject) => {
+    try {
+      // 1. Compress image
+      if (onProgress) onProgress(0, "compressing");
+      const imageCompression = (await import("browser-image-compression"))
+        .default;
+
+      const compressedFile = await imageCompression(file, {
+        maxSizeMB: 0.5, // 500KB max
+        maxWidthOrHeight: 1280,
+        useWebWorker: true,
+        fileType: "image/jpeg",
+      });
+
+      if (onProgress) onProgress(100, "compressing");
+
+      // 2. Upload to Firebase Storage
+      if (onProgress) onProgress(0, "uploading");
+      const timestamp = Date.now();
+      const path = `internship/documentations/${userId}/${timestamp}.jpg`;
+      const storageRef = ref(storage, path);
+
+      const uploadTask = uploadBytesResumable(storageRef, compressedFile);
+
+      uploadTask.on(
+        "state_changed",
+        (snapshot) => {
+          const progress =
+            (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          if (onProgress) onProgress(progress, "uploading");
+        },
+        (error) => {
+          console.error("[Storage] Upload failed:", error);
+          reject(error);
+        },
+        async () => {
+          const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+          console.log(`[Storage] Upload success: ${path}`);
+          resolve(downloadUrl);
+        },
+      );
+    } catch (error) {
+      console.error("[Storage] Upload failed:", error);
+      reject(error);
+    }
+  });
+}
+
+/**
+ * Delete multiple storage files (for batch deletion)
+ */
+export async function deleteStorageFiles(urls: string[]): Promise<void> {
+  const deletePromises = urls.map((url) => deleteStorageFile(url));
+  await Promise.allSettled(deletePromises);
+}
+
 export async function deleteStorageFile(url: string): Promise<void> {
   try {
     const fileRef = ref(storage, url);

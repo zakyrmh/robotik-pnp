@@ -22,8 +22,10 @@ import {
   FileText,
   Pencil,
   Trash2,
+  Archive,
 } from "lucide-react";
 import { InternshipLogbookModal } from "./InternshipLogbookModal";
+import { InternshipLogbookDetailModal } from "./InternshipLogbookDetailModal";
 import { internshipService } from "@/lib/firebase/services/internship-service";
 import { useAuth } from "@/hooks/useAuth";
 import type { InternshipLogbookEntry } from "@/schemas/internship";
@@ -42,6 +44,9 @@ export function InternshipLogbook() {
   >(undefined);
   const [entryToDelete, setEntryToDelete] =
     useState<InternshipLogbookEntry | null>(null);
+  const [selectedEntry, setSelectedEntry] =
+    useState<InternshipLogbookEntry | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
 
   const fetchEntries = React.useCallback(async () => {
     if (!user) return;
@@ -65,13 +70,13 @@ export function InternshipLogbook() {
   const handleAddEntry = async (data: InternshipLogbookEntry) => {
     if (!user) return;
     try {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { id, ...entryData } = data;
-
-      if (editingEntry) {
-        // Placeholder for update logic, currently adding new entry as per previous status
-        await internshipService.addLogbookEntry(entryData);
+      if (editingEntry && data.id) {
+        // Update existing logbook entry
+        await internshipService.updateLogbookEntry(data);
       } else {
+        // Create new logbook entry
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { id, ...entryData } = data;
         await internshipService.addLogbookEntry(entryData);
       }
       toast.success(
@@ -93,14 +98,11 @@ export function InternshipLogbook() {
     if (!user || !entryToDelete?.id) return;
 
     try {
-      await internshipService.deleteLogbookEntry(
-        entryToDelete.id,
-        entryToDelete.documentationUrls || [],
-      );
-      toast.success("Logbook dihapus");
+      await internshipService.softDeleteLogbook(entryToDelete.id);
+      toast.success("Logbook dipindahkan ke sampah");
       fetchEntries();
     } catch {
-      toast.error("Gagal menghapus logbook");
+      toast.error("Gagal memindahkan logbook");
     } finally {
       setEntryToDelete(null);
     }
@@ -120,6 +122,11 @@ export function InternshipLogbook() {
     setIsModalOpen(true);
   };
 
+  const openDetailModal = (entry: InternshipLogbookEntry) => {
+    setSelectedEntry(entry);
+    setIsDetailModalOpen(true);
+  };
+
   // derived stats
   const totalEntries = entries.length;
   const totalDurationMinutes = entries.reduce(
@@ -132,10 +139,18 @@ export function InternshipLogbook() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight">Logbook Magang</h2>
-        <Button onClick={openNewModal}>
-          <Plus className="mr-2 h-4 w-4" />
-          Tambah Log Harian
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" asChild>
+            <a href="/internship/trash">
+              <Archive className="mr-2 h-4 w-4" />
+              Sampah
+            </a>
+          </Button>
+          <Button onClick={openNewModal}>
+            <Plus className="mr-2 h-4 w-4" />
+            Tambah Log Harian
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -181,7 +196,11 @@ export function InternshipLogbook() {
         ) : (
           <div className="grid gap-4">
             {entries.map((entry) => (
-              <Card key={entry.id} className="overflow-hidden">
+              <Card
+                key={entry.id}
+                className="overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:border-blue-300 dark:hover:border-blue-700"
+                onClick={() => openDetailModal(entry)}
+              >
                 <CardContent className="p-0">
                   <div className="flex flex-col md:flex-row">
                     <div
@@ -259,7 +278,10 @@ export function InternshipLogbook() {
                               variant="ghost"
                               size="sm"
                               className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                              onClick={() => handleDeleteEntry(entry)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteEntry(entry);
+                              }}
                             >
                               <Trash2 className="w-4 h-4 mr-2" />
                               Hapus
@@ -267,7 +289,10 @@ export function InternshipLogbook() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => openEditModal(entry)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openEditModal(entry);
+                              }}
                             >
                               <Pencil className="w-4 h-4 mr-2" />
                               Edit Draft
@@ -292,25 +317,31 @@ export function InternshipLogbook() {
         isEditing={!!editingEntry}
       />
 
+      <InternshipLogbookDetailModal
+        isOpen={isDetailModalOpen}
+        onOpenChange={setIsDetailModalOpen}
+        entry={selectedEntry}
+      />
+
       <AlertDialog
         open={!!entryToDelete}
         onOpenChange={(open) => !open && setEntryToDelete(null)}
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Hapus Logbook?</AlertDialogTitle>
+            <AlertDialogTitle>Pindahkan ke Sampah?</AlertDialogTitle>
             <AlertDialogDescription>
-              Tindakan ini tidak dapat dibatalkan. Data logbook dan dokumentasi
-              akan dihapus permanen.
+              Logbook draft akan dipindahkan ke sampah. Anda masih bisa
+              memulihkannya nanti dari halaman Sampah.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDelete}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-orange-600 hover:bg-orange-700"
             >
-              Hapus
+              Pindahkan ke Sampah
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

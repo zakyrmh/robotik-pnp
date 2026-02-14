@@ -196,45 +196,147 @@ export const internshipService = {
   },
 
   /**
-   * Delete Logbook Entry
+   * Update Logbook Entry
    */
-  async deleteLogbookEntry(
+  async updateLogbookEntry(
+    entry: InternshipLogbookEntry,
+  ): Promise<InternshipLogbookEntry> {
+    if (!entry.id) {
+      throw new Error("Logbook ID is required for update");
+    }
+    const ref = doc(db, "internship_logbooks", entry.id);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { id, ...updateData } = entry;
+    await setDoc(ref, { ...updateData, id: entry.id, updatedAt: new Date() });
+    return entry;
+  },
+
+  /**
+   * Soft Delete Logbook Entry (mark as deleted, keep files in storage)
+   * Use this for draft deletion - files will be cleaned up on hard delete
+   */
+  async softDeleteLogbook(logbookId: string): Promise<void> {
+    const ref = doc(db, "internship_logbooks", logbookId);
+    await setDoc(
+      ref,
+      {
+        deletedAt: new Date(),
+        updatedAt: new Date(),
+      },
+      { merge: true },
+    );
+  },
+
+  /**
+   * Hard Delete Logbook Entry (remove from database AND delete files from storage)
+   * Use this for permanent deletion
+   */
+  async hardDeleteLogbook(
     logbookId: string,
     documentationUrls: string[],
   ): Promise<void> {
+    // 1. Delete files from storage
     if (documentationUrls?.length) {
       await Promise.all(documentationUrls.map((url) => deleteStorageFile(url)));
     }
+    // 2. Delete document from Firestore
     const ref = doc(db, "internship_logbooks", logbookId);
     await deleteDoc(ref);
   },
 
   /**
-   * Get User Logbook Entries
+   * Restore Logbook Entry (remove deletedAt timestamp)
+   */
+  async restoreLogbook(logbookId: string): Promise<void> {
+    const ref = doc(db, "internship_logbooks", logbookId);
+    await setDoc(
+      ref,
+      {
+        deletedAt: null,
+        updatedAt: new Date(),
+      },
+      { merge: true },
+    );
+  },
+
+  /**
+   * Get Deleted Logbook Entries (soft-deleted only)
+   */
+  async getDeletedLogbooks(userId: string): Promise<InternshipLogbookEntry[]> {
+    const ref = collection(db, "internship_logbooks");
+    const q = query(ref, where("userId", "==", userId));
+    const snap = await getDocs(q);
+
+    // Parse timestamps and filter for soft-deleted entries only
+    return snap.docs
+      .map((doc) => {
+        const data = doc.data() as unknown as InternshipLogbookEntry & {
+          date: Timestamp;
+          createdAt: Timestamp;
+          updatedAt: Timestamp;
+          deletedAt?: Timestamp;
+        };
+        return {
+          id: doc.id,
+          ...data,
+          date: data.date?.toDate ? data.date.toDate() : new Date(data.date),
+          createdAt: data.createdAt?.toDate
+            ? data.createdAt.toDate()
+            : new Date(data.createdAt),
+          updatedAt: data.updatedAt?.toDate
+            ? data.updatedAt.toDate()
+            : new Date(data.updatedAt),
+          deletedAt: data.deletedAt?.toDate
+            ? data.deletedAt.toDate()
+            : undefined,
+        } as InternshipLogbookEntry;
+      })
+      .filter((entry) => entry.deletedAt); // Only deleted entries
+  },
+
+  /**
+   * Delete Logbook Entry (Legacy - hard delete)
+   * @deprecated Use hardDeleteLogbook instead
+   */
+  async deleteLogbookEntry(
+    logbookId: string,
+    documentationUrls: string[],
+  ): Promise<void> {
+    return this.hardDeleteLogbook(logbookId, documentationUrls);
+  },
+
+  /**
+   * Get User Logbook Entries (excludes soft-deleted entries)
    */
   async getLogbookEntries(userId: string): Promise<InternshipLogbookEntry[]> {
     const ref = collection(db, "internship_logbooks");
     const q = query(ref, where("userId", "==", userId));
     const snap = await getDocs(q);
 
-    // Need to parse/convert timestamps manually or use converter
-    return snap.docs.map((doc) => {
-      const data = doc.data() as unknown as InternshipLogbookEntry & {
-        date: Timestamp;
-        createdAt: Timestamp;
-        updatedAt: Timestamp;
-      };
-      return {
-        id: doc.id,
-        ...data,
-        date: data.date?.toDate ? data.date.toDate() : new Date(data.date),
-        createdAt: data.createdAt?.toDate
-          ? data.createdAt.toDate()
-          : new Date(data.createdAt),
-        updatedAt: data.updatedAt?.toDate
-          ? data.updatedAt.toDate()
-          : new Date(data.updatedAt),
-      } as InternshipLogbookEntry;
-    });
+    // Parse timestamps and filter out soft-deleted entries
+    return snap.docs
+      .map((doc) => {
+        const data = doc.data() as unknown as InternshipLogbookEntry & {
+          date: Timestamp;
+          createdAt: Timestamp;
+          updatedAt: Timestamp;
+          deletedAt?: Timestamp;
+        };
+        return {
+          id: doc.id,
+          ...data,
+          date: data.date?.toDate ? data.date.toDate() : new Date(data.date),
+          createdAt: data.createdAt?.toDate
+            ? data.createdAt.toDate()
+            : new Date(data.createdAt),
+          updatedAt: data.updatedAt?.toDate
+            ? data.updatedAt.toDate()
+            : new Date(data.updatedAt),
+          deletedAt: data.deletedAt?.toDate
+            ? data.deletedAt.toDate()
+            : undefined,
+        } as InternshipLogbookEntry;
+      })
+      .filter((entry) => !entry.deletedAt); // Exclude soft-deleted entries
   },
 };

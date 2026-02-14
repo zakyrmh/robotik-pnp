@@ -50,10 +50,19 @@ service firebase.storage {
       allow write: if isAdminOrRecruiter();
     }
     
-    // Registration Docs & Logbooks
+    // Registration Docs
     // Path: registration_docs/{period}/{userId}/...
-    // Logbook menggunakan period "LOGBOOK"
     match /registration_docs/{period}/{userId}/{allPaths=**} {
+      // READ: Owner atau Admin/Recruiter
+      allow read: if isOwner(userId) || isAdminOrRecruiter();
+      
+      // WRITE: Owner (Upload/Delete own files) atau Admin/Recruiter
+      allow write: if isOwner(userId) || isAdminOrRecruiter();
+    }
+    
+    // Internship Logbook Documentation
+    // Path: internship/documentations/{userId}/...
+    match /internship/documentations/{userId}/{allPaths=**} {
       // READ: Owner atau Admin/Recruiter
       allow read: if isOwner(userId) || isAdminOrRecruiter();
       

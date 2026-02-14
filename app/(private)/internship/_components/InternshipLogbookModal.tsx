@@ -6,7 +6,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { Calendar as CalendarIcon, Loader2, Upload, X } from "lucide-react";
-import imageCompression from "browser-image-compression";
 import Image from "next/image";
 
 import {
@@ -49,7 +48,10 @@ import {
   type InternshipLogbookEntry,
 } from "@/schemas/internship";
 import { z } from "zod";
-import { uploadRegistrationImage } from "@/lib/firebase/services/storage-service";
+import {
+  uploadInternshipDocumentation,
+  deleteStorageFiles,
+} from "@/lib/firebase/services/storage-service";
 import { useAuth } from "@/hooks/useAuth";
 
 // Extend schema for form usage (files handling)
@@ -60,6 +62,7 @@ const formSchema = InternshipLogbookEntrySchema.omit({
   updatedAt: true,
   status: true,
   statusReason: true,
+  deletedAt: true, // Not user-editable
 }).extend({
   // Override files handling in form
   documentationFiles: z.any().optional(), // For file input handling
@@ -99,6 +102,7 @@ export function InternshipLogbookModal({
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [deletedUrls, setDeletedUrls] = useState<string[]>([]); // Track URLs to delete on submit
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
 
   // Update preview URLs when defaultValues change (e.g. opening edit modal)
@@ -164,8 +168,24 @@ export function InternshipLogbookModal({
     newPreviewUrls.splice(index, 1);
     setPreviewUrls(newPreviewUrls);
 
-    // Simplistic handling
-    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
+    // Update form state to reflect removed URL
+    const currentUrls = form.getValues("documentationUrls") || [];
+    const existingUrlsCount = currentUrls.length;
+
+    if (index < existingUrlsCount) {
+      // Removing an existing URL from defaultValues - mark for deletion
+      const urlToDelete = currentUrls[index];
+      setDeletedUrls((prev) => [...prev, urlToDelete]);
+      const newUrls = [...currentUrls];
+      newUrls.splice(index, 1);
+      form.setValue("documentationUrls", newUrls);
+    } else {
+      // Removing a newly uploaded file (not yet saved) - just remove from state
+      const uploadedFileIndex = index - existingUrlsCount;
+      setUploadedFiles((prev) =>
+        prev.filter((_, i) => i !== uploadedFileIndex),
+      );
+    }
   };
 
   const handleSubmit = async (
@@ -175,48 +195,34 @@ export function InternshipLogbookModal({
     if (!user) return;
     setIsSubmitting(true);
     try {
-      // 1. Upload new files
+      // 1. Delete removed files from storage
+      if (deletedUrls.length > 0) {
+        await deleteStorageFiles(deletedUrls);
+      }
+
+      // 2. Upload new files only (don't re-upload existing URLs)
       const newUrls: string[] = [];
       const currentUrls = form.getValues("documentationUrls") || []; // These are existing ones we kept
 
       for (const file of uploadedFiles) {
-        const compressedFile = await imageCompression(file, {
-          maxSizeMB: 0.5,
-          maxWidthOrHeight: 1280,
-          useWebWorker: true,
-        });
-
-        const downloadUrl = await uploadRegistrationImage(
-          compressedFile,
-          "payment_proof", // HACK: Type limitation
-          user.uid,
-          "LOGBOOK",
-        );
+        const downloadUrl = await uploadInternshipDocumentation(file, user.uid);
         newUrls.push(downloadUrl);
       }
 
-      // Merge current (existing) urls + new urls
-      // Note: This logic assumes 'currentUrls' in form state is accurate.
-      // If user removed an image, 'removeFile' should have updated form state.
-      // Since I didn't fully fix removeFile, this might duplicate or keep deleted ones if note careful.
-      // I will assume for now user only adds or we fix remove later.
+      // 3. Merge existing URLs + newly uploaded URLs
       const finalUrls = [...currentUrls, ...newUrls];
-      // Dedupe just in case
-      const uniqueUrls = Array.from(new Set(finalUrls));
 
-      if (uniqueUrls.length === 0) {
+      if (finalUrls.length === 0) {
         toast.error("Wajib sertakan minimal 1 foto dokumentasi");
         setIsSubmitting(false);
         return;
       }
 
-      // 2. Prepare Payload
-      // 'values' is FormValues (no id).
-      // We need to pass ID if editing.
+      // 4. Prepare Payload
       const payload = {
         ...values,
         duration: Number(values.duration),
-        documentationUrls: uniqueUrls,
+        documentationUrls: finalUrls,
         status: status,
         userId: user.uid,
         id: defaultValues?.id, // ID from props
@@ -232,6 +238,7 @@ export function InternshipLogbookModal({
       form.reset();
       setUploadedFiles([]);
       setPreviewUrls([]);
+      setDeletedUrls([]);
     } catch (error) {
       console.error("Error submitting logbook:", error);
       toast.error("Gagal menyimpan logbook");

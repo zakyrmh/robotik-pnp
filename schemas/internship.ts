@@ -170,6 +170,7 @@ export const InternshipLogbookEntrySchema = z.object({
 
   createdAt: TimestampSchema,
   updatedAt: TimestampSchema,
+  deletedAt: TimestampSchema.optional(), // For soft delete
 });
 
 // ---------------------------------------------------------

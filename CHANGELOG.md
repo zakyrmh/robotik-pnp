@@ -5,6 +5,107 @@ All significant changes to this project will be documented in this file.
 This format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-02-14
+
+### Added
+
+- **Internship Logbook System - Major Enhancement**:
+  - **Logbook Detail Modal**:
+    - Beautiful detail view modal with comprehensive information display.
+    - Status-specific styling with color-coded badges and icons.
+    - Image gallery with lightbox functionality (click to view full size).
+    - Metadata display (created at, updated at timestamps).
+    - Rejection reason display for rejected logbooks.
+  - **Trash System (Soft Delete)**:
+    - New `/internship/trash` page for managing deleted logbooks.
+    - Soft delete functionality: deleted logbooks are marked with `deletedAt` timestamp without removing files.
+    - Restore capability: recover soft-deleted logbooks back to main list.
+    - Permanent delete: hard delete with file removal from Firebase Storage.
+    - Visual trash indicator with orange color scheme.
+    - Deletion timestamp tracking.
+  - **Smart File Management**:
+    - Dedicated storage path: `internship/documentations/{userId}/`.
+    - Automatic image compression (max 500KB) before upload.
+    - Smart upload logic: only uploads new files, prevents duplicate uploads on edit.
+    - Batch file deletion with `deleteStorageFiles()` helper.
+    - File tracking: `deletedUrls` state to mark files for removal.
+
+- **Service Layer Enhancements** (`internship-service.ts`):
+  - `updateLogbookEntry()`: Updates existing logbook entries (fix duplicate bug).
+  - `softDeleteLogbook()`: Marks logbook as deleted without removing files.
+  - `hardDeleteLogbook()`: Permanently deletes logbook and all associated files.
+  - `restoreLogbook()`: Restores soft-deleted logbooks.
+  - `getDeletedLogbooks()`: Fetches only soft-deleted entries for trash view.
+  - Enhanced `getLogbookEntries()`: Filters out soft-deleted entries automatically.
+
+- **Storage Service** (`storage-service.ts`):
+  - `uploadInternshipDocumentation()`: Dedicated upload function for logbook files.
+  - `deleteStorageFiles()`: Batch deletion with error handling.
+  - Proper file path structure: `internship/documentations/{userId}/{timestamp}.jpg`.
+
+### Changed
+
+- **Logbook Entry Management**:
+  - Edit functionality now updates existing entries instead of creating duplicates.
+  - Delete behavior changed from hard delete to soft delete for better data recovery.
+  - File upload optimized: unchanged files are not re-uploaded during edit.
+  - Confirmation dialogs updated with clearer messaging for soft delete vs permanent delete.
+
+- **UI/UX Improvements**:
+  - Logbook cards now clickable to view details.
+  - Added "Sampah" (Trash) button in main logbook page header.
+  - Hover effects on cards with visual feedback (shadow, border color).
+  - Action buttons (Edit, Delete) use `stopPropagation` to prevent modal opening.
+  - Status badges with color coding (Draft: gray, Submitted: blue, Approved: green, Rejected: red).
+
+### Fixed
+
+- **Critical Bug**: Duplicate logbook entries created when editing and submitting drafts.
+  - Root cause: `handleAddEntry` always called `addLogbookEntry` even for edits.
+  - Solution: Now uses `updateLogbookEntry` when `editingEntry` is true and entry ID exists.
+  - Modal properly passes entry `id` to submit handler.
+
+- **File Upload Issues**:
+  - Wrong storage path: Files were uploaded to `registration_docs` instead of `internship/documentations`.
+  - Insufficient deletion logic: Files not properly cleaned up on logbook deletion.
+  - Duplicate uploads: Unchanged files were re-uploaded on every edit.
+
+### Security
+
+- **Firebase Storage Rules**:
+  - Added rules for `internship/documentations/{userId}/` path.
+  - Access control: Users can only read/write their own documentation files.
+  - Admin/Recruiter override: Full access to all internship documentation.
+
+- **Data Integrity**:
+  - Soft delete prevents accidental data loss.
+  - Permanent delete requires explicit confirmation with warning dialog.
+  - Files remain in storage during soft delete for potential recovery.
+
+### Schema
+
+- **Updated `InternshipLogbookEntrySchema`**:
+  - Added `deletedAt?: Date` field for soft delete tracking.
+  - Maintains backward compatibility with existing entries.
+
+### Technical Details
+
+- **Soft Delete Flow**:
+  - Sets `deletedAt` timestamp, files remain in storage.
+  - Entry filtered from main list but appears in trash.
+  - Can be restored (removes `deletedAt`) or permanently deleted.
+
+- **Hard Delete Flow**:
+  - Deletes all documentation files from Firebase Storage.
+  - Removes Firestore document completely.
+  - Irreversible action with confirmation dialog.
+
+- **File Upload Strategy**:
+  - Track new files in `uploadedFiles` state.
+  - Track deleted URLs in `deletedUrls` state.
+  - On submit: Delete marked files, upload new files, merge with existing URLs.
+  - Prevents duplicate uploads and ensures proper cleanup.
+
 ## [1.7.0] - 2026-02-13
 
 ### Added
