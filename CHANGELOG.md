@@ -5,6 +5,39 @@ All significant changes to this project will be documented in this file.
 This format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2026-02-20
+
+### Added
+
+- **Internship Schedule Management Enhancement**:
+  - **Schedule Visibility Control**: New `isScheduleVisible` flag to control when caang users can see their rolling schedules.
+  - **Internship Start Date**: Administrators can now set an official start date for the internship period.
+  - **Dynamic Date Calculation**: Rolling schedules now automatically calculate and store `startDate` and `endDate` for each week based on the set internship start date.
+  - **Live Countdown & Highlighting**:
+    - Automatic "Minggu Ini" (Active) highlighting based on system date.
+    - Real-time countdown for future weeks (e.g., "Mulai 3 hari lagi", "Mulai Besok").
+    - Visual indicators for past, current, and future weeks.
+  - **Integrated Date Ranges**: Date ranges are now displayed directly next to week badges in both admin and user views.
+
+- **Internship Logbook System - Universal Support**:
+  - **Multi-Type Logbook Support**: Form now supports creating logbook entries for both **Magang Divisi (Rolling)** and **Magang Departemen**.
+  - **Smart Selection**: Automatically filters division/field options based on the selected internship type.
+  - **Auto-Population**: For Department Internships, the system automatically fetches the user's registered field and pre-fills (and locks) the input to ensure data consistency.
+  - **Enhanced Visibility**: List and detail views now show the internship type and formatted division names.
+
+### Changed
+
+- **Schedule Generation Logic**: Modified `generateAllRollingSchedules` to overwrite existing schedules when regenerated, ensuring date range updates propagate to all users.
+- **Improved UI Aesthetics**:
+  - Dynamic highlight with pulse animation for active weeks.
+  - Better typography and spacing in schedule cards.
+  - Consistent naming and formatting for divisions and departments.
+
+### Fixed
+
+- **Registration State Management**: Fixed a bug where `entryToDelete` state was missing from the logbook component, restoring the soft-delete functionality.
+- **Import Errors**: Resolved missing type imports for registration schemas in the logbook component.
+
 ## [1.8.0] - 2026-02-14
 
 ### Added

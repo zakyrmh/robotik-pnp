@@ -140,7 +140,95 @@ export const DepartmentInternshipRegistrationSchema = z.object({
 });
 
 // ---------------------------------------------------------
-// 5. INTERNSHIP LOGBOOK SCHEMA (Basic structure)
+// 5. ROLLING INTERNSHIP SCHEDULE SCHEMA
+//    Collection: "internship_rolling_schedules"
+//    Menyimpan jadwal rotasi divisi per user caang.
+//
+//    SOP Magang Rolling:
+//    - Setiap caang harus magang di SEMUA 5 divisi KRI
+//    - Default 2 divisi per minggu (configurable oleh admin)
+//    - Minggu 1: divisi yang dipilih caang saat pendaftaran
+//    - Sisa divisi di-rotate otomatis ke minggu berikutnya
+//    - 1 divisi = 1 hari magang
+//    - Logbook = absensi magang
+// ---------------------------------------------------------
+
+/** Satu entri jadwal per minggu */
+export const RollingScheduleWeekEntrySchema = z.object({
+  weekNumber: z.number().int().min(1), // Minggu ke-N (1-indexed)
+  divisions: z.array(KriTeamEnum).min(1).max(5), // Daftar divisi minggu ini
+  startDate: TimestampSchema.optional(), // Tanggal mulai minggu ini
+  endDate: TimestampSchema.optional(), // Tanggal berakhir minggu ini
+});
+
+/** Schema utama jadwal rolling per user */
+export const RollingInternshipScheduleSchema = z.object({
+  id: z.string().optional(), // Firestore document ID (= userId)
+  userId: z.string(), // ID Caang
+
+  // Jadwal mingguan - berisi daftar divisi per minggu
+  // Contoh: Minggu 1 -> [krai, krsbi_b], Minggu 2 -> [krsbi_h, krsti], Minggu 3 -> [krsri]
+  weeks: z
+    .array(RollingScheduleWeekEntrySchema)
+    .min(1, "Minimal 1 minggu jadwal"),
+
+  // Total minggu (dihitung otomatis dari ceil(5 / divisionsPerWeek))
+  totalWeeks: z.number().int().min(1),
+
+  // Jumlah divisi per minggu (default 2, bisa diubah admin menjadi 3)
+  divisionsPerWeek: z.number().int().min(1).max(5).default(2),
+
+  // Divisi pilihan caang saat pendaftaran (dari RollingInternshipRegistration)
+  // Digunakan untuk menempatkan divisi pilihan di Minggu 1
+  primaryDivisionChoice: KriTeamEnum, // divisionChoice1
+  secondaryDivisionChoice: KriTeamEnum, // divisionChoice2
+
+  // Siapa yang generate jadwal
+  generatedBy: z.enum(["system", "admin"]).default("system"),
+  // Jika admin, simpan ID admin yang mengubah
+  modifiedByAdminId: z.string().optional(),
+
+  // Status jadwal
+  scheduleStatus: z
+    .enum([
+      "draft", // Jadwal belum final
+      "active", // Jadwal aktif/berjalan
+      "completed", // Semua minggu selesai
+    ])
+    .default("draft"),
+
+  // Minggu saat ini yang sedang berjalan (1-indexed, null jika belum mulai)
+  currentWeek: z.number().int().min(0).optional(),
+
+  createdAt: TimestampSchema,
+  updatedAt: TimestampSchema,
+});
+
+/** Konfigurasi jadwal rolling (singleton document di collection settings) */
+export const RollingScheduleConfigSchema = z.object({
+  // Jumlah divisi per minggu (default 2)
+  divisionsPerWeek: z.number().int().min(1).max(5).default(2),
+
+  // Tanggal mulai magang rolling
+  internshipStartDate: TimestampSchema.optional(),
+
+  // Apakah jadwal sudah di-generate untuk batch saat ini
+  isScheduleGenerated: z.boolean().default(false),
+
+  // Apakah jadwal visible/terlihat oleh caang (default false, admin harus aktifkan)
+  isScheduleVisible: z.boolean().default(false),
+
+  // Daftar divisi yang ikut rolling (default semua 5)
+  activeDivisions: z
+    .array(KriTeamEnum)
+    .default(["krai", "krsbi_h", "krsbi_b", "krsti", "krsri"]),
+
+  updatedAt: TimestampSchema,
+  updatedBy: z.string().optional(),
+});
+
+// ---------------------------------------------------------
+// 6. INTERNSHIP LOGBOOK SCHEMA (Basic structure)
 // ---------------------------------------------------------
 
 export const InternshipLogbookEntrySchema = z.object({
@@ -174,7 +262,58 @@ export const InternshipLogbookEntrySchema = z.object({
 });
 
 // ---------------------------------------------------------
-// 6. EXPORT TYPES
+// 7. HELPER FUNCTIONS
+// ---------------------------------------------------------
+
+/**
+ * Mendapatkan nama jenis magang yang readable
+ */
+export function getInternshipTypeDisplayName(type: string): string {
+  switch (type) {
+    case "rolling":
+      return "Divisi (Rolling)";
+    case "department":
+      return "Departemen";
+    case "fixed":
+      return "Tetap";
+    default:
+      return type;
+  }
+}
+
+/**
+ * Mendapatkan nama divisi/bidang target yang readable
+ */
+export function getDivisionDisplayName(type: string, division: string): string {
+  if (type === "rolling") {
+    const names: Record<string, string> = {
+      krai: "KRAI",
+      krsbi_h: "KRSBI Humanoid",
+      krsbi_b: "KRSBI Beroda",
+      krsti: "KRSTI",
+      krsri: "KRSRI",
+    };
+    return names[division] || division;
+  }
+
+  if (type === "department") {
+    const names: Record<string, string> = {
+      kestari: "Kestari",
+      maintenance: "Maintenance",
+      production: "Produksi",
+      humas: "Humas",
+      infokom_field: "Infokom",
+      kpsdm: "KPSDM",
+      ristek: "Ristek",
+    };
+    return names[division] || division;
+  }
+
+  return division;
+}
+
+// ---------------------------------------------------------
+// 8. EXPORT TYPES
 // ---------------------------------------------------------
 
 export type InternshipRole = z.infer<typeof InternshipRoleEnum>;
@@ -193,3 +332,12 @@ export type DepartmentInternshipRegistration = z.infer<
 export type InternshipLogbookEntry = z.infer<
   typeof InternshipLogbookEntrySchema
 >;
+
+// Rolling Schedule Types
+export type RollingScheduleWeekEntry = z.infer<
+  typeof RollingScheduleWeekEntrySchema
+>;
+export type RollingInternshipSchedule = z.infer<
+  typeof RollingInternshipScheduleSchema
+>;
+export type RollingScheduleConfig = z.infer<typeof RollingScheduleConfigSchema>;

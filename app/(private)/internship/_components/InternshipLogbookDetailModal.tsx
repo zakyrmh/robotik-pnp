@@ -21,7 +21,11 @@ import {
   XCircle,
   AlertCircle,
 } from "lucide-react";
-import type { InternshipLogbookEntry } from "@/schemas/internship";
+import {
+  type InternshipLogbookEntry,
+  getInternshipTypeDisplayName,
+  getDivisionDisplayName,
+} from "@/schemas/internship";
 import Image from "next/image";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -110,10 +114,18 @@ export function InternshipLogbookDetailModal({
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
                 <Target className="w-4 h-4" />
-                Divisi Target
+                {entry.internshipType === "department" ? "Bidang" : "Divisi"}
               </div>
-              <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4">
-                <p className="font-semibold text-lg">{entry.targetDivision}</p>
+              <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4 flex items-center justify-between">
+                <p className="font-semibold text-lg">
+                  {getDivisionDisplayName(
+                    entry.internshipType,
+                    entry.targetDivision,
+                  )}
+                </p>
+                <Badge variant="secondary">
+                  {getInternshipTypeDisplayName(entry.internshipType)}
+                </Badge>
               </div>
             </div>
 

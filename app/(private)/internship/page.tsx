@@ -6,12 +6,14 @@ import { internshipService } from "@/lib/firebase/services/internship-service";
 import { RollingInternshipForm } from "./_components/RollingInternshipForm";
 import { DepartmentInternshipForm } from "./_components/DepartmentInternshipForm";
 import { InternshipLogbook } from "./_components/InternshipLogbook";
+import { RollingScheduleView } from "./_components/RollingScheduleView";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 
 import {
   type RollingInternshipRegistration,
   type DepartmentInternshipRegistration,
+  type RollingInternshipSchedule,
 } from "@/schemas/internship";
 
 import { format } from "date-fns";
@@ -21,6 +23,7 @@ import { RecruitmentSettings } from "@/schemas/recruitment-settings";
 import { Clock, Lock } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
 
 export default function InternshipPage() {
@@ -30,6 +33,9 @@ export default function InternshipPage() {
   // State
   const [hasRolling, setHasRolling] = React.useState(false);
   const [hasDepartment, setHasDepartment] = React.useState(false);
+  const [schedule, setSchedule] =
+    React.useState<RollingInternshipSchedule | null>(null);
+  const [isScheduleVisible, setIsScheduleVisible] = React.useState(false);
   const [settings, setSettings] = React.useState<RecruitmentSettings | null>(
     null,
   );
@@ -39,14 +45,19 @@ export default function InternshipPage() {
     async function fetchData() {
       if (!user) return;
       try {
-        const [status, fetchedSettings] = await Promise.all([
-          internshipService.checkRegistrationStatus(user.uid),
-          getRecruitmentSettings(),
-        ]);
+        const [status, fetchedSettings, fetchedSchedule, scheduleConfig] =
+          await Promise.all([
+            internshipService.checkRegistrationStatus(user.uid),
+            getRecruitmentSettings(),
+            internshipService.getRollingSchedule(user.uid),
+            internshipService.getRollingScheduleConfig(),
+          ]);
 
         setHasRolling(status.hasRolling);
         setHasDepartment(status.hasDepartment);
         setSettings(fetchedSettings);
+        setSchedule(fetchedSchedule);
+        setIsScheduleVisible(scheduleConfig?.isScheduleVisible ?? false);
       } catch (error) {
         console.error("Error fetching internship data:", error);
         toast.error("Gagal memuat data magang.");
@@ -165,10 +176,48 @@ export default function InternshipPage() {
       );
     }
 
-    // Default for registered users (Complete or Closed-Pending): Logbook
+    // Default for registered users (Complete or Closed-Pending): Logbook + Schedule
     return (
-      <div className="container py-8">
-        <InternshipLogbook />
+      <div className="container py-8 space-y-6">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+            Magang
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Pantau jadwal dan progres magang kamu.
+          </p>
+        </div>
+
+        <Tabs defaultValue={schedule ? "schedule" : "logbook"}>
+          <TabsList>
+            <TabsTrigger value="schedule">Jadwal Magang</TabsTrigger>
+            <TabsTrigger value="logbook">Logbook</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="schedule" className="mt-4">
+            {schedule && isScheduleVisible ? (
+              <RollingScheduleView schedule={schedule} />
+            ) : (
+              <Card className="border-dashed">
+                <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+                  <Clock className="w-12 h-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-1">
+                    Jadwal Belum Tersedia
+                  </h3>
+                  <p className="text-sm text-muted-foreground max-w-md">
+                    {!isScheduleVisible && schedule
+                      ? "Jadwal Anda sedang dalam tahap finalisasi oleh admin. Harap tunggu informasi lebih lanjut."
+                      : "Jadwal magang rolling belum di-generate oleh admin. Silakan hubungi admin untuk informasi lebih lanjut."}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+
+          <TabsContent value="logbook" className="mt-4">
+            <InternshipLogbook />
+          </TabsContent>
+        </Tabs>
       </div>
     );
   }

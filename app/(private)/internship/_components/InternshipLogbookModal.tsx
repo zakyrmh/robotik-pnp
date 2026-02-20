@@ -53,6 +53,10 @@ import {
   deleteStorageFiles,
 } from "@/lib/firebase/services/storage-service";
 import { useAuth } from "@/hooks/useAuth";
+import {
+  type RollingInternshipRegistration,
+  type DepartmentInternshipRegistration,
+} from "@/schemas/internship";
 
 // Extend schema for form usage (files handling)
 const formSchema = InternshipLogbookEntrySchema.omit({
@@ -81,9 +85,35 @@ interface InternshipLogbookModalProps {
   ) => Promise<void>;
   defaultValues?: Partial<InternshipLogbookEntry>;
   isEditing?: boolean;
+  registrations?: {
+    rolling: RollingInternshipRegistration | null;
+    department: DepartmentInternshipRegistration | null;
+  } | null;
 }
 
-const DIVISIONS = ["KRAI", "KRSBI-B", "KRSBI-H", "KRSTI", "KRSRI"];
+const INTERNSHIP_TYPES = [
+  { value: "rolling", label: "Magang Divisi (Rolling)" },
+  { value: "department", label: "Magang Departemen" },
+];
+
+const ROLLING_DIVISIONS = [
+  { value: "krai", label: "KRAI" },
+  { value: "krsbi_b", label: "KRSBI Beroda" },
+  { value: "krsbi_h", label: "KRSBI Humanoid" },
+  { value: "krsti", label: "KRSTI" },
+  { value: "krsri", label: "KRSRI" },
+];
+
+const DEPT_DIVISIONS = [
+  { value: "kestari", label: "Kestari" },
+  { value: "maintenance", label: "Maintenance" },
+  { value: "production", label: "Produksi" },
+  { value: "humas", label: "Humas" },
+  { value: "infokom_field", label: "Infokom" },
+  { value: "kpsdm", label: "KPSDM" },
+  { value: "ristek", label: "Ristek" },
+];
+
 const ACTIVITY_TYPES = [
   "Riset/Belajar",
   "Pengerjaan Proyek",
@@ -98,6 +128,7 @@ export function InternshipLogbookModal({
   onSubmit,
   defaultValues,
   isEditing = false,
+  registrations,
 }: InternshipLogbookModalProps) {
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -146,6 +177,18 @@ export function InternshipLogbookModal({
       });
     }
   }, [defaultValues, isOpen, form]);
+
+  // Effect for Auto-population for Department Internship
+  const currentType = form.watch("internshipType");
+  useEffect(() => {
+    if (
+      currentType === "department" &&
+      registrations?.department?.fieldChoice &&
+      !isEditing
+    ) {
+      form.setValue("targetDivision", registrations.department.fieldChoice);
+    }
+  }, [currentType, registrations, form, isEditing]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -261,6 +304,39 @@ export function InternshipLogbookModal({
 
         <Form {...form}>
           <form className="space-y-4">
+            {/* Internship Type Selection */}
+            <FormField
+              control={form.control}
+              name="internshipType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Jenis Magang</FormLabel>
+                  <Select
+                    onValueChange={(val) => {
+                      field.onChange(val);
+                      // Reset target division when type changes
+                      form.setValue("targetDivision", "");
+                    }}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Pilih Jenis Magang" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {INTERNSHIP_TYPES.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Date */}
               <FormField
@@ -331,29 +407,58 @@ export function InternshipLogbookModal({
               <FormField
                 control={form.control}
                 name="targetDivision"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Divisi</FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Pilih Divisi" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {DIVISIONS.map((div) => (
-                          <SelectItem key={div} value={div}>
-                            {div}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const currentType = form.watch("internshipType");
+                  const options =
+                    currentType === "department"
+                      ? DEPT_DIVISIONS
+                      : ROLLING_DIVISIONS;
+
+                  return (
+                    <FormItem>
+                      <FormLabel>
+                        {currentType === "department" ? "Bidang" : "Divisi"}
+                      </FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        key={`${currentType}-${field.value}`} // Force re-render on type change
+                      >
+                        <FormControl>
+                          <SelectTrigger
+                            disabled={
+                              currentType === "department" &&
+                              !!registrations?.department
+                            }
+                          >
+                            <SelectValue
+                              placeholder={
+                                currentType === "department"
+                                  ? "Pilih Bidang"
+                                  : "Pilih Divisi"
+                              }
+                            />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {options.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {currentType === "department" &&
+                        registrations?.department && (
+                          <p className="text-[10px] text-blue-600 mt-1">
+                            * Otomatis dipilih berdasarkan data pendaftaran
+                            magang Anda.
+                          </p>
+                        )}
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
 
               {/* Activity Type */}

@@ -19,10 +19,25 @@ import {
   type RollingInternshipRegistration,
   type DepartmentInternshipRegistration,
   type InternshipLogbookEntry,
+  type RollingInternshipSchedule,
+  type RollingScheduleWeekEntry,
+  type RollingScheduleConfig,
 } from "@/schemas/internship";
+import { type KriTeam } from "@/schemas/users";
 
 const ROLLING_COLLECTION = "internship_rolling_registrations";
 const DEPT_COLLECTION = "internship_department_registrations";
+const SCHEDULE_COLLECTION = "internship_rolling_schedules";
+const SCHEDULE_CONFIG_DOC = "rolling_schedule_config";
+
+// All 5 KRI divisions
+const ALL_DIVISIONS: KriTeam[] = [
+  "krai",
+  "krsbi_h",
+  "krsbi_b",
+  "krsti",
+  "krsri",
+];
 
 // Converter helpers
 const rollingConverter = {
@@ -338,5 +353,336 @@ export const internshipService = {
         } as InternshipLogbookEntry;
       })
       .filter((entry) => !entry.deletedAt); // Exclude soft-deleted entries
+  },
+
+  // =========================================================
+  // ROLLING SCHEDULE MANAGEMENT
+  // =========================================================
+
+  /**
+   * Generate rolling schedule for a single user based on their registration.
+   * - Week 1: user's chosen divisions (divisionChoice1, divisionChoice2)
+   * - Remaining weeks: auto-rotate remaining divisions
+   */
+  generateScheduleForUser(
+    userId: string,
+    divisionChoice1: KriTeam,
+    divisionChoice2: KriTeam,
+    divisionsPerWeek: number = 2,
+    startDate?: Date,
+  ): Omit<RollingInternshipSchedule, "id" | "createdAt" | "updatedAt"> {
+    // Build ordered division list:
+    // Week 1 = [choice1, choice2], then remaining in default order
+    const chosenDivisions: KriTeam[] = [divisionChoice1, divisionChoice2];
+    const remainingDivisions = ALL_DIVISIONS.filter(
+      (d) => !chosenDivisions.includes(d),
+    );
+
+    // All divisions in order: chosen first, then remaining
+    const orderedDivisions = [...chosenDivisions, ...remainingDivisions];
+
+    // Split into weekly chunks
+    const weeks: RollingScheduleWeekEntry[] = [];
+    let weekNumber = 1;
+    let currentDate = startDate ? new Date(startDate) : undefined;
+
+    for (let i = 0; i < orderedDivisions.length; i += divisionsPerWeek) {
+      const weekDivisions = orderedDivisions.slice(i, i + divisionsPerWeek) as [
+        KriTeam,
+        ...KriTeam[],
+      ];
+
+      const weekEntry: RollingScheduleWeekEntry = {
+        weekNumber,
+        divisions: weekDivisions,
+      };
+
+      // Add dates if startDate is provided
+      if (currentDate) {
+        weekEntry.startDate = new Date(currentDate);
+        const endDate = new Date(currentDate);
+        endDate.setDate(endDate.getDate() + 6); // End of the week (7 days)
+        weekEntry.endDate = endDate;
+        // Move to next week
+        currentDate = new Date(currentDate);
+        currentDate.setDate(currentDate.getDate() + 7);
+      }
+
+      weeks.push(weekEntry);
+      weekNumber++;
+    }
+
+    const totalWeeks = weeks.length;
+
+    return {
+      userId,
+      weeks,
+      totalWeeks,
+      divisionsPerWeek,
+      primaryDivisionChoice: divisionChoice1,
+      secondaryDivisionChoice: divisionChoice2,
+      generatedBy: "system",
+      scheduleStatus: "draft",
+      currentWeek: 0,
+    };
+  },
+
+  /**
+   * Save a rolling schedule to Firestore
+   */
+  async saveRollingSchedule(
+    schedule: Omit<RollingInternshipSchedule, "id" | "createdAt" | "updatedAt">,
+  ): Promise<RollingInternshipSchedule> {
+    const ref = doc(db, SCHEDULE_COLLECTION, schedule.userId);
+    const now = new Date();
+
+    const fullSchedule: RollingInternshipSchedule = {
+      ...schedule,
+      id: schedule.userId,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    await setDoc(ref, fullSchedule);
+    return fullSchedule;
+  },
+
+  /**
+   * Generate and save rolling schedule for a single user
+   */
+  async generateRollingScheduleForUser(
+    userId: string,
+    divisionChoice1: KriTeam,
+    divisionChoice2: KriTeam,
+    divisionsPerWeek: number = 2,
+    startDate?: Date,
+  ): Promise<RollingInternshipSchedule> {
+    const schedule = this.generateScheduleForUser(
+      userId,
+      divisionChoice1,
+      divisionChoice2,
+      divisionsPerWeek,
+      startDate,
+    );
+    return this.saveRollingSchedule(schedule);
+  },
+
+  /**
+   * Generate rolling schedules for ALL registered users (bulk)
+   * Uses their divisionChoice1 and divisionChoice2 from rolling registration.
+   */
+  async generateAllRollingSchedules(
+    divisionsPerWeek: number = 2,
+    startDate?: Date,
+  ): Promise<{ generated: number; skipped: number; errors: string[] }> {
+    const rollingRegs = await this.getAllRollingInternships();
+    let generated = 0;
+    const errors: string[] = [];
+
+    for (const reg of rollingRegs) {
+      try {
+        await this.generateRollingScheduleForUser(
+          reg.userId,
+          reg.divisionChoice1,
+          reg.divisionChoice2,
+          divisionsPerWeek,
+          startDate,
+        );
+        generated++;
+      } catch (error) {
+        errors.push(
+          `Failed for user ${reg.userId}: ${error instanceof Error ? error.message : "Unknown error"}`,
+        );
+      }
+    }
+
+    return { generated, skipped: 0, errors };
+  },
+
+  /**
+   * Get rolling schedule for a specific user
+   */
+  async getRollingSchedule(
+    userId: string,
+  ): Promise<RollingInternshipSchedule | null> {
+    const ref = doc(db, SCHEDULE_COLLECTION, userId);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) return null;
+
+    const data = snap.data();
+    return {
+      id: snap.id,
+      ...data,
+      createdAt: data.createdAt?.toDate
+        ? data.createdAt.toDate()
+        : new Date(data.createdAt),
+      updatedAt: data.updatedAt?.toDate
+        ? data.updatedAt.toDate()
+        : new Date(data.updatedAt),
+      weeks: (data.weeks || []).map(
+        (
+          w: RollingScheduleWeekEntry & {
+            startDate?: Timestamp;
+            endDate?: Timestamp;
+          },
+        ) => ({
+          ...w,
+          startDate: w.startDate?.toDate
+            ? (w.startDate as unknown as Timestamp).toDate()
+            : w.startDate
+              ? new Date(w.startDate as unknown as string)
+              : undefined,
+          endDate: w.endDate?.toDate
+            ? (w.endDate as unknown as Timestamp).toDate()
+            : w.endDate
+              ? new Date(w.endDate as unknown as string)
+              : undefined,
+        }),
+      ),
+    } as RollingInternshipSchedule;
+  },
+
+  /**
+   * Get ALL rolling schedules (admin view)
+   */
+  async getAllRollingSchedules(): Promise<RollingInternshipSchedule[]> {
+    const ref = collection(db, SCHEDULE_COLLECTION);
+    const snap = await getDocs(ref);
+    return snap.docs.map((docSnap) => {
+      const data = docSnap.data();
+      return {
+        id: docSnap.id,
+        ...data,
+        createdAt: data.createdAt?.toDate
+          ? data.createdAt.toDate()
+          : new Date(data.createdAt),
+        updatedAt: data.updatedAt?.toDate
+          ? data.updatedAt.toDate()
+          : new Date(data.updatedAt),
+        weeks: (data.weeks || []).map(
+          (
+            w: RollingScheduleWeekEntry & {
+              startDate?: Timestamp;
+              endDate?: Timestamp;
+            },
+          ) => ({
+            ...w,
+            startDate: w.startDate?.toDate
+              ? (w.startDate as unknown as Timestamp).toDate()
+              : w.startDate
+                ? new Date(w.startDate as unknown as string)
+                : undefined,
+            endDate: w.endDate?.toDate
+              ? (w.endDate as unknown as Timestamp).toDate()
+              : w.endDate
+                ? new Date(w.endDate as unknown as string)
+                : undefined,
+          }),
+        ),
+      } as RollingInternshipSchedule;
+    });
+  },
+
+  /**
+   * Update a rolling schedule (admin override)
+   */
+  async updateRollingSchedule(
+    userId: string,
+    updates: Partial<
+      Pick<
+        RollingInternshipSchedule,
+        | "weeks"
+        | "divisionsPerWeek"
+        | "totalWeeks"
+        | "scheduleStatus"
+        | "currentWeek"
+      >
+    >,
+    adminId: string,
+  ): Promise<void> {
+    const ref = doc(db, SCHEDULE_COLLECTION, userId);
+    await setDoc(
+      ref,
+      {
+        ...updates,
+        generatedBy: "admin",
+        modifiedByAdminId: adminId,
+        updatedAt: new Date(),
+      },
+      { merge: true },
+    );
+  },
+
+  /**
+   * Activate all draft schedules (set status to "active")
+   */
+  async activateAllSchedules(): Promise<number> {
+    const schedules = await this.getAllRollingSchedules();
+    let activated = 0;
+    for (const schedule of schedules) {
+      if (schedule.scheduleStatus === "draft") {
+        const ref = doc(db, SCHEDULE_COLLECTION, schedule.userId);
+        await setDoc(
+          ref,
+          {
+            scheduleStatus: "active",
+            currentWeek: 1,
+            updatedAt: new Date(),
+          },
+          { merge: true },
+        );
+        activated++;
+      }
+    }
+    return activated;
+  },
+
+  /**
+   * Delete a rolling schedule
+   */
+  async deleteRollingSchedule(userId: string): Promise<void> {
+    const ref = doc(db, SCHEDULE_COLLECTION, userId);
+    await deleteDoc(ref);
+  },
+
+  /**
+   * Get rolling schedule config
+   */
+  async getRollingScheduleConfig(): Promise<RollingScheduleConfig | null> {
+    const ref = doc(db, "settings", SCHEDULE_CONFIG_DOC);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) return null;
+
+    const data = snap.data();
+    return {
+      ...data,
+      updatedAt: data.updatedAt?.toDate
+        ? data.updatedAt.toDate()
+        : new Date(data.updatedAt),
+      internshipStartDate: data.internshipStartDate?.toDate
+        ? data.internshipStartDate.toDate()
+        : data.internshipStartDate
+          ? new Date(data.internshipStartDate)
+          : undefined,
+    } as RollingScheduleConfig;
+  },
+
+  /**
+   * Update rolling schedule config
+   */
+  async updateRollingScheduleConfig(
+    config: Partial<RollingScheduleConfig>,
+    adminId: string,
+  ): Promise<void> {
+    const ref = doc(db, "settings", SCHEDULE_CONFIG_DOC);
+    await setDoc(
+      ref,
+      {
+        ...config,
+        updatedBy: adminId,
+        updatedAt: new Date(),
+      },
+      { merge: true },
+    );
   },
 };

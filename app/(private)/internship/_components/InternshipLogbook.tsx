@@ -28,7 +28,15 @@ import { InternshipLogbookModal } from "./InternshipLogbookModal";
 import { InternshipLogbookDetailModal } from "./InternshipLogbookDetailModal";
 import { internshipService } from "@/lib/firebase/services/internship-service";
 import { useAuth } from "@/hooks/useAuth";
-import type { InternshipLogbookEntry } from "@/schemas/internship";
+import type {
+  InternshipLogbookEntry,
+  RollingInternshipRegistration,
+  DepartmentInternshipRegistration,
+} from "@/schemas/internship";
+import {
+  getInternshipTypeDisplayName,
+  getDivisionDisplayName,
+} from "@/schemas/internship";
 import { format } from "date-fns";
 import { id as localeId } from "date-fns/locale";
 import { toast } from "sonner";
@@ -47,6 +55,11 @@ export function InternshipLogbook() {
   const [selectedEntry, setSelectedEntry] =
     useState<InternshipLogbookEntry | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [registrations, setRegistrations] = useState<{
+    rolling: RollingInternshipRegistration | null;
+    department: DepartmentInternshipRegistration | null;
+  } | null>(null);
+  const [isLoadingRegs, setIsLoadingRegs] = useState(true);
 
   const fetchEntries = React.useCallback(async () => {
     if (!user) return;
@@ -65,7 +78,22 @@ export function InternshipLogbook() {
 
   useEffect(() => {
     fetchEntries();
-  }, [fetchEntries]);
+
+    // Fetch registration data for auto-population
+    if (user) {
+      setIsLoadingRegs(true);
+      internshipService
+        .checkRegistrationStatus(user.uid)
+        .then((result) => {
+          setRegistrations({
+            rolling: result.rollingData,
+            department: result.departmentData,
+          });
+        })
+        .catch((err) => console.error("Failed to fetch reg status:", err))
+        .finally(() => setIsLoadingRegs(false));
+    }
+  }, [fetchEntries, user]);
 
   const handleAddEntry = async (data: InternshipLogbookEntry) => {
     if (!user) return;
@@ -146,8 +174,12 @@ export function InternshipLogbook() {
               Sampah
             </a>
           </Button>
-          <Button onClick={openNewModal}>
-            <Plus className="mr-2 h-4 w-4" />
+          <Button onClick={openNewModal} disabled={isLoadingRegs}>
+            {isLoadingRegs ? (
+              <Clock className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Plus className="mr-2 h-4 w-4" />
+            )}
             Tambah Log Harian
           </Button>
         </div>
@@ -218,7 +250,7 @@ export function InternshipLogbook() {
                           <h4 className="font-semibold text-lg">
                             {entry.activityType}
                           </h4>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground mt-1">
                             <Clock className="w-3 h-3" />
                             <span>
                               {format(entry.date, "PPP", { locale: localeId })}
@@ -226,7 +258,21 @@ export function InternshipLogbook() {
                             <span>•</span>
                             <span>{entry.duration} Menit</span>
                             <span>•</span>
-                            <span>{entry.targetDivision}</span>
+                            <Badge
+                              variant="secondary"
+                              className="px-1.5 py-0 h-5 text-[10px] font-normal"
+                            >
+                              {getInternshipTypeDisplayName(
+                                entry.internshipType,
+                              )}
+                            </Badge>
+                            <span>•</span>
+                            <span className="font-medium text-slate-700 dark:text-slate-300">
+                              {getDivisionDisplayName(
+                                entry.internshipType,
+                                entry.targetDivision,
+                              )}
+                            </span>
                           </div>
                         </div>
                         <Badge
@@ -315,6 +361,7 @@ export function InternshipLogbook() {
         onSubmit={handleAddEntry}
         defaultValues={editingEntry}
         isEditing={!!editingEntry}
+        registrations={registrations}
       />
 
       <InternshipLogbookDetailModal
