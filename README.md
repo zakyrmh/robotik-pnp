@@ -1,36 +1,130 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sistem Informasi Terpadu UKM Robotik PNP
 
-## Getting Started
+Sistem informasi berbasis web untuk manajemen anggota, kegiatan, dan administrasi UKM Robotik Politeknik Negeri Padang.
 
-First, run the development server:
+## Tech Stack
+
+- **Framework** — Next.js App Router
+- **Database** — Supabase (PostgreSQL)
+- **Auth** — Supabase Authentication
+- **UI** — shadcn/ui + Tailwind CSS
+- **Validasi** — Zod
+- **Package Manager** — pnpm
+
+## Prasyarat
+
+- Node.js 18+
+- pnpm 8+
+- Akun Supabase
+- Supabase CLI (install via `winget install Supabase.CLI`)
+
+## Instalasi
+
+1. Clone repository
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+   git clone https://github.com/zakyrmh/robotik-pnp.git
+   cd robotik-pnp
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+   pnpm install
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3. Salin file environment
 
-## Learn More
+```bash
+   cp .env.example .env.local
+```
 
-To learn more about Next.js, take a look at the following resources:
+4. Isi `.env.local` dengan nilai dari Supabase Dashboard
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```env
+    NEXT_PUBLIC_SUPABASE_URL=
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+5. Link ke Supabase project
 
-## Deploy on Vercel
+```bash
+   supabase link --project-ref YOUR_PROJECT_ID
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+6. Push migrasi database
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+   supabase db push
+```
+
+7. Generate TypeScript types
+
+```bash
+   supabase gen types typescript --project-id YOUR_PROJECT_ID > lib/db/types/database.types.ts
+```
+
+8. Jalankan development server
+
+```bash
+   pnpm dev
+```
+
+Buka [http://localhost:3000](http://localhost:3000) di browser.
+
+## Struktur Folder
+
+```
+app/
+├── (auth)/
+│   ├── login/
+│   ├── register/
+│   └── callback/
+├── (dashboard)/
+│   └── dashboard/
+└── layout.tsx
+lib/
+├── supabase/
+│   ├── client.ts
+│   ├── server.ts
+│   └── middleware.ts
+└── db/
+    ├── schema/
+    ├── validations/
+    └── types/
+supabase/
+└── migrations/
+```
+
+## Database
+
+Skema database terdiri dari:
+
+- `users` — mirror dari auth.users Supabase
+- `profiles` — data profil personal anggota
+- `education_details` — data akademik anggota
+- `user_blacklist` — manajemen blacklist anggota
+- `majors` — master data jurusan
+- `study_programs` — master data program studi
+
+## Scripts
+
+```bash
+pnpm dev              # jalankan development server
+pnpm build            # build untuk production
+pnpm start            # jalankan production server
+supabase db push      # push migrasi ke Supabase
+supabase db reset     # reset database lokal
+```
+
+## Kontribusi
+
+1. Fork repository ini
+2. Buat branch fitur baru (`git checkout -b feat/nama-fitur`)
+3. Commit perubahan (`git commit -m "feat: tambah fitur X"`)
+4. Push ke branch (`git push origin feat/nama-fitur`)
+5. Buat Pull Request
+
+## Lisensi
+
+Proyek ini menggunakan lisensi [MIT](LICENSE).
