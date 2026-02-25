@@ -5,3 +5,8 @@ export * from './education-details';
 export * from './user-blacklist';
 export * from './majors';
 export * from './study-programs';
+export * from './departments';
+export * from './divisions';
+export * from './roles';
+export * from './permissions';
+export * from './rbac';
