@@ -17,6 +17,31 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ---
 
+## [0.3.0] - 2026-02-26
+
+### Added
+
+- Sidebar dashboard responsif dengan Shadcn Sidebar (collapsible, off-canvas di mobile)
+- Navigasi role-based — menu difilter otomatis berdasarkan role user yang login
+- Collapsible sub-menu dengan indikator chevron dan auto-expand saat halaman aktif
+- Konfigurasi menu terpusat di `lib/sidebar-navigation.ts` untuk 6 panel admin:
+  - Open Recruitment, Kesekretariatan, Komisi Disiplin, Divisi, MRC, dan Super Admin
+- Komponen `AppSidebar` dengan header logo, konten menu, dan footer profil user
+- Komponen `SidebarUserNav` — avatar, nama, email, dan tombol logout via dropdown
+- Komponen `DashboardHeader` — toggle sidebar dan judul halaman
+- Layout `(private)/layout.tsx` — auth check server-side dan query role user dari database
+- Halaman dashboard dengan placeholder Bento Grid (statistik dan konten)
+- Instalasi komponen Shadcn: `sidebar`, `collapsible`, `separator`, `sheet`, `tooltip`, `avatar`, `dropdown-menu`
+
+### Changed
+
+- Root layout ditambah `TooltipProvider` (dibutuhkan oleh Shadcn Sidebar)
+- Metadata situs diperbarui dengan judul dan deskripsi UKM Robotik PNP
+- Bahasa HTML diubah dari `en` ke `id`
+- Proteksi auth dashboard dipindahkan dari halaman ke layout
+
+---
+
 ## [0.2.0] - 2026-02-25
 
 ### Added
