@@ -17,6 +17,35 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ---
 
+## [0.4.0] - 2026-02-27
+
+### Added
+
+- Halaman **Manajemen Akun & Role** (`/dashboard/admin/roles`) untuk Super Admin
+- Tabel daftar user dengan kolom: nama, email, role, status, tanggal bergabung
+- Pencarian real-time berdasarkan nama atau email
+- Panel **Lihat Detail** user (slide-over sheet): profil, role, status, telepon, tanggal bergabung
+- Panel **Edit Akun** (slide-over sheet) dengan fitur:
+  - Ubah status akun (aktif / nonaktif / diblokir)
+  - Kelola role sistem (multi-select checkbox)
+  - Kirim email reset password
+  - Hapus akun (soft delete dengan konfirmasi)
+- Server actions: `getUsers`, `getAllRoles`, `updateUserStatus`, `updateUserRoles`, `resetUserPassword`, `deleteUser`
+- Komponen reusable: `RoleBadge`, `StatusBadge`, `UserDetailSheet`, `UserEditSheet`
+- Tipe shared `UserWithRoles` di `lib/types/admin.ts`
+- Instalasi komponen Shadcn: `table`, `badge`, `select`, `dialog`, `alert-dialog`
+
+### Changed
+
+- RLS policy tabel `users` dan `profiles` ditambah akses baca untuk admin (`member:read`)
+- RLS policy tabel `profiles` ditambah akses update untuk admin (`member:update`)
+
+### Fixed
+
+- Query `getUsers` error disambiguasi FK dengan hint `!user_roles_user_id_fkey`
+
+---
+
 ## [0.3.0] - 2026-02-26
 
 ### Added

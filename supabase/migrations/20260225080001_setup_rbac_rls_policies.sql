@@ -18,6 +18,35 @@ ALTER TABLE public.user_divisions   ENABLE ROW LEVEL SECURITY;
 
 
 -- =====================================================
+-- POLICY: USERS — Admin bisa baca semua user
+-- =====================================================
+-- Policy "users: self read" (migration sebelumnya) hanya mengizinkan
+-- user melihat datanya sendiri. Policy ini menambahkan akses baca
+-- untuk user yang memiliki permission 'member:read'.
+
+CREATE POLICY "users: admin read" ON public.users
+  FOR SELECT USING (
+    public.user_has_permission(auth.uid(), 'member:read')
+  );
+
+
+-- =====================================================
+-- POLICY: PROFILES — Admin bisa baca semua profil
+-- =====================================================
+
+CREATE POLICY "profiles: admin read" ON public.profiles
+  FOR SELECT USING (
+    public.user_has_permission(auth.uid(), 'member:read')
+  );
+
+-- Admin bisa update profil anggota
+CREATE POLICY "profiles: admin update" ON public.profiles
+  FOR UPDATE USING (
+    public.user_has_permission(auth.uid(), 'member:update')
+  );
+
+
+-- =====================================================
 -- POLICY: DEPARTMENTS (publik baca, admin kelola)
 -- =====================================================
 
