@@ -17,6 +17,39 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ---
 
+## [0.5.0] - 2026-02-28
+
+### Added
+
+#### Halaman Super Admin Panel (`/dashboard/admin`)
+
+- Dashboard overview untuk Super Admin dengan layout Bento Grid
+- Kartu statistik: total pengguna, pengguna aktif, nonaktif, dan diblokir
+- Widget **Distribusi Role** dengan bar visual persentase per role
+- Widget **Pendaftaran Terbaru** — 5 user terbaru dengan avatar, status, dan waktu relatif
+- **Quick Links** navigasi cepat ke Manajemen Akun & Role, Audit Logs, dan Dashboard
+- Server actions: `getAdminStats()`, `getRecentUsers()`
+- Skeleton loading state lengkap untuk semua section dashboard
+
+#### Halaman Audit Logs Sistem (`/dashboard/admin/audit`)
+
+- **Sistem Audit Log** — pencatatan aktivitas perubahan data otomatis
+- Migration: tabel `audit_logs` dengan kolom actor, action, table, data before/after
+- Trigger otomatis pada tabel `users`, `profiles`, dan `user_roles`
+- Fungsi `generate_audit_summary()` untuk deskripsi otomatis per perubahan
+- Handler khusus `fn_audit_user_roles()` untuk tabel dengan composite key
+- RLS policy: hanya user dengan permission `audit:read` yang bisa membaca log
+- Permission `audit:read` di-seed ke role `super_admin`
+- Timeline interaktif dengan filter tabel dan tipe aksi
+- Detail perubahan (diff view: old vs new) yang bisa di-expand
+- Paginasi "Muat Lebih Banyak" dan avatar actor pada setiap log entry
+- Server action: `getAuditLogs()` dengan filter dan paginasi
+- Tipe: `AuditLog`, `AuditLogWithActor`, `AuditLogFilters`
+- Komponen: `AuditLogTimeline`, `AuditLogSkeleton`
+- Schema type: `lib/db/schema/audit-logs.ts`
+
+---
+
 ## [0.4.0] - 2026-02-27
 
 ### Added
