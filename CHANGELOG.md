@@ -17,6 +17,413 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ---
 
+## [0.7.0] - 2026-03-03
+
+### Added
+
+#### Modul Komisi Disiplin — Dashboard (`/dashboard/komdis`)
+
+- 3 section statistik: Kegiatan & Kehadiran (6 kartu), Pelanggaran & Poin (4 kartu), Surat Peringatan (5 kartu)
+- Alert banner real-time: kegiatan berlangsung (🟢 pulse) + pending review pengurangan poin
+- Quick links ke semua 6 sub-halaman komdis dengan ikon, deskripsi, hover effect
+- Server action: `getKomdisDashboardStats()` — aggregate dari 5 tabel (events, attendances, violations, reductions, warning_letters)
+
+#### Modul Komisi Disiplin — Kegiatan & Absensi QR
+
+**Database (Migration: `20260303210000_create_komdis_system.sql`):**
+
+- 4 tabel baru: `komdis_events`, `komdis_attendance_tokens`, `komdis_attendances`, `komdis_sanctions`
+- 3 enum: `komdis_event_status` (draft/upcoming/ongoing/completed), `komdis_attendance_status` (present/late/absent), `komdis_sanction_type` (physical/points)
+- QR token dinamis: TTL 5 menit, auto-invalidasi token lama, deteksi kadaluarsa
+- Deteksi keterlambatan otomatis: `start_time + late_tolerance` vs waktu scan
+- RLS: pengurus full access + anggota baca event publik, kelola token sendiri, baca kehadiran sendiri
+- Realtime enabled: `komdis_attendance_tokens`, `komdis_attendances`
+- Constraint: 1 kehadiran per user per event, 1 sanksi per kehadiran
+- Schema TypeScript: `KomdisEvent`, `KomdisAttendance(WithUser)`, `KomdisAttendanceToken`, `KomdisSanction`, `KomdisEventStats`
+
+**Buat Kegiatan (`/dashboard/komdis/kegiatan/buat`):**
+
+- Form CRUD: judul, deskripsi, lokasi, tanggal, jam mulai/selesai, toleransi telat (menit), poin default
+- Daftar kegiatan dengan status badge (4 warna)
+- Status transition: draft → upcoming → ongoing → completed (dengan konfirmasi dialog)
+- Edit & hapus untuk kegiatan draft
+- Metadata card: tanggal, waktu, lokasi, toleransi
+- Komponen: `KegiatanManager`, `KegiatanSkeleton`
+
+**Kelola Absensi (`/dashboard/komdis/kegiatan/absensi`):**
+
+- Event selector dengan indikator 🟢 ongoing
+- 5 statistik: hadir, terlambat, tidak hadir, sanksi fisik, total poin
+- QR Scanner: input field auto-focus + Enter key (barcode scanner friendly)
+- Hasil scan real-time: sukses (auto-dismiss 4s), telat (persistent + aksi cepat), error
+- Quick sanction pada scan telat: 🏋️ Sanksi Fisik / ⚡ Poin (1-klik)
+- Tabel kehadiran: nama, status badge, jam scan, menit telat, badge sanksi, tombol aksi
+- Form sanksi inline: tipe (fisik/poin), jumlah poin, catatan
+- Komponen: `AbsensiManager`, `AbsensiSkeleton`
+
+**Server Actions (`komdis.action.ts`):**
+
+- `getKomdisEvents()`, `getKomdisEventById()`, `createKomdisEvent()`, `updateKomdisEvent()`, `updateKomdisEventStatus()`, `deleteKomdisEvent()`
+- `generateAttendanceToken()` — QR token 64-char hex, TTL 5 menit, cek sudah hadir, invalidasi token lama
+- `scanAttendanceToken()` — validasi 4 langkah (exist, unused, not expired, not duplicate), deteksi telat otomatis, catat kehadiran
+- `getEventAttendances()`, `giveSanction()` (upsert), `getEventStats()`
+
+#### Modul Komisi Disiplin — Pelanggaran & Poin
+
+**Database (Migration: `20260303220000_create_komdis_violations.sql`):**
+
+- 2 tabel baru: `komdis_violations` (dengan link opsional ke event/sanction), `komdis_point_reductions` (pengajuan pengurangan)
+- 2 enum: `komdis_violation_category` (attendance/discipline/property/ethics/other), `komdis_reduction_status` (pending/approved/rejected)
+- Partial approval: `approved_points` ≤ `points` yang diminta
+- RLS: pengurus full access + anggota baca pelanggaran sendiri, CRUD pengajuan sendiri
+- Realtime enabled: `komdis_violations`, `komdis_point_reductions`
+- Schema TypeScript: `KomdisViolation(WithUser)`, `KomdisPointReduction(WithUser)`, `KomdisMemberPointSummary`
+
+**Input & Edit Poin (`/dashboard/komdis/pelanggaran/poin`):**
+
+- 2 mode tampilan: Ringkasan (ranking tabel per anggota) + Semua Pelanggaran (detail)
+- Ringkasan: ranking by net poin, kolom pelanggaran/total/pengurangan/poin bersih, badge warna (≥5 merah, ≥3 kuning)
+- Form input: pilih anggota (dropdown), kategori (5 pilihan), deskripsi, poin
+- Edit & hapus pelanggaran dengan konfirmasi dialog
+- Filter kategori pada tabel pelanggaran
+- Search anggota pada ringkasan
+- Komponen: `ViolationManager`, `ViolationSkeleton`
+
+**Review Pengurangan Poin (`/dashboard/komdis/pelanggaran/review`):**
+
+- Banner pending count
+- Filter status: pending / approved / rejected
+- Kartu pengajuan: nama, poin diminta, alasan, tanggal, bukti (preview modal)
+- Approve: partial approval (poin disetujui ≤ diminta) + catatan komdis
+- Reject: dengan alasan
+- Hasil review ditampilkan pada kartu yang sudah diproses
+- Komponen: `ReductionReviewManager`, `ReductionSkeleton`
+
+**Server Actions (tambahan di `komdis.action.ts`):**
+
+- `getViolations()`, `createViolation()`, `updateViolation()`, `deleteViolation()`
+- `getMemberPointSummaries()` — aggregate poin - pengurangan per anggota, sorted desc
+- `getPointReductions()`, `reviewPointReduction()` (approve partial / reject)
+- `getAllMembers()` — daftar anggota untuk dropdown
+
+#### Modul Komisi Disiplin — Surat Peringatan (SP) Digital
+
+**Database (Migration: `20260304080000_create_komdis_sp.sql`):**
+
+- 1 tabel: `komdis_warning_letters` (nomor surat, level, status, konten, audit trail)
+- 2 enum: `komdis_sp_level` (sp1/sp2/sp3), `komdis_sp_status` (draft/issued/acknowledged/revoked)
+- Auto-generate nomor surat: `{seq}/{SP-level}/KOMDIS/{bulan_romawi}/{tahun}`
+- Point snapshot: catat total poin saat SP diterbitkan
+- Revocation audit: revoked_by, revoked_at, revoke_reason
+- RLS: pengurus full access + anggota baca SP sendiri yang issued/acknowledged
+- Realtime enabled: `komdis_warning_letters`
+- Schema TypeScript: `KomdisWarningLetter(WithUser)`, `KomdisSpLevel`, `KomdisSpStatus`
+
+**Penerbitan SP Digital (`/dashboard/komdis/sp/terbit`):**
+
+- Stats bar: draft, aktif, total SP
+- Form buat SP: pilih anggota (dropdown + poin terkini), level (SP-1/2/3), perihal, alasan, ringkasan pelanggaran, konsekuensi, tanggal berlaku/kedaluwarsa
+- Auto-snapshot poin anggota saat membuat SP
+- Kartu SP: level badge warna, status badge, nomor surat, tanggal, poin
+- Draft actions: terbitkan (dengan konfirmasi), edit, hapus
+- Aktif actions: cabut SP (dengan alasan wajib)
+- Detail: alasan, ringkasan pelanggaran (pre block), konsekuensi, alasan pencabutan
+- Komponen: `SpTerbitManager`, `SpTerbitSkeleton`
+
+**Riwayat SP Anggota (`/dashboard/komdis/sp/riwayat`):**
+
+- 5 statistik: SP-1, SP-2, SP-3 (excl. revoked), aktif, dicabut
+- Triple filter: level + status + anggota (server-side)
+- Search: nama, nomor surat, perihal (client-side)
+- Tabel riwayat: anggota, level, status, nomor surat, perihal, tanggal, poin
+- Expandable rows: detail alasan, pelanggaran, konsekuensi, tanggal berlaku/kedaluwarsa, acknowledgement, revocation
+- Komponen: `SpRiwayatManager`, `SpRiwayatSkeleton`
+
+**Server Actions (tambahan di `komdis.action.ts`):**
+
+- `getWarningLetters()` — filter by level/status/user, join profil + email
+- `createWarningLetter()` — auto nomor surat, point snapshot, status draft
+- `updateWarningLetter()` — hanya draft
+- `issueWarningLetter()` — draft → issued + tanggal terbit/berlaku
+- `revokeWarningLetter()` — issued/acknowledged → revoked + audit trail
+- `deleteWarningLetter()` — hanya draft
+
+#### Modul Kesekretariatan — Sistem Piket & Denda
+
+**Database (Migration: `20260303200000_create_piket_system.sql`):**
+
+- 4 tabel baru: `piket_periods`, `piket_assignments`, `piket_submissions`, `piket_fines`
+- 2 enum: `piket_submission_status` (pending/approved/rejected), `piket_fine_status` (unpaid/pending_verification/paid/waived)
+- RLS policy: pengurus full access + anggota self-access (baca jadwal, submit piket, baca denda)
+- Realtime enabled: `piket_submissions`, `piket_fines`
+- Constraint: 1 jadwal per user per periode, 1 submission per assignment per bulan, 1 denda per assignment per bulan
+- Schema TypeScript: `PiketPeriod`, `PiketAssignment(WithUser)`, `PiketSubmission(WithUser)`, `PiketFine(WithUser)`, `PiketDashboardStats`
+
+**Dashboard Kestari (`/dashboard/kestari`):**
+
+- Overview dengan 8 statistik kartu: total anggota, terjadwal, submit bulan ini, pending, disetujui, ditolak, belum bayar, total denda
+- Banner periode aktif dengan nominal denda
+
+**Atur Jadwal Piket (`/dashboard/kestari/piket/jadwal`):**
+
+- Buat periode baru (nama, tanggal mulai/akhir, nominal denda)
+- Generate jadwal otomatis: distribusi merata ke 4 minggu, random shuffle
+- Tabel anggota per minggu dengan dropdown ubah minggu
+- Edit nominal denda inline
+- Dialog konfirmasi generate ulang
+- Komponen: `PiketScheduleManager`, `ScheduleSkeleton`
+
+**Verifikasi Bukti Piket (`/dashboard/kestari/piket/verifikasi`):**
+
+- Filter: status (pending/approved/rejected) + bulan
+- Kartu submission: nama, minggu piket, tanggal, catatan
+- Tombol lihat foto sebelum/sesudah (fullscreen modal)
+- Approve 1-klik + reject dengan alasan (dialog)
+- Tampilkan alasan penolakan pada kartu yang ditolak
+- Komponen: `PiketVerificationManager`, `VerificationSkeleton`
+
+**Daftar Pelanggar Piket (`/dashboard/kestari/sanksi/pelanggar`):**
+
+- Generate denda otomatis per bulan (skip yang sudah piket/sudah kena denda)
+- Dialog konfirmasi generate dengan info nominal
+- Banner ringkasan: jumlah pelanggar × total denda belum bayar
+- Tabel pelanggar: bulan, nominal, status (4 badge warna), alasan
+- Filter status + bulan
+- Komponen: `PelanggarManager`, `PelanggarSkeleton`
+
+**Verifikasi Pembayaran Denda (`/dashboard/kestari/sanksi/pembayaran`):**
+
+- Banner pending verifikasi
+- Default filter: pending_verification (akses cepat)
+- Kartu denda: nama, bulan, nominal, badge status
+- Lihat bukti bayar (fullscreen modal)
+- Tombol Verifikasi Lunas (1-klik) + Bebaskan (dispensasi, dialog)
+- Komponen: `PaymentVerificationManager`, `PaymentSkeleton`
+
+**Server Actions (`kestari.action.ts`):**
+
+- `getPiketPeriods()`, `getActivePeriod()`, `createPiketPeriod()`, `updateFineAmount()`
+- `generatePiketSchedule()` — random shuffle + modulo distribution ke 4 minggu
+- `getPiketAssignments()`, `updateAssignmentWeek()`
+- `getPiketSubmissions()`, `verifyPiketSubmission()`
+- `generateFinesForMonth()` — auto-denda, skip approved, skip existing
+- `getPiketFines()`, `verifyFinePayment()`
+- `getPiketDashboardStats()` — 8 metrik real-time
+
+**UI:**
+
+- Komponen `Textarea` (shadcn/ui) ditambahkan
+
+---
+
+## [0.6.0] - 2026-03-01
+
+### Added
+
+#### Dashboard MRC (`/dashboard/mrc`)
+
+- Halaman overview modul MRC dengan layout Bento Grid
+- Hero card event aktif/terbaru: status, jadwal pendaftaran, lokasi, jumlah kategori
+- Statistik ringkasan: total event, total kategori, event aktif
+- Quick links ke semua 8 sub-halaman MRC
+- Daftar semua event dengan status badge dan info ringkas
+- Empty state dengan CTA buat event pertama
+- Skeleton loading state lengkap
+
+#### Modul MRC — Buka/Tutup Pendaftaran (`/dashboard/mrc/pengaturan/pendaftaran`)
+
+- Migration: tabel `mrc_events` (event per edisi) dan `mrc_categories` (kategori lomba)
+- Enum `mrc_event_status`: draft → registration → closed → ongoing → completed → cancelled
+- Trigger `fn_mrc_updated_at()` untuk auto-update `updated_at`
+- Audit trail otomatis pada `mrc_events` dan `mrc_categories`
+- RLS policy: public read (semua user login) + admin manage (`mrc:manage`)
+- Permission `mrc:manage` di-seed ke role `super_admin` dan `pengurus`
+- Schema TypeScript: `MrcEvent`, `MrcCategory`, `MrcEventStatus`, `MRC_STATUS_LABELS`
+- Validasi Zod: `mrcEventInsertSchema`, `mrcRegistrationUpdateSchema`, `mrcCategoryInsertSchema`
+- Server actions: `getMrcEvents()`, `getMrcEventById()`, `createMrcEvent()`, `updateMrcRegistration()`, `updateMrcEvent()`
+- Halaman Buka/Tutup Pendaftaran dengan:
+  - Daftar event MRC dengan status badge, kategori count, lokasi
+  - Expandable detail: jadwal pendaftaran, event start/end
+  - Kontrol ubah status dengan datetime picker
+  - Dialog form buat event baru (dengan auto-slug)
+  - Panduan alur status event
+- Komponen: `MrcRegistrationManager`, `MrcRegistrationSkeleton`
+
+#### Modul MRC — Kategori Lomba & Biaya (`/dashboard/mrc/pengaturan/kategori`)
+
+- Halaman manajemen kategori lomba per event MRC
+- Tabel kategori dengan kolom: nama, biaya (Rupiah), ukuran tim, kuota, status aktif
+- Dialog form tambah/edit kategori dengan field: nama, deskripsi, URL peraturan, biaya, min/max anggota, kuota
+- Toggle aktif/nonaktif kategori (non-aktif tidak tampil di form pendaftaran)
+- Hapus kategori dengan konfirmasi AlertDialog
+- Ringkasan statistik: jumlah kategori, rentang biaya, kategori aktif
+- Event selector untuk beralih antar event
+- Server actions: `getCategoriesByEvent()`, `createMrcCategory()`, `updateMrcCategory()`, `deleteMrcCategory()`
+- Komponen: `MrcCategoryManager`, `MrcCategorySkeleton`
+
+#### Modul MRC — Database Pendaftaran Peserta
+
+- Migration: tabel `mrc_teams` (data tim + status workflow 6 tahap)
+- Tabel `mrc_team_members` (anggota tim: ketua, member, pembimbing)
+- Tabel `mrc_payments` (bukti pembayaran + verifikasi panitia)
+- Enum: `mrc_team_status`, `mrc_payment_status`, `mrc_member_role`
+- Audit trail otomatis pada `mrc_teams` dan `mrc_payments`
+- RLS policy: admin manage + peserta akses tim sendiri
+- Tipe TypeScript: `MrcTeam`, `MrcTeamMember`, `MrcPayment`, `MrcTeamFull`
+
+#### Modul MRC — Verifikasi Berkas & Tim (`/dashboard/mrc/peserta/berkas`)
+
+- Tabel tim peserta dengan expandable detail (anggota, kontak, pembimbing)
+- Filter event dan status (pending, revisi, terverifikasi, ditolak)
+- Statistik mini: menunggu, perlu revisi, terverifikasi
+- Aksi verifikasi: setujui / minta revisi / tolak (dengan alasan wajib)
+- Server actions: `getTeamsForVerification()`, `updateTeamDocStatus()`
+- Komponen: `TeamVerificationTable`, `TeamVerificationSkeleton`
+
+#### Modul MRC — Verifikasi Pembayaran (`/dashboard/mrc/peserta/pembayaran`)
+
+- Tabel tim dengan bukti pembayaran, nominal, metode, pengirim
+- Link langsung ke file bukti pembayaran
+- Statistik: tim eligible, menunggu, terverifikasi, total pemasukan (Rupiah)
+- Aksi verifikasi / tolak inline dengan alasan
+- Auto-update status tim ke `payment_verified` setelah pembayaran diverifikasi
+- Server actions: `getTeamsForPayment()`, `verifyPayment()`
+- Komponen: `PaymentVerificationTable`, `PaymentVerificationSkeleton`
+
+#### Modul MRC — Database Sistem QR & Check-in
+
+- Migration: tabel `mrc_qr_codes` (token QR per anggota tim)
+- Tabel `mrc_scan_logs` (log setiap scan: checkin/entry/exit/match_verify)
+- Enum: `mrc_scan_type`, `mrc_member_role` (reuse)
+- RLS policy untuk panitia
+- Tipe TypeScript: `MrcQrCode`, `MrcQrCodeWithTeam`, `MrcScanLog`, `MrcScanType`
+
+#### Modul MRC — Pendaftaran Ulang (`/dashboard/mrc/operasional/checkin`)
+
+- Scanner input QR token (kompatibel barcode scanner)
+- Statistik realtime: total kokarde, sudah check-in, di dalam gedung
+- Daftar peserta dengan status check-in & inside badge
+- Feedback scan langsung (sukses/sudah check-in/error)
+- Server actions: `getCheckinStats()`, `scanQrToken()`
+- Komponen: `CheckinManager`, `CheckinSkeleton`
+
+#### Modul MRC — Generate & Cetak QR (`/dashboard/mrc/operasional/qr`)
+
+- Generate QR codes batch untuk semua anggota tim (skip duplikat)
+- Tabel QR: nama, tim, role, token, status check-in
+- Layout cetak kokarde 2 kolom (print-friendly via `print:hidden`/`print:block`)
+- Statistik: total QR, sudah/belum check-in
+- Server actions: `generateQrCodesForEvent()`, `getQrCodesForEvent()`
+- Komponen: `QrManager`, `QrManagerSkeleton`
+
+#### Modul MRC — Scan QR Anti Joki (`/dashboard/mrc/operasional/scan`)
+
+- 4 mode scan: Check-in, Masuk Gedung, Keluar Gedung, Verifikasi Tanding
+- Mode selector visual dengan color-coded cards
+- Input QR token dengan auto-focus (barcode scanner friendly)
+- Hasil scan detail: identitas, tim, institusi, kategori, role
+- Riwayat scan session-based (20 entri terakhir) dengan timestamp
+- Logic auto: entry harus sudah check-in, exit toggle is_inside, match_verify read-only
+
+#### Modul MRC — Foundation Sistem Pertandingan (Tahap 1)
+
+**Database:**
+
+- Migration: 6 tabel baru (`mrc_groups`, `mrc_group_teams`, `mrc_matches`, `mrc_match_rounds`, `mrc_live_state`, `mrc_overlay_configs`)
+- 5 enum baru: `mrc_match_stage`, `mrc_match_status`, `mrc_timer_status`, `mrc_overlay_scene`, `mrc_timer_mode`
+- Timer countdown per pertandingan (`timer_duration`, `timer_remaining`, `timer_status`, `timer_started_at`)
+- Bracket progression otomatis (`next_match_id`, `next_match_slot`)
+- Live state per kategori untuk kontrol overlay OBS
+- Overlay config per kategori (background upload, posisi teks, warna tema)
+- RLS: admin CRUD + public read untuk overlay pages
+- Supabase Realtime enabled: `mrc_matches`, `mrc_match_rounds`, `mrc_live_state`, `mrc_group_teams`
+
+**TypeScript Types:**
+
+- 7 enum + labels: MrcMatchStage, MrcMatchStatus, MrcTimerStatus, MrcOverlayScene, MrcTimerMode
+- 10 interface baru: MrcGroup, MrcGroupTeam, MrcGroupTeamWithInfo, MrcMatch, MrcMatchWithTeams, MrcMatchRound, MrcLiveState, MrcOverlayConfig, OverlayElementPosition
+
+**Server Actions:**
+
+- `drawGroups()` — Drawing grup acak per kategori
+- `getGroupStandings()` — Ambil klasemen grup + info tim
+- `getMatchesByCategory()` — Daftar pertandingan per kategori
+- `submitRoundScore()` — Input skor babak + auto-update total
+- `finishMatch()` — Selesaikan match + bracket progression
+- `getMatchRounds()` — Skor per babak
+- `getLiveState()` — Ambil/buat live state per kategori
+- `updateLiveState()` — Update scene overlay, timer break/coming up
+- `updateMatchState()` — Update timer, swap, status pertandingan
+
+**Sidebar Navigation:**
+
+- Ditambahkan section "Streaming & Overlay" (Pengaturan Overlay, Daftar Overlay)
+- "Manajemen Pertandingan" diperbarui: Drawing Grup, Klasemen & Bracket, Panel Operator
+
+#### Modul MRC — Drawing Grup & Bracket (Tahap 2)
+
+**Halaman Drawing Grup (`/dashboard/mrc/pertandingan/drawing`):**
+
+- Pilih event → pilih kategori lomba
+- Konfigurasi: tim per grup (default 3), babak per match (2/3), durasi timer
+- Drawing acak dengan dialog konfirmasi (menghapus data lama)
+- Visualisasi hasil drawing: kartu grup dengan daftar tim
+- Generate jadwal round-robin otomatis per grup
+- Daftar pertandingan grup dengan badge status
+- Server action: `generateGroupMatches()` — buat jadwal round-robin
+
+**Halaman Klasemen & Bracket (`/dashboard/mrc/pertandingan/bracket`):**
+
+- Dual tab: Klasemen Grup | Bracket Eliminasi
+- Tabel standing per grup: M/W/D/L/SF/SA/±/Pts
+- Baris lolos (top 2) di-highlight hijau
+- Bracket eliminasi horizontal: kolom per stage, card per match
+- Nama pemenang bold, badge LIVE merah, skor final
+- Empty states informatif saat data belum ada
+
+#### Modul MRC — Panel Operator (Tahap 3)
+
+**Halaman Panel Operator (`/dashboard/mrc/pertandingan/operator`):**
+
+- 3-level selector: Event → Kategori → Pertandingan (auto-select match live/upcoming)
+- Scoreboard besar: nama tim (swap-aware), skor total, timer countdown
+- Timer countdown: preset 1/2/3/5/10 menit + input kustom
+- Kontrol timer: Start (hijau), Pause (kuning), Reset
+- Timer merah berkedip saat sisa < 30 detik
+- Input skor per babak (0-100) dengan catatan juri opsional
+- Auto-advance babak setelah submit skor + auto-swap posisi babak genap
+- Auto-reset timer ke durasi awal saat pindah babak
+- Riwayat skor per babak inline
+- Tombol "Mulai Pertandingan" (upcoming → live)
+- Tombol "Tukar Posisi" (manual swap kapan saja)
+- Dialog "Pilih Pemenang" → selesaikan match + bracket auto-advance
+- Status pertandingan selesai dengan info pemenang
+- Komponen: `OperatorPanel`, `OperatorSkeleton`
+
+#### Modul MRC — Overlay OBS & Streaming (Tahap 4)
+
+**Route Group `(overlay)` — 6 Overlay Publik untuk OBS Browser Source:**
+
+- `/overlay/match` — Nama tim + skor + timer countdown. Elemen transparan, posisi absolut. Timer merah berkedip saat < 30 detik. Swap-aware.
+- `/overlay/scoreboard` — Skor detail per babak dalam kartu semi-transparan. Pemenang dengan ikon 🏆.
+- `/overlay/bracket` — Pohon bracket eliminasi horizontal. Card per match, LIVE badge merah, pemenang bold.
+- `/overlay/standing` — Tabel klasemen grup. Baris lolos (top 2) highlight hijau. Dark semi-transparan.
+- `/overlay/coming-up` — Preview match selanjutnya + countdown opsional.
+- `/overlay/break` — Pesan istirahat animasi pulse + countdown (mode: none/countdown/target_time).
+- Semua overlay: background transparan, Supabase Realtime subscription, query params `?event=xxx&cat=xxx`.
+- Layout overlay: Suspense boundary, fixed fullscreen, tanpa navigasi.
+
+**Dashboard Streaming (`/dashboard/mrc/streaming/...`):**
+
+- **Pengaturan Overlay** (`/streaming/overlay`): Scene switcher 7 tombol (none/match/scoreboard/bracket/standing/coming_up/break), konfigurasi break (pesan + timer mode), konfigurasi coming up (pilih match + pesan + timer), start timer. Komponen: `OverlayController`.
+- **Daftar Overlay** (`/streaming/daftar`): 6 kartu overlay dengan deskripsi, ikon, URL preview, tombol Salin URL (clipboard), tombol buka di tab baru. URL auto-generate dengan event & category. Komponen: `OverlayList`.
+
+**Server Action:**
+
+- `generateGroupMatches()` — Generate jadwal round-robin otomatis per grup
+
+---
+
 ## [0.5.0] - 2026-02-28
 
 ### Added

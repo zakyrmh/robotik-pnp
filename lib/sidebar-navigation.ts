@@ -41,6 +41,7 @@ import {
   Shield,
   Ticket,
   Trophy,
+  Video,
   // Super Admin
   Crown,
 } from 'lucide-react'
@@ -270,8 +271,16 @@ export const SIDEBAR_MENU: SidebarMenuGroup[] = [
         icon: Trophy,
         subItems: [
           { title: 'Drawing Grup', href: '/dashboard/mrc/pertandingan/drawing' },
-          { title: 'Realtime Bracket', href: '/dashboard/mrc/pertandingan/bracket' },
-          { title: 'Live Score & OBS', href: '/dashboard/mrc/pertandingan/livescore' },
+          { title: 'Klasemen & Bracket', href: '/dashboard/mrc/pertandingan/bracket' },
+          { title: 'Panel Operator', href: '/dashboard/mrc/pertandingan/operator' },
+        ],
+      },
+      {
+        title: 'Streaming & Overlay',
+        icon: Video,
+        subItems: [
+          { title: 'Pengaturan Overlay', href: '/dashboard/mrc/streaming/overlay' },
+          { title: 'Daftar Overlay', href: '/dashboard/mrc/streaming/daftar' },
         ],
       },
     ],
