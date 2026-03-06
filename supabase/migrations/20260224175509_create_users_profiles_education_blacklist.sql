@@ -23,14 +23,19 @@ COMMENT ON COLUMN public.users.deleted_at IS 'Soft delete: jika terisi, user dia
 
 -- Trigger sync dari auth.users → public.users otomatis saat user baru daftar
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
   INSERT INTO public.users (id, email, status)
   VALUES (NEW.id, NEW.email, 'active');
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
@@ -65,15 +70,19 @@ COMMENT ON COLUMN public.profiles.avatar_url      IS 'URL file di Cloudflare R2'
 
 -- Trigger auto-create profile saat user baru dibuat
 CREATE OR REPLACE FUNCTION public.handle_new_profile()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
   INSERT INTO public.profiles (user_id, full_name)
-  VALUES (NEW.id, COALESCE(NEW.raw_user_meta_data->>
-'full_name', ''));
+  VALUES (NEW.id, COALESCE(NEW.raw_user_meta_data->>'full_name', ''));
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
+DROP TRIGGER IF EXISTS on_auth_user_created_profile ON auth.users;
 CREATE TRIGGER on_auth_user_created_profile
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_profile();

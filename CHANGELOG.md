@@ -17,6 +17,89 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ---
 
+## [0.8.0] - 2026-03-05
+
+### Fixed
+
+- **Auth & Audit Logs**: Memperbaiki issue `Database error saving new user` saat register yang disebabkan karena trigger `fn_audit_log` memaksa pencarian `NEW.id` pada tabel yang memakai `user_id` (seperti `profiles`).
+- **Auth Triggers**: Menyederhanakan trigger tabel `auth.users` dengan menggabungkan operasi insert `users` dan `profiles` ke dalam satu transaksi function `handle_new_user()` untuk mencegah _race condition_.
+
+### Added
+
+#### Dashboard Caang — Wizard Pendaftaran (`/dashboard`)
+
+- Dashboard halaman utama otomatis mendeteksi role `caang` dan menampilkan wizard pendaftaran
+- Wizard 4-step: Data Diri → Upload Dokumen → Pembayaran → Review & Kirim
+- Step 1 (Biodata): nama, panggilan, gender, TTL, alamat, telepon, NIM, jurusan/prodi (cascading dropdown), tahun masuk, motivasi, pengalaman organisasi, prestasi
+- Step 2 (Dokumen): URL pas foto, KTM (opsional), bukti follow IG Robotik, IG MRC, subscribe YT — dengan indikator status per dokumen
+- Step 3 (Pembayaran): metode (transfer/offline), nominal, bukti pembayaran URL
+- Step 4 (Review): ringkasan data diri, checklist dokumen (✓/✗), info pembayaran, tombol submit
+- Visual step indicator: active/done/pending states dengan ikon + warna
+- Status banner: submitted (kuning), accepted (hijau 🎉), rejected (merah), revision (oranye + field tags)
+- Revision mode: field yang perlu direvisi ditandai border oranye + badge "Revisi"
+- Read-only mode saat status submitted/accepted/rejected
+- Auto-create `or_registrations` record saat caang pertama kali buka dashboard
+- Server component `CaangDashboard` dengan welcome header, progress info bar, dan data fetching paralel
+- 6 server actions baru: `getMyRegistration`, `saveBiodata`, `saveDocuments`, `savePayment`, `submitRegistration`, `getStudyProgramOptions`
+
+#### Modul Open Recruitment — Manajemen Caang
+
+**Database (Migration: `20260304190000_create_or_registrations.sql`):**
+
+- 1 tabel: `or_registrations` (biodata, dokumen, pembayaran, verifikasi)
+- 2 enum: `or_registration_status` (draft/submitted/revision/accepted/rejected), `or_registration_step` (biodata/documents/payment/completed)
+- Multi-step tracking pendaftaran: biodata → dokumen → pembayaran → submit
+- Verifikasi 3 keputusan: terima, tolak, minta revisi (dengan field tracking)
+- Revision fields: array field yang perlu direvisi oleh caang
+- Unique constraint: 1 pendaftaran per user
+- RLS: admin OR full access + caang CRUD own registration
+- Realtime enabled: `or_registrations`
+- Schema TypeScript (`lib/db/schema/or.ts`): `OrRegistration(WithUser)`, `OrBlacklistWithUser`, `OrDashboardStats`
+
+**Verifikasi Pendaftar (`/dashboard/or/caang/verifikasi`):**
+
+- Alert pending: jumlah pendaftar menunggu verifikasi + revisi ulang
+- Filter status (submitted/revision/accepted/rejected) + text search (nama/email)
+- Kartu pendaftar: avatar, biodata ringkas (email, NIM, prodi, telepon), status + step badge
+- Quick action buttons per kartu: terima (✓), revisi (↻), tolak (✗)
+- Detail modal: biodata grid lengkap, motivasi, pengalaman, prestasi, dokumen preview grid, pembayaran
+- Verifikasi form inline: terima (catatan opsional), tolak (alasan), revisi (pilih field + instruksi)
+- Revision field tag selector: 9 field (foto, KTM, IG, YT, pembayaran, motivasi, telepon, alamat)
+- Preview dokumen overlay
+- Komponen: `VerifikasiManager`, `VerifikasiSkeleton`
+
+**Daftar Blacklist Caang (`/dashboard/or/caang/blacklist`):**
+
+- Statistik: total blacklist, permanen, sementara
+- Form tambah blacklist: pilih caang (filter existing), alasan, bukti URL, permanen/sementara + tanggal exp
+- Auto-reject pendaftaran aktif saat diblacklist
+- Kartu blacklist: badge permanen/sementara, alasan, tanggal, exp date
+- Preview bukti + hapus dengan konfirmasi
+- Komponen: `BlacklistManager`, `BlacklistSkeleton`
+
+**Database & Edit Data (`/dashboard/or/caang/database`):**
+
+- Statistik 6 kartu: total, draft, menunggu, revisi, diterima, ditolak
+- Filter status + text search (nama/email/NIM)
+- Tabel lengkap: nomor, nama+email, status, NIM, prodi, telepon, step (emoji), terdaftar, aksi
+- Edit modal: profil (nama, panggilan, telepon, alamat) + registrasi (motivasi, pengalaman, prestasi, tahun masuk)
+- Preview dokumen (foto, KTM, IG, YT, bukti bayar) dari dalam modal edit
+- Dual update: adminUpdateProfile + adminUpdateRegistration
+- Komponen: `DatabaseManager`, `DatabaseSkeleton`
+
+**Server Actions (`or.action.ts`):**
+
+- `getRegistrations()` — filter status + search, join profil + edukasi + prodi + jurusan
+- `getRegistrationById()`
+- `verifyRegistration()` — accept/reject/revision + revision fields
+- `adminUpdateRegistration()` — update data pendaftaran
+- `adminUpdateProfile()` — update profil user
+- `getBlacklist()` — join profil + email
+- `addToBlacklist()` — auto reject pendaftaran aktif
+- `removeFromBlacklist()`
+
+---
+
 ## [0.7.0] - 2026-03-03
 
 ### Added

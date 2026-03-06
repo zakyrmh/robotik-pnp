@@ -2,26 +2,71 @@
  * Halaman Dashboard — /dashboard
  *
  * Halaman utama setelah user berhasil login.
- * Konten dashboard akan dikembangkan lebih lanjut.
- * Saat ini menampilkan placeholder dengan style Bento Grid.
+ * Mendeteksi role user:
+ * - Caang → Tampilkan Registration Wizard (pendaftaran step-by-step)
+ * - Lainnya → Tampilkan dashboard umum
  *
  * Catatan: Proteksi autentikasi dilakukan di layout.tsx (private).
  */
 
+import { Suspense } from 'react'
+import { createClient } from '@/lib/supabase/server'
+import { Skeleton } from '@/components/ui/skeleton'
+
 export default function DashboardPage() {
   return (
+    <Suspense fallback={<DashboardSkeleton />}>
+      <DashboardContent />
+    </Suspense>
+  )
+}
+
+async function DashboardContent() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  if (!user) return null
+
+  // Check user roles
+  const { data: userRolesData } = await supabase
+    .from('user_roles')
+    .select('roles ( name )')
+    .eq('user_id', user.id)
+
+  const userRoles: string[] = (userRolesData ?? [])
+    .map((row) => {
+      const role = row.roles
+      if (Array.isArray(role)) return role[0]?.name ?? null
+      if (role && typeof role === 'object' && 'name' in role) return (role as { name: string }).name
+      return null
+    })
+    .filter((name): name is string => name !== null)
+
+  const isCaang = userRoles.includes('caang') && !userRoles.includes('admin') && !userRoles.includes('super_admin') && !userRoles.includes('pengurus') && !userRoles.includes('anggota')
+
+  if (isCaang) {
+    // Dynamic import caang content to keep bundle smaller
+    const { CaangDashboard } = await import('@/components/or/caang-dashboard')
+    return <CaangDashboard />
+  }
+
+  // Default dashboard for other roles
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('full_name')
+    .eq('user_id', user.id)
+    .single()
+
+  return (
     <div className="space-y-6">
-      {/* Header halaman */}
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
         <p className="text-sm text-muted-foreground">
-          Selamat datang di Sistem Informasi UKM Robotik PNP.
+          Selamat datang{profile?.full_name ? `, ${profile.full_name}` : ''}! Ini adalah Sistem Informasi UKM Robotik PNP.
         </p>
       </div>
 
-      {/* Bento Grid placeholder */}
       <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-        {/* Kartu statistik placeholder */}
         {[
           { label: 'Total Anggota', value: '—' },
           { label: 'Calon Anggota', value: '—' },
@@ -41,7 +86,6 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Area konten utama placeholder */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <div className="rounded-xl border bg-card p-6 shadow-sm md:col-span-4">
           <h2 className="mb-4 text-sm font-semibold">Aktivitas Terbaru</h2>
@@ -56,6 +100,22 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div>
+        <Skeleton className="h-8 w-64 rounded mb-2" />
+        <Skeleton className="h-4 w-96 rounded" />
+      </div>
+      <Skeleton className="h-32 rounded-xl" />
+      <div className="grid gap-4 sm:grid-cols-4">
+        {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-20 rounded-xl" />)}
+      </div>
+      <Skeleton className="h-64 rounded-xl" />
     </div>
   )
 }
