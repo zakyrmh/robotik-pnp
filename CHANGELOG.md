@@ -17,6 +17,26 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ---
 
+## [0.8.1] - 2026-03-07
+
+### Added
+
+- **Dokumen & Bukti Pembayaran**: Mendukung upload berkas gambar pendaftaran calon anggota secara langsung dari web menuju _Cloudflare R2 Object Storage_.
+- **Client-Side Compression**: Integrasi `browser-image-compression` untuk mencekik bandwith dan ukuran file maksimal 1MB per gambar sebelum diunggah ke server.
+- **R2 Folder Organizing**: Upload file kini dikelompokkan otomatis berkat path dinamis `caang/2026/{userId}/namafile` per pendaftar.
+- UI _Preview Image_ _realtime_ saat memuat file foto (Dokumen dan Pembayaran).
+- Bar indikator kemajuan unduhan file ("_Memproses Pemasukan Data..._") khusus per file di step Dokumen dan Pembayaran.
+- Peringatan pop-up navigasi browser (`beforeunload`) bila caang tak sengaja me-refresh halaman sebelum menyimpan unggahan gambar.
+- Link praktis di formulir dokumen yang langsung mengarahkan pengguna ke laman Instagram dan YouTube instansi.
+
+### Changed
+
+- Input **Nominal Pembayaran (Rp)** telah dihapus dari formulir untuk menghindari _human-error_.
+- Input **Bukti Pembayaran (URL)** (teks manual) telah diubah sepenuhnya menggunakan form File Image khusus.
+- Apabila calon anggota menekan metode pembayaran "Transfer", sistem kini akan menayangkan UI Box Daftar Rekening Bank Statis (Bank Nagari, BNI) dan E-Wallet (DANA, OVO) lengkap dengan tombol klik Salin Nomor _Clipboard_ 📋.
+
+---
+
 ## [0.8.0] - 2026-03-05
 
 ### Fixed

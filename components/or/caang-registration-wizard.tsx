@@ -13,7 +13,8 @@
  * Jika revision → caang bisa edit dan submit ulang
  */
 
-import { useState, useTransition } from 'react'
+import Image from 'next/image'
+import { useState, useTransition, useEffect } from 'react'
 import {
   User,
   FileText,
@@ -30,6 +31,9 @@ import {
   Camera,
   Instagram,
   Youtube,
+  Copy,
+  Landmark,
+  Wallet,
 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
@@ -52,6 +56,8 @@ import {
   submitRegistration,
   getMyRegistration,
 } from '@/app/actions/or.action'
+import { uploadImageToR2 } from '@/app/actions/upload.action'
+import imageCompression from 'browser-image-compression'
 import type { OrRegistrationWithUser } from '@/lib/db/schema/or'
 import { OR_REGISTRATION_STATUS_LABELS } from '@/lib/db/schema/or'
 
@@ -63,8 +69,6 @@ const STEPS = [
   { key: 'payment', label: 'Pembayaran', icon: CreditCard },
   { key: 'review', label: 'Kirim', icon: Send },
 ] as const
-
-type StepKey = (typeof STEPS)[number]['key']
 
 interface Props {
   registration: OrRegistrationWithUser
@@ -109,11 +113,36 @@ export function CaangRegistrationWizard({ registration: initialReg, studyProgram
   const [igFollowUrl, setIgFollowUrl] = useState(reg.ig_follow_url || '')
   const [igMrcUrl, setIgMrcUrl] = useState(reg.ig_mrc_url || '')
   const [ytSubUrl, setYtSubUrl] = useState(reg.yt_sub_url || '')
+  
+  // Document Files
+  const [photoFile, setPhotoFile] = useState<File | null>(null)
+  const [ktmFile, setKtmFile] = useState<File | null>(null)
+  const [igFollowFile, setIgFollowFile] = useState<File | null>(null)
+  const [igMrcFile, setIgMrcFile] = useState<File | null>(null)
+  const [ytSubFile, setYtSubFile] = useState<File | null>(null)
+
+  const [uploadStatus, setUploadStatus] = useState<Record<string, 'pending' | 'uploading' | 'done' | 'error'>>({})
+  const [previews, setPreviews] = useState<Record<string, string>>({})
 
   // ── Payment form ──
   const [paymentUrl, setPaymentUrl] = useState(reg.payment_url || '')
+  const [paymentFile, setPaymentFile] = useState<File | null>(null)
   const [paymentMethod, setPaymentMethod] = useState(reg.payment_method || 'transfer')
-  const [paymentAmount, setPaymentAmount] = useState(reg.payment_amount ? String(reg.payment_amount) : '')
+
+  // ── Unsaved Document Warning (BeforeUnload) ──
+  useEffect(() => {
+    const hasUnsavedFiles = !!(photoFile || ktmFile || igFollowFile || igMrcFile || ytSubFile || paymentFile)
+    
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedFiles) {
+        e.preventDefault()
+        e.returnValue = '' // Standar browser untuk memunculkan default alert popup
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [photoFile, ktmFile, igFollowFile, igMrcFile, ytSubFile, paymentFile])
 
   const showFeedback = (type: 'success' | 'error', msg: string) => {
     setFeedback({ type, msg })
@@ -150,34 +179,143 @@ export function CaangRegistrationWizard({ registration: initialReg, studyProgram
     })
   }
 
-  const handleSaveDocuments = () => {
-    if (!photoUrl.trim()) { showFeedback('error', 'Pas foto wajib diupload.'); return }
-    if (!igFollowUrl.trim()) { showFeedback('error', 'Bukti follow IG Robotik wajib diupload.'); return }
-    if (!igMrcUrl.trim()) { showFeedback('error', 'Bukti follow IG MRC wajib diupload.'); return }
-    if (!ytSubUrl.trim()) { showFeedback('error', 'Bukti subscribe YT wajib diupload.'); return }
-    startTransition(async () => {
-      const result = await saveDocuments({
-        photoUrl, ktmUrl: ktmUrl || undefined,
-        igFollowUrl, igMrcUrl, ytSubUrl,
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, setFile: (f: File | null) => void, fieldName: string) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      showFeedback('error', 'Hanya gambar (JPG, PNG) yang diperbolehkan.')
+      e.target.value = ''
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      showFeedback('error', `Ukuran ${file.name} melebihi 5MB.`)
+      e.target.value = ''
+      return
+    }
+
+    try {
+      showFeedback('success', `Mengkompresi gambar...`)
+      setUploadStatus(prev => ({ ...prev, [fieldName]: 'pending' }))
+      const compressed = await imageCompression(file, {
+        maxSizeMB: 1, 
+        maxWidthOrHeight: 1280,
+        useWebWorker: true,
       })
-      if (result.error) { showFeedback('error', result.error); return }
-      showFeedback('success', 'Dokumen berhasil disimpan!')
-      await reload()
-      setActiveStep(2)
+      const finalFile = new File([compressed], file.name, { type: file.type })
+      setFile(finalFile)
+      
+      // Update preview immediately
+      setPreviews(prev => ({ ...prev, [fieldName]: URL.createObjectURL(finalFile) }))
+      showFeedback('success', `Gambar siap diunggah.`)
+    } catch {
+      setFile(file)
+    }
+  }
+
+  const handleSaveDocuments = () => {
+    if (!photoUrl && !photoFile) { showFeedback('error', 'Pas foto wajib diupload.'); return }
+    if (!igFollowUrl && !igFollowFile) { showFeedback('error', 'Bukti follow IG Robotik wajib diupload.'); return }
+    if (!igMrcUrl && !igMrcFile) { showFeedback('error', 'Bukti follow IG MRC wajib diupload.'); return }
+    if (!ytSubUrl && !ytSubFile) { showFeedback('error', 'Bukti subscribe YT wajib diupload.'); return }
+
+    startTransition(async () => {
+      try {
+        const uploadIfFile = async (file: File | null, existingUrl: string, field: string) => {
+          if (!file) return existingUrl
+          
+          setUploadStatus(prev => ({ ...prev, [field]: 'uploading' }))
+          const fd = new FormData()
+          fd.append('file', file)
+          const res = await uploadImageToR2(fd, `caang/2026/${reg.user_id}`)
+          
+          if (!res.success) {
+            setUploadStatus(prev => ({ ...prev, [field]: 'error' }))
+            throw new Error(String(res.error))
+          }
+          
+          setUploadStatus(prev => ({ ...prev, [field]: 'done' }))
+          return res.url as string
+        }
+
+        const newPhotoUrl = await uploadIfFile(photoFile, photoUrl, 'photo_url')
+        const newKtmUrl = await uploadIfFile(ktmFile, ktmUrl, 'ktm_url')
+        const newIgFollowUrl = await uploadIfFile(igFollowFile, igFollowUrl, 'ig_follow_url')
+        const newIgMrcUrl = await uploadIfFile(igMrcFile, igMrcUrl, 'ig_mrc_url')
+        const newYtSubUrl = await uploadIfFile(ytSubFile, ytSubUrl, 'yt_sub_url')
+
+        const result = await saveDocuments({
+          photoUrl: newPhotoUrl,
+          ktmUrl: newKtmUrl || undefined,
+          igFollowUrl: newIgFollowUrl,
+          igMrcUrl: newIgMrcUrl,
+          ytSubUrl: newYtSubUrl,
+        })
+
+        if (result.error) throw new Error(result.error)
+        
+        setPhotoUrl(newPhotoUrl)
+        setKtmUrl(newKtmUrl)
+        setIgFollowUrl(newIgFollowUrl)
+        setIgMrcUrl(newIgMrcUrl)
+        setYtSubUrl(newYtSubUrl)
+        
+        setPhotoFile(null)
+        setKtmFile(null)
+        setIgFollowFile(null)
+        setIgMrcFile(null)
+        setYtSubFile(null)
+
+        showFeedback('success', 'Dokumen berhasil disimpan!')
+        await reload()
+        setActiveStep(2)
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : String(err)
+        showFeedback('error', errorMsg || 'Gagal menyimpan / mengupload dokumen.')
+      }
     })
   }
 
   const handleSavePayment = () => {
-    if (!paymentUrl.trim()) { showFeedback('error', 'Bukti pembayaran wajib diupload.'); return }
+    if (!paymentUrl && !paymentFile) { showFeedback('error', 'Bukti pembayaran wajib diupload.'); return }
+    
     startTransition(async () => {
-      const result = await savePayment({
-        paymentUrl, paymentMethod,
-        paymentAmount: paymentAmount ? parseInt(paymentAmount) : undefined,
-      })
-      if (result.error) { showFeedback('error', result.error); return }
-      showFeedback('success', 'Pembayaran berhasil disimpan!')
-      await reload()
-      setActiveStep(3)
+      try {
+        let newPaymentUrl = paymentUrl
+        if (paymentFile) {
+          setUploadStatus(prev => ({ ...prev, payment_url: 'uploading' }))
+          const fd = new FormData()
+          fd.append('file', paymentFile)
+          const res = await uploadImageToR2(fd, `caang/2026/${reg.user_id}`)
+          
+          if (!res.success) {
+            setUploadStatus(prev => ({ ...prev, payment_url: 'error' }))
+            throw new Error(String(res.error))
+          }
+          
+          newPaymentUrl = res.url as string
+          setUploadStatus(prev => ({ ...prev, payment_url: 'done' }))
+        }
+
+        const result = await savePayment({
+          paymentUrl: newPaymentUrl, 
+          paymentMethod,
+          paymentAmount: undefined,
+        })
+
+        if (result.error) throw new Error(result.error)
+        
+        setPaymentUrl(newPaymentUrl)
+        setPaymentFile(null)
+
+        showFeedback('success', 'Pembayaran berhasil disimpan!')
+        await reload()
+        setActiveStep(3)
+      } catch (err) {
+        const errorMsg = err instanceof Error ? err.message : String(err)
+        showFeedback('error', errorMsg || 'Gagal menyimpan / mengupload dokumen.')
+      }
     })
   }
 
@@ -384,32 +522,81 @@ export function CaangRegistrationWizard({ registration: initialReg, studyProgram
           <div className="space-y-4 animate-in fade-in-0">
             <div>
               <h2 className="text-lg font-semibold flex items-center gap-2"><FileText className="size-5" /> Upload Dokumen</h2>
-              <p className="text-xs text-muted-foreground">Upload dokumen pendukung pendaftaran. Gunakan link dari Google Drive, Imgur, atau penyimpanan lain.</p>
+              <p className="text-xs text-muted-foreground">Upload gambar dokumen pendukung. Maksimal 5MB per file.</p>
             </div>
             <div className="grid gap-4">
               {[
-                { label: 'Pas Foto *', value: photoUrl, set: setPhotoUrl, icon: Camera, field: 'photo_url', placeholder: 'URL pas foto (formal, latar biru/merah)' },
-                { label: 'KTM (opsional)', value: ktmUrl, set: setKtmUrl, icon: FileText, field: 'ktm_url', placeholder: 'URL foto KTM' },
-                { label: 'Bukti Follow IG Robotik PNP *', value: igFollowUrl, set: setIgFollowUrl, icon: Instagram, field: 'ig_follow_url', placeholder: 'URL screenshot follow @robotik_pnp' },
-                { label: 'Bukti Follow IG MRC *', value: igMrcUrl, set: setIgMrcUrl, icon: Instagram, field: 'ig_mrc_url', placeholder: 'URL screenshot follow @mrc_pnp' },
-                { label: 'Bukti Subscribe YT Robotik *', value: ytSubUrl, set: setYtSubUrl, icon: Youtube, field: 'yt_sub_url', placeholder: 'URL screenshot subscribe YouTube Robotik PNP' },
+                { label: 'Pas Foto *', valueUrl: photoUrl, file: photoFile, setFile: setPhotoFile, icon: Camera, field: 'photo_url' },
+                { label: 'KTM (opsional)', valueUrl: ktmUrl, file: ktmFile, setFile: setKtmFile, icon: FileText, field: 'ktm_url' },
+                { label: 'Bukti Follow IG Robotik PNP *', valueUrl: igFollowUrl, file: igFollowFile, setFile: setIgFollowFile, icon: Instagram, field: 'ig_follow_url', link: { url: 'https://www.instagram.com/robotikpnp', text: 'Buka IG Robotik PNP' } },
+                { label: 'Bukti Follow IG MRC *', valueUrl: igMrcUrl, file: igMrcFile, setFile: setIgMrcFile, icon: Instagram, field: 'ig_mrc_url', link: { url: 'https://www.instagram.com/mrcpnp', text: 'Buka IG MRC' } },
+                { label: 'Bukti Subscribe YT Robotik *', valueUrl: ytSubUrl, file: ytSubFile, setFile: setYtSubFile, icon: Youtube, field: 'yt_sub_url', link: { url: 'https://www.youtube.com/@robotikpnp', text: 'Buka YouTube Robotik' } },
               ].map((doc) => {
                 const Icon = doc.icon
                 return (
                   <div key={doc.field} className={`rounded-lg border p-3 space-y-1.5 ${needsRevision(doc.field) ? 'border-orange-500 bg-orange-500/5' : ''}`}>
-                    <Label className="text-xs flex items-center gap-1.5">
-                      <Icon className="size-3.5" /> {doc.label}
-                      {needsRevision(doc.field) && <Badge variant="outline" className="text-[9px] bg-orange-500/15 text-orange-600 ml-1">Revisi</Badge>}
+                    <Label className="text-xs flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Icon className="size-3.5" /> {doc.label}
+                        {needsRevision(doc.field) && <Badge variant="outline" className="text-[9px] bg-orange-500/15 text-orange-600 ml-1">Revisi</Badge>}
+                      </span>
+                      {doc.link && (
+                        <a href={doc.link.url} target="_blank" rel="noreferrer" className="text-[10px] text-blue-600 hover:text-blue-700 underline font-normal">
+                          {doc.link.text}
+                        </a>
+                      )}
                     </Label>
-                    <Input
-                      value={doc.value}
-                      onChange={(e) => doc.set(e.target.value)}
-                      placeholder={doc.placeholder}
-                      disabled={isReadOnly}
-                    />
-                    {doc.value && (
-                      <p className="text-[10px] text-emerald-600 flex items-center gap-1"><CheckCircle2 className="size-3" /> Link tersedia</p>
-                    )}
+                    
+                    <div className="flex gap-3 mt-2">
+                       <div className="size-16 shrink-0 rounded border border-muted-foreground/20 overflow-hidden bg-muted flex items-center justify-center">
+                          {(previews[doc.field] || doc.valueUrl) ? (
+                            <Image src={previews[doc.field] || doc.valueUrl} alt={doc.label} width={64} height={64} unoptimized className="w-full h-full object-cover" />
+                          ) : (
+                            <Camera className="size-5 text-muted-foreground/50" />
+                          )}
+                       </div>
+                       
+                       <div className="flex-1 space-y-2 flex flex-col justify-center">
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleFileChange(e, doc.setFile, doc.field)}
+                            disabled={isReadOnly || uploadStatus[doc.field] === 'uploading'}
+                            className="h-8 py-1.5 cursor-pointer file:cursor-pointer text-xs"
+                          />
+                          
+                          {/* File Selection Status / Link */}
+                          {!doc.file && doc.valueUrl && uploadStatus[doc.field] !== 'uploading' && (
+                            <p className="text-[10px] text-emerald-600 flex items-center gap-1"><CheckCircle2 className="size-3" /> <a href={doc.valueUrl} target="_blank" rel="noreferrer" className="underline hover:text-emerald-700">Lihat dokumen yang tersimpan</a></p>
+                          )}
+                          {doc.file && uploadStatus[doc.field] !== 'uploading' && uploadStatus[doc.field] !== 'done' && (
+                            <p className="text-[10px] text-blue-600 flex items-center gap-1"><CheckCircle2 className="size-3" /> Siap diunggah: {doc.file.name}</p>
+                          )}
+
+                          {/* Progress Indicators */}
+                          {uploadStatus[doc.field] === 'uploading' && (
+                            <div className="flex items-center gap-2">
+                              <Loader2 className="size-3 animate-spin text-blue-600 shrink-0" />
+                              <span className="text-[10px] text-blue-600 shrink-0">Mengunggah...</span>
+                              <div className="flex-1 overflow-hidden h-1.5 flex rounded-full bg-blue-100">
+                                <div className="w-[65%] shrink-0 shadow-none flex flex-col text-center whitespace-nowrap justify-center bg-blue-600 opacity-60 animate-pulse"></div>
+                              </div>
+                            </div>
+                          )}
+                          {uploadStatus[doc.field] === 'done' && (
+                            <div className="flex items-center gap-1 text-emerald-600">
+                              <CheckCircle2 className="size-3" />
+                              <span className="text-[10px]">Penyimpanan berhasil!</span>
+                            </div>
+                          )}
+                          {uploadStatus[doc.field] === 'error' && (
+                            <div className="flex items-center gap-1 text-red-600">
+                              <XCircle className="size-3" />
+                              <span className="text-[10px]">Gagal mengunggah file!</span>
+                            </div>
+                          )}
+                       </div>
+                    </div>
                   </div>
                 )
               })}
@@ -442,24 +629,160 @@ export function CaangRegistrationWizard({ registration: initialReg, studyProgram
                 <Select value={paymentMethod} onValueChange={setPaymentMethod} disabled={isReadOnly}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="transfer">Transfer Bank</SelectItem>
-                    <SelectItem value="offline">Bayar Offline (Cash)</SelectItem>
+                    <SelectItem value="transfer">Transfer Bank & E-Wallet</SelectItem>
+                    <SelectItem value="offline">Bayar Offline (Cash / Sekretariat)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5">
-                <Label className="text-xs">Nominal (Rp)</Label>
-                <Input type="number" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} placeholder="50000" disabled={isReadOnly} />
-              </div>
-              <div className={`space-y-1.5 ${needsRevision('payment_url') ? 'sm:col-span-2' : ''}`}>
-                <Label className="text-xs">Bukti Pembayaran (URL) *</Label>
-                <Input
-                  value={paymentUrl}
-                  onChange={(e) => setPaymentUrl(e.target.value)}
-                  placeholder="URL bukti transfer / foto bukti bayar"
-                  disabled={isReadOnly}
-                  className={needsRevision('payment_url') ? 'border-orange-500' : ''}
-                />
+
+              {/* Tampilkan Daftar Rekening Jika Transfer */}
+              {paymentMethod === 'transfer' && (
+                <div className="sm:col-span-2 rounded-lg border bg-muted/20 p-4 space-y-4">
+                  <div>
+                    <p className="text-xs font-semibold mb-1">Informasi Rekening Pembayaran</p>
+                    <p className="text-[10px] text-muted-foreground">Silakan transfer biaya registrasi ke salah satu rekening atau nomor e-wallet di bawah ini.</p>
+                  </div>
+                  
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {/* Bank List */}
+                    <div className="space-y-2">
+                      <div className="flex flex-col gap-2 p-3 bg-background border rounded-md">
+                        <div className="flex items-center gap-1.5 text-blue-600 font-semibold text-xs">
+                          <Landmark className="size-3.5" /> Bank Nagari
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-mono text-sm font-medium tracking-wider">1234-5678-9012</p>
+                            <p className="text-[10px] text-muted-foreground uppercase mt-0.5">a.n. UKM Robotik PNP</p>
+                          </div>
+                          <Button variant="ghost" size="icon" className="size-6 text-muted-foreground hover:text-foreground" onClick={() => { navigator.clipboard.writeText('123456789012'); showFeedback('success', 'Nomor rekening Bank Nagari tersalin!') }}>
+                            <Copy className="size-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      <div className="flex flex-col gap-2 p-3 bg-background border rounded-md">
+                        <div className="flex items-center gap-1.5 text-blue-600 font-semibold text-xs">
+                          <Landmark className="size-3.5" /> Bank BNI
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-mono text-sm font-medium tracking-wider">0987-6543-210</p>
+                            <p className="text-[10px] text-muted-foreground uppercase mt-0.5">a.n. UKM Robotik PNP</p>
+                          </div>
+                          <Button variant="ghost" size="icon" className="size-6 text-muted-foreground hover:text-foreground" onClick={() => { navigator.clipboard.writeText('09876543210'); showFeedback('success', 'Nomor rekening Bank BNI tersalin!') }}>
+                            <Copy className="size-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* E-Wallet List */}
+                    <div className="space-y-2">
+                      <div className="flex flex-col gap-2 p-3 bg-background border rounded-md">
+                        <div className="flex items-center gap-1.5 text-emerald-600 font-semibold text-xs">
+                          <Wallet className="size-3.5" /> DANA / GoPay
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-mono text-sm font-medium tracking-wider">0812-3456-7890</p>
+                            <p className="text-[10px] text-muted-foreground uppercase mt-0.5">a.n. UKM Robotik PNP</p>
+                          </div>
+                          <Button variant="ghost" size="icon" className="size-6 text-muted-foreground hover:text-foreground" onClick={() => { navigator.clipboard.writeText('081234567890'); showFeedback('success', 'Nomor e-wallet tersalin!') }}>
+                            <Copy className="size-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-2 p-3 bg-background border rounded-md">
+                        <div className="flex items-center gap-1.5 text-purple-600 font-semibold text-xs">
+                          <Wallet className="size-3.5" /> OVO / ShopeePay
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-mono text-sm font-medium tracking-wider">0852-6543-2109</p>
+                            <p className="text-[10px] text-muted-foreground uppercase mt-0.5">a.n. UKM Robotik PNP</p>
+                          </div>
+                          <Button variant="ghost" size="icon" className="size-6 text-muted-foreground hover:text-foreground" onClick={() => { navigator.clipboard.writeText('085265432109'); showFeedback('success', 'Nomor e-wallet tersalin!') }}>
+                            <Copy className="size-3.5" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {paymentMethod === 'offline' && (
+                <div className="sm:col-span-2 rounded-lg border bg-emerald-500/10 border-emerald-500/20 p-3 flex gap-3">
+                   <div className="mt-0.5 text-emerald-600"><CheckCircle2 className="size-4" /></div>
+                   <div>
+                     <p className="text-xs font-medium text-emerald-800 dark:text-emerald-400">Pembayaran di Sekretariat</p>
+                     <p className="text-[10px] text-emerald-700/80 dark:text-emerald-500 mt-1 leading-relaxed">
+                       Harap serahkan biaya pendaftaran langsung ke sekretariat UKM Robotik PNP. Minta bukti/kwitansi kepada panitia lalu fotokan ke dalam unggahan bukti di bawah.
+                     </p>
+                   </div>
+                </div>
+              )}
+
+              <div className={`space-y-1.5 rounded-lg border p-3 sm:col-span-2 ${needsRevision('payment_url') ? 'border-orange-500 bg-orange-500/5' : ''}`}>
+                <Label className="text-xs flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <FileText className="size-3.5" /> Bukti Pembayaran *
+                    {needsRevision('payment_url') && <Badge variant="outline" className="text-[9px] bg-orange-500/15 text-orange-600 ml-1">Revisi</Badge>}
+                  </span>
+                </Label>
+                
+                <div className="flex gap-3 mt-2">
+                   <div className="size-16 shrink-0 rounded border border-muted-foreground/20 overflow-hidden bg-muted flex items-center justify-center">
+                      {(previews['payment_url'] || paymentUrl) ? (
+                        <Image src={previews['payment_url'] || paymentUrl} alt="Bukti Pembayaran" width={64} height={64} unoptimized className="w-full h-full object-cover" />
+                      ) : (
+                        <Camera className="size-5 text-muted-foreground/50" />
+                      )}
+                   </div>
+                   
+                   <div className="flex-1 space-y-2 flex flex-col justify-center">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleFileChange(e, setPaymentFile, 'payment_url')}
+                        disabled={isReadOnly || uploadStatus['payment_url'] === 'uploading'}
+                        className="h-8 py-1.5 cursor-pointer file:cursor-pointer text-xs"
+                      />
+                      
+                      {/* File Selection Status / Link */}
+                      {!paymentFile && paymentUrl && uploadStatus['payment_url'] !== 'uploading' && (
+                        <p className="text-[10px] text-emerald-600 flex items-center gap-1"><CheckCircle2 className="size-3" /> <a href={paymentUrl} target="_blank" rel="noreferrer" className="underline hover:text-emerald-700">Lihat dokumen yang tersimpan</a></p>
+                      )}
+                      {paymentFile && uploadStatus['payment_url'] !== 'uploading' && uploadStatus['payment_url'] !== 'done' && (
+                        <p className="text-[10px] text-blue-600 flex items-center gap-1"><CheckCircle2 className="size-3" /> Siap diunggah: {paymentFile.name}</p>
+                      )}
+
+                      {/* Progress Indicators */}
+                      {uploadStatus['payment_url'] === 'uploading' && (
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="size-3 animate-spin text-blue-600 shrink-0" />
+                          <span className="text-[10px] font-medium text-blue-600 shrink-0">Memproses Pemasukan Data...</span>
+                          <div className="flex-1 overflow-hidden h-1.5 flex rounded-full bg-blue-100">
+                            <div className="w-[65%] shrink-0 shadow-none flex flex-col text-center whitespace-nowrap justify-center bg-blue-600 opacity-60 animate-pulse"></div>
+                          </div>
+                        </div>
+                      )}
+                      {uploadStatus['payment_url'] === 'done' && (
+                        <div className="flex items-center gap-1 text-emerald-600">
+                          <CheckCircle2 className="size-3" />
+                          <span className="text-[10px]">Penyimpanan berhasil!</span>
+                        </div>
+                      )}
+                      {uploadStatus['payment_url'] === 'error' && (
+                        <div className="flex items-center gap-1 text-red-600">
+                          <XCircle className="size-3" />
+                          <span className="text-[10px]">Gagal mengunggah file!</span>
+                        </div>
+                      )}
+                   </div>
+                </div>
               </div>
             </div>
 
