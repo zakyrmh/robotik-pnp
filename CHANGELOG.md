@@ -26,6 +26,13 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Otomasi deteksi _next parameter_ di API route callbacks (`/api/auth/callback`) untuk mendukung pengalihan laman Magic Link yang dinamis.
 - Integrasi ke Form UI Zod Schema auth baru khusus pemulihan kata sandi.
 
+### Fixed
+
+- **API/Query**: Memperbaiki error ambiguitas relasi (`PGRST201`) pada _query_ Supabase di modul Open Recruitment (`getRegistrations` dan `getBlacklist`) dengan menambahkan _Foreign Key Hint_ eksplisit (`users!or_registrations_user_id_fkey`).
+- **Database/RLS**: Memperbaiki _bug_ data pendidikan (NIM dan Jurusan) pendaftar yang tidak muncul bagi admin dengan menambahkan _policy_ RLS `"education: admin read"` pada tabel `education_details`.
+- **Database/RLS**: Memperbarui _policy_ RLS pada tabel `or_registrations` agar lebih fleksibel dan terintegrasi dengan sistem RBAC (menggunakan pengecekan _permission_ `or:manage`) menggantikan pengecekan _role_ statis.
+- **UI/Logic**: Memperbaiki _bug_ munculnya akun dengan _multi-role_ (seperti akun yang memiliki role `caang` sekaligus `super_admin`) di antrean Halaman Verifikasi. Perbaikan dilakukan dengan menambahkan _hint_ relasi `user_roles!user_roles_user_id_fkey` dan mengimplementasikan filter pengecualian _role_ staf/pengurus di sisi server (Next.js).
+
 ---
 
 ## [0.8.1] - 2026-03-07
