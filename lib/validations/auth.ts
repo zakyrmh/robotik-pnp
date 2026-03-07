@@ -37,3 +37,20 @@ export type LoginFormData = z.infer<typeof loginSchema>
 
 /** Tipe data yang dihasilkan dari validasi register */
 export type RegisterFormData = z.infer<typeof registerSchema>
+
+/** Skema validasi untuk form lupa password */
+export const forgotPasswordSchema = z.object({
+  email: emailSchema,
+})
+
+/** Skema validasi untuk form reset password */
+export const resetPasswordSchema = z.object({
+  password: passwordSchema,
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Password tidak sama",
+  path: ["confirmPassword"],
+})
+
+export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>
+export type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>

@@ -112,7 +112,18 @@ function LoginForm() {
           <AuthFormField
             fieldId="login-password"
             name="password"
-            label="Password"
+            label={
+              <div className="flex items-center justify-between w-full">
+                <span>Password</span>
+                <Link
+                  href="/forgot-password"
+                  className="text-xs text-primary hover:underline underline-offset-4"
+                  tabIndex={-1}
+                >
+                  Lupa password?
+                </Link>
+              </div>
+            }
             type="password"
             placeholder="Masukkan password"
             autoComplete="current-password"

@@ -16,7 +16,7 @@ interface AuthFormFieldProps extends React.ComponentProps<typeof Input> {
   /** ID unik untuk menghubungkan label dan input */
   fieldId: string
   /** Teks label yang ditampilkan di atas input */
-  label: string
+  label: React.ReactNode
   /** Pesan error yang ditampilkan di bawah input (opsional) */
   error?: string
 }

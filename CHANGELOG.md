@@ -17,6 +17,17 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ---
 
+## [0.8.2] - 2026-03-07
+
+### Added
+
+- **Fitur Lupa Password (`/forgot-password`)**: Halaman untuk meminta tautan reset password menggunakan flow OAuth Supabase (`resetPasswordForEmail`).
+- **Fitur Reset Password (`/reset-password`)**: Halaman untuk melakukan perubahan password secara asinkronus setelah session pemulihan divalidasi.
+- Otomasi deteksi _next parameter_ di API route callbacks (`/api/auth/callback`) untuk mendukung pengalihan laman Magic Link yang dinamis.
+- Integrasi ke Form UI Zod Schema auth baru khusus pemulihan kata sandi.
+
+---
+
 ## [0.8.1] - 2026-03-07
 
 ### Added
