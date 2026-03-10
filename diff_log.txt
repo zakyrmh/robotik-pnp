@@ -1,0 +1,122 @@
+diff --git a/app/actions/upload.action.ts b/app/actions/upload.action.ts
+index df80028..566c63d 100644
+--- a/app/actions/upload.action.ts
++++ b/app/actions/upload.action.ts
+@@ -1,49 +1,62 @@
+-'use server'
++"use server";
+ 
+-import { uploadToR2, getR2PublicUrl } from '@/lib/cloudflare/r2'
+-import { createClient } from '@/lib/supabase/server'
++import { uploadToR2, getR2PublicUrl } from "@/lib/cloudflare/r2";
++import { createClient } from "@/lib/supabase/server";
+ 
+ export async function uploadImageToR2(formData: FormData, folder: string) {
+   try {
+-    const supabase = await createClient()
+-    const { data: { user } } = await supabase.auth.getUser()
+-    if (!user) return { success: false, error: 'Unauthorized' }
++    const supabase = await createClient();
++    const {
++      data: { user },
++    } = await supabase.auth.getUser();
++    if (!user) return { success: false, error: "Unauthorized" };
+ 
+-    const file = formData.get('file') as File | null
+-    if (!file) return { success: false, error: 'No file provided' }
++    const file = formData.get("file") as File | null;
++    if (!file) return { success: false, error: "No file provided" };
+ 
+     // Validasi ukuran (maksimal 5MB, meski client sudah compress)
+-    if (file.size > 5 * 1024 * 1024) return { success: false, error: 'Ukuran file terlalu besar (Maksimal 5MB)' }
++    if (file.size > 5 * 1024 * 1024)
++      return {
++        success: false,
++        error: "Ukuran file terlalu besar (Maksimal 5MB)",
++      };
+ 
+     // Validasi tipe file
+-    if (!file.type.startsWith('image/')) return { success: false, error: 'Hanya file gambar yang diperbolehkan' }
++    if (!file.type.startsWith("image/"))
++      return { success: false, error: "Hanya file gambar yang diperbolehkan" };
++
++    // Pastikan env public URL sudah diset SEBELUM upload agar tidak ada file
++    // terupload ke R2 namun URL-nya tidak bisa disimpan ke database dengan benar.
++    const publicR2Url = process.env.NEXT_PUBLIC_R2_PUBLIC_URL;
++    if (!publicR2Url) {
++      return {
++        success: false,
++        error:
++          "Konfigurasi server tidak lengkap: NEXT_PUBLIC_R2_PUBLIC_URL belum diset. Hubungi administrator.",
++      };
++    }
++
++    const buffer = Buffer.from(await file.arrayBuffer());
+ 
+-    const buffer = Buffer.from(await file.arrayBuffer())
+-    
+-    // Hilangkan spasi dari nama file dan buat unik dengan userId & timestamp
+-    const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_')
+-    const filename = `${user.id}-${Date.now()}-${cleanFileName}`
+-    const key = `${folder}/${filename}`
++    // Hilangkan karakter spesial dari nama file dan buat unik dengan userId & timestamp
++    const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
++    const filename = `${user.id}-${Date.now()}-${cleanFileName}`;
++    const key = `${folder}/${filename}`;
+ 
+     const result = await uploadToR2(key, buffer, {
+       contentType: file.type,
+-    })
++    });
+ 
+-    if (!result.success) return { success: false, error: result.error }
+-
+-    // NEXT_PUBLIC_R2_PUBLIC_URL dari env
+-    const publicUrl = process.env.NEXT_PUBLIC_R2_PUBLIC_URL
+-    if(!publicUrl) {
+-      // Jika env custom domain R2 belum diset, fall back gunakan R2 default bucket URL/key
+-      return { success: true, url: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com/${process.env.R2_BUCKET_NAME}/${key}` }
+-    }
++    if (!result.success) return { success: false, error: result.error };
+ 
++    // Selalu kembalikan URL publik (r2.dev atau custom domain) — inilah yang disimpan ke database.
++    // URL ini bisa diakses langsung oleh browser tanpa autentikasi AWS Signature.
+     return {
+       success: true,
+-      url: getR2PublicUrl(key, publicUrl)
+-    }
++      url: getR2PublicUrl(key, publicR2Url),
++    };
+   } catch (error) {
+-    console.error('Upload error:', error)
+-    return { success: false, error: 'Gagal mengupload file ke storage server' }
++    console.error("Upload error:", error);
++    return { success: false, error: "Gagal mengupload file ke storage server" };
+   }
+ }
+diff --git a/next.config.ts b/next.config.ts
+index e9ffa30..1607f61 100644
+--- a/next.config.ts
++++ b/next.config.ts
+@@ -1,7 +1,20 @@
+ import type { NextConfig } from "next";
+ 
+ const nextConfig: NextConfig = {
+-  /* config options here */
++  images: {
++    remotePatterns: [
++      // Cloudflare R2 public access via r2.dev subdomain
++      {
++        protocol: "https",
++        hostname: "**.r2.dev",
++      },
++      // Cloudflare R2 S3-compatible endpoint (fallback/legacy)
++      {
++        protocol: "https",
++        hostname: "**.r2.cloudflarestorage.com",
++      },
++    ],
++  },
+ };
+ 
+ export default nextConfig;

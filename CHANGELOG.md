@@ -9,9 +9,16 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Added
 
+- **Pengaturan Open Recruitment**: Menambahkan halaman UI pengaturan periode pendaftaran (`/dashboard/or/pengaturan/periode`) untuk mengontrol status buka/tutup serta rentang jadwal kalender pendaftaran OR.
+- **Database/Settings**: Membuat tabel migrasi `or_settings` berskema _key-value_ JSONB untuk menyimpan berbagai konfigurasi dinamis sistem OR, lengkap dengan RLS dan _seed_ awal.
+- **Server Actions**: Menambahkan pustaka aksi `or-settings.action.ts` yang mencakup `getRegistrationPeriod` dan `updateRegistrationPeriod` untuk berinteraksi dengan tabel pengaturan baru.
+- **Konfigurasi Next Images**: Mendaftarkan domain R2 Cloudflare (`**.r2.dev` dan `**.r2.cloudflarestorage.com`) ke modul pemuat _remotePatterns_ di `next.config.ts` guna menunjang renderisasi `<Image>` NextJS.
+
 ### Changed
 
 ### Fixed
+
+- **Integrasi Cloudflare R2 Validasi**: Memperbaiki fungsi unggah (`upload.action.ts`) dengan validasi deteksi awal terhadap _environment_ `NEXT_PUBLIC_R2_PUBLIC_URL` guna mencegah cacat penyimpanan URL di _database_ pasca-_upload_ gagal.
 
 ### Removed
 
