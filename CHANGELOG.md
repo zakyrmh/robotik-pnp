@@ -16,8 +16,13 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Changed
 
+- **Migrasi Middleware → Proxy (Next.js 16)**: Mengubah nama file entry point dari `middleware.ts` menjadi `proxy.ts` dan nama fungsi dari `middleware` ke `proxy` di root project sesuai konvensi baru Next.js 16. Fungsi helper turut dimigrasi dari `lib/supabase/middleware.ts` ke `lib/supabase/proxy.ts`.
+- **Hapus `config.ts`**: Menghapus file `config.ts` di root project yang merupakan percobaan lama pembuatan middleware dengan nama file yang tidak dikenali Next.js.
+
 ### Fixed
 
+- **Auth Guard — Redirect Halaman Auth**: Memperbaiki bug di mana user yang sudah login tetap bisa mengakses halaman `/login`, `/register`, `/forgot-password`, dan `/reset-password`. Penyebabnya adalah tidak adanya file `proxy.ts` di root project sehingga logika redirect di `lib/supabase/proxy.ts` tidak pernah dieksekusi. Sekarang user yang sudah terautentikasi akan otomatis diarahkan ke `/dashboard`.
+- **Auth Guard — Cakupan Redirect Diperluas**: Memperluas daftar halaman auth yang diproteksi dari sebelumnya hanya `/login` dan `/register`, menjadi mencakup juga `/forgot-password` dan `/reset-password`.
 - **Integrasi Cloudflare R2 Validasi**: Memperbaiki fungsi unggah (`upload.action.ts`) dengan validasi deteksi awal terhadap _environment_ `NEXT_PUBLIC_R2_PUBLIC_URL` guna mencegah cacat penyimpanan URL di _database_ pasca-_upload_ gagal.
 
 ### Removed
