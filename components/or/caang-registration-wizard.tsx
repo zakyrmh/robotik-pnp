@@ -33,7 +33,6 @@ import {
   Youtube,
   Copy,
   Landmark,
-  Wallet,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -57,6 +56,11 @@ import {
   getMyRegistration,
 } from "@/app/actions/or.action";
 import { uploadImageToSupabase } from "@/app/actions/upload.action";
+import {
+  getPaymentAccounts,
+  getRegistrationFee,
+  OrBankAccount,
+} from "@/app/actions/or-settings.action";
 import imageCompression from "browser-image-compression";
 import type { OrRegistrationWithUser } from "@/lib/db/schema/or";
 import { OR_REGISTRATION_STATUS_LABELS } from "@/lib/db/schema/or";
@@ -146,6 +150,20 @@ export function CaangRegistrationWizard({
   const [paymentMethod, setPaymentMethod] = useState(
     reg.payment_method || "transfer",
   );
+  
+  const [paymentAccounts, setPaymentAccounts] = useState<OrBankAccount[]>([]);
+  const [loadingAccounts, setLoadingAccounts] = useState(true);
+  const [registrationFee, setRegistrationFee] = useState(50000);
+
+  useEffect(() => {
+    Promise.all([getPaymentAccounts(), getRegistrationFee()]).then(
+      ([accountsRes, feeRes]) => {
+        setPaymentAccounts(accountsRes.data.filter((acc) => acc.is_active));
+        setRegistrationFee(feeRes.data.amount);
+        setLoadingAccounts(false);
+      },
+    );
+  }, []);
 
   // ── Unsaved Document Warning (BeforeUnload) ──
   useEffect(() => {
@@ -1009,9 +1027,9 @@ export function CaangRegistrationWizard({
               {paymentMethod === "transfer" && (
                 <div className="sm:col-span-2 rounded-lg border bg-muted/20 p-4 space-y-4">
                   <div>
-                    <p className="text-xs font-semibold mb-1">
-                      Informasi Rekening Pembayaran
-                    </p>
+                    <h3 className="text-sm font-semibold mb-1">
+                      Biaya Registrasi: {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(registrationFee)}
+                    </h3>
                     <p className="text-[10px] text-muted-foreground">
                       Silakan transfer biaya registrasi ke salah satu rekening
                       atau nomor e-wallet di bawah ini.
@@ -1019,131 +1037,51 @@ export function CaangRegistrationWizard({
                   </div>
 
                   <div className="grid gap-3 sm:grid-cols-2">
-                    {/* Bank List */}
-                    <div className="space-y-2">
-                      <div className="flex flex-col gap-2 p-3 bg-background border rounded-md">
-                        <div className="flex items-center gap-1.5 text-blue-600 font-semibold text-xs">
-                          <Landmark className="size-3.5" /> Bank Nagari
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-mono text-sm font-medium tracking-wider">
-                              1234-5678-9012
-                            </p>
-                            <p className="text-[10px] text-muted-foreground uppercase mt-0.5">
-                              a.n. UKM Robotik PNP
-                            </p>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-6 text-muted-foreground hover:text-foreground"
-                            onClick={() => {
-                              navigator.clipboard.writeText("123456789012");
-                              showFeedback(
-                                "success",
-                                "Nomor rekening Bank Nagari tersalin!",
-                              );
-                            }}
-                          >
-                            <Copy className="size-3.5" />
-                          </Button>
-                        </div>
+                    {loadingAccounts ? (
+                      <div className="sm:col-span-2 py-6 text-center text-muted-foreground flex flex-col items-center justify-center">
+                        <Loader2 className="size-5 animate-spin mb-2" />
+                        <p className="text-xs font-medium">Memuat rekening...</p>
                       </div>
-
-                      <div className="flex flex-col gap-2 p-3 bg-background border rounded-md">
-                        <div className="flex items-center gap-1.5 text-blue-600 font-semibold text-xs">
-                          <Landmark className="size-3.5" /> Bank BNI
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-mono text-sm font-medium tracking-wider">
-                              0987-6543-210
-                            </p>
-                            <p className="text-[10px] text-muted-foreground uppercase mt-0.5">
-                              a.n. UKM Robotik PNP
-                            </p>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-6 text-muted-foreground hover:text-foreground"
-                            onClick={() => {
-                              navigator.clipboard.writeText("09876543210");
-                              showFeedback(
-                                "success",
-                                "Nomor rekening Bank BNI tersalin!",
-                              );
-                            }}
-                          >
-                            <Copy className="size-3.5" />
-                          </Button>
-                        </div>
+                    ) : paymentAccounts.length === 0 ? (
+                      <div className="sm:col-span-2 py-6 text-center border-2 border-dashed rounded-md text-muted-foreground">
+                        <p className="text-xs">Belum ada rekening yang ditambahkan.</p>
                       </div>
-                    </div>
-
-                    {/* E-Wallet List */}
-                    <div className="space-y-2">
-                      <div className="flex flex-col gap-2 p-3 bg-background border rounded-md">
-                        <div className="flex items-center gap-1.5 text-emerald-600 font-semibold text-xs">
-                          <Wallet className="size-3.5" /> DANA / GoPay
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-mono text-sm font-medium tracking-wider">
-                              0812-3456-7890
-                            </p>
-                            <p className="text-[10px] text-muted-foreground uppercase mt-0.5">
-                              a.n. UKM Robotik PNP
-                            </p>
+                    ) : (
+                      paymentAccounts.map((acc, index) => (
+                        <div
+                          key={acc.id || index}
+                          className="flex flex-col gap-2 p-3 bg-background border rounded-md"
+                        >
+                          <div className="flex items-center gap-1.5 text-blue-600 font-semibold text-xs">
+                            <Landmark className="size-3.5" /> {acc.bank_name}
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-6 text-muted-foreground hover:text-foreground"
-                            onClick={() => {
-                              navigator.clipboard.writeText("081234567890");
-                              showFeedback(
-                                "success",
-                                "Nomor e-wallet tersalin!",
-                              );
-                            }}
-                          >
-                            <Copy className="size-3.5" />
-                          </Button>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col gap-2 p-3 bg-background border rounded-md">
-                        <div className="flex items-center gap-1.5 text-purple-600 font-semibold text-xs">
-                          <Wallet className="size-3.5" /> OVO / ShopeePay
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-mono text-sm font-medium tracking-wider">
-                              0852-6543-2109
-                            </p>
-                            <p className="text-[10px] text-muted-foreground uppercase mt-0.5">
-                              a.n. UKM Robotik PNP
-                            </p>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-mono text-sm font-medium tracking-wider">
+                                {acc.account_number}
+                              </p>
+                              <p className="text-[10px] text-muted-foreground uppercase mt-0.5 max-w-[140px] truncate">
+                                a.n. {acc.account_name}
+                              </p>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="size-6 shrink-0 text-muted-foreground hover:text-foreground"
+                              onClick={() => {
+                                navigator.clipboard.writeText(acc.account_number);
+                                showFeedback(
+                                  "success",
+                                  `Rekening ${acc.bank_name} tersalin!`,
+                                );
+                              }}
+                            >
+                              <Copy className="size-3.5" />
+                            </Button>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-6 text-muted-foreground hover:text-foreground"
-                            onClick={() => {
-                              navigator.clipboard.writeText("085265432109");
-                              showFeedback(
-                                "success",
-                                "Nomor e-wallet tersalin!",
-                              );
-                            }}
-                          >
-                            <Copy className="size-3.5" />
-                          </Button>
                         </div>
-                      </div>
-                    </div>
+                      ))
+                    )}
                   </div>
                 </div>
               )}
