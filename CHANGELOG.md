@@ -29,6 +29,27 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ---
 
+## [0.8.3] - 2026-03-11
+
+### Added
+
+- **Server Action Publik**: Menambahkan fungsi `getPublicRegistrationPeriod` di `or-settings.action.ts` tanpa pengecekan autentikasi, sehingga halaman publik `/register` dapat membaca status periode pendaftaran menggunakan RLS anon read yang sudah ada di tabel `or_settings`.
+- **Komponen `RegisterForm`**: Mengekstrak form pendaftaran dari `register/page.tsx` menjadi client component tersendiri (`components/auth/register-form.tsx`) agar halaman register dapat dikonversi menjadi server component.
+- **Komponen `RegistrationClosed`**: Menambahkan tampilan informatif ketika pendaftaran ditutup (`components/auth/registration-closed.tsx`), berisi pesan penutupan, info kontak pengurus, dan tautan ke halaman login.
+- **Komponen `RegistrationCountdown`**: Menambahkan tampilan hitung mundur real-time (`components/auth/registration-countdown.tsx`) yang memperbarui hari/jam/menit/detik setiap detik menggunakan `setInterval`, dan otomatis me-refresh halaman via `router.refresh()` saat countdown habis.
+- **Migrasi Fix RLS**: Menambahkan migration `20260311000000_fix_or_settings_rls.sql` untuk memperbaiki policy RLS `or_settings` yang keliru.
+
+### Changed
+
+- **Halaman Register — Konversi ke Server Component**: Mengubah `register/page.tsx` dari client component menjadi async server component. Halaman kini mengambil data periode pendaftaran dari database saat render dan menampilkan salah satu dari tiga tampilan: form pendaftaran, hitung mundur, atau pesan ditutup — sesuai kondisi waktu saat ini terhadap `start_date` dan `end_date`.
+
+### Fixed
+
+- **Database/RLS `or_settings` — Policy Tidak Lengkap**: Memperbaiki bug di mana policy RLS `or_settings_admin_update` hanya mencakup `FOR UPDATE`, sedangkan operasi `.upsert()` di Supabase JS client diterjemahkan menjadi `INSERT ... ON CONFLICT DO UPDATE` yang membutuhkan KEDUA policy INSERT dan UPDATE. Policy lama diganti dengan `or_settings_admin_write` bertipe `FOR ALL` yang mencakup INSERT, UPDATE, dan DELETE sekaligus.
+- **Database `or_settings` — Tabel Belum Diaplikasikan**: Memperbaiki error _"Could not find the table 'public.or_settings' in the schema cache"_ yang disebabkan migration belum dijalankan di remote Supabase project. Tabel, seed data, dan RLS policy kini harus diaplikasikan secara manual via SQL Editor Supabase Dashboard.
+
+---
+
 ## [0.8.2] - 2026-03-07
 
 ### Added
