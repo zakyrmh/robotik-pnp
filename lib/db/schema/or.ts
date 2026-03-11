@@ -12,8 +12,14 @@ export type OrRegistrationStatus =
   | "draft"
   | "submitted"
   | "revision"
-  | "accepted"
-  | "rejected";
+  | "accepted" // Lolos Berkas -> Siap Pelatihan dll
+  | "rejected"
+  | "training"
+  | "interview_1"
+  | "project_phase"
+  | "interview_2"
+  | "graduated";
+
 export type OrRegistrationStep =
   | "biodata"
   | "documents"
@@ -27,8 +33,13 @@ export const OR_REGISTRATION_STATUS_LABELS: Record<
   draft: "Draft",
   submitted: "Menunggu Verifikasi",
   revision: "Perlu Revisi",
-  accepted: "Diterima",
+  accepted: "Lolos Berkas",
   rejected: "Ditolak",
+  training: "Masa Pelatihan",
+  interview_1: "Wawancara 1",
+  project_phase: "Project Seleksi",
+  interview_2: "Wawancara 2",
+  graduated: "Lulus / Lolos Akhir",
 };
 
 export const OR_REGISTRATION_STEP_LABELS: Record<OrRegistrationStep, string> = {

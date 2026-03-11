@@ -56,6 +56,11 @@ const STATUS_COLORS: Record<OrRegistrationStatus, string> = {
   revision: 'bg-orange-500/15 text-orange-600 border-orange-500/25',
   accepted: 'bg-emerald-500/15 text-emerald-600 border-emerald-500/25',
   rejected: 'bg-red-500/15 text-red-600 border-red-500/25',
+  training: "bg-blue-500/15 text-blue-600 border-blue-500/25",
+  interview_1: "bg-purple-500/15 text-purple-600 border-purple-500/25",
+  project_phase: "bg-indigo-500/15 text-indigo-600 border-indigo-500/25",
+  interview_2: "bg-fuchsia-500/15 text-fuchsia-600 border-fuchsia-500/25",
+  graduated: "bg-emerald-600/20 text-emerald-700 border-emerald-600/30 font-bold",
 }
 
 interface Props {
