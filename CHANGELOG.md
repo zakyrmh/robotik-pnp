@@ -29,6 +29,19 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ---
 
+## [0.8.4] - 2026-03-11
+
+### Added
+
+- **Route Handler `/auth/callback`**: Menambahkan route handler baru di `app/auth/callback/route.ts` yang menangani callback verifikasi email dari Supabase. Route ini menukar `code` dari query parameter dengan session pengguna menggunakan `exchangeCodeForSession`, lalu mengalihkan ke halaman sukses `/auth/verified` jika berhasil, atau ke `/login?error=...` jika gagal.
+- **Halaman `/auth/verified`**: Menambahkan halaman konfirmasi verifikasi email (`app/auth/verified/page.tsx`) yang ditampilkan setelah user mengklik link di email. Halaman berisi ikon sukses animasi, instruksi tiga langkah selanjutnya (Masuk → Lengkapi Profil → Ikuti OR), progress bar hitung mundur 5 detik, dan auto-redirect ke `/login` saat countdown habis via `router.push`. Tersedia pula tombol "Lanjutkan Sekarang" untuk redirect manual tanpa menunggu.
+
+### Fixed
+
+- **Auth Callback — Halaman 404 Saat Verifikasi Email**: Memperbaiki bug di mana user yang mengklik link verifikasi email mendapat halaman kosong 404. Penyebabnya adalah `emailRedirectTo` di `register-form.tsx` mengarah ke `/auth/callback`, sedangkan route handler yang ada di `app/(auth)/callback/route.ts` hanya melayani URL `/callback` (bukan `/auth/callback`) karena `(auth)` adalah route _group_ Next.js yang tidak berkontribusi pada URL. Route baru dibuat di path yang tepat (`app/auth/callback/route.ts`) untuk menangani URL `/auth/callback`.
+
+---
+
 ## [0.8.3] - 2026-03-11
 
 ### Added
