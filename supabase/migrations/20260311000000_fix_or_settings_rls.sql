@@ -14,11 +14,14 @@
 -- gagal karena tidak ada policy INSERT untuk admin.
 --
 -- Solusi: hapus policy lama dan ganti dengan FOR ALL
--- yang mencakup SELECT (INSERT + UPDATE + DELETE).
+-- yang mencakup INSERT + UPDATE + DELETE sekaligus.
+--
+-- Idempotent: aman dijalankan berulang kali.
 -- ================================================
 
--- Hapus policy lama yang hanya FOR UPDATE
+-- Hapus semua varian policy lama (apapun namanya)
 DROP POLICY IF EXISTS "or_settings_admin_update" ON public.or_settings;
+DROP POLICY IF EXISTS "or_settings_admin_write"  ON public.or_settings;
 
 -- Buat policy baru yang mencakup INSERT + UPDATE + DELETE
 -- sekaligus dengan USING dan WITH CHECK

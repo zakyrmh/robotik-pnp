@@ -4,9 +4,11 @@
 -- ================================================
 -- Tabel ini digunakan untuk menyimpan pengaturan global
 -- terkait Open Recruitment, seperti periode pendaftaran.
+--
+-- Idempotent: aman dijalankan berulang kali.
 -- ================================================
 
-CREATE TABLE public.or_settings (
+CREATE TABLE IF NOT EXISTS public.or_settings (
     id SERIAL PRIMARY KEY,
     key VARCHAR(50) UNIQUE NOT NULL,
     value JSONB NOT NULL,
@@ -19,13 +21,14 @@ COMMENT ON TABLE public.or_settings IS 'Pengaturan Open Recruitment';
 COMMENT ON COLUMN public.or_settings.key IS 'Kunci pengaturan, e.g., registration_period';
 COMMENT ON COLUMN public.or_settings.value IS 'Nilai pengaturan dalam format JSON';
 
--- Insert default registration period (tertutup secara default)
+-- Insert default registration period (skip jika sudah ada)
 INSERT INTO public.or_settings (key, value, description)
 VALUES (
     'registration_period',
     '{"is_open": false, "start_date": null, "end_date": null}'::jsonb,
     'Periode pendaftaran Open Recruitment'
-);
+)
+ON CONFLICT (key) DO NOTHING;
 
 -- =====================================================
 -- RLS POLICIES
@@ -36,6 +39,7 @@ ALTER TABLE public.or_settings ENABLE ROW LEVEL SECURITY;
 -- Semua orang (termasuk anon) bisa membaca pengaturan OR.
 -- Diperlukan oleh halaman publik /register untuk mengecek
 -- apakah pendaftaran sedang buka/tutup tanpa perlu login.
+DROP POLICY IF EXISTS "or_settings_public_read" ON public.or_settings;
 CREATE POLICY "or_settings_public_read" ON public.or_settings
     FOR SELECT
     USING (true);
@@ -48,6 +52,8 @@ CREATE POLICY "or_settings_public_read" ON public.or_settings
 -- PostgreSQL RLS memeriksa KEDUA policy INSERT dan UPDATE
 -- bahkan ketika baris sudah ada dan hanya UPDATE yang dieksekusi.
 -- Menggunakan FOR ALL memastikan kedua operasi selalu diizinkan.
+DROP POLICY IF EXISTS "or_settings_admin_update" ON public.or_settings;
+DROP POLICY IF EXISTS "or_settings_admin_write" ON public.or_settings;
 CREATE POLICY "or_settings_admin_write" ON public.or_settings
     FOR ALL
     USING (

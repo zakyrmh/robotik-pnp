@@ -1,0 +1,11 @@
+-- Migration: 20260307145857_remote_schema.sql
+-- ================================================
+-- Stub file — migration ini sudah dijalankan di remote database
+-- tetapi tidak memiliki file lokal yang sesuai.
+--
+-- File ini dibuat sebagai placeholder agar Supabase CLI dapat
+-- menyinkronkan riwayat migration (supabase migration repair)
+-- tanpa error "file does not exist".
+--
+-- Jangan hapus file ini.
+-- ================================================

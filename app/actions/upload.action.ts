@@ -1,62 +1,113 @@
 "use server";
 
-import { uploadToR2, getR2PublicUrl } from "@/lib/cloudflare/r2";
 import { createClient } from "@/lib/supabase/server";
 
-export async function uploadImageToR2(formData: FormData, folder: string) {
+/**
+ * Nama bucket di Supabase Storage.
+ * Bucket ini harus sudah dibuat manual via Supabase Dashboard
+ * dengan setting: Private, max 5MB, MIME types: image/*
+ */
+const BUCKET = "or-documents";
+
+/**
+ * Mengupload gambar ke Supabase Storage (bucket: or-documents).
+ *
+ * Alur:
+ * 1. Validasi auth, ukuran, dan tipe file
+ * 2. Upload ke path: {folder}/{timestamp}-{cleanFilename}
+ * 3. Generate Signed URL dengan masa berlaku 1 tahun
+ * 4. Kembalikan signed URL — inilah yang disimpan ke database
+ *
+ * Catatan: Bucket bersifat private. File tidak bisa diakses
+ * tanpa Signed URL yang dibuat server-side. Signed URL berlaku
+ * 1 tahun (cukup untuk satu periode OR).
+ *
+ * @param formData FormData berisi key "file" dengan File object
+ * @param folder   Path folder di dalam bucket, contoh: "caang/2026/{userId}"
+ */
+export async function uploadImageToSupabase(
+  formData: FormData,
+  folder: string,
+) {
   try {
     const supabase = await createClient();
+
+    // ── Langkah 1: Autentikasi ──
     const {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) return { success: false, error: "Unauthorized" };
 
+    // ── Langkah 2: Ambil dan validasi file ──
     const file = formData.get("file") as File | null;
-    if (!file) return { success: false, error: "No file provided" };
+    if (!file) return { success: false, error: "Tidak ada file yang dikirim." };
 
-    // Validasi ukuran (maksimal 5MB, meski client sudah compress)
-    if (file.size > 5 * 1024 * 1024)
+    if (file.size > 5 * 1024 * 1024) {
       return {
         success: false,
-        error: "Ukuran file terlalu besar (Maksimal 5MB)",
-      };
-
-    // Validasi tipe file
-    if (!file.type.startsWith("image/"))
-      return { success: false, error: "Hanya file gambar yang diperbolehkan" };
-
-    // Pastikan env public URL sudah diset SEBELUM upload agar tidak ada file
-    // terupload ke R2 namun URL-nya tidak bisa disimpan ke database dengan benar.
-    const publicR2Url = process.env.NEXT_PUBLIC_R2_PUBLIC_URL;
-    if (!publicR2Url) {
-      return {
-        success: false,
-        error:
-          "Konfigurasi server tidak lengkap: NEXT_PUBLIC_R2_PUBLIC_URL belum diset. Hubungi administrator.",
+        error: "Ukuran file terlalu besar (Maksimal 5MB).",
       };
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
+    if (!file.type.startsWith("image/")) {
+      return {
+        success: false,
+        error: "Hanya file gambar yang diperbolehkan (JPG, PNG, WebP).",
+      };
+    }
 
-    // Hilangkan karakter spesial dari nama file dan buat unik dengan userId & timestamp
+    // ── Langkah 3: Bangun path unik di dalam bucket ──
+    // Format: {folder}/{userId}-{timestamp}-{cleanFilename}
+    // Contoh: caang/2026/abc-123/abc-123-1741234567890-pas_foto.jpg
     const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
     const filename = `${user.id}-${Date.now()}-${cleanFileName}`;
-    const key = `${folder}/${filename}`;
+    const storagePath = `${folder}/${filename}`;
 
-    const result = await uploadToR2(key, buffer, {
-      contentType: file.type,
-    });
+    // ── Langkah 4: Upload ke Supabase Storage ──
+    const buffer = Buffer.from(await file.arrayBuffer());
 
-    if (!result.success) return { success: false, error: result.error };
+    const { error: uploadError } = await supabase.storage
+      .from(BUCKET)
+      .upload(storagePath, buffer, {
+        contentType: file.type,
+        upsert: false, // Jangan timpa file yang sudah ada
+      });
 
-    // Selalu kembalikan URL publik (r2.dev atau custom domain) — inilah yang disimpan ke database.
-    // URL ini bisa diakses langsung oleh browser tanpa autentikasi AWS Signature.
+    if (uploadError) {
+      console.error("[uploadImageToSupabase] Upload error:", uploadError);
+      return {
+        success: false,
+        error: `Gagal mengupload file: ${uploadError.message}`,
+      };
+    }
+
+    // ── Langkah 5: Buat Signed URL (berlaku 1 tahun) ──
+    // 365 hari × 24 jam × 60 menit × 60 detik = 31.536.000 detik
+    const ONE_YEAR_IN_SECONDS = 365 * 24 * 60 * 60;
+
+    const { data: signedData, error: signedError } = await supabase.storage
+      .from(BUCKET)
+      .createSignedUrl(storagePath, ONE_YEAR_IN_SECONDS);
+
+    if (signedError || !signedData?.signedUrl) {
+      console.error("[uploadImageToSupabase] Signed URL error:", signedError);
+      // File sudah terupload tapi URL gagal dibuat — hapus file agar tidak ada orphan
+      await supabase.storage.from(BUCKET).remove([storagePath]);
+      return {
+        success: false,
+        error: "File terupload tapi gagal membuat URL akses. Coba ulangi.",
+      };
+    }
+
     return {
       success: true,
-      url: getR2PublicUrl(key, publicR2Url),
+      url: signedData.signedUrl,
     };
   } catch (error) {
-    console.error("Upload error:", error);
-    return { success: false, error: "Gagal mengupload file ke storage server" };
+    console.error("[uploadImageToSupabase] Unexpected error:", error);
+    return {
+      success: false,
+      error: "Terjadi kesalahan tak terduga saat mengupload file.",
+    };
   }
 }
