@@ -121,6 +121,12 @@ export const SIDEBAR_MENU: SidebarMenuGroup[] = [
         href: "/dashboard/pustaka",
         requiresAcceptedCaang: true,
       },
+      {
+        title: "Magang",
+        icon: FlaskConical,
+        href: "/dashboard/magang",
+        requiresAcceptedCaang: true,
+      },
     ],
   },
 

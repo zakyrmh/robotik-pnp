@@ -12,6 +12,21 @@ export interface RegistrationFee {
   amount: number;
 }
 
+/** Tahapan pipeline seleksi caang (bisa dikustomisasi per generasi) */
+export interface PipelineStep {
+  id: string;
+  label: string;
+  description: string;
+  /** Status OR yang dipetakan ke step ini */
+  mappedStatus: string;
+  order: number;
+}
+
+/** Link komunitas (WhatsApp, Discord, dll) */
+export interface CommunityLinks {
+  whatsapp: string;
+  discord: string;
+}
 export interface OrBankAccount {
   id: string;
   bank_name: string;
@@ -272,5 +287,217 @@ export async function saveRegistrationFee(
   } catch (error) {
     console.error("[saveRegistrationFee]", error);
     return { success: false, error: "Gagal menyimpan biaya pendaftaran." };
+  }
+}
+
+// ═══════════════════════════════════════════════
+// PIPELINE STEPS (Tahapan Seleksi Caang) — Dinamis per generasi
+// ═══════════════════════════════════════════════
+
+const DEFAULT_PIPELINE_STEPS: PipelineStep[] = [
+  {
+    id: "1",
+    label: "Pendaftaran",
+    description: "Registrasi dan verifikasi berkas",
+    mappedStatus: "accepted",
+    order: 1,
+  },
+  {
+    id: "2",
+    label: "Demo Robot & Perkenalan",
+    description: "Pengenalan organisasi dan demo robot",
+    mappedStatus: "training",
+    order: 2,
+  },
+  {
+    id: "3",
+    label: "Pelatihan",
+    description: "Sesi pelatihan dasar robotik",
+    mappedStatus: "training",
+    order: 3,
+  },
+  {
+    id: "4",
+    label: "Wawancara 1",
+    description: "Wawancara tahap pertama",
+    mappedStatus: "interview_1",
+    order: 4,
+  },
+  {
+    id: "5",
+    label: "Project Robot",
+    description: "Mengerjakan project robot secara tim",
+    mappedStatus: "project_phase",
+    order: 5,
+  },
+  {
+    id: "6",
+    label: "Wawancara 2",
+    description: "Wawancara tahap akhir",
+    mappedStatus: "interview_2",
+    order: 6,
+  },
+  {
+    id: "7",
+    label: "Pelantikan Anggota Muda",
+    description: "Resmi menjadi anggota muda UKM Robotik",
+    mappedStatus: "graduated",
+    order: 7,
+  },
+  {
+    id: "8",
+    label: "Penentuan Jabatan",
+    description: "Penempatan di divisi organisasi",
+    mappedStatus: "graduated",
+    order: 8,
+  },
+];
+
+/**
+ * Mengambil konfigurasi pipeline steps seleksi caang
+ */
+export async function getPipelineSteps(): Promise<{
+  data: PipelineStep[];
+  error: string | null;
+}> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { data: DEFAULT_PIPELINE_STEPS, error: null };
+
+    const { data, error } = await supabase
+      .from("or_settings")
+      .select("value")
+      .eq("key", "pipeline_steps")
+      .single();
+
+    if (error) {
+      if (error.code === "PGRST116") {
+        return { data: DEFAULT_PIPELINE_STEPS, error: null };
+      }
+      return { data: DEFAULT_PIPELINE_STEPS, error: error.message };
+    }
+
+    return {
+      data: (data.value as PipelineStep[]) || DEFAULT_PIPELINE_STEPS,
+      error: null,
+    };
+  } catch (error) {
+    console.error("[getPipelineSteps]", error);
+    return {
+      data: DEFAULT_PIPELINE_STEPS,
+      error: "Gagal memuat pipeline steps.",
+    };
+  }
+}
+
+/**
+ * Menyimpan konfigurasi pipeline steps seleksi caang (admin only)
+ */
+export async function savePipelineSteps(
+  steps: PipelineStep[],
+): Promise<{ success: boolean; error: string | null }> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: "Unauthorized" };
+
+    const { error } = await supabase.from("or_settings").upsert(
+      {
+        key: "pipeline_steps",
+        value: steps as unknown as string,
+        description:
+          "Tahapan pipeline seleksi caang (dikustomisasi per generasi)",
+        updated_at: new Date().toISOString(),
+        updated_by: user.id,
+      },
+      { onConflict: "key" },
+    );
+
+    if (error) return { success: false, error: error.message };
+    return { success: true, error: null };
+  } catch (error) {
+    console.error("[savePipelineSteps]", error);
+    return { success: false, error: "Gagal menyimpan pipeline steps." };
+  }
+}
+
+// ═══════════════════════════════════════════════
+// COMMUNITY LINKS (WhatsApp & Discord)
+// ═══════════════════════════════════════════════
+
+/**
+ * Mengambil link komunitas (WhatsApp, Discord)
+ */
+export async function getCommunityLinks(): Promise<{
+  data: CommunityLinks;
+  error: string | null;
+}> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { data: { whatsapp: "", discord: "" }, error: null };
+
+    const { data, error } = await supabase
+      .from("or_settings")
+      .select("value")
+      .eq("key", "community_links")
+      .single();
+
+    if (error) {
+      if (error.code === "PGRST116") {
+        return { data: { whatsapp: "", discord: "" }, error: null };
+      }
+      return { data: { whatsapp: "", discord: "" }, error: error.message };
+    }
+
+    return {
+      data: (data.value as CommunityLinks) || { whatsapp: "", discord: "" },
+      error: null,
+    };
+  } catch (error) {
+    console.error("[getCommunityLinks]", error);
+    return {
+      data: { whatsapp: "", discord: "" },
+      error: "Gagal memuat link komunitas.",
+    };
+  }
+}
+
+/**
+ * Menyimpan link komunitas (WhatsApp, Discord) — admin only
+ */
+export async function saveCommunityLinks(
+  links: CommunityLinks,
+): Promise<{ success: boolean; error: string | null }> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: "Unauthorized" };
+
+    const { error } = await supabase.from("or_settings").upsert(
+      {
+        key: "community_links",
+        value: links as unknown as string,
+        description: "Link grup WhatsApp dan server Discord",
+        updated_at: new Date().toISOString(),
+        updated_by: user.id,
+      },
+      { onConflict: "key" },
+    );
+
+    if (error) return { success: false, error: error.message };
+    return { success: true, error: null };
+  } catch (error) {
+    console.error("[saveCommunityLinks]", error);
+    return { success: false, error: "Gagal menyimpan link komunitas." };
   }
 }

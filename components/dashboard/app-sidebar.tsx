@@ -236,7 +236,8 @@ export function AppSidebar({ userRoles, caangStatus, user, ...props }: AppSideba
 
       {/* ── Konten: Menu navigasi yang difilter ── */}
       <SidebarContent>
-        {/* Menu Dashboard utama (selalu tampil untuk semua role) */}
+        {/* Menu Dashboard utama (tampil untuk semua role KECUALI caang) */}
+        {!userRoles.includes('caang') && (
         <SidebarGroup>
           <SidebarMenu>
             <SidebarMenuItem>
@@ -268,7 +269,7 @@ export function AppSidebar({ userRoles, caangStatus, user, ...props }: AppSideba
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
-
+        )}
         {/* Menu per role — difilter berdasarkan role user */}
         {visibleGroups.map((group) => (
           <NavGroup key={group.label} group={group} pathname={pathname} />
