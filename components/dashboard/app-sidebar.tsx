@@ -51,6 +51,8 @@ import {
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   /** Daftar nama role yang dimiliki user */
   userRoles: string[]
+  /** Status registrasi caang (opsional, hanya untuk role caang) */
+  caangStatus?: string | null
   /** Informasi user untuk ditampilkan di footer */
   user: {
     email: string
@@ -195,11 +197,11 @@ function NavGroup({
 // KOMPONEN UTAMA: AppSidebar
 // ═════════════════════════════════════════════════════
 
-export function AppSidebar({ userRoles, user, ...props }: AppSidebarProps) {
+export function AppSidebar({ userRoles, caangStatus, user, ...props }: AppSidebarProps) {
   const pathname = usePathname()
 
-  /** Filter menu berdasarkan role user */
-  const visibleGroups = filterMenuByRoles(userRoles)
+  /** Filter menu berdasarkan role user (dan status caang jika relevan) */
+  const visibleGroups = filterMenuByRoles(userRoles, caangStatus)
 
   return (
     <Sidebar collapsible="icon" {...props}>

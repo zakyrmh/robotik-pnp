@@ -18,8 +18,8 @@
  * Ke depan, filter bisa diperkuat dengan memeriksa departemen/divisi spesifik.
  */
 
-import type { LucideIcon } from 'lucide-react'
-import type { SystemRole } from '@/lib/db/schema/enums'
+import type { LucideIcon } from "lucide-react";
+import type { SystemRole } from "@/lib/db/schema/enums";
 
 import {
   Home,
@@ -44,7 +44,7 @@ import {
   Video,
   // Super Admin
   Crown,
-} from 'lucide-react'
+} from "lucide-react";
 
 // ═════════════════════════════════════════════════════
 // TIPE DATA
@@ -52,28 +52,30 @@ import {
 
 /** Item sub-menu di dalam collapsible */
 export interface SidebarSubItem {
-  title: string
-  href: string
+  title: string;
+  href: string;
 }
 
 /** Item menu utama (bisa punya sub-item) */
 export interface SidebarMenuItem {
-  title: string
-  icon: LucideIcon
+  title: string;
+  icon: LucideIcon;
   /** Jika tidak ada subItems, href wajib ada */
-  href?: string
+  href?: string;
   /** Sub-menu yang tampil dalam Collapsible */
-  subItems?: SidebarSubItem[]
+  subItems?: SidebarSubItem[];
+  /** Jika true, item ini hanya muncul untuk caang yang sudah diterima (accepted+) */
+  requiresAcceptedCaang?: boolean;
 }
 
 /** Grup menu yang memiliki label dan daftar item */
 export interface SidebarMenuGroup {
   /** Label grup (ditampilkan sebagai SidebarGroupLabel) */
-  label: string
+  label: string;
   /** Role yang diizinkan melihat grup ini */
-  allowedRoles: readonly SystemRole[]
+  allowedRoles: readonly SystemRole[];
   /** Daftar item menu dalam grup ini */
-  items: SidebarMenuItem[]
+  items: SidebarMenuItem[];
 }
 
 // ═════════════════════════════════════════════════════
@@ -81,64 +83,138 @@ export interface SidebarMenuGroup {
 // ═════════════════════════════════════════════════════
 
 export const SIDEBAR_MENU: SidebarMenuGroup[] = [
-  // ── 1. Admin OR (Open Recruitment) ──
+  // ── 0. Calon Anggota (Caang) ──
+  // Menu caang difilter berdasarkan status registrasi:
+  // - draft/submitted/revision: hanya Dashboard Caang
+  // - rejected: hanya Dashboard Caang
+  // - accepted/training/interview_1/project_phase/interview_2/graduated: semua menu
   {
-    label: 'Open Recruitment',
-    allowedRoles: ['admin', 'super_admin'],
+    label: "Calon Anggota",
+    allowedRoles: ["caang"],
     items: [
       {
-        title: 'Dashboard OR',
+        title: "Dashboard Caang",
         icon: Home,
-        href: '/dashboard/or',
+        href: "/dashboard",
       },
       {
-        title: 'Pengaturan OR',
+        title: "Tugas & Project",
+        icon: FolderKanban,
+        href: "/dashboard/tugas",
+        requiresAcceptedCaang: true,
+      },
+      {
+        title: "Jadwal & Kegiatan",
+        icon: CalendarDays,
+        href: "/dashboard/kegiatan",
+        requiresAcceptedCaang: true,
+      },
+      {
+        title: "Kelompok Seleksi",
+        icon: Users,
+        href: "/dashboard/kelompok",
+        requiresAcceptedCaang: true,
+      },
+      {
+        title: "Pustaka Materi",
+        icon: BookOpen,
+        href: "/dashboard/pustaka",
+        requiresAcceptedCaang: true,
+      },
+    ],
+  },
+
+  // ── 1. Admin OR (Open Recruitment) ──
+  {
+    label: "Open Recruitment",
+    allowedRoles: ["admin", "super_admin"],
+    items: [
+      {
+        title: "Dashboard OR",
+        icon: Home,
+        href: "/dashboard/or",
+      },
+      {
+        title: "Pengaturan OR",
         icon: Settings,
         subItems: [
-          { title: 'Periode & Jadwal Pendaftaran', href: '/dashboard/or/pengaturan/periode' },
-          { title: 'Keuangan & Rekening', href: '/dashboard/or/pengaturan/keuangan' },
-          { title: 'Kontak & Pesan Pengumuman', href: '/dashboard/or/pengaturan/kontak' },
+          {
+            title: "Periode & Jadwal Pendaftaran",
+            href: "/dashboard/or/pengaturan/periode",
+          },
+          {
+            title: "Keuangan & Rekening",
+            href: "/dashboard/or/pengaturan/keuangan",
+          },
+          {
+            title: "Kontak & Pesan Pengumuman",
+            href: "/dashboard/or/pengaturan/kontak",
+          },
         ],
       },
       {
-        title: 'Manajemen Caang',
+        title: "Manajemen Caang",
         icon: Users,
         subItems: [
-          { title: 'Verifikasi Pendaftar', href: '/dashboard/or/caang/verifikasi' },
-          { title: 'Daftar Blacklist Caang', href: '/dashboard/or/caang/blacklist' },
-          { title: 'Database & Edit Data', href: '/dashboard/or/caang/database' },
+          {
+            title: "Verifikasi Pendaftar",
+            href: "/dashboard/or/caang/verifikasi",
+          },
+          {
+            title: "Daftar Blacklist Caang",
+            href: "/dashboard/or/caang/blacklist",
+          },
+          {
+            title: "Database & Edit Data",
+            href: "/dashboard/or/caang/database",
+          },
         ],
       },
       {
-        title: 'Kegiatan & Absensi',
+        title: "Kegiatan & Absensi",
         icon: CalendarDays,
         subItems: [
-          { title: 'Jadwal Kegiatan', href: '/dashboard/or/kegiatan/jadwal' },
-          { title: 'Scan QR / Input Absensi', href: '/dashboard/or/kegiatan/absensi' },
+          { title: "Jadwal Kegiatan", href: "/dashboard/or/kegiatan/jadwal" },
+          {
+            title: "Scan QR / Input Absensi",
+            href: "/dashboard/or/kegiatan/absensi",
+          },
         ],
       },
       {
-        title: 'Pustaka & Tugas',
+        title: "Pustaka & Tugas",
         icon: BookOpen,
         subItems: [
-          { title: 'Materi Pembelajaran', href: '/dashboard/or/pustaka/materi' },
-          { title: 'Penilaian & Input Nilai', href: '/dashboard/or/pustaka/penilaian' },
+          {
+            title: "Materi Pembelajaran",
+            href: "/dashboard/or/pustaka/materi",
+          },
+          {
+            title: "Penilaian & Input Nilai",
+            href: "/dashboard/or/pustaka/penilaian",
+          },
         ],
       },
       {
-        title: 'Manajemen Kelompok',
+        title: "Manajemen Kelompok",
         icon: FolderKanban,
         subItems: [
-          { title: 'Setup Kelompok & Sub-kelompok', href: '/dashboard/or/kelompok/setup' },
-          { title: 'Auto-Generate Anggota', href: '/dashboard/or/kelompok/generate' },
+          {
+            title: "Setup Kelompok & Sub-kelompok",
+            href: "/dashboard/or/kelompok/setup",
+          },
+          {
+            title: "Auto-Generate Anggota",
+            href: "/dashboard/or/kelompok/generate",
+          },
         ],
       },
       {
-        title: 'Manajemen Magang',
+        title: "Manajemen Magang",
         icon: Wrench,
         subItems: [
-          { title: 'Setup Magang', href: '/dashboard/or/magang/setup' },
-          { title: 'Monitoring Logbook', href: '/dashboard/or/magang/logbook' },
+          { title: "Setup Magang", href: "/dashboard/or/magang/setup" },
+          { title: "Monitoring Logbook", href: "/dashboard/or/magang/logbook" },
         ],
       },
     ],
@@ -146,28 +222,40 @@ export const SIDEBAR_MENU: SidebarMenuGroup[] = [
 
   // ── 2. Admin Kestari (Kesekretariatan) ──
   {
-    label: 'Kesekretariatan',
-    allowedRoles: ['pengurus', 'super_admin'],
+    label: "Kesekretariatan",
+    allowedRoles: ["pengurus", "super_admin"],
     items: [
       {
-        title: 'Dashboard Kestari',
+        title: "Dashboard Kestari",
         icon: Home,
-        href: '/dashboard/kestari',
+        href: "/dashboard/kestari",
       },
       {
-        title: 'Manajemen Piket',
+        title: "Manajemen Piket",
         icon: Sparkles,
         subItems: [
-          { title: 'Atur Jadwal Piket', href: '/dashboard/kestari/piket/jadwal' },
-          { title: 'Verifikasi Bukti Piket', href: '/dashboard/kestari/piket/verifikasi' },
+          {
+            title: "Atur Jadwal Piket",
+            href: "/dashboard/kestari/piket/jadwal",
+          },
+          {
+            title: "Verifikasi Bukti Piket",
+            href: "/dashboard/kestari/piket/verifikasi",
+          },
         ],
       },
       {
-        title: 'Sanksi & Denda',
+        title: "Sanksi & Denda",
         icon: Scale,
         subItems: [
-          { title: 'Daftar Pelanggar Piket', href: '/dashboard/kestari/sanksi/pelanggar' },
-          { title: 'Verifikasi Pembayaran Denda', href: '/dashboard/kestari/sanksi/pembayaran' },
+          {
+            title: "Daftar Pelanggar Piket",
+            href: "/dashboard/kestari/sanksi/pelanggar",
+          },
+          {
+            title: "Verifikasi Pembayaran Denda",
+            href: "/dashboard/kestari/sanksi/pembayaran",
+          },
         ],
       },
     ],
@@ -175,36 +263,48 @@ export const SIDEBAR_MENU: SidebarMenuGroup[] = [
 
   // ── 3. Admin Komdis (Komisi Disiplin) ──
   {
-    label: 'Komisi Disiplin',
-    allowedRoles: ['pengurus', 'super_admin'],
+    label: "Komisi Disiplin",
+    allowedRoles: ["pengurus", "super_admin"],
     items: [
       {
-        title: 'Dashboard Komdis',
+        title: "Dashboard Komdis",
         icon: Home,
-        href: '/dashboard/komdis',
+        href: "/dashboard/komdis",
       },
       {
-        title: 'Kegiatan Resmi UKM',
+        title: "Kegiatan Resmi UKM",
         icon: CalendarDays,
         subItems: [
-          { title: 'Buat Kegiatan', href: '/dashboard/komdis/kegiatan/buat' },
-          { title: 'Kelola Absensi', href: '/dashboard/komdis/kegiatan/absensi' },
+          { title: "Buat Kegiatan", href: "/dashboard/komdis/kegiatan/buat" },
+          {
+            title: "Kelola Absensi",
+            href: "/dashboard/komdis/kegiatan/absensi",
+          },
         ],
       },
       {
-        title: 'Pelanggaran & Poin',
+        title: "Pelanggaran & Poin",
         icon: AlertTriangle,
         subItems: [
-          { title: 'Input & Edit Poin', href: '/dashboard/komdis/pelanggaran/poin' },
-          { title: 'Review Pengurangan Poin', href: '/dashboard/komdis/pelanggaran/review' },
+          {
+            title: "Input & Edit Poin",
+            href: "/dashboard/komdis/pelanggaran/poin",
+          },
+          {
+            title: "Review Pengurangan Poin",
+            href: "/dashboard/komdis/pelanggaran/review",
+          },
         ],
       },
       {
-        title: 'Surat Peringatan (SP)',
+        title: "Surat Peringatan (SP)",
         icon: FileText,
         subItems: [
-          { title: 'Penerbitan SP Digital', href: '/dashboard/komdis/sp/terbit' },
-          { title: 'Riwayat SP Anggota', href: '/dashboard/komdis/sp/riwayat' },
+          {
+            title: "Penerbitan SP Digital",
+            href: "/dashboard/komdis/sp/terbit",
+          },
+          { title: "Riwayat SP Anggota", href: "/dashboard/komdis/sp/riwayat" },
         ],
       },
     ],
@@ -212,20 +312,26 @@ export const SIDEBAR_MENU: SidebarMenuGroup[] = [
 
   // ── 4. Admin Divisi (Ketua / Wakil Divisi) ──
   {
-    label: 'Divisi',
-    allowedRoles: ['pengurus', 'anggota', 'super_admin'],
+    label: "Divisi",
+    allowedRoles: ["pengurus", "anggota", "super_admin"],
     items: [
       {
-        title: 'Dashboard Divisi',
+        title: "Dashboard Divisi",
         icon: Home,
-        href: '/dashboard/divisi',
+        href: "/dashboard/divisi",
       },
       {
-        title: 'Logbook Riset',
+        title: "Logbook Riset",
         icon: FlaskConical,
         subItems: [
-          { title: 'Validasi Logbook', href: '/dashboard/divisi/logbook/validasi' },
-          { title: 'Terbitkan Logbook', href: '/dashboard/divisi/logbook/publish' },
+          {
+            title: "Validasi Logbook",
+            href: "/dashboard/divisi/logbook/validasi",
+          },
+          {
+            title: "Terbitkan Logbook",
+            href: "/dashboard/divisi/logbook/publish",
+          },
         ],
       },
     ],
@@ -233,54 +339,87 @@ export const SIDEBAR_MENU: SidebarMenuGroup[] = [
 
   // ── 5. Panitia / Operator MRC ──
   {
-    label: 'MRC',
-    allowedRoles: ['pengurus', 'super_admin'],
+    label: "MRC",
+    allowedRoles: ["pengurus", "super_admin"],
     items: [
       {
-        title: 'Dashboard MRC',
+        title: "Dashboard MRC",
         icon: Home,
-        href: '/dashboard/mrc',
+        href: "/dashboard/mrc",
       },
       {
-        title: 'Pengaturan Lomba',
+        title: "Pengaturan Lomba",
         icon: Settings,
         subItems: [
-          { title: 'Buka/Tutup Pendaftaran', href: '/dashboard/mrc/pengaturan/pendaftaran' },
-          { title: 'Kategori Lomba & Biaya', href: '/dashboard/mrc/pengaturan/kategori' },
+          {
+            title: "Buka/Tutup Pendaftaran",
+            href: "/dashboard/mrc/pengaturan/pendaftaran",
+          },
+          {
+            title: "Kategori Lomba & Biaya",
+            href: "/dashboard/mrc/pengaturan/kategori",
+          },
         ],
       },
       {
-        title: 'Verifikasi Peserta',
+        title: "Verifikasi Peserta",
         icon: Shield,
         subItems: [
-          { title: 'Verifikasi Berkas & Tim', href: '/dashboard/mrc/peserta/berkas' },
-          { title: 'Verifikasi Pembayaran', href: '/dashboard/mrc/peserta/pembayaran' },
+          {
+            title: "Verifikasi Berkas & Tim",
+            href: "/dashboard/mrc/peserta/berkas",
+          },
+          {
+            title: "Verifikasi Pembayaran",
+            href: "/dashboard/mrc/peserta/pembayaran",
+          },
         ],
       },
       {
-        title: 'Operasional Hari-H',
+        title: "Operasional Hari-H",
         icon: Ticket,
         subItems: [
-          { title: 'Pendaftaran Ulang', href: '/dashboard/mrc/operasional/checkin' },
-          { title: 'Generate & Cetak QR', href: '/dashboard/mrc/operasional/qr' },
-          { title: 'Scan QR Anti-Joki', href: '/dashboard/mrc/operasional/scan' },
+          {
+            title: "Pendaftaran Ulang",
+            href: "/dashboard/mrc/operasional/checkin",
+          },
+          {
+            title: "Generate & Cetak QR",
+            href: "/dashboard/mrc/operasional/qr",
+          },
+          {
+            title: "Scan QR Anti-Joki",
+            href: "/dashboard/mrc/operasional/scan",
+          },
         ],
       },
       {
-        title: 'Manajemen Pertandingan',
+        title: "Manajemen Pertandingan",
         icon: Trophy,
         subItems: [
-          { title: 'Drawing Grup', href: '/dashboard/mrc/pertandingan/drawing' },
-          { title: 'Klasemen & Bracket', href: '/dashboard/mrc/pertandingan/bracket' },
-          { title: 'Panel Operator', href: '/dashboard/mrc/pertandingan/operator' },
+          {
+            title: "Drawing Grup",
+            href: "/dashboard/mrc/pertandingan/drawing",
+          },
+          {
+            title: "Klasemen & Bracket",
+            href: "/dashboard/mrc/pertandingan/bracket",
+          },
+          {
+            title: "Panel Operator",
+            href: "/dashboard/mrc/pertandingan/operator",
+          },
         ],
       },
       {
-        title: 'Streaming & Overlay',
+        title: "Streaming & Overlay",
         icon: Video,
         subItems: [
-          { title: 'Pengaturan Overlay', href: '/dashboard/mrc/streaming/overlay' },
-          { title: 'Daftar Overlay', href: '/dashboard/mrc/streaming/daftar' },
+          {
+            title: "Pengaturan Overlay",
+            href: "/dashboard/mrc/streaming/overlay",
+          },
+          { title: "Daftar Overlay", href: "/dashboard/mrc/streaming/daftar" },
         ],
       },
     ],
@@ -288,43 +427,81 @@ export const SIDEBAR_MENU: SidebarMenuGroup[] = [
 
   // ── 6. Super Admin Panel ──
   {
-    label: 'Super Admin',
-    allowedRoles: ['super_admin'],
+    label: "Super Admin",
+    allowedRoles: ["super_admin"],
     items: [
       {
-        title: 'Super Admin Panel',
+        title: "Super Admin Panel",
         icon: Crown,
-        href: '/dashboard/admin',
+        href: "/dashboard/admin",
       },
       {
-        title: 'Manajemen Akun & Role',
+        title: "Manajemen Akun & Role",
         icon: Users,
-        href: '/dashboard/admin/roles',
+        href: "/dashboard/admin/roles",
       },
       {
-        title: 'Audit Logs Sistem',
+        title: "Audit Logs Sistem",
         icon: FileText,
-        href: '/dashboard/admin/audit',
+        href: "/dashboard/admin/audit",
       },
     ],
   },
-]
+];
 
 // ═════════════════════════════════════════════════════
 // UTILITY: Filter menu berdasarkan role user
 // ═════════════════════════════════════════════════════
 
+/** Status registrasi caang yang dianggap sudah "diterima" (lolos berkas ke atas) */
+const ACCEPTED_CAANG_STATUSES = [
+  "accepted",
+  "training",
+  "interview_1",
+  "project_phase",
+  "interview_2",
+  "graduated",
+];
+
 /**
  * Memfilter daftar menu sidebar berdasarkan role yang dimiliki user.
+ * Untuk role caang, menu juga difilter berdasarkan status registrasi.
  *
- * @param userRoles - Array nama role yang dimiliki user
+ * @param userRoles   - Array nama role yang dimiliki user
+ * @param caangStatus - Status registrasi caang (opsional, hanya relevan untuk role caang)
  * @returns Array SidebarMenuGroup yang boleh dilihat user
  *
  * @example
+ * const visibleMenu = filterMenuByRoles(['caang'], 'accepted')
  * const visibleMenu = filterMenuByRoles(['admin', 'pengurus'])
  */
-export function filterMenuByRoles(userRoles: string[]): SidebarMenuGroup[] {
+export function filterMenuByRoles(
+  userRoles: string[],
+  caangStatus?: string | null,
+): SidebarMenuGroup[] {
+  const isCaang = userRoles.includes("caang");
+  const isAcceptedCaang =
+    isCaang &&
+    caangStatus != null &&
+    ACCEPTED_CAANG_STATUSES.includes(caangStatus);
+
   return SIDEBAR_MENU.filter((group) =>
-    group.allowedRoles.some((role) => userRoles.includes(role))
-  )
+    group.allowedRoles.some((role) => userRoles.includes(role)),
+  ).map((group) => {
+    // Untuk non-caang group, tampilkan semua item apa adanya
+    if (!isCaang || !group.allowedRoles.includes("caang" as SystemRole)) {
+      return group;
+    }
+
+    // Untuk caang group, filter item berdasarkan status registrasi
+    return {
+      ...group,
+      items: group.items.filter((item) => {
+        // Item tanpa syarat → selalu tampil (Dashboard Caang)
+        if (!item.requiresAcceptedCaang) return true;
+        // Item yang butuh accepted → hanya jika caang sudah diterima
+        return isAcceptedCaang;
+      }),
+    };
+  });
 }

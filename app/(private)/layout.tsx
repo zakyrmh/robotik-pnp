@@ -8,6 +8,7 @@
  * - Server-side auth check via Supabase
  * - Query role user dari tabel user_roles + roles
  * - Query profil user dari tabel profiles
+ * - Query status registrasi caang (jika role caang) untuk kontrol sidebar
  * - Menyediakan SidebarProvider yang membungkus AppSidebar + konten
  * - Menggunakan komponen Shadcn SidebarInset untuk area konten utama
  */
@@ -57,6 +58,17 @@ export default async function PrivateLayout({
     .eq('user_id', user.id)
     .single()
 
+  // ── Langkah 4: Ambil status registrasi caang (jika role caang) ──
+  let caangStatus: string | null = null
+  if (userRoles.includes('caang')) {
+    const { data: registration } = await supabase
+      .from('or_registrations')
+      .select('status')
+      .eq('user_id', user.id)
+      .single()
+    caangStatus = registration?.status ?? null
+  }
+
   // Siapkan data user untuk sidebar
   const sidebarUser = {
     email: user.email ?? '',
@@ -66,8 +78,8 @@ export default async function PrivateLayout({
 
   return (
     <SidebarProvider>
-      {/* Sidebar navigasi dengan menu yang difilter per role */}
-      <AppSidebar userRoles={userRoles} user={sidebarUser} />
+      {/* Sidebar navigasi dengan menu yang difilter per role & status caang */}
+      <AppSidebar userRoles={userRoles} caangStatus={caangStatus} user={sidebarUser} />
 
       {/* Area konten utama */}
       <SidebarInset>
