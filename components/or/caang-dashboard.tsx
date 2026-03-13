@@ -7,6 +7,7 @@
  * 3. accepted/training/interview_1/project_phase/interview_2/graduated → Dashboard progres seleksi
  */
 
+import Link from "next/link";
 import {
   Bot,
   Sparkles,
@@ -19,13 +20,19 @@ import {
   ClipboardList,
   Users,
   MessageCircle,
+  Globe,
 } from "lucide-react";
 import { getMyRegistration, getStudyProgramOptions } from "@/app/actions/or.action";
 import {
   getPipelineSteps,
   getCommunityLinks,
 } from "@/app/actions/or-settings.action";
-import type { PipelineStep, CommunityLinks } from "@/app/actions/or-settings.action";
+import type {
+  PipelineStep,
+  CommunityLinksConfig,
+} from "@/app/actions/or-settings.action";
+import { getUpcomingEventsForCaang } from "@/app/actions/or-events.action";
+import type { OrEvent } from "@/app/actions/or-events.action";
 import { CaangRegistrationWizard } from "@/components/or/caang-registration-wizard";
 import { OR_REGISTRATION_STATUS_LABELS } from "@/lib/db/schema/or";
 import type { OrRegistrationStatus } from "@/lib/db/schema/or";
@@ -58,12 +65,13 @@ const STATUS_ORDER: Record<string, number> = {
 };
 
 export async function CaangDashboard() {
-  const [regResult, prodiResult, pipelineResult, linksResult] =
+  const [regResult, prodiResult, pipelineResult, linksResult, eventsResult] =
     await Promise.all([
       getMyRegistration(),
       getStudyProgramOptions(),
       getPipelineSteps(),
       getCommunityLinks(),
+      getUpcomingEventsForCaang(),
     ]);
 
   if (!regResult.data) {
@@ -166,14 +174,14 @@ export async function CaangDashboard() {
   // ── 3. Diterima / Dalam Proses Seleksi ──
   if (ACCEPTED_PIPELINE_STATUSES.includes(status)) {
     const pipelineSteps = pipelineResult.data;
-    const communityLinks = linksResult.data;
 
     return (
       <AcceptedCaangDashboard
         fullName={reg.full_name || "Calon Anggota"}
         status={status}
         pipelineSteps={pipelineSteps}
-        communityLinks={communityLinks}
+        communityConfig={linksResult.data}
+        upcomingEvents={eventsResult.data}
       />
     );
   }
@@ -190,12 +198,14 @@ function AcceptedCaangDashboard({
   fullName,
   status,
   pipelineSteps,
-  communityLinks,
+  communityConfig,
+  upcomingEvents,
 }: {
   fullName: string;
   status: OrRegistrationStatus;
   pipelineSteps: PipelineStep[];
-  communityLinks: CommunityLinks;
+  communityConfig: CommunityLinksConfig;
+  upcomingEvents: OrEvent[];
 }) {
   const currentStatusOrder = STATUS_ORDER[status] ?? 0;
   const statusLabel =
@@ -344,18 +354,63 @@ function AcceptedCaangDashboard({
       <div className="grid gap-4 sm:grid-cols-2">
         {/* Kegiatan Terdekat */}
         <div className="rounded-xl border bg-card p-5 shadow-sm">
-          <h2 className="text-sm font-semibold mb-3 flex items-center gap-2">
-            <CalendarDays className="size-4 text-primary" />
-            Kegiatan Terdekat
-          </h2>
-          <div className="flex flex-col items-center justify-center py-8 rounded-lg border border-dashed text-center">
-            <CalendarDays className="size-8 text-muted-foreground/30 mb-2" />
-            <p className="text-xs text-muted-foreground font-medium">
-              Belum ada jadwal kegiatan
-            </p>
-            <p className="text-[10px] text-muted-foreground/70 mt-0.5">
-              Kegiatan akan muncul di sini saat admin menambahkannya
-            </p>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold flex items-center gap-2">
+              <CalendarDays className="size-4 text-primary" />
+              Kegiatan Terdekat
+            </h2>
+            <Link href="/dashboard/kegiatan" className="text-[10px] text-primary hover:underline">
+              Lihat Semua
+            </Link>
+          </div>
+          
+          <div className="space-y-3">
+            {upcomingEvents.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 rounded-lg border border-dashed text-center">
+                <CalendarDays className="size-8 text-muted-foreground/30 mb-2" />
+                <p className="text-xs text-muted-foreground font-medium">
+                  Belum ada jadwal kegiatan
+                </p>
+                <p className="text-[10px] text-muted-foreground/70 mt-0.5">
+                  Kegiatan akan muncul di sini saat admin menambahkannya
+                </p>
+              </div>
+            ) : (
+              upcomingEvents.map((event) => (
+                <div key={event.id} className="rounded-lg border p-3 bg-muted/10 relative overflow-hidden group">
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold truncate">{event.title}</p>
+                      <div className="flex items-center gap-2 mt-1 text-[10px] text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <Clock className="size-3" />
+                          {event.start_time.substring(0, 5)}
+                        </span>
+                        <span>•</span>
+                        <span>{new Date(event.event_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</span>
+                      </div>
+                    </div>
+                    <div className="shrink-0">
+                      <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${
+                        event.execution_mode === 'offline' ? 'bg-orange-500/10 text-orange-600' :
+                        event.execution_mode === 'online' ? 'bg-blue-500/10 text-blue-600' :
+                        'bg-purple-500/10 text-purple-600'
+                      }`}>
+                        {event.execution_mode.toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* Quick Detail Link Overlay on Hover */}
+                  <Link 
+                    href={`/dashboard/kegiatan?id=${event.id}`}
+                    className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                  >
+                    <span className="text-[10px] bg-background px-2 py-1 rounded shadow-sm border font-medium">Lihat Detail</span>
+                  </Link>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
@@ -403,70 +458,59 @@ function AcceptedCaangDashboard({
             Grup & Komunitas
           </h2>
           <div className="space-y-3">
-            {/* WhatsApp */}
-            {communityLinks.whatsapp ? (
-              <a
-                href={communityLinks.whatsapp}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 rounded-lg border p-3 hover:bg-accent/50 transition-colors group"
-              >
-                <div className="flex size-9 items-center justify-center rounded-lg bg-green-500/15">
-                  <svg
-                    className="size-5 text-green-600"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                  >
-                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                  </svg>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">Grup WhatsApp</p>
-                  <p className="text-[10px] text-muted-foreground truncate">
-                    Klik untuk bergabung
-                  </p>
-                </div>
-                <ExternalLink className="size-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-              </a>
-            ) : (
+            {communityConfig.links.filter(l => l.is_active).length === 0 ? (
               <div className="rounded-lg border border-dashed p-3 text-center">
                 <p className="text-xs text-muted-foreground">
-                  Link WhatsApp belum tersedia
+                  Link komunitas belum tersedia
                 </p>
               </div>
-            )}
-
-            {/* Discord */}
-            {communityLinks.discord ? (
-              <a
-                href={communityLinks.discord}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 rounded-lg border p-3 hover:bg-accent/50 transition-colors group"
-              >
-                <div className="flex size-9 items-center justify-center rounded-lg bg-indigo-500/15">
-                  <svg
-                    className="size-5 text-indigo-600"
-                    viewBox="0 0 24 24"
-                    fill="currentColor"
-                  >
-                    <path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
-                  </svg>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">Server Discord</p>
-                  <p className="text-[10px] text-muted-foreground truncate">
-                    Klik untuk bergabung
-                  </p>
-                </div>
-                <ExternalLink className="size-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-              </a>
             ) : (
-              <div className="rounded-lg border border-dashed p-3 text-center">
-                <p className="text-xs text-muted-foreground">
-                  Link Discord belum tersedia
-                </p>
-              </div>
+              communityConfig.links
+                .filter((l) => l.is_active)
+                .map((link) => (
+                  <a
+                    key={link.id}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 rounded-lg border p-3 hover:bg-accent/50 transition-colors group"
+                  >
+                    <div
+                      className={`flex size-9 items-center justify-center rounded-lg ${
+                        link.platform === "whatsapp"
+                          ? "bg-green-500/15"
+                          : link.platform === "discord"
+                            ? "bg-indigo-500/15"
+                            : link.platform === "telegram"
+                               ? "bg-blue-500/15"
+                               : "bg-primary/10"
+                      }`}
+                    >
+                      {link.platform === "whatsapp" ? (
+                        <svg className="size-5 text-green-600" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                        </svg>
+                      ) : link.platform === "discord" ? (
+                        <svg className="size-5 text-indigo-600" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M20.317 4.37a19.791 19.791 0 00-4.885-1.515.074.074 0 00-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 00-5.487 0 12.64 12.64 0 00-.617-1.25.077.077 0 00-.079-.037A19.736 19.736 0 003.677 4.37a.07.07 0 00-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 00.031.057 19.9 19.9 0 005.993 3.03.078.078 0 00.084-.028c.462-.63.874-1.295 1.226-1.994a.076.076 0 00-.041-.106 13.107 13.107 0 01-1.872-.892.077.077 0 01-.008-.128 10.2 10.2 0 00.372-.292.074.074 0 01.077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 01.078.01c.12.098.246.198.373.292a.077.077 0 01-.006.127 12.299 12.299 0 01-1.873.892.077.077 0 00-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 00.084.028 19.839 19.839 0 006.002-3.03.077.077 0 00.032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 00-.031-.03z" />
+                        </svg>
+                      ) : link.platform === "telegram" ? (
+                        <svg className="size-5 text-blue-600" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12 0c-6.627 0-12 5.373-12 12s5.373 12 12 12 12-5.373 12-12-5.373-12-12-12zm5.891 8.146l-2.003 9.464c-.149.659-.541.823-1.091.515l-3.051-2.246-1.472 1.417c-.163.163-.3.298-.614.298l.218-3.091 5.626-5.084c.245-.218-.053-.338-.379-.121l-6.952 4.377-2.998-.937c-.652-.204-.666-.652.136-.964l11.722-4.516c.543-.204.981.11.806.828z" />
+                        </svg>
+                      ) : (
+                        <Globe className="size-5 text-primary" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">{link.label || "Link Komunitas"}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">
+                        Klik untuk bergabung
+                      </p>
+                    </div>
+                    <ExternalLink className="size-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                  </a>
+                ))
             )}
           </div>
         </div>

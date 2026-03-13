@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { revalidatePath } from "next/cache";
 
 export interface RegistrationPeriod {
   is_open: boolean;
@@ -22,11 +23,38 @@ export interface PipelineStep {
   order: number;
 }
 
-/** Link komunitas (WhatsApp, Discord, dll) */
-export interface CommunityLinks {
-  whatsapp: string;
-  discord: string;
+/** Tipe platform komunitas */
+export type CommunityPlatform = "whatsapp" | "discord" | "telegram" | "other";
+
+/** Item link komunitas satuan */
+export interface CommunityLinkItem {
+  id: string;
+  platform: CommunityPlatform;
+  label: string;
+  url: string;
+  is_active: boolean;
 }
+
+/** Daftar link komunitas */
+export interface CommunityLinksConfig {
+  links: CommunityLinkItem[];
+}
+
+/** Kontak panitia yang bisa dihubungi */
+export interface ContactPerson {
+  id: string;
+  name: string;
+  role: string;
+  phone: string;
+}
+
+/** Pengumuman dan kontak OR */
+export interface AnnouncementSettings {
+  message: string;
+  is_active: boolean;
+  contacts: ContactPerson[];
+}
+
 export interface OrBankAccount {
   id: string;
   bank_name: string;
@@ -57,7 +85,6 @@ export async function getRegistrationPeriod(): Promise<{
 
     if (error) {
       if (error.code === "PGRST116") {
-        // Jika baris belum ada, kembalikan default
         return {
           data: { is_open: false, start_date: null, end_date: null },
           error: null,
@@ -75,10 +102,6 @@ export async function getRegistrationPeriod(): Promise<{
 
 /**
  * Mengambil pengaturan periode pendaftaran tanpa memerlukan autentikasi.
- * Digunakan oleh halaman publik /register untuk mengecek status pendaftaran.
- *
- * Catatan: Pastikan tabel `or_settings` memiliki RLS policy yang mengizinkan
- * anon role untuk membaca baris dengan key = 'registration_period'.
  */
 export async function getPublicRegistrationPeriod(): Promise<{
   data: RegistrationPeriod | null;
@@ -86,7 +109,6 @@ export async function getPublicRegistrationPeriod(): Promise<{
 }> {
   try {
     const supabase = await createClient();
-
     const { data, error } = await supabase
       .from("or_settings")
       .select("value")
@@ -95,23 +117,19 @@ export async function getPublicRegistrationPeriod(): Promise<{
 
     if (error) {
       if (error.code === "PGRST116") {
-        // Belum ada data → anggap pendaftaran ditutup
         return {
           data: { is_open: false, start_date: null, end_date: null },
           error: null,
         };
       }
-      // Error lain (termasuk RLS block) → fallback ke ditutup
       return {
         data: { is_open: false, start_date: null, end_date: null },
         error: null,
       };
     }
-
     return { data: data.value as RegistrationPeriod, error: null };
   } catch (error) {
     console.error("[getPublicRegistrationPeriod]", error);
-    // Jika terjadi error tak terduga, tampilkan pendaftaran ditutup
     return {
       data: { is_open: false, start_date: null, end_date: null },
       error: null,
@@ -132,7 +150,6 @@ export async function updateRegistrationPeriod(
     } = await supabase.auth.getUser();
     if (!user) return { success: false, error: "Unauthorized" };
 
-    // Upsert pengaturan
     const { error } = await supabase.from("or_settings").upsert(
       {
         key: "registration_period",
@@ -143,9 +160,7 @@ export async function updateRegistrationPeriod(
       },
       { onConflict: "key" },
     );
-
     if (error) return { success: false, error: error.message };
-
     return { success: true, error: null };
   } catch (error) {
     console.error("[updateRegistrationPeriod]", error);
@@ -154,7 +169,7 @@ export async function updateRegistrationPeriod(
 }
 
 /**
- * Mengambil daftar rekening pembayaran (JSON array) dari tabel or_settings
+ * Mengambil daftar rekening pembayaran
  */
 export async function getPaymentAccounts(): Promise<{
   data: OrBankAccount[];
@@ -174,12 +189,9 @@ export async function getPaymentAccounts(): Promise<{
       .single();
 
     if (error) {
-      if (error.code === "PGRST116") {
-        return { data: [], error: null };
-      }
+      if (error.code === "PGRST116") return { data: [], error: null };
       return { data: [], error: error.message };
     }
-
     return { data: (data.value as OrBankAccount[]) || [], error: null };
   } catch (error) {
     console.error("[getPaymentAccounts]", error);
@@ -188,7 +200,7 @@ export async function getPaymentAccounts(): Promise<{
 }
 
 /**
- * Menyimpan seluruh daftar rekening pembayaran ke tabel or_settings
+ * Menyimpan seluruh daftar rekening pembayaran
  */
 export async function savePaymentAccounts(
   accounts: OrBankAccount[],
@@ -210,9 +222,7 @@ export async function savePaymentAccounts(
       },
       { onConflict: "key" },
     );
-
     if (error) return { success: false, error: error.message };
-
     return { success: true, error: null };
   } catch (error) {
     console.error("[savePaymentAccounts]", error);
@@ -241,12 +251,10 @@ export async function getRegistrationFee(): Promise<{
       .single();
 
     if (error) {
-      if (error.code === "PGRST116") {
-        return { data: { amount: 50000 }, error: null }; // Default 50rb jika belum diatur
-      }
+      if (error.code === "PGRST116")
+        return { data: { amount: 50000 }, error: null };
       return { data: { amount: 0 }, error: error.message };
     }
-
     return {
       data: (data.value as RegistrationFee) || { amount: 0 },
       error: null,
@@ -280,9 +288,7 @@ export async function saveRegistrationFee(
       },
       { onConflict: "key" },
     );
-
     if (error) return { success: false, error: error.message };
-
     return { success: true, error: null };
   } catch (error) {
     console.error("[saveRegistrationFee]", error);
@@ -291,7 +297,7 @@ export async function saveRegistrationFee(
 }
 
 // ═══════════════════════════════════════════════
-// PIPELINE STEPS (Tahapan Seleksi Caang) — Dinamis per generasi
+// PIPELINE STEPS
 // ═══════════════════════════════════════════════
 
 const DEFAULT_PIPELINE_STEPS: PipelineStep[] = [
@@ -353,9 +359,6 @@ const DEFAULT_PIPELINE_STEPS: PipelineStep[] = [
   },
 ];
 
-/**
- * Mengambil konfigurasi pipeline steps seleksi caang
- */
 export async function getPipelineSteps(): Promise<{
   data: PipelineStep[];
   error: string | null;
@@ -372,14 +375,11 @@ export async function getPipelineSteps(): Promise<{
       .select("value")
       .eq("key", "pipeline_steps")
       .single();
-
     if (error) {
-      if (error.code === "PGRST116") {
+      if (error.code === "PGRST116")
         return { data: DEFAULT_PIPELINE_STEPS, error: null };
-      }
       return { data: DEFAULT_PIPELINE_STEPS, error: error.message };
     }
-
     return {
       data: (data.value as PipelineStep[]) || DEFAULT_PIPELINE_STEPS,
       error: null,
@@ -393,9 +393,6 @@ export async function getPipelineSteps(): Promise<{
   }
 }
 
-/**
- * Menyimpan konfigurasi pipeline steps seleksi caang (admin only)
- */
 export async function savePipelineSteps(
   steps: PipelineStep[],
 ): Promise<{ success: boolean; error: string | null }> {
@@ -417,8 +414,11 @@ export async function savePipelineSteps(
       },
       { onConflict: "key" },
     );
-
     if (error) return { success: false, error: error.message };
+
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/caang");
+
     return { success: true, error: null };
   } catch (error) {
     console.error("[savePipelineSteps]", error);
@@ -427,14 +427,30 @@ export async function savePipelineSteps(
 }
 
 // ═══════════════════════════════════════════════
-// COMMUNITY LINKS (WhatsApp & Discord)
+// COMMUNITY LINKS (CRUD)
 // ═══════════════════════════════════════════════
 
-/**
- * Mengambil link komunitas (WhatsApp, Discord)
- */
+const DEFAULT_COMMUNITY_CONFIG: CommunityLinksConfig = {
+  links: [
+    {
+      id: "1",
+      platform: "whatsapp",
+      label: "Grup WhatsApp Resmi",
+      url: "",
+      is_active: true,
+    },
+    {
+      id: "2",
+      platform: "discord",
+      label: "Server Discord UKM",
+      url: "",
+      is_active: true,
+    },
+  ],
+};
+
 export async function getCommunityLinks(): Promise<{
-  data: CommunityLinks;
+  data: CommunityLinksConfig;
   error: string | null;
 }> {
   try {
@@ -442,39 +458,33 @@ export async function getCommunityLinks(): Promise<{
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return { data: { whatsapp: "", discord: "" }, error: null };
+    if (!user) return { data: DEFAULT_COMMUNITY_CONFIG, error: null };
 
     const { data, error } = await supabase
       .from("or_settings")
       .select("value")
       .eq("key", "community_links")
       .single();
-
     if (error) {
-      if (error.code === "PGRST116") {
-        return { data: { whatsapp: "", discord: "" }, error: null };
-      }
-      return { data: { whatsapp: "", discord: "" }, error: error.message };
+      if (error.code === "PGRST116")
+        return { data: DEFAULT_COMMUNITY_CONFIG, error: null };
+      return { data: DEFAULT_COMMUNITY_CONFIG, error: error.message };
     }
-
     return {
-      data: (data.value as CommunityLinks) || { whatsapp: "", discord: "" },
+      data: (data.value as CommunityLinksConfig) || DEFAULT_COMMUNITY_CONFIG,
       error: null,
     };
   } catch (error) {
     console.error("[getCommunityLinks]", error);
     return {
-      data: { whatsapp: "", discord: "" },
+      data: DEFAULT_COMMUNITY_CONFIG,
       error: "Gagal memuat link komunitas.",
     };
   }
 }
 
-/**
- * Menyimpan link komunitas (WhatsApp, Discord) — admin only
- */
 export async function saveCommunityLinks(
-  links: CommunityLinks,
+  config: CommunityLinksConfig,
 ): Promise<{ success: boolean; error: string | null }> {
   try {
     const supabase = await createClient();
@@ -486,8 +496,8 @@ export async function saveCommunityLinks(
     const { error } = await supabase.from("or_settings").upsert(
       {
         key: "community_links",
-        value: links as unknown as string,
-        description: "Link grup WhatsApp dan server Discord",
+        value: config as unknown as string,
+        description: "Daftar link grup WhatsApp, Telegram, dan server Discord",
         updated_at: new Date().toISOString(),
         updated_by: user.id,
       },
@@ -495,9 +505,92 @@ export async function saveCommunityLinks(
     );
 
     if (error) return { success: false, error: error.message };
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/caang");
     return { success: true, error: null };
   } catch (error) {
     console.error("[saveCommunityLinks]", error);
     return { success: false, error: "Gagal menyimpan link komunitas." };
+  }
+}
+
+// ═══════════════════════════════════════════════
+// ANNOUNCEMENT & CONTACTS
+// ═══════════════════════════════════════════════
+
+const DEFAULT_ANNOUNCEMENT: AnnouncementSettings = {
+  message:
+    "Selamat datang di Open Recruitment UKM Robotik PNP! Pantau terus timeline seleksi untuk informasi terbaru.",
+  is_active: true,
+  contacts: [
+    {
+      id: "1",
+      name: "Sekretariat UKM",
+      role: "Seketaris OR",
+      phone: "628123456789",
+    },
+  ],
+};
+
+export async function getAnnouncementSettings(): Promise<{
+  data: AnnouncementSettings;
+  error: string | null;
+}> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { data: DEFAULT_ANNOUNCEMENT, error: null };
+
+    const { data, error } = await supabase
+      .from("or_settings")
+      .select("value")
+      .eq("key", "announcement_settings")
+      .single();
+    if (error) {
+      if (error.code === "PGRST116")
+        return { data: DEFAULT_ANNOUNCEMENT, error: null };
+      return { data: DEFAULT_ANNOUNCEMENT, error: error.message };
+    }
+    return {
+      data: (data.value as AnnouncementSettings) || DEFAULT_ANNOUNCEMENT,
+      error: null,
+    };
+  } catch (error) {
+    console.error("[getAnnouncementSettings]", error);
+    return { data: DEFAULT_ANNOUNCEMENT, error: "Gagal memuat pengumuman." };
+  }
+}
+
+export async function saveAnnouncementSettings(
+  settings: AnnouncementSettings,
+): Promise<{ success: boolean; error: string | null }> {
+  try {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: "Unauthorized" };
+
+    const { error } = await supabase.from("or_settings").upsert(
+      {
+        key: "announcement_settings",
+        value: settings as unknown as string,
+        description:
+          "Pesan pengumuman dashboard caang dan daftar kontak panitia",
+        updated_at: new Date().toISOString(),
+        updated_by: user.id,
+      },
+      { onConflict: "key" },
+    );
+
+    if (error) return { success: false, error: error.message };
+    revalidatePath("/dashboard");
+    revalidatePath("/dashboard/caang");
+    return { success: true, error: null };
+  } catch (error) {
+    console.error("[saveAnnouncementSettings]", error);
+    return { success: false, error: "Gagal menyimpan pengumuman." };
   }
 }

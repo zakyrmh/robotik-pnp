@@ -10,8 +10,10 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 ### Added
 
 - **Pengaturan Open Recruitment**: Menambahkan halaman UI pengaturan periode pendaftaran (`/dashboard/or/pengaturan/periode`) untuk mengontrol status buka/tutup serta rentang jadwal kalender pendaftaran OR.
+- **Pengaturan OR Dinamis (Full CRUD)**: Implementasi manajemen Kontak Panitia, Link Komunitas (WhatsApp/Discord), dan Timeline Seleksi yang dapat dikelola sepenuhnya oleh admin via dashboard.
+- **Manajemen Kegiatan & Absensi Caang**: Menambahkan fitur jadwal kegiatan OR (`/dashboard/caang/kegiatan`) dan rekapitulasi absensi mandiri (`/dashboard/caang/absensi`) untuk calon anggota.
 - **Database/Settings**: Membuat tabel migrasi `or_settings` berskema _key-value_ JSONB untuk menyimpan berbagai konfigurasi dinamis sistem OR, lengkap dengan RLS dan _seed_ awal.
-- **Server Actions**: Menambahkan pustaka aksi `or-settings.action.ts` yang mencakup `getRegistrationPeriod` dan `updateRegistrationPeriod` untuk berinteraksi dengan tabel pengaturan baru.
+- **Server Actions**: Menambahkan pustaka aksi `or-settings.action.ts` (announcement, links, timeline) dan `or-events.action.ts` (CRUD event & attendance).
 - **Konfigurasi Next Images**: Mendaftarkan domain R2 Cloudflare (`**.r2.dev` dan `**.r2.cloudflarestorage.com`) ke modul pemuat _remotePatterns_ di `next.config.ts` guna menunjang renderisasi `<Image>` NextJS.
 
 ### Changed
@@ -20,6 +22,8 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - **Endpoint Upload Action**: Modifikasi `upload.action.ts` kini memproduksi _Signed URL_ (token aktif 1 tahun) yang lebih mutakhir dibanding skema Public R2 URL sebelumnya.
 - **Migrasi Middleware → Proxy (Next.js 16)**: Mengubah nama file entry point dari `middleware.ts` menjadi `proxy.ts` dan nama fungsi dari `middleware` ke `proxy` di root project sesuai konvensi baru Next.js 16. Fungsi helper turut dimigrasi dari `lib/supabase/middleware.ts` ke `lib/supabase/proxy.ts`.
 - **Hapus `config.ts`**: Menghapus file `config.ts` di root project yang merupakan percobaan lama pembuatan middleware dengan nama file yang tidak dikenali Next.js.
+- **Dashboard Caang**: Pembaruan UI dashboard pendaftar yang kini mendukung tampilan pengumuman broadcast, link komunitas dinamis, dan agenda kegiatan terdekat.
+- **Badge UI Component**: Menambahkan varian warna baru (success, warning, blue, amber, emerald, indigo) untuk menunjang status kegiatan dan absensi.
 
 ### Fixed
 

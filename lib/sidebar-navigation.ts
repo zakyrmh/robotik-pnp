@@ -29,6 +29,7 @@ import {
   BookOpen,
   FolderKanban,
   Wrench,
+  ClipboardCheck,
   // Kestari
   Sparkles,
   Scale,
@@ -100,31 +101,37 @@ export const SIDEBAR_MENU: SidebarMenuGroup[] = [
       {
         title: "Tugas & Project",
         icon: FolderKanban,
-        href: "/dashboard/tugas",
+        href: "/dashboard/caang/tugas",
         requiresAcceptedCaang: true,
       },
       {
         title: "Jadwal & Kegiatan",
         icon: CalendarDays,
-        href: "/dashboard/kegiatan",
+        href: "/dashboard/caang/kegiatan",
         requiresAcceptedCaang: true,
       },
       {
         title: "Kelompok Seleksi",
         icon: Users,
-        href: "/dashboard/kelompok",
+        href: "/dashboard/caang/kelompok",
         requiresAcceptedCaang: true,
       },
       {
         title: "Pustaka Materi",
         icon: BookOpen,
-        href: "/dashboard/pustaka",
+        href: "/dashboard/caang/pustaka",
+        requiresAcceptedCaang: true,
+      },
+      {
+        title: "Rekap Absensi",
+        icon: ClipboardCheck,
+        href: "/dashboard/caang/absensi",
         requiresAcceptedCaang: true,
       },
       {
         title: "Magang",
         icon: FlaskConical,
-        href: "/dashboard/magang",
+        href: "/dashboard/caang/magang",
         requiresAcceptedCaang: true,
       },
     ],
@@ -155,6 +162,14 @@ export const SIDEBAR_MENU: SidebarMenuGroup[] = [
           {
             title: "Kontak & Pesan Pengumuman",
             href: "/dashboard/or/pengaturan/kontak",
+          },
+          {
+            title: "Link Komunitas",
+            href: "/dashboard/or/pengaturan/komunitas",
+          },
+          {
+            title: "Timeline Seleksi",
+            href: "/dashboard/or/pengaturan/timeline",
           },
         ],
       },
