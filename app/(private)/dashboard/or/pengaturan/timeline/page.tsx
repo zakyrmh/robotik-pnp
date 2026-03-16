@@ -42,6 +42,7 @@ export default function TimelineSetupPage() {
     type: "success" | "error";
     msg: string;
   } | null>(null);
+  const [lastAddedId, setLastAddedId] = useState<string | null>(null);
 
   useEffect(() => {
     getPipelineSteps().then(({ data }) => {
@@ -59,14 +60,16 @@ export default function TimelineSetupPage() {
 
   const handleAddStep = () => {
     const nextOrder = steps.length > 0 ? Math.max(...steps.map((s) => s.order)) + 1 : 1;
+    const newId = Math.random().toString(36).substring(2, 9);
     const newStep: PipelineStep = {
-      id: Math.random().toString(36).substring(2, 9),
+      id: newId,
       label: "",
       description: "",
       mappedStatus: "accepted",
       order: nextOrder,
     };
     setSteps([...steps, newStep]);
+    setLastAddedId(newId);
   };
 
   const handleRemoveStep = (id: string) => {
@@ -208,6 +211,7 @@ export default function TimelineSetupPage() {
                             onChange={(e) => handleUpdateStep(step.id, { label: e.target.value })}
                             placeholder="Contoh: Pelatihan Robotik"
                             className="h-9 focus-visible:ring-primary"
+                            autoFocus={step.id === lastAddedId}
                           />
                         </div>
                         <div className="space-y-1.5">

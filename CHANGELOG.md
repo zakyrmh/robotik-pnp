@@ -16,7 +16,7 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Changed
 
-- **Timeline Seleksi**: Memperbarui sistem notifikasi feedback (success/error) menjadi floating notification di pojok kanan atas untuk visibilitas yang lebih baik.
+- **Timeline Seleksi**: Memperbarui sistem notifikasi feedback (success/error) menjadi floating notification di pojok kanan atas serta menambahkan fitur auto-focus pada input label saat menambah tahapan baru.
 - **Penyimpanan Dokumen Caang (Storage)**: Memigrasikan fungsi upload berkas dokumen dan bukti pembayaran dari _Cloudflare R2 Storage_ ke ekosistem terpadu **Supabase Storage** (bucket `or-documents`).
 - **Endpoint Upload Action**: Modifikasi `upload.action.ts` kini memproduksi _Signed URL_ (token aktif 1 tahun) yang lebih mutakhir dibanding skema Public R2 URL sebelumnya.
 - **Migrasi Middleware → Proxy (Next.js 16)**: Mengubah nama file entry point dari `middleware.ts` menjadi `proxy.ts` dan nama fungsi dari `middleware` ke `proxy` di root project sesuai konvensi baru Next.js 16. Fungsi helper turut dimigrasi dari `lib/supabase/middleware.ts` ke `lib/supabase/proxy.ts`.
