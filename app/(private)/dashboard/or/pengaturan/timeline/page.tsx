@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useTransition } from "react";
 import {
-  GripVertical,
   Plus,
   Trash2,
   Save,
@@ -115,6 +114,22 @@ export default function TimelineSetupPage() {
 
   return (
     <div className="max-w-5xl space-y-6">
+      {/* Notifikasi Feedback */}
+      {feedback && (
+        <div
+          className={`fixed top-4 right-4 z-50 animate-in fade-in slide-in-from-right-5 flex items-center gap-3 rounded-xl border p-4 shadow-lg min-w-[300px] max-w-md ${
+            feedback.type === "success"
+              ? "border-emerald-500/50 bg-emerald-50 text-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-200"
+              : "border-destructive/50 bg-destructive-foreground text-destructive-foreground dark:bg-destructive/10 dark:text-destructive"
+          }`}
+        >
+          <div className={`p-1 rounded-full ${feedback.type === "success" ? "bg-emerald-500/20" : "bg-destructive/20"}`}>
+            {feedback.type === "success" ? <CheckCircle2 className="size-5 text-emerald-600" /> : <AlertCircle className="size-5 text-destructive" />}
+          </div>
+          <p className="text-sm font-semibold">{feedback.msg}</p>
+        </div>
+      )}
+
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-bold tracking-tight">Timeline Seleksi</h1>
         <p className="text-sm text-muted-foreground">
@@ -274,18 +289,7 @@ export default function TimelineSetupPage() {
         </Button>
       </div>
 
-      {feedback && (
-        <div
-          className={`animate-in fade-in slide-in-from-top-2 flex items-center gap-2 rounded-lg border p-4 text-sm font-medium ${
-            feedback.type === "success"
-              ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
-              : "border-destructive/20 bg-destructive/10 text-destructive"
-          }`}
-        >
-          {feedback.type === "success" ? <CheckCircle2 className="size-4" /> : <AlertCircle className="size-4" />}
-          {feedback.msg}
-        </div>
-      )}
+
     </div>
   );
 }

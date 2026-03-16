@@ -5,19 +5,18 @@ Semua perubahan penting pada proyek ini akan didokumentasikan di file ini.
 Format berdasarkan [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.8.5] - 2026-03-16
 
 ### Added
 
-- **Pengaturan Open Recruitment**: Menambahkan halaman UI pengaturan periode pendaftaran (`/dashboard/or/pengaturan/periode`) untuk mengontrol status buka/tutup serta rentang jadwal kalender pendaftaran OR.
 - **Pengaturan OR Dinamis (Full CRUD)**: Implementasi manajemen Kontak Panitia, Link Komunitas (WhatsApp/Discord), dan Timeline Seleksi yang dapat dikelola sepenuhnya oleh admin via dashboard.
 - **Manajemen Kegiatan & Absensi Caang**: Menambahkan fitur jadwal kegiatan OR (`/dashboard/caang/kegiatan`) dan rekapitulasi absensi mandiri (`/dashboard/caang/absensi`) untuk calon anggota.
 - **Database/Settings**: Membuat tabel migrasi `or_settings` berskema _key-value_ JSONB untuk menyimpan berbagai konfigurasi dinamis sistem OR, lengkap dengan RLS dan _seed_ awal.
 - **Server Actions**: Menambahkan pustaka aksi `or-settings.action.ts` (announcement, links, timeline) dan `or-events.action.ts` (CRUD event & attendance).
-- **Konfigurasi Next Images**: Mendaftarkan domain R2 Cloudflare (`**.r2.dev` dan `**.r2.cloudflarestorage.com`) ke modul pemuat _remotePatterns_ di `next.config.ts` guna menunjang renderisasi `<Image>` NextJS.
 
 ### Changed
 
+- **Timeline Seleksi**: Memperbarui sistem notifikasi feedback (success/error) menjadi floating notification di pojok kanan atas untuk visibilitas yang lebih baik.
 - **Penyimpanan Dokumen Caang (Storage)**: Memigrasikan fungsi upload berkas dokumen dan bukti pembayaran dari _Cloudflare R2 Storage_ ke ekosistem terpadu **Supabase Storage** (bucket `or-documents`).
 - **Endpoint Upload Action**: Modifikasi `upload.action.ts` kini memproduksi _Signed URL_ (token aktif 1 tahun) yang lebih mutakhir dibanding skema Public R2 URL sebelumnya.
 - **Migrasi Middleware → Proxy (Next.js 16)**: Mengubah nama file entry point dari `middleware.ts` menjadi `proxy.ts` dan nama fungsi dari `middleware` ke `proxy` di root project sesuai konvensi baru Next.js 16. Fungsi helper turut dimigrasi dari `lib/supabase/middleware.ts` ke `lib/supabase/proxy.ts`.
@@ -32,8 +31,6 @@ dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - **Auth Guard — Redirect Halaman Auth**: Memperbaiki bug di mana user yang sudah login tetap bisa mengakses halaman `/login`, `/register`, `/forgot-password`, dan `/reset-password`. Penyebabnya adalah tidak adanya file `proxy.ts` di root project sehingga logika redirect di `lib/supabase/proxy.ts` tidak pernah dieksekusi. Sekarang user yang sudah terautentikasi akan otomatis diarahkan ke `/dashboard`.
 - **Auth Guard — Cakupan Redirect Diperluas**: Memperluas daftar halaman auth yang diproteksi dari sebelumnya hanya `/login` dan `/register`, menjadi mencakup juga `/forgot-password` dan `/reset-password`.
 - **Integrasi Cloudflare R2 Validasi**: Memperbaiki fungsi unggah (`upload.action.ts`) dengan validasi deteksi awal terhadap _environment_ `NEXT_PUBLIC_R2_PUBLIC_URL` guna mencegah cacat penyimpanan URL di _database_ pasca-_upload_ gagal.
-
-### Removed
 
 ---
 
