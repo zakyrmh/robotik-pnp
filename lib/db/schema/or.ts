@@ -139,3 +139,121 @@ export interface OrBlacklistWithUser {
   email: string;
   avatar_url: string | null;
 }
+
+// ═══════════════════════════════════════════════════════
+// MODUL: KEGIATAN & ABSENSI
+// ═══════════════════════════════════════════════════════
+
+export type OrEventType =
+  | "demo"
+  | "pelatihan"
+  | "wawancara"
+  | "project"
+  | "pelantikan"
+  | "lainnya";
+
+export type OrEventMode = "offline" | "online" | "hybrid";
+
+export type OrEventStatus = "draft" | "published" | "completed";
+
+export type OrAttendanceStatus =
+  | "present"
+  | "late"
+  | "absent"
+  | "excused"
+  | "sick";
+
+export const OR_EVENT_TYPE_LABELS: Record<OrEventType, string> = {
+  demo: "Demo & Perkenalan",
+  pelatihan: "Pelatihan",
+  wawancara: "Wawancara",
+  project: "Project Seleksi",
+  pelantikan: "Pelantikan",
+  lainnya: "Lainnya",
+};
+
+export const OR_EVENT_MODE_LABELS: Record<OrEventMode, string> = {
+  offline: "Offline (Tatap Muka)",
+  online: "Online (Daring)",
+  hybrid: "Hybrid",
+};
+
+export const OR_EVENT_STATUS_LABELS: Record<OrEventStatus, string> = {
+  draft: "Draft (Internal)",
+  published: "Dipublikasikan",
+  completed: "Selesai",
+};
+
+export const OR_ATTENDANCE_STATUS_LABELS: Record<OrAttendanceStatus, string> = {
+  present: "Hadir",
+  late: "Terlambat",
+  absent: "Alfa / Tidak Hadir",
+  excused: "Izin",
+  sick: "Sakit",
+};
+
+/** Data Kegiatan OR */
+export interface OrEvent {
+  id: string;
+  title: string;
+  description: string | null;
+  event_type: OrEventType;
+
+  // Jadwal
+  event_date: string;
+  start_time: string;
+  end_time: string | null;
+
+  // Lokasi & Mode
+  location: string | null;
+  execution_mode: OrEventMode;
+  meeting_link: string | null;
+
+  // Fitur & Konfigurasi
+  status: OrEventStatus;
+  allow_attendance: boolean;
+  late_tolerance: number;
+
+  // Poin Konfigurasi
+  points_present: number;
+  points_late: number;
+  points_excused: number;
+  points_sick: number;
+  points_absent: number;
+
+  // Audit
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Data Absensi Kegiatan OR */
+export interface OrEventAttendance {
+  id: string;
+  event_id: string;
+  user_id: string;
+  status: OrAttendanceStatus;
+  checked_in_at: string | null;
+  notes: string | null;
+  points: number;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Data Absensi + Info User */
+export interface OrEventAttendanceWithUser extends OrEventAttendance {
+  full_name: string;
+  nickname: string | null;
+  nim: string | null;
+  avatar_url: string | null;
+}
+
+/** Token QR Absensi */
+export interface OrAttendanceToken {
+  id: string;
+  user_id: string;
+  event_id: string;
+  token: string;
+  expires_at: string;
+  created_at: string;
+}

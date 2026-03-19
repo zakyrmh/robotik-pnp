@@ -200,6 +200,10 @@ export const SIDEBAR_MENU: SidebarMenuGroup[] = [
             title: "Scan QR / Input Absensi",
             href: "/dashboard/or/kegiatan/absensi",
           },
+          {
+            title: "Rekapitulasi Poin",
+            href: "/dashboard/or/rekapitulasi",
+          },
         ],
       },
       {

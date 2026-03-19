@@ -5,6 +5,40 @@ Semua perubahan penting pada proyek ini akan didokumentasikan di file ini.
 Format berdasarkan [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 dan proyek ini mengikuti [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.7] - 2026-03-19
+
+### Added
+
+- **Fitur Absensi & Kegiatan Caang**: Implementasi modul `/dashboard/caang/absensi` dan `/dashboard/caang/kegiatan` yang memungkinkan calon anggota memantau jadwal agenda OR dan riwayat kehadiran serta perolehan poin secara personal.
+- **Sistem Token QR Absensi Dinamis**: Menambahkan migrasi database `or_attendance_tokens` dan logic server action `caangGenerateAttendanceToken` untuk menghasilkan token QR yang valid selama 5 menit bagi tiap peserta guna keamanan absensi.
+- **Scanner QR Terpadu (Admin)**: Implementasi antarmuka scanner QR (`/dashboard/or/kegiatan/absensi`) yang terintegrasi dengan server action `scanAttendanceToken` untuk verifikasi kehadiran peserta secara instan.
+- **Finalisasi Rekapitulasi Poin**: Melengkapi dashboard rekapitulasi poin admin (`/dashboard/or/rekapitulasi`) dengan integrasi data kehadiran dan perhitungan poin otomatis.
+
+### Changed
+
+- **Standarisasi UI Dashboard OR**: Melakukan penyelarasan bahasa desain premium (bento-stat, typography italic/black, dan color palette) pada seluruh halaman manajemen Open Recruitment agar konsisten dengan standar modul lainnya.
+
+## [0.8.6] - 2026-03-16
+
+### Added
+
+- **Fitur Rekapitulasi Poin (Phase 4)**: Implementasi halaman rekapitulasi poin (`/dashboard/or/rekapitulasi`) untuk admin guna memantau akumulasi poin kehadiran seluruh Caang secara otomatis.
+- **Server Action Rekapitulasi**: Menambahkan fungsi `adminGetAttendanceSummary` pada `or-events.action.ts` untuk agregasi data kehadiran, poin, dan statistik partisipasi peserta.
+- **Komponen RekapitulasiManager**: Memisahkan logika client-side rekapitulasi ke dalam komponen tersendiri untuk performa dan pemeliharaan yang lebih baik.
+- **Sistem Scanner QR Real-time (Phase 3)**: Implementasi antarmuka scanner QR untuk admin pada halaman absensi yang terintegrasi dengan handheld barcode scanner.
+
+### Changed
+
+- **Refaktorisasi Halaman Absensi & Rekapitulasi**: Mengonversi halaman `absensi/page.tsx` dan `rekapitulasi/page.tsx` menjadi Server Components dengan pola `Suspense` dan `Skeleton` loading.
+- **Ekstraksi Client Logic**: Memindahkan logika interaktif sistem absensi ke `AbsensiManager` dan sistem rekapitulasi ke `RekapitulasiManager` di direktori `components/or/`.
+- **Standarisasi UI OR Admin**: Menyelaraskan gaya visual (UI/UX) halaman Absensi dan Rekapitulasi dengan halaman Database dan Blacklist agar memiliki bahasa desain premium yang seragam (ikon kontainer, typography black/italic, dan layout bento-stat).
+- **Update Sidebar**: Menambahkan menu "Rekapitulasi Poin" ke dalam grup navigasi "Kegiatan & Absensi" pada sidebar Admin.
+
+### Fixed
+
+- **Type Safety & Linting**: Memperbaiki berbagai error linting (unused variables, cascading renders) dan meningkatkan keamanan tipe data pada server actions `or-events.action.ts`.
+- **Efek Samping useEffect**: Mengoptimalkan hooks `useEffect` pada komponen client untuk mencegah render berulang (cascading renders) yang tidak perlu.
+
 ## [0.8.5] - 2026-03-16
 
 ### Added
