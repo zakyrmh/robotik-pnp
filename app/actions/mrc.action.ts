@@ -1,4 +1,4 @@
-'use server'
+"use server";
 
 /**
  * Server Actions — Modul MRC (Minangkabau Robot Contest)
@@ -7,7 +7,7 @@
  * termasuk data event, status pendaftaran, dan kategori lomba.
  */
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from "@/lib/supabase/server";
 import type {
   MrcEvent,
   MrcCategory,
@@ -24,12 +24,12 @@ import type {
   MrcMatchRound,
   MrcMatchStage,
   MrcLiveState,
-} from '@/lib/db/schema/mrc'
+} from "@/lib/db/schema/mrc";
 
 /** Hasil standar dari server action */
 interface ActionResult<T> {
-  data: T | null
-  error: string | null
+  data: T | null;
+  error: string | null;
 }
 
 // ═════════════════════════════════════════════════════
@@ -38,47 +38,51 @@ interface ActionResult<T> {
 
 /** Data event yang sudah di-join dengan jumlah kategori */
 export interface MrcEventWithStats extends MrcEvent {
-  category_count: number
+  category_count: number;
 }
 
 /**
  * Mengambil semua event MRC, diurutkan dari terbaru.
  * Setiap event di-enrich dengan jumlah kategori.
  */
-export async function getMrcEvents(): Promise<ActionResult<MrcEventWithStats[]>> {
+export async function getMrcEvents(): Promise<
+  ActionResult<MrcEventWithStats[]>
+> {
   try {
-    const supabase = await createClient()
+    const supabase = await createClient();
 
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      return { data: null, error: 'Sesi tidak valid. Silakan login ulang.' }
+      return { data: null, error: "Sesi tidak valid. Silakan login ulang." };
     }
 
     const { data, error } = await supabase
-      .from('mrc_events')
-      .select('*, mrc_categories(id)')
-      .order('created_at', { ascending: false })
+      .from("mrc_events")
+      .select("*, mrc_categories(id)")
+      .order("created_at", { ascending: false });
 
     if (error) {
-      console.error('[getMrcEvents] Supabase error:', error.message)
-      return { data: null, error: 'Gagal memuat data event MRC.' }
+      console.error("[getMrcEvents] Supabase error:", error.message);
+      return { data: null, error: "Gagal memuat data event MRC." };
     }
 
     const events: MrcEventWithStats[] = (data ?? []).map((row) => {
-      const { mrc_categories, ...event } = row
+      const { mrc_categories, ...event } = row;
       return {
         ...event,
-        category_count: Array.isArray(mrc_categories) ? mrc_categories.length : 0,
-      }
-    })
+        category_count: Array.isArray(mrc_categories)
+          ? mrc_categories.length
+          : 0,
+      };
+    });
 
-    return { data: events, error: null }
+    return { data: events, error: null };
   } catch (err) {
-    console.error('[getMrcEvents] Unexpected error:', err)
-    return { data: null, error: 'Terjadi kesalahan yang tidak terduga.' }
+    console.error("[getMrcEvents] Unexpected error:", err);
+    return { data: null, error: "Terjadi kesalahan yang tidak terduga." };
   }
 }
 
@@ -87,41 +91,41 @@ export async function getMrcEvents(): Promise<ActionResult<MrcEventWithStats[]>>
  * Disertai data kategori lomba di dalamnya.
  */
 export async function getMrcEventById(
-  eventId: string
+  eventId: string,
 ): Promise<ActionResult<MrcEvent & { categories: MrcCategory[] }>> {
   try {
-    const supabase = await createClient()
+    const supabase = await createClient();
 
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      return { data: null, error: 'Sesi tidak valid. Silakan login ulang.' }
+      return { data: null, error: "Sesi tidak valid. Silakan login ulang." };
     }
 
     const { data, error } = await supabase
-      .from('mrc_events')
-      .select('*, mrc_categories(*)')
-      .eq('id', eventId)
-      .single()
+      .from("mrc_events")
+      .select("*, mrc_categories(*)")
+      .eq("id", eventId)
+      .single();
 
     if (error) {
-      console.error('[getMrcEventById] Supabase error:', error.message)
-      return { data: null, error: 'Gagal memuat data event.' }
+      console.error("[getMrcEventById] Supabase error:", error.message);
+      return { data: null, error: "Gagal memuat data event." };
     }
 
-    const { mrc_categories, ...event } = data
+    const { mrc_categories, ...event } = data;
     return {
       data: {
         ...event,
         categories: Array.isArray(mrc_categories) ? mrc_categories : [],
       },
       error: null,
-    }
+    };
   } catch (err) {
-    console.error('[getMrcEventById] Unexpected error:', err)
-    return { data: null, error: 'Terjadi kesalahan yang tidak terduga.' }
+    console.error("[getMrcEventById] Unexpected error:", err);
+    return { data: null, error: "Terjadi kesalahan yang tidak terduga." };
   }
 }
 
@@ -135,48 +139,48 @@ export async function getMrcEventById(
  * @param input - Data event baru (name, slug, dll)
  */
 export async function createMrcEvent(input: {
-  name: string
-  slug: string
-  description?: string | null
-  venue?: string | null
-  contact_person?: string | null
-  contact_phone?: string | null
-  contact_email?: string | null
+  name: string;
+  slug: string;
+  description?: string | null;
+  venue?: string | null;
+  contact_person?: string | null;
+  contact_phone?: string | null;
+  contact_email?: string | null;
 }): Promise<ActionResult<MrcEvent>> {
   try {
-    const supabase = await createClient()
+    const supabase = await createClient();
 
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      return { data: null, error: 'Sesi tidak valid. Silakan login ulang.' }
+      return { data: null, error: "Sesi tidak valid. Silakan login ulang." };
     }
 
     const { data, error } = await supabase
-      .from('mrc_events')
+      .from("mrc_events")
       .insert({
         ...input,
-        status: 'draft',
+        status: "draft",
         created_by: user.id,
       })
       .select()
-      .single()
+      .single();
 
     if (error) {
       // Handle duplicate slug
-      if (error.code === '23505') {
-        return { data: null, error: `Slug "${input.slug}" sudah digunakan.` }
+      if (error.code === "23505") {
+        return { data: null, error: `Slug "${input.slug}" sudah digunakan.` };
       }
-      console.error('[createMrcEvent] Supabase error:', error.message)
-      return { data: null, error: 'Gagal membuat event baru.' }
+      console.error("[createMrcEvent] Supabase error:", error.message);
+      return { data: null, error: "Gagal membuat event baru." };
     }
 
-    return { data, error: null }
+    return { data, error: null };
   } catch (err) {
-    console.error('[createMrcEvent] Unexpected error:', err)
-    return { data: null, error: 'Terjadi kesalahan yang tidak terduga.' }
+    console.error("[createMrcEvent] Unexpected error:", err);
+    return { data: null, error: "Terjadi kesalahan yang tidak terduga." };
   }
 }
 
@@ -198,43 +202,43 @@ export async function updateMrcRegistration(
   eventId: string,
   status: MrcEventStatus,
   regOpen?: string | null,
-  regClose?: string | null
+  regClose?: string | null,
 ): Promise<ActionResult<null>> {
   try {
-    const supabase = await createClient()
+    const supabase = await createClient();
 
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      return { data: null, error: 'Sesi tidak valid. Silakan login ulang.' }
+      return { data: null, error: "Sesi tidak valid. Silakan login ulang." };
     }
 
     // Validasi: jika membuka pendaftaran, waktu buka wajib
-    if (status === 'registration' && !regOpen) {
-      return { data: null, error: 'Waktu buka pendaftaran wajib diisi.' }
+    if (status === "registration" && !regOpen) {
+      return { data: null, error: "Waktu buka pendaftaran wajib diisi." };
     }
 
     // Build update payload
-    const updateData: Record<string, unknown> = { status }
-    if (regOpen !== undefined) updateData.registration_open = regOpen
-    if (regClose !== undefined) updateData.registration_close = regClose
+    const updateData: Record<string, unknown> = { status };
+    if (regOpen !== undefined) updateData.registration_open = regOpen;
+    if (regClose !== undefined) updateData.registration_close = regClose;
 
     const { error } = await supabase
-      .from('mrc_events')
+      .from("mrc_events")
       .update(updateData)
-      .eq('id', eventId)
+      .eq("id", eventId);
 
     if (error) {
-      console.error('[updateMrcRegistration] Supabase error:', error.message)
-      return { data: null, error: 'Gagal mengubah status pendaftaran.' }
+      console.error("[updateMrcRegistration] Supabase error:", error.message);
+      return { data: null, error: "Gagal mengubah status pendaftaran." };
     }
 
-    return { data: null, error: null }
+    return { data: null, error: null };
   } catch (err) {
-    console.error('[updateMrcRegistration] Unexpected error:', err)
-    return { data: null, error: 'Terjadi kesalahan yang tidak terduga.' }
+    console.error("[updateMrcRegistration] Unexpected error:", err);
+    return { data: null, error: "Terjadi kesalahan yang tidak terduga." };
   }
 }
 
@@ -244,41 +248,41 @@ export async function updateMrcRegistration(
 export async function updateMrcEvent(
   eventId: string,
   input: {
-    name?: string
-    description?: string | null
-    venue?: string | null
-    event_start?: string | null
-    event_end?: string | null
-    contact_person?: string | null
-    contact_phone?: string | null
-    contact_email?: string | null
-  }
+    name?: string;
+    description?: string | null;
+    venue?: string | null;
+    event_start?: string | null;
+    event_end?: string | null;
+    contact_person?: string | null;
+    contact_phone?: string | null;
+    contact_email?: string | null;
+  },
 ): Promise<ActionResult<null>> {
   try {
-    const supabase = await createClient()
+    const supabase = await createClient();
 
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      return { data: null, error: 'Sesi tidak valid. Silakan login ulang.' }
+      return { data: null, error: "Sesi tidak valid. Silakan login ulang." };
     }
 
     const { error } = await supabase
-      .from('mrc_events')
+      .from("mrc_events")
       .update(input)
-      .eq('id', eventId)
+      .eq("id", eventId);
 
     if (error) {
-      console.error('[updateMrcEvent] Supabase error:', error.message)
-      return { data: null, error: 'Gagal memperbarui data event.' }
+      console.error("[updateMrcEvent] Supabase error:", error.message);
+      return { data: null, error: "Gagal memperbarui data event." };
     }
 
-    return { data: null, error: null }
+    return { data: null, error: null };
   } catch (err) {
-    console.error('[updateMrcEvent] Unexpected error:', err)
-    return { data: null, error: 'Terjadi kesalahan yang tidak terduga.' }
+    console.error("[updateMrcEvent] Unexpected error:", err);
+    return { data: null, error: "Terjadi kesalahan yang tidak terduga." };
   }
 }
 
@@ -293,34 +297,34 @@ export async function updateMrcEvent(
  * @param eventId - ID event MRC
  */
 export async function getCategoriesByEvent(
-  eventId: string
+  eventId: string,
 ): Promise<ActionResult<MrcCategory[]>> {
   try {
-    const supabase = await createClient()
+    const supabase = await createClient();
 
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      return { data: null, error: 'Sesi tidak valid. Silakan login ulang.' }
+      return { data: null, error: "Sesi tidak valid. Silakan login ulang." };
     }
 
     const { data, error } = await supabase
-      .from('mrc_categories')
-      .select('*')
-      .eq('event_id', eventId)
-      .order('name', { ascending: true })
+      .from("mrc_categories")
+      .select("*")
+      .eq("event_id", eventId)
+      .order("name", { ascending: true });
 
     if (error) {
-      console.error('[getCategoriesByEvent] Supabase error:', error.message)
-      return { data: null, error: 'Gagal memuat data kategori.' }
+      console.error("[getCategoriesByEvent] Supabase error:", error.message);
+      return { data: null, error: "Gagal memuat data kategori." };
     }
 
-    return { data: data ?? [], error: null }
+    return { data: data ?? [], error: null };
   } catch (err) {
-    console.error('[getCategoriesByEvent] Unexpected error:', err)
-    return { data: null, error: 'Terjadi kesalahan yang tidak terduga.' }
+    console.error("[getCategoriesByEvent] Unexpected error:", err);
+    return { data: null, error: "Terjadi kesalahan yang tidak terduga." };
   }
 }
 
@@ -330,28 +334,28 @@ export async function getCategoriesByEvent(
  * @param input - Data kategori (nama, biaya, ukuran tim, dll)
  */
 export async function createMrcCategory(input: {
-  event_id: string
-  name: string
-  description?: string | null
-  rules_url?: string | null
-  max_team_size?: number
-  min_team_size?: number
-  max_teams?: number | null
-  registration_fee?: number
+  event_id: string;
+  name: string;
+  description?: string | null;
+  rules_url?: string | null;
+  max_team_size?: number;
+  min_team_size?: number;
+  max_teams?: number | null;
+  registration_fee?: number;
 }): Promise<ActionResult<MrcCategory>> {
   try {
-    const supabase = await createClient()
+    const supabase = await createClient();
 
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      return { data: null, error: 'Sesi tidak valid. Silakan login ulang.' }
+      return { data: null, error: "Sesi tidak valid. Silakan login ulang." };
     }
 
     const { data, error } = await supabase
-      .from('mrc_categories')
+      .from("mrc_categories")
       .insert({
         ...input,
         min_team_size: input.min_team_size ?? 1,
@@ -360,23 +364,23 @@ export async function createMrcCategory(input: {
         is_active: true,
       })
       .select()
-      .single()
+      .single();
 
     if (error) {
-      if (error.code === '23505') {
+      if (error.code === "23505") {
         return {
           data: null,
           error: `Kategori "${input.name}" sudah ada di event ini.`,
-        }
+        };
       }
-      console.error('[createMrcCategory] Supabase error:', error.message)
-      return { data: null, error: 'Gagal membuat kategori baru.' }
+      console.error("[createMrcCategory] Supabase error:", error.message);
+      return { data: null, error: "Gagal membuat kategori baru." };
     }
 
-    return { data, error: null }
+    return { data, error: null };
   } catch (err) {
-    console.error('[createMrcCategory] Unexpected error:', err)
-    return { data: null, error: 'Terjadi kesalahan yang tidak terduga.' }
+    console.error("[createMrcCategory] Unexpected error:", err);
+    return { data: null, error: "Terjadi kesalahan yang tidak terduga." };
   }
 }
 
@@ -389,25 +393,25 @@ export async function createMrcCategory(input: {
 export async function updateMrcCategory(
   categoryId: string,
   input: {
-    name?: string
-    description?: string | null
-    rules_url?: string | null
-    max_team_size?: number
-    min_team_size?: number
-    max_teams?: number | null
-    registration_fee?: number
-    is_active?: boolean
-  }
+    name?: string;
+    description?: string | null;
+    rules_url?: string | null;
+    max_team_size?: number;
+    min_team_size?: number;
+    max_teams?: number | null;
+    registration_fee?: number;
+    is_active?: boolean;
+  },
 ): Promise<ActionResult<null>> {
   try {
-    const supabase = await createClient()
+    const supabase = await createClient();
 
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      return { data: null, error: 'Sesi tidak valid. Silakan login ulang.' }
+      return { data: null, error: "Sesi tidak valid. Silakan login ulang." };
     }
 
     // Validasi min <= max team size jika keduanya diisi
@@ -418,27 +422,27 @@ export async function updateMrcCategory(
     ) {
       return {
         data: null,
-        error: 'Min anggota tim harus ≤ max anggota tim.',
-      }
+        error: "Min anggota tim harus ≤ max anggota tim.",
+      };
     }
 
     const { error } = await supabase
-      .from('mrc_categories')
+      .from("mrc_categories")
       .update(input)
-      .eq('id', categoryId)
+      .eq("id", categoryId);
 
     if (error) {
-      if (error.code === '23505') {
-        return { data: null, error: `Nama kategori sudah ada di event ini.` }
+      if (error.code === "23505") {
+        return { data: null, error: `Nama kategori sudah ada di event ini.` };
       }
-      console.error('[updateMrcCategory] Supabase error:', error.message)
-      return { data: null, error: 'Gagal memperbarui kategori.' }
+      console.error("[updateMrcCategory] Supabase error:", error.message);
+      return { data: null, error: "Gagal memperbarui kategori." };
     }
 
-    return { data: null, error: null }
+    return { data: null, error: null };
   } catch (err) {
-    console.error('[updateMrcCategory] Unexpected error:', err)
-    return { data: null, error: 'Terjadi kesalahan yang tidak terduga.' }
+    console.error("[updateMrcCategory] Unexpected error:", err);
+    return { data: null, error: "Terjadi kesalahan yang tidak terduga." };
   }
 }
 
@@ -448,33 +452,33 @@ export async function updateMrcCategory(
  * @param categoryId - ID kategori yang dihapus
  */
 export async function deleteMrcCategory(
-  categoryId: string
+  categoryId: string,
 ): Promise<ActionResult<null>> {
   try {
-    const supabase = await createClient()
+    const supabase = await createClient();
 
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      return { data: null, error: 'Sesi tidak valid. Silakan login ulang.' }
+      return { data: null, error: "Sesi tidak valid. Silakan login ulang." };
     }
 
     const { error } = await supabase
-      .from('mrc_categories')
+      .from("mrc_categories")
       .delete()
-      .eq('id', categoryId)
+      .eq("id", categoryId);
 
     if (error) {
-      console.error('[deleteMrcCategory] Supabase error:', error.message)
-      return { data: null, error: 'Gagal menghapus kategori.' }
+      console.error("[deleteMrcCategory] Supabase error:", error.message);
+      return { data: null, error: "Gagal menghapus kategori." };
     }
 
-    return { data: null, error: null }
+    return { data: null, error: null };
   } catch (err) {
-    console.error('[deleteMrcCategory] Unexpected error:', err)
-    return { data: null, error: 'Terjadi kesalahan yang tidak terduga.' }
+    console.error("[deleteMrcCategory] Unexpected error:", err);
+    return { data: null, error: "Terjadi kesalahan yang tidak terduga." };
   }
 }
 
@@ -484,20 +488,20 @@ export async function deleteMrcCategory(
 
 /** Tim + kategori + jumlah anggota (untuk tabel verifikasi berkas) */
 export interface TeamForVerification {
-  id: string
-  team_name: string
-  institution: string
-  captain_name: string
-  captain_email: string
-  captain_phone: string
-  advisor_name: string
-  status: MrcTeamStatus
-  rejection_reason: string | null
-  notes: string | null
-  created_at: string
-  category_name: string
-  member_count: number
-  members: MrcTeamMember[]
+  id: string;
+  team_name: string;
+  institution: string;
+  captain_name: string;
+  captain_email: string;
+  captain_phone: string;
+  advisor_name: string;
+  status: MrcTeamStatus;
+  rejection_reason: string | null;
+  notes: string | null;
+  created_at: string;
+  category_name: string;
+  member_count: number;
+  members: MrcTeamMember[];
 }
 
 /**
@@ -509,46 +513,50 @@ export interface TeamForVerification {
  */
 export async function getTeamsForVerification(
   eventId: string,
-  status?: MrcTeamStatus
+  status?: MrcTeamStatus,
 ): Promise<ActionResult<TeamForVerification[]>> {
   try {
-    const supabase = await createClient()
+    const supabase = await createClient();
 
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      return { data: null, error: 'Sesi tidak valid. Silakan login ulang.' }
+      return { data: null, error: "Sesi tidak valid. Silakan login ulang." };
     }
 
     let query = supabase
-      .from('mrc_teams')
-      .select(`
+      .from("mrc_teams")
+      .select(
+        `
         id, team_name, institution,
         captain_name, captain_email, captain_phone,
         advisor_name, status, rejection_reason, notes, created_at,
         mrc_categories ( name ),
         mrc_team_members ( id, full_name, role, identity_number, phone, created_at )
-      `)
-      .eq('event_id', eventId)
-      .order('created_at', { ascending: false })
+      `,
+      )
+      .eq("event_id", eventId)
+      .order("created_at", { ascending: false });
 
     if (status) {
-      query = query.eq('status', status)
+      query = query.eq("status", status);
     }
 
-    const { data, error } = await query
+    const { data, error } = await query;
 
     if (error) {
-      console.error('[getTeamsForVerification] Supabase error:', error.message)
-      return { data: null, error: 'Gagal memuat data tim.' }
+      console.error("[getTeamsForVerification] Supabase error:", error.message);
+      return { data: null, error: "Gagal memuat data tim." };
     }
 
     const teams: TeamForVerification[] = (data ?? []).map((row) => {
-      const cat = row.mrc_categories
-      const catObj = Array.isArray(cat) ? cat[0] : cat
-      const members = Array.isArray(row.mrc_team_members) ? row.mrc_team_members : []
+      const cat = row.mrc_categories;
+      const catObj = Array.isArray(cat) ? cat[0] : cat;
+      const members = Array.isArray(row.mrc_team_members)
+        ? row.mrc_team_members
+        : [];
 
       return {
         id: row.id,
@@ -562,16 +570,16 @@ export async function getTeamsForVerification(
         rejection_reason: row.rejection_reason,
         notes: row.notes,
         created_at: row.created_at,
-        category_name: catObj?.name ?? '—',
+        category_name: catObj?.name ?? "—",
         member_count: members.length,
         members: members as MrcTeamMember[],
-      }
-    })
+      };
+    });
 
-    return { data: teams, error: null }
+    return { data: teams, error: null };
   } catch (err) {
-    console.error('[getTeamsForVerification] Unexpected error:', err)
-    return { data: null, error: 'Terjadi kesalahan yang tidak terduga.' }
+    console.error("[getTeamsForVerification] Unexpected error:", err);
+    return { data: null, error: "Terjadi kesalahan yang tidak terduga." };
   }
 }
 
@@ -589,44 +597,47 @@ export async function getTeamsForVerification(
  */
 export async function updateTeamDocStatus(
   teamId: string,
-  status: 'documents_verified' | 'revision' | 'rejected',
+  status: "documents_verified" | "revision" | "rejected",
   reason?: string | null,
-  notes?: string | null
+  notes?: string | null,
 ): Promise<ActionResult<null>> {
   try {
-    const supabase = await createClient()
+    const supabase = await createClient();
 
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      return { data: null, error: 'Sesi tidak valid. Silakan login ulang.' }
+      return { data: null, error: "Sesi tidak valid. Silakan login ulang." };
     }
 
     // Validasi: alasan wajib untuk revision/rejected
-    if ((status === 'revision' || status === 'rejected') && !reason?.trim()) {
-      return { data: null, error: 'Alasan wajib diisi untuk revisi atau penolakan.' }
+    if ((status === "revision" || status === "rejected") && !reason?.trim()) {
+      return {
+        data: null,
+        error: "Alasan wajib diisi untuk revisi atau penolakan.",
+      };
     }
 
-    const updateData: Record<string, unknown> = { status }
-    if (reason !== undefined) updateData.rejection_reason = reason
-    if (notes !== undefined) updateData.notes = notes
+    const updateData: Record<string, unknown> = { status };
+    if (reason !== undefined) updateData.rejection_reason = reason;
+    if (notes !== undefined) updateData.notes = notes;
 
     const { error } = await supabase
-      .from('mrc_teams')
+      .from("mrc_teams")
       .update(updateData)
-      .eq('id', teamId)
+      .eq("id", teamId);
 
     if (error) {
-      console.error('[updateTeamDocStatus] Supabase error:', error.message)
-      return { data: null, error: 'Gagal mengubah status verifikasi.' }
+      console.error("[updateTeamDocStatus] Supabase error:", error.message);
+      return { data: null, error: "Gagal mengubah status verifikasi." };
     }
 
-    return { data: null, error: null }
+    return { data: null, error: null };
   } catch (err) {
-    console.error('[updateTeamDocStatus] Unexpected error:', err)
-    return { data: null, error: 'Terjadi kesalahan yang tidak terduga.' }
+    console.error("[updateTeamDocStatus] Unexpected error:", err);
+    return { data: null, error: "Terjadi kesalahan yang tidak terduga." };
   }
 }
 
@@ -636,14 +647,14 @@ export async function updateTeamDocStatus(
 
 /** Tim + pembayaran terbaru (untuk tabel verifikasi pembayaran) */
 export interface TeamForPayment {
-  id: string
-  team_name: string
-  institution: string
-  captain_name: string
-  status: MrcTeamStatus
-  category_name: string
-  registration_fee: number
-  payments: MrcPayment[]
+  id: string;
+  team_name: string;
+  institution: string;
+  captain_name: string;
+  status: MrcTeamStatus;
+  category_name: string;
+  registration_fee: number;
+  payments: MrcPayment[];
 }
 
 /**
@@ -653,39 +664,41 @@ export interface TeamForPayment {
  * @param eventId - ID event MRC
  */
 export async function getTeamsForPayment(
-  eventId: string
+  eventId: string,
 ): Promise<ActionResult<TeamForPayment[]>> {
   try {
-    const supabase = await createClient()
+    const supabase = await createClient();
 
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      return { data: null, error: 'Sesi tidak valid. Silakan login ulang.' }
+      return { data: null, error: "Sesi tidak valid. Silakan login ulang." };
     }
 
     const { data, error } = await supabase
-      .from('mrc_teams')
-      .select(`
+      .from("mrc_teams")
+      .select(
+        `
         id, team_name, institution, captain_name, status,
         mrc_categories ( name, registration_fee ),
         mrc_payments ( * )
-      `)
-      .eq('event_id', eventId)
-      .in('status', ['documents_verified', 'payment_verified', 'checked_in'])
-      .order('created_at', { ascending: false })
+      `,
+      )
+      .eq("event_id", eventId)
+      .in("status", ["documents_verified", "payment_verified", "checked_in"])
+      .order("created_at", { ascending: false });
 
     if (error) {
-      console.error('[getTeamsForPayment] Supabase error:', error.message)
-      return { data: null, error: 'Gagal memuat data pembayaran.' }
+      console.error("[getTeamsForPayment] Supabase error:", error.message);
+      return { data: null, error: "Gagal memuat data pembayaran." };
     }
 
     const teams: TeamForPayment[] = (data ?? []).map((row) => {
-      const cat = row.mrc_categories
-      const catObj = Array.isArray(cat) ? cat[0] : cat
-      const payments = Array.isArray(row.mrc_payments) ? row.mrc_payments : []
+      const cat = row.mrc_categories;
+      const catObj = Array.isArray(cat) ? cat[0] : cat;
+      const payments = Array.isArray(row.mrc_payments) ? row.mrc_payments : [];
 
       return {
         id: row.id,
@@ -693,16 +706,17 @@ export async function getTeamsForPayment(
         institution: row.institution,
         captain_name: row.captain_name,
         status: row.status as MrcTeamStatus,
-        category_name: catObj?.name ?? '—',
-        registration_fee: (catObj as { registration_fee?: number })?.registration_fee ?? 0,
+        category_name: catObj?.name ?? "—",
+        registration_fee:
+          (catObj as { registration_fee?: number })?.registration_fee ?? 0,
         payments: payments as MrcPayment[],
-      }
-    })
+      };
+    });
 
-    return { data: teams, error: null }
+    return { data: teams, error: null };
   } catch (err) {
-    console.error('[getTeamsForPayment] Unexpected error:', err)
-    return { data: null, error: 'Terjadi kesalahan yang tidak terduga.' }
+    console.error("[getTeamsForPayment] Unexpected error:", err);
+    return { data: null, error: "Terjadi kesalahan yang tidak terduga." };
   }
 }
 
@@ -718,22 +732,22 @@ export async function getTeamsForPayment(
 export async function verifyPayment(
   paymentId: string,
   teamId: string,
-  status: 'verified' | 'rejected',
-  reason?: string | null
+  status: "verified" | "rejected",
+  reason?: string | null,
 ): Promise<ActionResult<null>> {
   try {
-    const supabase = await createClient()
+    const supabase = await createClient();
 
     const {
       data: { user },
-    } = await supabase.auth.getUser()
+    } = await supabase.auth.getUser();
 
     if (!user) {
-      return { data: null, error: 'Sesi tidak valid. Silakan login ulang.' }
+      return { data: null, error: "Sesi tidak valid. Silakan login ulang." };
     }
 
-    if (status === 'rejected' && !reason?.trim()) {
-      return { data: null, error: 'Alasan penolakan wajib diisi.' }
+    if (status === "rejected" && !reason?.trim()) {
+      return { data: null, error: "Alasan penolakan wajib diisi." };
     }
 
     // Update status pembayaran
@@ -741,36 +755,39 @@ export async function verifyPayment(
       status,
       verified_by: user.id,
       verified_at: new Date().toISOString(),
-    }
-    if (reason !== undefined) paymentUpdate.rejection_reason = reason
+    };
+    if (reason !== undefined) paymentUpdate.rejection_reason = reason;
 
     const { error: paymentError } = await supabase
-      .from('mrc_payments')
+      .from("mrc_payments")
       .update(paymentUpdate)
-      .eq('id', paymentId)
+      .eq("id", paymentId);
 
     if (paymentError) {
-      console.error('[verifyPayment] Payment update error:', paymentError.message)
-      return { data: null, error: 'Gagal memverifikasi pembayaran.' }
+      console.error(
+        "[verifyPayment] Payment update error:",
+        paymentError.message,
+      );
+      return { data: null, error: "Gagal memverifikasi pembayaran." };
     }
 
     // Jika verified, update status tim ke payment_verified
-    if (status === 'verified') {
+    if (status === "verified") {
       const { error: teamError } = await supabase
-        .from('mrc_teams')
-        .update({ status: 'payment_verified' })
-        .eq('id', teamId)
+        .from("mrc_teams")
+        .update({ status: "payment_verified" })
+        .eq("id", teamId);
 
       if (teamError) {
-        console.error('[verifyPayment] Team update error:', teamError.message)
+        console.error("[verifyPayment] Team update error:", teamError.message);
         // Tidak fatal — pembayaran sudah terverifikasi
       }
     }
 
-    return { data: null, error: null }
+    return { data: null, error: null };
   } catch (err) {
-    console.error('[verifyPayment] Unexpected error:', err)
-    return { data: null, error: 'Terjadi kesalahan yang tidak terduga.' }
+    console.error("[verifyPayment] Unexpected error:", err);
+    return { data: null, error: "Terjadi kesalahan yang tidak terduga." };
   }
 }
 
@@ -786,80 +803,87 @@ export async function verifyPayment(
  * @param eventId - ID event MRC
  */
 export async function generateQrCodesForEvent(
-  eventId: string
+  eventId: string,
 ): Promise<ActionResult<{ generated: number; skipped: number }>> {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { data: null, error: 'Sesi tidak valid.' }
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { data: null, error: "Sesi tidak valid." };
 
     // Ambil semua tim yang sudah payment_verified
     const { data: teams, error: teamsError } = await supabase
-      .from('mrc_teams')
-      .select(`
+      .from("mrc_teams")
+      .select(
+        `
         id, team_name,
         mrc_team_members ( id, full_name, role )
-      `)
-      .eq('event_id', eventId)
-      .in('status', ['payment_verified', 'checked_in'])
+      `,
+      )
+      .eq("event_id", eventId)
+      .in("status", ["payment_verified", "checked_in"]);
 
     if (teamsError) {
-      console.error('[generateQrCodesForEvent] error:', teamsError.message)
-      return { data: null, error: 'Gagal mengambil data tim.' }
+      console.error("[generateQrCodesForEvent] error:", teamsError.message);
+      return { data: null, error: "Gagal mengambil data tim." };
     }
 
     // Ambil QR yang sudah ada untuk event ini
-    const teamIds = (teams ?? []).map((t) => t.id)
+    const teamIds = (teams ?? []).map((t) => t.id);
     if (teamIds.length === 0) {
-      return { data: { generated: 0, skipped: 0 }, error: null }
+      return { data: { generated: 0, skipped: 0 }, error: null };
     }
 
     const { data: existingQr } = await supabase
-      .from('mrc_qr_codes')
-      .select('member_id, team_id')
-      .in('team_id', teamIds)
+      .from("mrc_qr_codes")
+      .select("member_id, team_id")
+      .in("team_id", teamIds);
 
     const existingSet = new Set(
-      (existingQr ?? []).map((q) => `${q.team_id}-${q.member_id ?? 'team'}`)
-    )
+      (existingQr ?? []).map((q) => `${q.team_id}-${q.member_id ?? "team"}`),
+    );
 
     // Generate batch insert
     const toInsert: Array<{
-      team_id: string
-      member_id: string | null
-      qr_token: string
-      person_name: string
-      person_role: string
-    }> = []
+      team_id: string;
+      member_id: string | null;
+      qr_token: string;
+      person_name: string;
+      person_role: "captain" | "member" | "advisor";
+    }> = [];
 
     for (const team of teams ?? []) {
       const members = Array.isArray(team.mrc_team_members)
         ? team.mrc_team_members
-        : []
+        : [];
 
       for (const member of members) {
-        const key = `${team.id}-${member.id}`
-        if (existingSet.has(key)) continue
+        const key = `${team.id}-${member.id}`;
+        if (existingSet.has(key)) continue;
 
-        const rand = Math.random().toString(36).substring(2, 8).toUpperCase()
+        const rand = Math.random().toString(36).substring(2, 8).toUpperCase();
         toInsert.push({
           team_id: team.id,
           member_id: member.id,
           qr_token: `MRC-${rand}-${Date.now().toString(36).slice(-4).toUpperCase()}`,
           person_name: member.full_name,
-          person_role: member.role,
-        })
+          person_role: member.role as "captain" | "member" | "advisor",
+        });
       }
     }
 
     if (toInsert.length > 0) {
       const { error: insertError } = await supabase
-        .from('mrc_qr_codes')
-        .insert(toInsert)
+        .from("mrc_qr_codes")
+        .insert(toInsert);
 
       if (insertError) {
-        console.error('[generateQrCodesForEvent] insert error:', insertError.message)
-        return { data: null, error: 'Gagal menyimpan QR codes.' }
+        console.error(
+          "[generateQrCodesForEvent] insert error:",
+          insertError.message,
+        );
+        return { data: null, error: "Gagal menyimpan QR codes." };
       }
     }
 
@@ -869,10 +893,10 @@ export async function generateQrCodesForEvent(
         skipped: existingSet.size,
       },
       error: null,
-    }
+    };
   } catch (err) {
-    console.error('[generateQrCodesForEvent] Unexpected:', err)
-    return { data: null, error: 'Terjadi kesalahan yang tidak terduga.' }
+    console.error("[generateQrCodesForEvent] Unexpected:", err);
+    return { data: null, error: "Terjadi kesalahan yang tidak terduga." };
   }
 }
 
@@ -882,65 +906,67 @@ export async function generateQrCodesForEvent(
  * @param eventId - ID event MRC
  */
 export async function getQrCodesForEvent(
-  eventId: string
+  eventId: string,
 ): Promise<ActionResult<MrcQrCodeWithTeam[]>> {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { data: null, error: 'Sesi tidak valid.' }
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { data: null, error: "Sesi tidak valid." };
 
     // Ambil team IDs untuk event ini
     const { data: teams } = await supabase
-      .from('mrc_teams')
-      .select('id, team_name, institution, mrc_categories(name)')
-      .eq('event_id', eventId)
-      .in('status', ['payment_verified', 'checked_in'])
+      .from("mrc_teams")
+      .select("id, team_name, institution, mrc_categories(name)")
+      .eq("event_id", eventId)
+      .in("status", ["payment_verified", "checked_in"]);
 
     if (!teams || teams.length === 0) {
-      return { data: [], error: null }
+      return { data: [], error: null };
     }
 
-    const teamIds = teams.map((t) => t.id)
+    const teamIds = teams.map((t) => t.id);
     const teamMap = new Map(
       teams.map((t) => {
-        const cat = t.mrc_categories
-        const catObj = Array.isArray(cat) ? cat[0] : cat
+        const cat = t.mrc_categories;
+        const catObj = Array.isArray(cat) ? cat[0] : cat;
         return [
           t.id,
           {
             team_name: t.team_name,
             institution: t.institution,
-            category_name: catObj?.name ?? '—',
+            category_name: catObj?.name ?? "—",
           },
-        ]
-      })
-    )
+        ];
+      }),
+    );
 
     const { data: qrCodes, error } = await supabase
-      .from('mrc_qr_codes')
-      .select('*')
-      .in('team_id', teamIds)
-      .order('person_name', { ascending: true })
+      .from("mrc_qr_codes")
+      .select("*")
+      .in("team_id", teamIds)
+      .order("person_name", { ascending: true });
 
     if (error) {
-      console.error('[getQrCodesForEvent] error:', error.message)
-      return { data: null, error: 'Gagal memuat QR codes.' }
+      console.error("[getQrCodesForEvent] error:", error.message);
+      return { data: null, error: "Gagal memuat QR codes." };
     }
 
     const result: MrcQrCodeWithTeam[] = (qrCodes ?? []).map((qr) => {
-      const info = teamMap.get(qr.team_id)
+      const info = teamMap.get(qr.team_id);
       return {
         ...qr,
-        team_name: info?.team_name ?? '—',
-        institution: info?.institution ?? '—',
-        category_name: info?.category_name ?? '—',
-      } as MrcQrCodeWithTeam
-    })
+        team_name: info?.team_name ?? "—",
+        institution: info?.institution ?? "—",
+        category_name: info?.category_name ?? "—",
+      } as MrcQrCodeWithTeam;
+    });
 
-    return { data: result, error: null }
+    return { data: result, error: null };
   } catch (err) {
-    console.error('[getQrCodesForEvent] Unexpected:', err)
-    return { data: null, error: 'Terjadi kesalahan yang tidak terduga.' }
+    console.error("[getQrCodesForEvent] Unexpected:", err);
+    return { data: null, error: "Terjadi kesalahan yang tidak terduga." };
   }
 }
 
@@ -950,40 +976,45 @@ export async function getQrCodesForEvent(
 
 /** Statistik check-in event */
 export interface CheckinStats {
-  totalQr: number
-  checkedIn: number
-  insideVenue: number
+  totalQr: number;
+  checkedIn: number;
+  insideVenue: number;
 }
 
 /**
  * Mengambil statistik check-in untuk event.
  */
 export async function getCheckinStats(
-  eventId: string
+  eventId: string,
 ): Promise<ActionResult<CheckinStats>> {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { data: null, error: 'Sesi tidak valid.' }
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { data: null, error: "Sesi tidak valid." };
 
     const { data: teams } = await supabase
-      .from('mrc_teams')
-      .select('id')
-      .eq('event_id', eventId)
-      .in('status', ['payment_verified', 'checked_in'])
+      .from("mrc_teams")
+      .select("id")
+      .eq("event_id", eventId)
+      .in("status", ["payment_verified", "checked_in"]);
 
     if (!teams || teams.length === 0) {
-      return { data: { totalQr: 0, checkedIn: 0, insideVenue: 0 }, error: null }
+      return {
+        data: { totalQr: 0, checkedIn: 0, insideVenue: 0 },
+        error: null,
+      };
     }
 
-    const teamIds = teams.map((t) => t.id)
+    const teamIds = teams.map((t) => t.id);
 
     const { data: qrCodes } = await supabase
-      .from('mrc_qr_codes')
-      .select('is_checked_in, is_inside')
-      .in('team_id', teamIds)
+      .from("mrc_qr_codes")
+      .select("is_checked_in, is_inside")
+      .in("team_id", teamIds);
 
-    const all = qrCodes ?? []
+    const all = qrCodes ?? [];
     return {
       data: {
         totalQr: all.length,
@@ -991,18 +1022,18 @@ export async function getCheckinStats(
         insideVenue: all.filter((q) => q.is_inside).length,
       },
       error: null,
-    }
+    };
   } catch (err) {
-    console.error('[getCheckinStats] Unexpected:', err)
-    return { data: null, error: 'Terjadi kesalahan yang tidak terduga.' }
+    console.error("[getCheckinStats] Unexpected:", err);
+    return { data: null, error: "Terjadi kesalahan yang tidak terduga." };
   }
 }
 
 /** Hasil scan QR */
 export interface ScanResult {
-  qr: MrcQrCodeWithTeam
-  action: string
-  message: string
+  qr: MrcQrCodeWithTeam;
+  action: string;
+  message: string;
 }
 
 /**
@@ -1018,118 +1049,120 @@ export interface ScanResult {
  */
 export async function scanQrToken(
   qrToken: string,
-  scanType: MrcScanType
+  scanType: MrcScanType,
 ): Promise<ActionResult<ScanResult>> {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { data: null, error: 'Sesi tidak valid.' }
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { data: null, error: "Sesi tidak valid." };
 
     // Cari QR code
     const { data: qr, error: qrError } = await supabase
-      .from('mrc_qr_codes')
-      .select('*')
-      .eq('qr_token', qrToken.trim())
-      .single()
+      .from("mrc_qr_codes")
+      .select("*")
+      .eq("qr_token", qrToken.trim())
+      .single();
 
     if (qrError || !qr) {
-      return { data: null, error: 'QR code tidak ditemukan atau tidak valid.' }
+      return { data: null, error: "QR code tidak ditemukan atau tidak valid." };
     }
 
     // Ambil info tim
     const { data: team } = await supabase
-      .from('mrc_teams')
-      .select('team_name, institution, mrc_categories(name)')
-      .eq('id', qr.team_id)
-      .single()
+      .from("mrc_teams")
+      .select("team_name, institution, mrc_categories(name)")
+      .eq("id", qr.team_id)
+      .single();
 
-    const cat = team?.mrc_categories
-    const catObj = Array.isArray(cat) ? cat[0] : cat
+    const cat = team?.mrc_categories;
+    const catObj = Array.isArray(cat) ? cat[0] : cat;
 
     const qrWithTeam: MrcQrCodeWithTeam = {
       ...qr,
-      team_name: team?.team_name ?? '—',
-      institution: team?.institution ?? '—',
-      category_name: catObj?.name ?? '—',
-    } as MrcQrCodeWithTeam
+      team_name: team?.team_name ?? "—",
+      institution: team?.institution ?? "—",
+      category_name: catObj?.name ?? "—",
+    } as MrcQrCodeWithTeam;
 
-    let message = ''
-    const updateData: Record<string, unknown> = {}
+    let message = "";
+    const updateData: Record<string, unknown> = {};
 
     switch (scanType) {
-      case 'checkin':
+      case "checkin":
         if (qr.is_checked_in) {
-          message = `${qr.person_name} sudah check-in sebelumnya.`
+          message = `${qr.person_name} sudah check-in sebelumnya.`;
         } else {
-          updateData.is_checked_in = true
-          updateData.checked_in_at = new Date().toISOString()
-          updateData.checked_in_by = user.id
-          updateData.is_inside = true
-          message = `${qr.person_name} berhasil check-in.`
+          updateData.is_checked_in = true;
+          updateData.checked_in_at = new Date().toISOString();
+          updateData.checked_in_by = user.id;
+          updateData.is_inside = true;
+          message = `${qr.person_name} berhasil check-in.`;
         }
-        break
+        break;
 
-      case 'entry':
+      case "entry":
         if (!qr.is_checked_in) {
-          return { data: null, error: `${qr.person_name} belum check-in. Lakukan check-in terlebih dahulu.` }
+          return {
+            data: null,
+            error: `${qr.person_name} belum check-in. Lakukan check-in terlebih dahulu.`,
+          };
         }
         if (qr.is_inside) {
-          message = `${qr.person_name} sudah tercatat di dalam gedung.`
+          message = `${qr.person_name} sudah tercatat di dalam gedung.`;
         } else {
-          updateData.is_inside = true
-          message = `${qr.person_name} masuk gedung.`
+          updateData.is_inside = true;
+          message = `${qr.person_name} masuk gedung.`;
         }
-        break
+        break;
 
-      case 'exit':
+      case "exit":
         if (!qr.is_inside) {
-          message = `${qr.person_name} tidak tercatat di dalam gedung.`
+          message = `${qr.person_name} tidak tercatat di dalam gedung.`;
         } else {
-          updateData.is_inside = false
-          message = `${qr.person_name} keluar gedung.`
+          updateData.is_inside = false;
+          message = `${qr.person_name} keluar gedung.`;
         }
-        break
+        break;
 
-      case 'match_verify':
+      case "match_verify":
         if (!qr.is_checked_in) {
-          return { data: null, error: `${qr.person_name} belum check-in!` }
+          return { data: null, error: `${qr.person_name} belum check-in!` };
         }
-        message = `✓ Terverifikasi: ${qr.person_name} (${qrWithTeam.team_name})`
-        break
+        message = `✓ Terverifikasi: ${qr.person_name} (${qrWithTeam.team_name})`;
+        break;
     }
 
     // Update QR state jika perlu
     if (Object.keys(updateData).length > 0) {
-      await supabase
-        .from('mrc_qr_codes')
-        .update(updateData)
-        .eq('id', qr.id)
+      await supabase.from("mrc_qr_codes").update(updateData).eq("id", qr.id);
     }
 
     // Update team status ke checked_in jika checkin
-    if (scanType === 'checkin' && !qr.is_checked_in) {
+    if (scanType === "checkin" && !qr.is_checked_in) {
       await supabase
-        .from('mrc_teams')
-        .update({ status: 'checked_in' })
-        .eq('id', qr.team_id)
+        .from("mrc_teams")
+        .update({ status: "checked_in" })
+        .eq("id", qr.team_id);
     }
 
     // Log scan
-    await supabase.from('mrc_scan_logs').insert({
+    await supabase.from("mrc_scan_logs").insert({
       qr_code_id: qr.id,
       scan_type: scanType,
       scanned_by: user.id,
       is_valid: true,
       notes: message,
-    })
+    });
 
     return {
       data: { qr: qrWithTeam, action: scanType, message },
       error: null,
-    }
+    };
   } catch (err) {
-    console.error('[scanQrToken] Unexpected:', err)
-    return { data: null, error: 'Terjadi kesalahan yang tidak terduga.' }
+    console.error("[scanQrToken] Unexpected:", err);
+    return { data: null, error: "Terjadi kesalahan yang tidak terduga." };
   }
 }
 
@@ -1148,90 +1181,93 @@ export async function scanQrToken(
 export async function drawGroups(
   eventId: string,
   categoryId: string,
-  teamsPerGroup: number = 3
+  teamsPerGroup: number = 3,
 ): Promise<ActionResult<{ groups: number; teams: number }>> {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { data: null, error: 'Sesi tidak valid.' }
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { data: null, error: "Sesi tidak valid." };
 
     // Ambil tim eligible
     const { data: teams, error: tErr } = await supabase
-      .from('mrc_teams')
-      .select('id')
-      .eq('event_id', eventId)
-      .eq('category_id', categoryId)
-      .in('status', ['payment_verified', 'checked_in'])
+      .from("mrc_teams")
+      .select("id")
+      .eq("event_id", eventId)
+      .eq("category_id", categoryId)
+      .in("status", ["payment_verified", "checked_in"]);
 
     if (tErr || !teams) {
-      return { data: null, error: 'Gagal mengambil data tim.' }
+      return { data: null, error: "Gagal mengambil data tim." };
     }
 
     if (teams.length < 2) {
-      return { data: null, error: 'Minimal 2 tim untuk membuat grup.' }
+      return { data: null, error: "Minimal 2 tim untuk membuat grup." };
     }
 
     // Hapus grup lama untuk kategori ini
     const { data: oldGroups } = await supabase
-      .from('mrc_groups')
-      .select('id')
-      .eq('event_id', eventId)
-      .eq('category_id', categoryId)
+      .from("mrc_groups")
+      .select("id")
+      .eq("event_id", eventId)
+      .eq("category_id", categoryId);
 
     if (oldGroups && oldGroups.length > 0) {
       await supabase
-        .from('mrc_groups')
+        .from("mrc_groups")
         .delete()
-        .eq('event_id', eventId)
-        .eq('category_id', categoryId)
+        .eq("event_id", eventId)
+        .eq("category_id", categoryId);
     }
 
     // Acak urutan tim
-    const shuffled = [...teams].sort(() => Math.random() - 0.5)
+    const shuffled = [...teams].sort(() => Math.random() - 0.5);
 
     // Hitung jumlah grup
-    const numGroups = Math.ceil(shuffled.length / teamsPerGroup)
-    const groupLabels = Array.from({ length: numGroups }, (_, i) =>
-      String.fromCharCode(65 + i) // A, B, C, ...
-    )
+    const numGroups = Math.ceil(shuffled.length / teamsPerGroup);
+    const groupLabels = Array.from(
+      { length: numGroups },
+      (_, i) => String.fromCharCode(65 + i), // A, B, C, ...
+    );
 
     // Buat grup
     const groupInserts = groupLabels.map((label) => ({
       event_id: eventId,
       category_id: categoryId,
       group_name: `Grup ${label}`,
-    }))
+    }));
 
     const { data: groups, error: gErr } = await supabase
-      .from('mrc_groups')
+      .from("mrc_groups")
       .insert(groupInserts)
-      .select('id')
+      .select("id");
 
     if (gErr || !groups) {
-      return { data: null, error: 'Gagal membuat grup.' }
+      return { data: null, error: "Gagal membuat grup." };
     }
 
     // Distribusikan tim ke grup secara merata
     const teamInserts = shuffled.map((team, i) => ({
       group_id: groups[i % numGroups].id,
       team_id: team.id,
-    }))
+    }));
 
     const { error: gtErr } = await supabase
-      .from('mrc_group_teams')
-      .insert(teamInserts)
+      .from("mrc_group_teams")
+      .insert(teamInserts);
 
     if (gtErr) {
-      return { data: null, error: 'Gagal memasukkan tim ke grup.' }
+      return { data: null, error: "Gagal memasukkan tim ke grup." };
     }
 
     return {
       data: { groups: numGroups, teams: shuffled.length },
       error: null,
-    }
+    };
   } catch (err) {
-    console.error('[drawGroups] Unexpected:', err)
-    return { data: null, error: 'Terjadi kesalahan yang tidak terduga.' }
+    console.error("[drawGroups] Unexpected:", err);
+    return { data: null, error: "Terjadi kesalahan yang tidak terduga." };
   }
 }
 
@@ -1248,43 +1284,60 @@ export async function generateGroupMatches(
   eventId: string,
   categoryId: string,
   totalRounds: number = 2,
-  timerDuration: number = 120
+  timerDuration: number = 120,
 ): Promise<ActionResult<{ matchesCreated: number }>> {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { data: null, error: 'Sesi tidak valid.' }
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { data: null, error: "Sesi tidak valid." };
 
     // Ambil grup untuk kategori ini
     const { data: groups } = await supabase
-      .from('mrc_groups')
-      .select('id')
-      .eq('event_id', eventId)
-      .eq('category_id', categoryId)
+      .from("mrc_groups")
+      .select("id")
+      .eq("event_id", eventId)
+      .eq("category_id", categoryId);
 
     if (!groups || groups.length === 0) {
-      return { data: null, error: 'Belum ada grup. Lakukan drawing terlebih dahulu.' }
+      return {
+        data: null,
+        error: "Belum ada grup. Lakukan drawing terlebih dahulu.",
+      };
     }
 
     // Hapus match grup lama
     await supabase
-      .from('mrc_matches')
+      .from("mrc_matches")
       .delete()
-      .eq('event_id', eventId)
-      .eq('category_id', categoryId)
-      .eq('stage', 'group_stage')
+      .eq("event_id", eventId)
+      .eq("category_id", categoryId)
+      .eq("stage", "group_stage");
 
-    let matchNumber = 1
-    const allInserts: Array<Record<string, unknown>> = []
+    let matchNumber = 1;
+    const allInserts: Array<{
+      event_id: string;
+      category_id: string;
+      stage: "group_stage";
+      group_id: string;
+      match_number: number;
+      team_a_id: string;
+      team_b_id: string;
+      total_rounds: number;
+      timer_duration: number;
+      timer_remaining: number;
+      status: "upcoming";
+    }> = [];
 
     for (const group of groups) {
       // Ambil tim dalam grup
       const { data: gTeams } = await supabase
-        .from('mrc_group_teams')
-        .select('team_id')
-        .eq('group_id', group.id)
+        .from("mrc_group_teams")
+        .select("team_id")
+        .eq("group_id", group.id);
 
-      const teamIds = (gTeams ?? []).map((t) => t.team_id)
+      const teamIds = (gTeams ?? []).map((t) => t.team_id);
 
       // Generate round-robin: setiap pasangan tim
       for (let i = 0; i < teamIds.length; i++) {
@@ -1292,7 +1345,7 @@ export async function generateGroupMatches(
           allInserts.push({
             event_id: eventId,
             category_id: categoryId,
-            stage: 'group_stage',
+            stage: "group_stage",
             group_id: group.id,
             match_number: matchNumber++,
             team_a_id: teamIds[i],
@@ -1300,27 +1353,25 @@ export async function generateGroupMatches(
             total_rounds: totalRounds,
             timer_duration: timerDuration,
             timer_remaining: timerDuration,
-            status: 'upcoming',
-          })
+            status: "upcoming",
+          });
         }
       }
     }
 
     if (allInserts.length > 0) {
-      const { error } = await supabase
-        .from('mrc_matches')
-        .insert(allInserts)
+      const { error } = await supabase.from("mrc_matches").insert(allInserts);
 
       if (error) {
-        console.error('[generateGroupMatches] insert error:', error.message)
-        return { data: null, error: 'Gagal membuat jadwal pertandingan.' }
+        console.error("[generateGroupMatches] insert error:", error.message);
+        return { data: null, error: "Gagal membuat jadwal pertandingan." };
       }
     }
 
-    return { data: { matchesCreated: allInserts.length }, error: null }
+    return { data: { matchesCreated: allInserts.length }, error: null };
   } catch (err) {
-    console.error('[generateGroupMatches] Unexpected:', err)
-    return { data: null, error: 'Terjadi kesalahan yang tidak terduga.' }
+    console.error("[generateGroupMatches] Unexpected:", err);
+    return { data: null, error: "Terjadi kesalahan yang tidak terduga." };
   }
 }
 
@@ -1329,57 +1380,62 @@ export async function generateGroupMatches(
  */
 export async function getGroupStandings(
   eventId: string,
-  categoryId: string
-): Promise<ActionResult<Array<{
-  group: MrcGroup
-  teams: MrcGroupTeamWithInfo[]
-}>>> {
+  categoryId: string,
+): Promise<
+  ActionResult<
+    Array<{
+      group: MrcGroup;
+      teams: MrcGroupTeamWithInfo[];
+    }>
+  >
+> {
   try {
-    const supabase = await createClient()
+    const supabase = await createClient();
 
     const { data: groups, error: gErr } = await supabase
-      .from('mrc_groups')
-      .select('*')
-      .eq('event_id', eventId)
-      .eq('category_id', categoryId)
-      .order('group_name')
+      .from("mrc_groups")
+      .select("*")
+      .eq("event_id", eventId)
+      .eq("category_id", categoryId)
+      .order("group_name");
 
     if (gErr) {
-      return { data: null, error: 'Gagal memuat grup.' }
+      return { data: null, error: "Gagal memuat grup." };
     }
 
     if (!groups || groups.length === 0) {
-      return { data: [], error: null }
+      return { data: [], error: null };
     }
 
-    const result: Array<{ group: MrcGroup; teams: MrcGroupTeamWithInfo[] }> = []
+    const result: Array<{ group: MrcGroup; teams: MrcGroupTeamWithInfo[] }> =
+      [];
 
     for (const group of groups) {
       const { data: gTeams } = await supabase
-        .from('mrc_group_teams')
-        .select('*, mrc_teams(team_name, institution)')
-        .eq('group_id', group.id)
-        .order('points', { ascending: false })
-        .order('score_for', { ascending: false })
+        .from("mrc_group_teams")
+        .select("*, mrc_teams(team_name, institution)")
+        .eq("group_id", group.id)
+        .order("points", { ascending: false })
+        .order("score_for", { ascending: false });
 
       const teamsWithInfo: MrcGroupTeamWithInfo[] = (gTeams ?? []).map((gt) => {
-        const teamData = gt.mrc_teams
-        const t = Array.isArray(teamData) ? teamData[0] : teamData
+        const teamData = gt.mrc_teams;
+        const t = Array.isArray(teamData) ? teamData[0] : teamData;
         return {
           ...gt,
-          team_name: t?.team_name ?? '—',
-          institution: t?.institution ?? '—',
+          team_name: t?.team_name ?? "—",
+          institution: t?.institution ?? "—",
           mrc_teams: undefined,
-        } as unknown as MrcGroupTeamWithInfo
-      })
+        } as unknown as MrcGroupTeamWithInfo;
+      });
 
-      result.push({ group, teams: teamsWithInfo })
+      result.push({ group, teams: teamsWithInfo });
     }
 
-    return { data: result, error: null }
+    return { data: result, error: null };
   } catch (err) {
-    console.error('[getGroupStandings] Unexpected:', err)
-    return { data: null, error: 'Terjadi kesalahan yang tidak terduga.' }
+    console.error("[getGroupStandings] Unexpected:", err);
+    return { data: null, error: "Terjadi kesalahan yang tidak terduga." };
   }
 }
 
@@ -1393,72 +1449,78 @@ export async function getGroupStandings(
 export async function getMatchesByCategory(
   eventId: string,
   categoryId: string,
-  stage?: MrcMatchStage
+  stage?: MrcMatchStage,
 ): Promise<ActionResult<MrcMatchWithTeams[]>> {
   try {
-    const supabase = await createClient()
+    const supabase = await createClient();
 
     let query = supabase
-      .from('mrc_matches')
-      .select('*')
-      .eq('event_id', eventId)
-      .eq('category_id', categoryId)
-      .order('match_number')
+      .from("mrc_matches")
+      .select("*")
+      .eq("event_id", eventId)
+      .eq("category_id", categoryId)
+      .order("match_number");
 
     if (stage) {
-      query = query.eq('stage', stage)
+      query = query.eq("stage", stage);
     }
 
-    const { data: matches, error } = await query
+    const { data: matches, error } = await query;
 
     if (error) {
-      return { data: null, error: 'Gagal memuat pertandingan.' }
+      return { data: null, error: "Gagal memuat pertandingan." };
     }
 
     // Collect team IDs untuk batch lookup
-    const teamIds = new Set<string>()
+    const teamIds = new Set<string>();
     for (const m of matches ?? []) {
-      if (m.team_a_id) teamIds.add(m.team_a_id)
-      if (m.team_b_id) teamIds.add(m.team_b_id)
+      if (m.team_a_id) teamIds.add(m.team_a_id);
+      if (m.team_b_id) teamIds.add(m.team_b_id);
     }
 
     // Fetch category name
     const { data: cat } = await supabase
-      .from('mrc_categories')
-      .select('name')
-      .eq('id', categoryId)
-      .single()
+      .from("mrc_categories")
+      .select("name")
+      .eq("id", categoryId)
+      .single();
 
     // Batch fetch tim
-    const teamMap = new Map<string, { team_name: string; institution: string }>()
+    const teamMap = new Map<
+      string,
+      { team_name: string; institution: string }
+    >();
     if (teamIds.size > 0) {
       const { data: teams } = await supabase
-        .from('mrc_teams')
-        .select('id, team_name, institution')
-        .in('id', Array.from(teamIds))
+        .from("mrc_teams")
+        .select("id, team_name, institution")
+        .in("id", Array.from(teamIds));
 
       for (const t of teams ?? []) {
-        teamMap.set(t.id, { team_name: t.team_name, institution: t.institution })
+        teamMap.set(t.id, {
+          team_name: t.team_name,
+          institution: t.institution,
+        });
       }
     }
 
     const result: MrcMatchWithTeams[] = (matches ?? []).map((m) => {
-      const a = m.team_a_id ? teamMap.get(m.team_a_id) : null
-      const b = m.team_b_id ? teamMap.get(m.team_b_id) : null
+      const a = m.team_a_id ? teamMap.get(m.team_a_id) : null;
+      const b = m.team_b_id ? teamMap.get(m.team_b_id) : null;
       return {
         ...m,
-        team_a_name: a?.team_name ?? m.team_a_label ?? 'TBD',
-        team_b_name: b?.team_name ?? m.team_b_label ?? 'TBD',
-        team_a_institution: a?.institution ?? '',
-        team_b_institution: b?.institution ?? '',
-        category_name: cat?.name ?? '—',
-      } as MrcMatchWithTeams
-    })
+        team_a_name: a?.team_name ?? m.team_a_label ?? "TBD",
+        team_b_name: b?.team_name ?? m.team_b_label ?? "TBD",
+        team_a_institution: a?.institution ?? "",
+        team_b_institution: b?.institution ?? "",
+        category_name: cat?.name ?? "—",
+      } as MrcMatchWithTeams;
+    });
 
-    return { data: result, error: null }
+    return { data: result, error: null };
   } catch (err) {
-    console.error('[getMatchesByCategory] Unexpected:', err)
-    return { data: null, error: 'Terjadi kesalahan yang tidak terduga.' }
+    console.error("[getMatchesByCategory] Unexpected:", err);
+    return { data: null, error: "Terjadi kesalahan yang tidak terduga." };
   }
 }
 
@@ -1481,21 +1543,23 @@ export async function submitRoundScore(
   roundNumber: number,
   scoreA: number,
   scoreB: number,
-  notes?: string | null
+  notes?: string | null,
 ): Promise<ActionResult<MrcMatchRound>> {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { data: null, error: 'Sesi tidak valid.' }
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { data: null, error: "Sesi tidak valid." };
 
     // Validasi skor
     if (scoreA < 0 || scoreA > 100 || scoreB < 0 || scoreB > 100) {
-      return { data: null, error: 'Skor harus antara 0-100.' }
+      return { data: null, error: "Skor harus antara 0-100." };
     }
 
     // Upsert skor babak
     const { data: round, error: rErr } = await supabase
-      .from('mrc_match_rounds')
+      .from("mrc_match_rounds")
       .upsert(
         {
           match_id: matchId,
@@ -1505,35 +1569,35 @@ export async function submitRoundScore(
           notes: notes ?? null,
           judged_by: user.id,
         },
-        { onConflict: 'match_id,round_number' }
+        { onConflict: "match_id,round_number" },
       )
       .select()
-      .single()
+      .single();
 
     if (rErr) {
-      console.error('[submitRoundScore] upsert error:', rErr.message)
-      return { data: null, error: 'Gagal menyimpan skor.' }
+      console.error("[submitRoundScore] upsert error:", rErr.message);
+      return { data: null, error: "Gagal menyimpan skor." };
     }
 
     // Hitung total skor dari semua babak
     const { data: allRounds } = await supabase
-      .from('mrc_match_rounds')
-      .select('score_a, score_b')
-      .eq('match_id', matchId)
+      .from("mrc_match_rounds")
+      .select("score_a, score_b")
+      .eq("match_id", matchId);
 
-    const totalA = (allRounds ?? []).reduce((sum, r) => sum + r.score_a, 0)
-    const totalB = (allRounds ?? []).reduce((sum, r) => sum + r.score_b, 0)
+    const totalA = (allRounds ?? []).reduce((sum, r) => sum + r.score_a, 0);
+    const totalB = (allRounds ?? []).reduce((sum, r) => sum + r.score_b, 0);
 
     // Update total skor di match
     await supabase
-      .from('mrc_matches')
+      .from("mrc_matches")
       .update({ score_a: totalA, score_b: totalB })
-      .eq('id', matchId)
+      .eq("id", matchId);
 
-    return { data: round, error: null }
+    return { data: round, error: null };
   } catch (err) {
-    console.error('[submitRoundScore] Unexpected:', err)
-    return { data: null, error: 'Terjadi kesalahan yang tidak terduga.' }
+    console.error("[submitRoundScore] Unexpected:", err);
+    return { data: null, error: "Terjadi kesalahan yang tidak terduga." };
   }
 }
 
@@ -1546,68 +1610,83 @@ export async function submitRoundScore(
  */
 export async function finishMatch(
   matchId: string,
-  winnerId: string
+  winnerId: string,
 ): Promise<ActionResult<null>> {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { data: null, error: 'Sesi tidak valid.' }
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { data: null, error: "Sesi tidak valid." };
 
     // Ambil data match
     const { data: match, error: mErr } = await supabase
-      .from('mrc_matches')
-      .select('*')
-      .eq('id', matchId)
-      .single()
+      .from("mrc_matches")
+      .select("*")
+      .eq("id", matchId)
+      .single();
 
     if (mErr || !match) {
-      return { data: null, error: 'Pertandingan tidak ditemukan.' }
+      return { data: null, error: "Pertandingan tidak ditemukan." };
     }
 
     // Validasi: winner harus salah satu dari team_a atau team_b
     if (winnerId !== match.team_a_id && winnerId !== match.team_b_id) {
-      return { data: null, error: 'Pemenang harus salah satu tim dalam pertandingan.' }
+      return {
+        data: null,
+        error: "Pemenang harus salah satu tim dalam pertandingan.",
+      };
     }
 
     // Update match
     const { error: uErr } = await supabase
-      .from('mrc_matches')
+      .from("mrc_matches")
       .update({
         winner_id: winnerId,
-        status: 'finished',
-        timer_status: 'stopped',
+        status: "finished",
+        timer_status: "stopped",
       })
-      .eq('id', matchId)
+      .eq("id", matchId);
 
     if (uErr) {
-      return { data: null, error: 'Gagal menyimpan hasil pertandingan.' }
+      return { data: null, error: "Gagal menyimpan hasil pertandingan." };
     }
 
     // Jika ada next match di bracket, masukkan pemenang
     if (match.next_match_id && match.next_match_slot) {
-      const updateField = match.next_match_slot === 'team_a'
-        ? { team_a_id: winnerId }
-        : { team_b_id: winnerId }
+      const updateField =
+        match.next_match_slot === "team_a"
+          ? { team_a_id: winnerId }
+          : { team_b_id: winnerId };
 
       await supabase
-        .from('mrc_matches')
+        .from("mrc_matches")
         .update(updateField)
-        .eq('id', match.next_match_id)
+        .eq("id", match.next_match_id);
     }
 
     // Jika fase grup, update standing langsung
-    if (match.stage === 'group_stage' && match.group_id) {
-      const loserId = winnerId === match.team_a_id ? match.team_b_id : match.team_a_id
+    if (match.stage === "group_stage" && match.group_id) {
+      const loserId =
+        winnerId === match.team_a_id ? match.team_b_id : match.team_a_id;
 
       if (loserId) {
         // Update pemenang: +1 played, +1 win, +3 points
         await supabase
-          .from('mrc_group_teams')
+          .from("mrc_group_teams")
           .update({
-            played: (await supabase.from('mrc_group_teams').select('played').eq('group_id', match.group_id).eq('team_id', winnerId).single()).data?.played as number + 1 || 1,
+            played:
+              ((
+                await supabase
+                  .from("mrc_group_teams")
+                  .select("played")
+                  .eq("group_id", match.group_id)
+                  .eq("team_id", winnerId)
+                  .single()
+              ).data?.played as number) + 1 || 1,
           })
-          .eq('group_id', match.group_id)
-          .eq('team_id', winnerId)
+          .eq("group_id", match.group_id)
+          .eq("team_id", winnerId);
 
         // Simplified: direct field updates via raw queries tidak ideal,
         // jadi kita skip auto-increment dan biarkan operator update manual via dashboard
@@ -1615,10 +1694,10 @@ export async function finishMatch(
       }
     }
 
-    return { data: null, error: null }
+    return { data: null, error: null };
   } catch (err) {
-    console.error('[finishMatch] Unexpected:', err)
-    return { data: null, error: 'Terjadi kesalahan yang tidak terduga.' }
+    console.error("[finishMatch] Unexpected:", err);
+    return { data: null, error: "Terjadi kesalahan yang tidak terduga." };
   }
 }
 
@@ -1626,23 +1705,23 @@ export async function finishMatch(
  * Mengambil skor per babak untuk suatu pertandingan.
  */
 export async function getMatchRounds(
-  matchId: string
+  matchId: string,
 ): Promise<ActionResult<MrcMatchRound[]>> {
   try {
-    const supabase = await createClient()
+    const supabase = await createClient();
     const { data, error } = await supabase
-      .from('mrc_match_rounds')
-      .select('*')
-      .eq('match_id', matchId)
-      .order('round_number')
+      .from("mrc_match_rounds")
+      .select("*")
+      .eq("match_id", matchId)
+      .order("round_number");
 
     if (error) {
-      return { data: null, error: 'Gagal memuat skor babak.' }
+      return { data: null, error: "Gagal memuat skor babak." };
     }
-    return { data: data ?? [], error: null }
+    return { data: data ?? [], error: null };
   } catch (err) {
-    console.error('[getMatchRounds] Unexpected:', err)
-    return { data: null, error: 'Terjadi kesalahan yang tidak terduga.' }
+    console.error("[getMatchRounds] Unexpected:", err);
+    return { data: null, error: "Terjadi kesalahan yang tidak terduga." };
   }
 }
 
@@ -1656,38 +1735,38 @@ export async function getMatchRounds(
  */
 export async function getLiveState(
   eventId: string,
-  categoryId: string
+  categoryId: string,
 ): Promise<ActionResult<MrcLiveState>> {
   try {
-    const supabase = await createClient()
+    const supabase = await createClient();
 
     // Coba ambil
     const { data: existing } = await supabase
-      .from('mrc_live_state')
-      .select('*')
-      .eq('event_id', eventId)
-      .eq('category_id', categoryId)
-      .single()
+      .from("mrc_live_state")
+      .select("*")
+      .eq("event_id", eventId)
+      .eq("category_id", categoryId)
+      .single();
 
     if (existing) {
-      return { data: existing as MrcLiveState, error: null }
+      return { data: existing as MrcLiveState, error: null };
     }
 
     // Buat baru kalau belum ada
     const { data: created, error } = await supabase
-      .from('mrc_live_state')
+      .from("mrc_live_state")
       .insert({ event_id: eventId, category_id: categoryId })
       .select()
-      .single()
+      .single();
 
     if (error) {
-      return { data: null, error: 'Gagal membuat live state.' }
+      return { data: null, error: "Gagal membuat live state." };
     }
 
-    return { data: created as MrcLiveState, error: null }
+    return { data: created as MrcLiveState, error: null };
   } catch (err) {
-    console.error('[getLiveState] Unexpected:', err)
-    return { data: null, error: 'Terjadi kesalahan yang tidak terduga.' }
+    console.error("[getLiveState] Unexpected:", err);
+    return { data: null, error: "Terjadi kesalahan yang tidak terduga." };
   }
 }
 
@@ -1697,30 +1776,34 @@ export async function getLiveState(
 export async function updateLiveState(
   eventId: string,
   categoryId: string,
-  updates: Partial<Omit<MrcLiveState, 'id' | 'event_id' | 'category_id' | 'updated_at'>>
+  updates: Partial<
+    Omit<MrcLiveState, "id" | "event_id" | "category_id" | "updated_at">
+  >,
 ): Promise<ActionResult<MrcLiveState>> {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { data: null, error: 'Sesi tidak valid.' }
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { data: null, error: "Sesi tidak valid." };
 
     const { data, error } = await supabase
-      .from('mrc_live_state')
+      .from("mrc_live_state")
       .update(updates)
-      .eq('event_id', eventId)
-      .eq('category_id', categoryId)
+      .eq("event_id", eventId)
+      .eq("category_id", categoryId)
       .select()
-      .single()
+      .single();
 
     if (error) {
-      console.error('[updateLiveState] error:', error.message)
-      return { data: null, error: 'Gagal memperbarui live state.' }
+      console.error("[updateLiveState] error:", error.message);
+      return { data: null, error: "Gagal memperbarui live state." };
     }
 
-    return { data: data as MrcLiveState, error: null }
+    return { data: data as MrcLiveState, error: null };
   } catch (err) {
-    console.error('[updateLiveState] Unexpected:', err)
-    return { data: null, error: 'Terjadi kesalahan yang tidak terduga.' }
+    console.error("[updateLiveState] Unexpected:", err);
+    return { data: null, error: "Terjadi kesalahan yang tidak terduga." };
   }
 }
 
@@ -1729,24 +1812,37 @@ export async function updateLiveState(
  */
 export async function updateMatchState(
   matchId: string,
-  updates: Partial<Pick<MrcMatch, 'status' | 'timer_duration' | 'timer_remaining' | 'timer_status' | 'timer_started_at' | 'is_swapped' | 'current_round'>>
+  updates: Partial<
+    Pick<
+      MrcMatch,
+      | "status"
+      | "timer_duration"
+      | "timer_remaining"
+      | "timer_status"
+      | "timer_started_at"
+      | "is_swapped"
+      | "current_round"
+    >
+  >,
 ): Promise<ActionResult<null>> {
   try {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return { data: null, error: 'Sesi tidak valid.' }
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { data: null, error: "Sesi tidak valid." };
 
     const { error } = await supabase
-      .from('mrc_matches')
+      .from("mrc_matches")
       .update(updates)
-      .eq('id', matchId)
+      .eq("id", matchId);
 
     if (error) {
-      return { data: null, error: 'Gagal memperbarui pertandingan.' }
+      return { data: null, error: "Gagal memperbarui pertandingan." };
     }
-    return { data: null, error: null }
+    return { data: null, error: null };
   } catch (err) {
-    console.error('[updateMatchState] Unexpected:', err)
-    return { data: null, error: 'Terjadi kesalahan yang tidak terduga.' }
+    console.error("[updateMatchState] Unexpected:", err);
+    return { data: null, error: "Terjadi kesalahan yang tidak terduga." };
   }
 }

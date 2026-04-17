@@ -15,7 +15,6 @@ import { useState, useTransition } from 'react'
 import {
   Plus,
   Loader2,
-  Zap,
   Filter,
   Edit3,
   Trash2,

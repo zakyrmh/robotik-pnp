@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 /**
  * RegisterForm — Komponen form pendaftaran akun baru
@@ -11,11 +11,11 @@
  * - useAuthForm hook untuk validasi Zod dan integrasi Supabase
  */
 
-import Link from 'next/link'
-import { UserPlus, Loader2 } from 'lucide-react'
+import Link from "next/link";
+import { UserPlus, Loader2 } from "lucide-react";
 
-import { AuthFormField } from '@/components/auth/auth-form-field'
-import { Button } from '@/components/ui/button'
+import { AuthFormField } from "@/components/auth/auth-form-field";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -23,9 +23,12 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
-import { useAuthForm } from '@/hooks/use-auth-form'
-import { registerSchema, type RegisterFormData } from '@/lib/validations/auth'
+} from "@/components/ui/card";
+import { useAuthForm } from "@/hooks/use-auth-form";
+import {
+  registerSchema,
+  type RegisterFormData,
+} from "@/lib/validations/auth.validation";
 
 export function RegisterForm() {
   const {
@@ -37,8 +40,8 @@ export function RegisterForm() {
     clearFieldError,
   } = useAuthForm<typeof registerSchema>({
     schema: registerSchema,
-    redirectTo: '/login?message=Cek email untuk konfirmasi akun',
-    successMessage: 'Pendaftaran berhasil! Mengalihkan ke halaman login...',
+    redirectTo: "/login?message=Cek email untuk konfirmasi akun",
+    successMessage: "Pendaftaran berhasil! Mengalihkan ke halaman login...",
     onSubmit: async (data: RegisterFormData, supabase) => {
       const { error } = await supabase.auth.signUp({
         email: data.email,
@@ -47,10 +50,10 @@ export function RegisterForm() {
           data: { full_name: data.full_name },
           emailRedirectTo: `${location.origin}/auth/callback`,
         },
-      })
-      return { error }
+      });
+      return { error };
     },
-  })
+  });
 
   return (
     <Card className="border-0 shadow-none sm:border sm:shadow-sm">
@@ -93,7 +96,7 @@ export function RegisterForm() {
             autoComplete="name"
             required
             error={fieldErrors.full_name}
-            onChange={() => clearFieldError('full_name')}
+            onChange={() => clearFieldError("full_name")}
           />
 
           <AuthFormField
@@ -105,7 +108,7 @@ export function RegisterForm() {
             autoComplete="email"
             required
             error={fieldErrors.email}
-            onChange={() => clearFieldError('email')}
+            onChange={() => clearFieldError("email")}
           />
 
           <AuthFormField
@@ -118,7 +121,7 @@ export function RegisterForm() {
             minLength={6}
             required
             error={fieldErrors.password}
-            onChange={() => clearFieldError('password')}
+            onChange={() => clearFieldError("password")}
           />
 
           <Button
@@ -132,14 +135,14 @@ export function RegisterForm() {
             ) : (
               <UserPlus className="size-4" />
             )}
-            {isPending ? 'Memproses...' : 'Daftar'}
+            {isPending ? "Memproses..." : "Daftar"}
           </Button>
         </form>
       </CardContent>
 
       <CardFooter className="justify-center">
         <p className="text-sm text-muted-foreground">
-          Sudah punya akun?{' '}
+          Sudah punya akun?{" "}
           <Link
             href="/login"
             className="font-semibold text-primary underline-offset-4 hover:underline"
@@ -149,5 +152,5 @@ export function RegisterForm() {
         </p>
       </CardFooter>
     </Card>
-  )
+  );
 }

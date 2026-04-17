@@ -22,7 +22,8 @@ import {
   MessageCircle,
   Globe,
 } from "lucide-react";
-import { getMyRegistration, getStudyProgramOptions } from "@/app/actions/or.action";
+import { getStudyProgramOptions } from "@/app/actions/or.action";
+import { getMyRegistration } from "@/app/actions/or-caang.action";
 import {
   getPipelineSteps,
   getCommunityLinks,
@@ -32,7 +33,7 @@ import type {
   CommunityLinksConfig,
 } from "@/app/actions/or-settings.action";
 import { getUpcomingEventsForCaang } from "@/app/actions/or-events.action";
-import type { OrEvent } from "@/app/actions/or-events.action";
+import type { OrEvent } from "@/lib/db/schema/or";
 import { CaangRegistrationWizard } from "@/components/or/caang-registration-wizard";
 import { OR_REGISTRATION_STATUS_LABELS } from "@/lib/db/schema/or";
 import type { OrRegistrationStatus } from "@/lib/db/schema/or";
@@ -179,9 +180,9 @@ export async function CaangDashboard() {
       <AcceptedCaangDashboard
         fullName={reg.full_name || "Calon Anggota"}
         status={status}
-        pipelineSteps={pipelineSteps}
-        communityConfig={linksResult.data}
-        upcomingEvents={eventsResult.data}
+        pipelineSteps={pipelineSteps ?? []}
+        communityConfig={linksResult.data ?? { links: [] }}
+        upcomingEvents={eventsResult.data ?? []}
       />
     );
   }

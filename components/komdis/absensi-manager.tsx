@@ -122,28 +122,30 @@ export function AbsensiManager({ events }: Props) {
     if (dismissRef.current) clearTimeout(dismissRef.current)
 
     startTransition(async () => {
-      const result = await scanAttendanceToken(token, selectedEventId)
+      const result = await scanAttendanceToken({ token })
       setScanInput('')
       inputRef.current?.focus()
 
       if (result.error) {
         setScanResult({ type: 'error', msg: result.error })
       } else if (result.data) {
-        const { attendance, isLate, lateMinutes } = result.data
+        const { userId, isLate, lateMinutes } = result.data
+        const att = attendances.find((a) => a.user_id === userId)
+        const fullName = att?.full_name ?? 'Anggota'
         if (isLate) {
           setScanResult({
             type: 'late',
-            msg: `${attendance.full_name} — TERLAMBAT ${lateMinutes} menit`,
-            name: attendance.full_name,
+            msg: `${fullName} — TERLAMBAT ${lateMinutes} menit`,
+            name: fullName,
             lateMinutes,
-            attendanceId: attendance.id,
-            userId: attendance.user_id,
+            attendanceId: att?.id,
+            userId,
           })
         } else {
           setScanResult({
             type: 'success',
-            msg: `${attendance.full_name} — Hadir ✓`,
-            name: attendance.full_name,
+            msg: `${fullName} — Hadir ✓`,
+            name: fullName,
           })
         }
         loadData(selectedEventId)
@@ -167,8 +169,6 @@ export function AbsensiManager({ events }: Props) {
     if (!sanctionTarget || !selectedEventId) return
     startTransition(async () => {
       const result = await giveSanction({
-        eventId: selectedEventId,
-        userId: sanctionTarget.user_id,
         attendanceId: sanctionTarget.id,
         sanctionType,
         points: sanctionType === 'points' ? (parseInt(sanctionPoints) || 1) : 0,
@@ -193,8 +193,6 @@ export function AbsensiManager({ events }: Props) {
     startTransition(async () => {
       const pts = type === 'points' ? (selectedEvent?.points_per_late ?? 1) : 0
       const result = await giveSanction({
-        eventId: selectedEventId,
-        userId: scanResult.userId!,
         attendanceId: scanResult.attendanceId!,
         sanctionType: type,
         points: pts,

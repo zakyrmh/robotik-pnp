@@ -16,11 +16,11 @@
  * - Data diambil server-side via server action
  */
 
-import { Suspense } from 'react'
-import { Crown } from 'lucide-react'
+import { Suspense } from "react";
+import { Crown } from "lucide-react";
 
-import { getUsers, getAllRoles } from '@/app/actions/admin.action'
-import { UsersTable, UsersTableSkeleton } from '@/components/admin/users-table'
+import { getUsers, getAllRoles } from "@/app/actions/admin.action";
+import { UsersTable, UsersTableSkeleton } from "@/components/admin/users-table";
 
 export default function ManajemenRolePage() {
   return (
@@ -28,7 +28,7 @@ export default function ManajemenRolePage() {
       {/* Header halaman */}
       <div className="flex items-start gap-4">
         <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10">
-          <Crown className="size-5 text-amber-600 dark:text-amber-400" />
+          <Crown className="size-5 text-amber-600" />
         </div>
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
@@ -46,7 +46,7 @@ export default function ManajemenRolePage() {
         <UsersTableLoader />
       </Suspense>
     </div>
-  )
+  );
 }
 
 // ═════════════════════════════════════════════════════
@@ -65,7 +65,7 @@ async function UsersTableLoader() {
   const [usersResult, rolesResult] = await Promise.all([
     getUsers(),
     getAllRoles(),
-  ])
+  ]);
 
   // Tampilkan pesan error jika gagal memuat data
   if (usersResult.error) {
@@ -78,7 +78,7 @@ async function UsersTableLoader() {
           Silakan muat ulang halaman atau hubungi administrator.
         </p>
       </div>
-    )
+    );
   }
 
   return (
@@ -86,5 +86,5 @@ async function UsersTableLoader() {
       users={usersResult.data ?? []}
       allRoles={rolesResult.data ?? []}
     />
-  )
+  );
 }

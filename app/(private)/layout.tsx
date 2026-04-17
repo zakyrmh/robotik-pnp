@@ -1,93 +1,87 @@
 /**
  * Layout untuk halaman private (dashboard dan lainnya)
- *
- * Layout ini hanya bisa diakses oleh user yang sudah login.
- * Jika belum login, user akan di-redirect ke halaman login.
- *
- * Fitur:
- * - Server-side auth check via Supabase
- * - Query role user dari tabel user_roles + roles
- * - Query profil user dari tabel profiles
- * - Query status registrasi caang (jika role caang) untuk kontrol sidebar
- * - Menyediakan SidebarProvider yang membungkus AppSidebar + konten
- * - Menggunakan komponen Shadcn SidebarInset untuk area konten utama
  */
 
-import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { redirect } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
 
-import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
-import { AppSidebar } from '@/components/dashboard/app-sidebar'
-import { DashboardHeader } from '@/components/dashboard/dashboard-header'
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/dashboard/app-sidebar";
+import { DashboardHeader } from "@/components/dashboard/dashboard-header";
+import { InitialLoader } from "@/components/ui/initial-loader";
+import { Toaster } from "sonner";
 
 export default async function PrivateLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: React.ReactNode;
 }>) {
-  const supabase = await createClient()
+  const supabase = await createClient();
 
-  // ── Langkah 1: Cek apakah user sudah login ──
   const {
     data: { user },
-  } = await supabase.auth.getUser()
+  } = await supabase.auth.getUser();
 
-  if (!user) redirect('/login')
+  if (!user) redirect("/login");
 
-  // ── Langkah 2: Ambil role user dari database ──
   const { data: userRolesData } = await supabase
-    .from('user_roles')
-    .select('roles ( name )')
-    .eq('user_id', user.id)
+    .from("user_roles")
+    .select("roles ( name )")
+    .eq("user_id", user.id);
 
-  // Ekstrak nama role menjadi array string
   const userRoles: string[] = (userRolesData ?? [])
     .map((row) => {
-      // Handle case: roles bisa berupa object atau array
-      const role = row.roles
-      if (Array.isArray(role)) return role[0]?.name ?? null
-      if (role && typeof role === 'object' && 'name' in role) return (role as { name: string }).name
-      return null
+      const role = row.roles;
+      if (Array.isArray(role)) return role[0]?.name ?? null;
+      if (role && typeof role === "object" && "name" in role)
+        return (role as { name: string }).name;
+      return null;
     })
-    .filter((name): name is string => name !== null)
+    .filter((name): name is string => name !== null);
 
-  // ── Langkah 3: Ambil profil user ──
   const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name, avatar_url')
-    .eq('user_id', user.id)
-    .single()
+    .from("profiles")
+    .select("full_name, avatar_url")
+    .eq("user_id", user.id)
+    .single();
 
-  // ── Langkah 4: Ambil status registrasi caang (jika role caang) ──
-  let caangStatus: string | null = null
-  if (userRoles.includes('caang')) {
+  let caangStatus: string | null = null;
+  if (userRoles.includes("caang")) {
     const { data: registration } = await supabase
-      .from('or_registrations')
-      .select('status')
-      .eq('user_id', user.id)
-      .single()
-    caangStatus = registration?.status ?? null
+      .from("or_registrations")
+      .select("status")
+      .eq("user_id", user.id)
+      .single();
+    caangStatus = registration?.status ?? null;
   }
 
-  // Siapkan data user untuk sidebar
   const sidebarUser = {
-    email: user.email ?? '',
-    fullName: profile?.full_name ?? '',
+    email: user.email ?? "",
+    fullName: profile?.full_name ?? "",
     avatarUrl: profile?.avatar_url ?? null,
-  }
+  };
 
   return (
-    <SidebarProvider>
-      {/* Sidebar navigasi dengan menu yang difilter per role & status caang */}
-      <AppSidebar userRoles={userRoles} caangStatus={caangStatus} user={sidebarUser} />
+    <>
+      <SidebarProvider>
+        <AppSidebar
+          userRoles={userRoles}
+          caangStatus={caangStatus}
+          user={sidebarUser}
+        />
 
-      {/* Area konten utama */}
-      <SidebarInset>
-        <DashboardHeader />
+        <SidebarInset>
+          <DashboardHeader />
 
-        {/* Konten halaman (children dari page.tsx) */}
-        <main className="flex-1 p-4 md:p-6">{children}</main>
-      </SidebarInset>
-    </SidebarProvider>
-  )
+          {/* InitialLoader hanya muncul sekali saat pertama buka dashboard */}
+          <InitialLoader>
+            {" "}
+            {/* ← wrap children */}
+            <main className="flex-1 p-4 md:p-6">{children}</main>
+          </InitialLoader>
+        </SidebarInset>
+      </SidebarProvider>
+      <Toaster position="top-right" richColors />
+    </>
+  );
 }

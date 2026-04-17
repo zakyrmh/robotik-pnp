@@ -191,10 +191,10 @@ function UserEditForm({
 
       // Simpan status
       if (selectedStatus !== user.status) {
-        const result = await updateUserStatus(
-          user.id,
-          selectedStatus as 'active' | 'inactive' | 'banned'
-        )
+        const result = await updateUserStatus({
+          userId: user.id,
+          status: selectedStatus as 'active' | 'inactive' | 'banned',
+        })
         if (result.error) {
           setFeedback({ type: 'error', message: result.error })
           return
@@ -208,7 +208,7 @@ function UserEditForm({
         selectedRoleIds.some((id) => !originalRoleIds.includes(id))
 
       if (rolesChanged) {
-        const result = await updateUserRoles(user.id, selectedRoleIds)
+        const result = await updateUserRoles({ userId: user.id, roleIds: selectedRoleIds })
         if (result.error) {
           setFeedback({ type: 'error', message: result.error })
           return
@@ -224,7 +224,7 @@ function UserEditForm({
   const handleResetPassword = () => {
     startTransition(async () => {
       setFeedback(null)
-      const result = await resetUserPassword(user.email)
+      const result = await resetUserPassword({ email: user.email })
       if (result.error) {
         setFeedback({ type: 'error', message: result.error })
       } else {
@@ -240,7 +240,7 @@ function UserEditForm({
   const handleDelete = () => {
     startTransition(async () => {
       setFeedback(null)
-      const result = await deleteUser(user.id)
+      const result = await deleteUser({ userId: user.id })
       if (result.error) {
         setFeedback({ type: 'error', message: result.error })
       } else {

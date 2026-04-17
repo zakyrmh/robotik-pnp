@@ -11,8 +11,8 @@
  * Layout menggunakan Bento Grid yang responsif.
  */
 
-import { Suspense } from 'react'
-import Link from 'next/link'
+import { Suspense } from "react";
+import Link from "next/link";
 import {
   Crown,
   Users,
@@ -23,20 +23,20 @@ import {
   FileText,
   ArrowRight,
   Clock,
-} from 'lucide-react'
+} from "lucide-react";
 
-import { Skeleton } from '@/components/ui/skeleton'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Separator } from '@/components/ui/separator'
-import { RoleBadge } from '@/components/admin/role-badge'
-import { StatusBadge } from '@/components/admin/status-badge'
+import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
+import { RoleBadge } from "@/components/admin/role-badge";
+import { StatusBadge } from "@/components/admin/status-badge";
 
 import {
   getAdminStats,
   getRecentUsers,
   type AdminStats,
   type RecentUser,
-} from '@/app/actions/admin.action'
+} from "@/app/actions/admin.action";
 
 export default function SuperAdminPanelPage() {
   return (
@@ -44,7 +44,7 @@ export default function SuperAdminPanelPage() {
       {/* Header halaman */}
       <div className="flex items-start gap-4">
         <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-amber-500/10">
-          <Crown className="size-5 text-amber-600 dark:text-amber-400" />
+          <Crown className="size-5 text-amber-600" />
         </div>
         <div>
           <h1 className="text-2xl font-bold tracking-tight">
@@ -61,7 +61,7 @@ export default function SuperAdminPanelPage() {
         <DashboardContent />
       </Suspense>
     </div>
-  )
+  );
 }
 
 // ═════════════════════════════════════════════════════
@@ -73,14 +73,14 @@ async function DashboardContent() {
   const [statsResult, recentResult] = await Promise.all([
     getAdminStats(),
     getRecentUsers(),
-  ])
+  ]);
 
   if (statsResult.error) {
-    return <ErrorBanner message={statsResult.error} />
+    return <ErrorBanner message={statsResult.error} />;
   }
 
-  const stats = statsResult.data!
-  const recentUsers = recentResult.data ?? []
+  const stats = statsResult.data!;
+  const recentUsers = recentResult.data ?? [];
 
   return (
     <>
@@ -163,7 +163,7 @@ async function DashboardContent() {
         />
       </div>
     </>
-  )
+  );
 }
 
 // ═════════════════════════════════════════════════════
@@ -172,31 +172,13 @@ async function DashboardContent() {
 
 /** Peta warna untuk kartu statistik */
 const COLOR_MAP = {
-  blue: {
-    bg: 'bg-blue-500/10',
-    text: 'text-blue-600 dark:text-blue-400',
-  },
-  emerald: {
-    bg: 'bg-emerald-500/10',
-    text: 'text-emerald-600 dark:text-emerald-400',
-  },
-  zinc: {
-    bg: 'bg-zinc-500/10',
-    text: 'text-zinc-600 dark:text-zinc-400',
-  },
-  red: {
-    bg: 'bg-red-500/10',
-    text: 'text-red-600 dark:text-red-400',
-  },
-  amber: {
-    bg: 'bg-amber-500/10',
-    text: 'text-amber-600 dark:text-amber-400',
-  },
-  violet: {
-    bg: 'bg-violet-500/10',
-    text: 'text-violet-600 dark:text-violet-400',
-  },
-} as const
+  blue: { bg: "bg-blue-500/10", text: "text-blue-600" },
+  emerald: { bg: "bg-emerald-500/10", text: "text-emerald-600" },
+  zinc: { bg: "bg-zinc-500/10", text: "text-zinc-600" },
+  red: { bg: "bg-red-500/10", text: "text-red-600" },
+  amber: { bg: "bg-amber-500/10", text: "text-amber-600" },
+  violet: { bg: "bg-violet-500/10", text: "text-violet-600" },
+} as const;
 
 function StatCard({
   label,
@@ -204,16 +186,18 @@ function StatCard({
   icon: Icon,
   color,
 }: {
-  label: string
-  value: number
-  icon: React.ComponentType<{ className?: string }>
-  color: keyof typeof COLOR_MAP
+  label: string;
+  value: number;
+  icon: React.ComponentType<{ className?: string }>;
+  color: keyof typeof COLOR_MAP;
 }) {
-  const colors = COLOR_MAP[color]
+  const colors = COLOR_MAP[color];
 
   return (
     <div className="flex items-center gap-4 rounded-xl border bg-card p-5 shadow-sm">
-      <div className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${colors.bg}`}>
+      <div
+        className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${colors.bg}`}
+      >
         <Icon className={`size-5 ${colors.text}`} />
       </div>
       <div>
@@ -221,7 +205,7 @@ function StatCard({
         <p className="text-2xl font-bold tracking-tight">{value}</p>
       </div>
     </div>
-  )
+  );
 }
 
 // ═════════════════════════════════════════════════════
@@ -230,36 +214,36 @@ function StatCard({
 
 /** Peta warna bar per role */
 const ROLE_BAR_COLORS: Record<string, string> = {
-  super_admin: 'bg-amber-500',
-  admin: 'bg-blue-500',
-  pengurus: 'bg-violet-500',
-  anggota: 'bg-emerald-500',
-  calon_anggota: 'bg-zinc-400',
-}
+  super_admin: "bg-amber-500",
+  admin: "bg-blue-500",
+  pengurus: "bg-violet-500",
+  anggota: "bg-emerald-500",
+  calon_anggota: "bg-zinc-400",
+};
 
 function RoleDistribution({
   distribution,
   totalUsers,
 }: {
-  distribution: AdminStats['roleDistribution']
-  totalUsers: number
+  distribution: AdminStats["roleDistribution"];
+  totalUsers: number;
 }) {
   if (distribution.length === 0) {
     return (
       <div className="flex h-32 items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground">
         Belum ada data distribusi role.
       </div>
-    )
+    );
   }
 
-  const maxCount = Math.max(...distribution.map((d) => d.count))
+  const maxCount = Math.max(...distribution.map((d) => d.count));
 
   return (
     <div className="space-y-3">
       {distribution.map((item) => {
-        const percentage = totalUsers > 0 ? (item.count / totalUsers) * 100 : 0
-        const barWidth = maxCount > 0 ? (item.count / maxCount) * 100 : 0
-        const barColor = ROLE_BAR_COLORS[item.name] ?? 'bg-zinc-400'
+        const percentage = totalUsers > 0 ? (item.count / totalUsers) * 100 : 0;
+        const barWidth = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
+        const barColor = ROLE_BAR_COLORS[item.name] ?? "bg-zinc-400";
 
         return (
           <div key={item.name} className="space-y-1.5">
@@ -276,10 +260,10 @@ function RoleDistribution({
               />
             </div>
           </div>
-        )
+        );
       })}
     </div>
-  )
+  );
 }
 
 // ═════════════════════════════════════════════════════
@@ -289,30 +273,30 @@ function RoleDistribution({
 /** Menghasilkan inisial dari nama */
 function getInitials(name: string): string {
   return name
-    .split(' ')
+    .split(" ")
     .slice(0, 2)
     .map((w) => w.charAt(0).toUpperCase())
-    .join('')
+    .join("");
 }
 
 /** Format waktu relatif (contoh: "2 jam lalu") */
 function timeAgo(iso: string): string {
-  const now = Date.now()
-  const then = new Date(iso).getTime()
-  const diffMs = now - then
+  const now = Date.now();
+  const then = new Date(iso).getTime();
+  const diffMs = now - then;
 
-  const minutes = Math.floor(diffMs / 60000)
-  const hours = Math.floor(diffMs / 3600000)
-  const days = Math.floor(diffMs / 86400000)
+  const minutes = Math.floor(diffMs / 60000);
+  const hours = Math.floor(diffMs / 3600000);
+  const days = Math.floor(diffMs / 86400000);
 
-  if (minutes < 1) return 'Baru saja'
-  if (minutes < 60) return `${minutes} menit lalu`
-  if (hours < 24) return `${hours} jam lalu`
-  if (days < 30) return `${days} hari lalu`
-  return new Date(iso).toLocaleDateString('id-ID', {
-    day: 'numeric',
-    month: 'short',
-  })
+  if (minutes < 1) return "Baru saja";
+  if (minutes < 60) return `${minutes} menit lalu`;
+  if (hours < 24) return `${hours} jam lalu`;
+  if (days < 30) return `${days} hari lalu`;
+  return new Date(iso).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+  });
 }
 
 function RecentUsersList({ users }: { users: RecentUser[] }) {
@@ -321,13 +305,13 @@ function RecentUsersList({ users }: { users: RecentUser[] }) {
       <div className="flex h-32 items-center justify-center rounded-lg border border-dashed text-sm text-muted-foreground">
         Belum ada pendaftaran.
       </div>
-    )
+    );
   }
 
   return (
     <div className="space-y-1">
       {users.map((user, idx) => {
-        const fullName = user.profiles?.full_name ?? 'Tanpa Nama'
+        const fullName = user.profiles?.full_name ?? "Tanpa Nama";
         return (
           <div key={user.id}>
             <div className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-accent">
@@ -355,10 +339,10 @@ function RecentUsersList({ users }: { users: RecentUser[] }) {
             </div>
             {idx < users.length - 1 && <Separator className="my-1" />}
           </div>
-        )
+        );
       })}
     </div>
-  )
+  );
 }
 
 // ═════════════════════════════════════════════════════
@@ -372,20 +356,22 @@ function QuickLink({
   icon: Icon,
   color,
 }: {
-  title: string
-  description: string
-  href: string
-  icon: React.ComponentType<{ className?: string }>
-  color: keyof typeof COLOR_MAP
+  title: string;
+  description: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color: keyof typeof COLOR_MAP;
 }) {
-  const colors = COLOR_MAP[color]
+  const colors = COLOR_MAP[color];
 
   return (
     <Link
       href={href}
       className="group flex items-start gap-4 rounded-xl border bg-card p-5 shadow-sm transition-colors hover:bg-accent"
     >
-      <div className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${colors.bg}`}>
+      <div
+        className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${colors.bg}`}
+      >
         <Icon className={`size-5 ${colors.text}`} />
       </div>
       <div className="flex-1 min-w-0">
@@ -398,7 +384,7 @@ function QuickLink({
       </div>
       <ArrowRight className="mt-0.5 size-4 shrink-0 text-muted-foreground opacity-0 transition-all group-hover:opacity-100 group-hover:translate-x-0.5" />
     </Link>
-  )
+  );
 }
 
 // ═════════════════════════════════════════════════════
@@ -413,7 +399,7 @@ function ErrorBanner({ message }: { message: string }) {
         Silakan muat ulang halaman atau hubungi administrator.
       </p>
     </div>
-  )
+  );
 }
 
 // ═════════════════════════════════════════════════════
@@ -426,7 +412,10 @@ function DashboardSkeleton() {
       {/* Stat cards skeleton */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-4 rounded-xl border bg-card p-5 shadow-sm">
+          <div
+            key={i}
+            className="flex items-center gap-4 rounded-xl border bg-card p-5 shadow-sm"
+          >
             <Skeleton className="size-10 rounded-xl" />
             <div className="space-y-2">
               <Skeleton className="h-3 w-24 rounded" />
@@ -471,7 +460,10 @@ function DashboardSkeleton() {
       {/* Quick links skeleton */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} className="flex items-start gap-4 rounded-xl border bg-card p-5 shadow-sm">
+          <div
+            key={i}
+            className="flex items-start gap-4 rounded-xl border bg-card p-5 shadow-sm"
+          >
             <Skeleton className="size-10 rounded-xl" />
             <div className="flex-1 space-y-2">
               <Skeleton className="h-4 w-36 rounded" />
@@ -481,5 +473,5 @@ function DashboardSkeleton() {
         ))}
       </div>
     </div>
-  )
+  );
 }

@@ -14,8 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sistem Informasi UKM Robotik PNP",
-  description: "Platform digital untuk mengelola kegiatan, anggota, dan informasi Unit Kegiatan Mahasiswa Robotik Politeknik Negeri Padang.",
+  title: "UKM Robotik PNP",
+  description:
+    "Website Resmi Unit Kegiatan Mahasiswa Robotik Politeknik Negeri Padang.",
 };
 
 export default function RootLayout({

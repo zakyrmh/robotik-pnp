@@ -86,12 +86,12 @@ export function ReductionReviewManager({ initialReductions }: Props) {
   const handleReview = (id: string) => {
     startTransition(async () => {
       const pts = reviewMode === 'approve' ? (parseInt(approvedPoints) || undefined) : undefined
-      const result = await reviewPointReduction(
-        id,
-        reviewMode === 'approve' ? 'approved' : 'rejected',
-        pts,
-        reviewNotes || undefined,
-      )
+      const result = await reviewPointReduction({
+        reductionId: id,
+        status: reviewMode === 'approve' ? 'approved' : 'rejected',
+        approvedPoints: pts,
+        reviewNotes: reviewNotes || undefined,
+      })
       if (result.error) {
         showFeedback('error', result.error)
       } else {
@@ -194,7 +194,8 @@ export function ReductionReviewManager({ initialReductions }: Props) {
                     onClick={() => setPreviewUrl(r.evidence_url)}
                     className="flex items-center gap-1 text-[10px] rounded-md border px-2 py-1 hover:bg-accent/50 transition-colors cursor-pointer shrink-0"
                   >
-                    <Image className="size-3" /> Bukti
+                    {/* eslint-disable-next-line jsx-a11y/alt-text */}
+                    <Image className="size-3" aria-hidden="true" /> Bukti
                   </button>
                 )}
 
@@ -303,6 +304,7 @@ export function ReductionReviewManager({ initialReductions }: Props) {
           onClick={() => setPreviewUrl(null)}
         >
           <div className="relative max-w-3xl max-h-[80vh]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={previewUrl} alt="Bukti pendukung pengurangan poin" className="rounded-lg max-h-[80vh] object-contain" />
             <Button
               size="sm"

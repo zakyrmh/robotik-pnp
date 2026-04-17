@@ -133,12 +133,12 @@ export function AbsensiManager({ initialEvents }: Props) {
     startTransition(async () => {
       const result = await adminScanAttendanceToken(token, selectedEventId)
 
-      if (result.success && result.data) {
+      if (!result.error && result.data) {
         setScanHistory((prev) =>
           [
             {
               id: crypto.randomUUID(),
-              name: result.data!.full_name,
+              name: result.data!.fullName,
               status: result.data!.status,
               points: result.data!.points,
               time: new Date().toLocaleTimeString('id-ID'),
@@ -150,7 +150,7 @@ export function AbsensiManager({ initialEvents }: Props) {
 
         showFeedback(
           'success',
-          `Berhasil: ${result.data.full_name} (${OR_ATTENDANCE_STATUS_LABELS[result.data.status]})`
+          `Berhasil: ${result.data.fullName} (${OR_ATTENDANCE_STATUS_LABELS[result.data.status]})`
         )
         fetchAttendance()
       } else {
@@ -192,7 +192,7 @@ export function AbsensiManager({ initialEvents }: Props) {
     if (!selectedCaang) return
 
     startTransition(async () => {
-      const { success, error } = await adminSubmitAttendance({
+      const result = await adminSubmitAttendance({
         id: selectedCaang.id,
         event_id: selectedEventId,
         user_id: selectedCaang.user_id,
@@ -200,12 +200,12 @@ export function AbsensiManager({ initialEvents }: Props) {
         checked_in_at: new Date(manualForm.checked_in_at).toISOString(),
       })
 
-      if (success) {
+      if (!result.error) {
         showFeedback('success', `Absensi ${selectedCaang.full_name} berhasil diperbarui.`)
         setSelectedCaang(null)
         fetchAttendance()
       } else {
-        showFeedback('error', error || 'Gagal menyimpan absensi.')
+        showFeedback('error', result.error || 'Gagal menyimpan absensi.')
       }
     })
   }

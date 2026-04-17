@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 /**
  * AuditLogTimeline — Komponen client-side untuk menampilkan
@@ -12,7 +12,7 @@
  * - Waktu relatif (contoh: "5 menit lalu")
  */
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition } from "react";
 import {
   Filter,
   ChevronDown,
@@ -22,9 +22,8 @@ import {
   Trash2,
   Loader2,
   ScrollText,
-  UserCircle,
   Bot,
-} from 'lucide-react'
+} from "lucide-react";
 
 import {
   Select,
@@ -32,14 +31,14 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Skeleton } from '@/components/ui/skeleton'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-import { getAuditLogs } from '@/app/actions/admin.action'
-import type { AuditLogWithActor } from '@/lib/types/admin'
+import { getAuditLogs } from "@/app/actions/admin.action";
+import type { AuditLogWithActor } from "@/lib/types/admin";
 
 // ═════════════════════════════════════════════════════
 // KONSTANTA
@@ -47,44 +46,46 @@ import type { AuditLogWithActor } from '@/lib/types/admin'
 
 /** Opsi filter tabel */
 const TABLE_OPTIONS = [
-  { value: 'all', label: 'Semua Tabel' },
-  { value: 'users', label: 'Users' },
-  { value: 'profiles', label: 'Profiles' },
-  { value: 'user_roles', label: 'User Roles' },
-] as const
+  { value: "all", label: "Semua Tabel" },
+  { value: "users", label: "Users" },
+  { value: "profiles", label: "Profiles" },
+  { value: "user_roles", label: "User Roles" },
+] as const;
 
 /** Opsi filter aksi */
 const ACTION_OPTIONS = [
-  { value: 'all', label: 'Semua Aksi' },
-  { value: 'INSERT', label: 'Insert' },
-  { value: 'UPDATE', label: 'Update' },
-  { value: 'DELETE', label: 'Delete' },
-] as const
+  { value: "all", label: "Semua Aksi" },
+  { value: "INSERT", label: "Insert" },
+  { value: "UPDATE", label: "Update" },
+  { value: "DELETE", label: "Delete" },
+] as const;
 
 /** Konfigurasi visual untuk setiap aksi */
 const ACTION_CONFIG = {
   INSERT: {
     icon: Plus,
-    label: 'Insert',
-    className: 'bg-emerald-500/15 text-emerald-700 border-emerald-500/25 dark:text-emerald-400',
-    dotColor: 'bg-emerald-500',
+    label: "Insert",
+    className:
+      "bg-emerald-500/15 text-emerald-700 border-emerald-500/25 dark:text-emerald-400",
+    dotColor: "bg-emerald-500",
   },
   UPDATE: {
     icon: Pencil,
-    label: 'Update',
-    className: 'bg-blue-500/15 text-blue-700 border-blue-500/25 dark:text-blue-400',
-    dotColor: 'bg-blue-500',
+    label: "Update",
+    className:
+      "bg-blue-500/15 text-blue-700 border-blue-500/25 dark:text-blue-400",
+    dotColor: "bg-blue-500",
   },
   DELETE: {
     icon: Trash2,
-    label: 'Delete',
-    className: 'bg-red-500/15 text-red-700 border-red-500/25 dark:text-red-400',
-    dotColor: 'bg-red-500',
+    label: "Delete",
+    className: "bg-red-500/15 text-red-700 border-red-500/25 dark:text-red-400",
+    dotColor: "bg-red-500",
   },
-} as const
+} as const;
 
 /** Items per page */
-const PAGE_SIZE = 20
+const PAGE_SIZE = 20;
 
 // ═════════════════════════════════════════════════════
 // UTILITY
@@ -92,44 +93,44 @@ const PAGE_SIZE = 20
 
 /** Format waktu relatif (contoh: "2 jam lalu") */
 function timeAgo(iso: string): string {
-  const now = Date.now()
-  const then = new Date(iso).getTime()
-  const diffMs = now - then
+  const now = Date.now();
+  const then = new Date(iso).getTime();
+  const diffMs = now - then;
 
-  const minutes = Math.floor(diffMs / 60000)
-  const hours = Math.floor(diffMs / 3600000)
-  const days = Math.floor(diffMs / 86400000)
+  const minutes = Math.floor(diffMs / 60000);
+  const hours = Math.floor(diffMs / 3600000);
+  const days = Math.floor(diffMs / 86400000);
 
-  if (minutes < 1) return 'Baru saja'
-  if (minutes < 60) return `${minutes} menit lalu`
-  if (hours < 24) return `${hours} jam lalu`
-  if (days < 30) return `${days} hari lalu`
-  return new Date(iso).toLocaleDateString('id-ID', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  })
+  if (minutes < 1) return "Baru saja";
+  if (minutes < 60) return `${minutes} menit lalu`;
+  if (hours < 24) return `${hours} jam lalu`;
+  if (days < 30) return `${days} hari lalu`;
+  return new Date(iso).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 }
 
 /** Format tanggal lengkap */
 function formatFullDate(iso: string): string {
-  return new Date(iso).toLocaleString('id-ID', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  })
+  return new Date(iso).toLocaleString("id-ID", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
 }
 
 /** Menghasilkan inisial dari nama */
 function getInitials(name: string): string {
   return name
-    .split(' ')
+    .split(" ")
     .slice(0, 2)
     .map((w) => w.charAt(0).toUpperCase())
-    .join('')
+    .join("");
 }
 
 // ═════════════════════════════════════════════════════
@@ -138,65 +139,71 @@ function getInitials(name: string): string {
 
 interface AuditLogTimelineProps {
   /** Data log awal yang dimuat di server */
-  initialLogs: AuditLogWithActor[]
+  initialLogs: AuditLogWithActor[];
   /** Total jumlah log di database */
-  initialTotal: number
+  initialTotal: number;
 }
 
 export function AuditLogTimeline({
   initialLogs,
   initialTotal,
 }: AuditLogTimelineProps) {
-  const [logs, setLogs] = useState(initialLogs)
-  const [total, setTotal] = useState(initialTotal)
-  const [isPending, startTransition] = useTransition()
+  const [logs, setLogs] = useState(initialLogs);
+  const [total, setTotal] = useState(initialTotal);
+  const [isPending, startTransition] = useTransition();
 
   // Filter state
-  const [tableFilter, setTableFilter] = useState('all')
-  const [actionFilter, setActionFilter] = useState('all')
+  const [tableFilter, setTableFilter] = useState("all");
+  const [actionFilter, setActionFilter] = useState("all");
 
   // Paginasi
-  const [offset, setOffset] = useState(PAGE_SIZE)
-  const hasMore = logs.length < total
+  const [offset, setOffset] = useState(PAGE_SIZE);
+  const hasMore = logs.length < total;
 
   /** Terapkan filter — reset list dan muat ulang dari awal */
   const applyFilters = (newTable: string, newAction: string) => {
-    setTableFilter(newTable)
-    setActionFilter(newAction)
+    setTableFilter(newTable);
+    setActionFilter(newAction);
 
     startTransition(async () => {
       const result = await getAuditLogs({
-        tableName: newTable === 'all' ? undefined : newTable,
-        action: newAction === 'all' ? undefined : (newAction as 'INSERT' | 'UPDATE' | 'DELETE'),
+        tableName: newTable === "all" ? undefined : newTable,
+        action:
+          newAction === "all"
+            ? undefined
+            : (newAction as "INSERT" | "UPDATE" | "DELETE"),
         limit: PAGE_SIZE,
         offset: 0,
-      })
+      });
 
       if (result.data) {
-        setLogs(result.data.logs)
-        setTotal(result.data.total)
-        setOffset(PAGE_SIZE)
+        setLogs(result.data.logs);
+        setTotal(result.data.total);
+        setOffset(PAGE_SIZE);
       }
-    })
-  }
+    });
+  };
 
   /** Muat lebih banyak (append ke list) */
   const loadMore = () => {
     startTransition(async () => {
       const result = await getAuditLogs({
-        tableName: tableFilter === 'all' ? undefined : tableFilter,
-        action: actionFilter === 'all' ? undefined : (actionFilter as 'INSERT' | 'UPDATE' | 'DELETE'),
+        tableName: tableFilter === "all" ? undefined : tableFilter,
+        action:
+          actionFilter === "all"
+            ? undefined
+            : (actionFilter as "INSERT" | "UPDATE" | "DELETE"),
         limit: PAGE_SIZE,
         offset,
-      })
+      });
 
       if (result.data) {
-        setLogs((prev) => [...prev, ...result.data!.logs])
-        setTotal(result.data.total)
-        setOffset((prev) => prev + PAGE_SIZE)
+        setLogs((prev) => [...prev, ...result.data!.logs]);
+        setTotal(result.data.total);
+        setOffset((prev) => prev + PAGE_SIZE);
       }
-    })
-  }
+    });
+  };
 
   return (
     <div className="space-y-4">
@@ -274,7 +281,7 @@ export function AuditLogTimeline({
         </div>
       )}
     </div>
-  )
+  );
 }
 
 // ═════════════════════════════════════════════════════
@@ -282,11 +289,11 @@ export function AuditLogTimeline({
 // ═════════════════════════════════════════════════════
 
 function LogEntry({ log }: { log: AuditLogWithActor }) {
-  const [expanded, setExpanded] = useState(false)
-  const config = ACTION_CONFIG[log.action]
-  const ActionIcon = config.icon
-  const actorName = log.actor_profile?.full_name ?? null
-  const hasDetailData = log.old_data || log.new_data
+  const [expanded, setExpanded] = useState(false);
+  const config = ACTION_CONFIG[log.action];
+  const ActionIcon = config.icon;
+  const actorName = log.actor_profile?.full_name ?? null;
+  const hasDetailData = log.old_data || log.new_data;
 
   return (
     <div className="group">
@@ -369,7 +376,7 @@ function LogEntry({ log }: { log: AuditLogWithActor }) {
         </div>
       )}
     </div>
-  )
+  );
 }
 
 // ═════════════════════════════════════════════════════
@@ -377,35 +384,35 @@ function LogEntry({ log }: { log: AuditLogWithActor }) {
 // ═════════════════════════════════════════════════════
 
 /** Kolom sensitif yang tidak ditampilkan di detail */
-const HIDDEN_FIELDS = new Set(['id', 'created_at', 'updated_at'])
+const HIDDEN_FIELDS = new Set(["id", "created_at", "updated_at"]);
 
 function DataDiff({
   oldData,
   newData,
 }: {
-  oldData: Record<string, unknown> | null
-  newData: Record<string, unknown> | null
+  oldData: Record<string, unknown> | null;
+  newData: Record<string, unknown> | null;
 }) {
   // Kumpulkan semua key unik dari kedua sumber
   const allKeys = new Set([
     ...Object.keys(oldData ?? {}),
     ...Object.keys(newData ?? {}),
-  ])
+  ]);
 
   // Filter key sensitif dan yang tidak berubah
   const changedKeys = Array.from(allKeys).filter((key) => {
-    if (HIDDEN_FIELDS.has(key)) return false
-    const oldVal = oldData?.[key]
-    const newVal = newData?.[key]
-    return JSON.stringify(oldVal) !== JSON.stringify(newVal)
-  })
+    if (HIDDEN_FIELDS.has(key)) return false;
+    const oldVal = oldData?.[key];
+    const newVal = newData?.[key];
+    return JSON.stringify(oldVal) !== JSON.stringify(newVal);
+  });
 
   if (changedKeys.length === 0) {
     return (
       <p className="text-xs text-muted-foreground italic">
         Tidak ada perubahan field yang terdeteksi.
       </p>
-    )
+    );
   }
 
   return (
@@ -415,8 +422,8 @@ function DataDiff({
       </p>
       <div className="grid gap-1.5">
         {changedKeys.map((key) => {
-          const oldVal = formatValue(oldData?.[key])
-          const newVal = formatValue(newData?.[key])
+          const oldVal = formatValue(oldData?.[key]);
+          const newVal = formatValue(newData?.[key]);
 
           return (
             <div
@@ -437,18 +444,18 @@ function DataDiff({
                 </span>
               )}
             </div>
-          )
+          );
         })}
       </div>
     </div>
-  )
+  );
 }
 
 /** Format value untuk tampilan (handle null, object, dll) */
 function formatValue(val: unknown): string {
-  if (val === null || val === undefined) return 'null'
-  if (typeof val === 'object') return JSON.stringify(val)
-  return String(val)
+  if (val === null || val === undefined) return "null";
+  if (typeof val === "object") return JSON.stringify(val);
+  return String(val);
 }
 
 // ═════════════════════════════════════════════════════
@@ -466,7 +473,7 @@ function EmptyState() {
         Log aktivitas akan muncul di sini saat terjadi perubahan data di sistem.
       </p>
     </div>
-  )
+  );
 }
 
 // ═════════════════════════════════════════════════════
@@ -504,5 +511,5 @@ export function AuditLogSkeleton() {
         ))}
       </div>
     </div>
-  )
+  );
 }

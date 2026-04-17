@@ -1,12 +1,12 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { Mail, Loader2, ArrowLeft, CheckCircle2 } from 'lucide-react'
+import { useState } from "react";
+import Link from "next/link";
+import { Mail, Loader2, ArrowLeft, CheckCircle2 } from "lucide-react";
 
-import { BentoAuthLayout } from '@/components/auth/bento-auth-layout'
-import { AuthFormField } from '@/components/auth/auth-form-field'
-import { Button } from '@/components/ui/button'
+import { BentoAuthLayout } from "@/components/auth/bento-auth-layout";
+import { AuthFormField } from "@/components/auth/auth-form-field";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -14,33 +14,34 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
-import { useAuthForm } from '@/hooks/use-auth-form'
-import { forgotPasswordSchema, type ForgotPasswordFormData } from '@/lib/validations/auth'
+} from "@/components/ui/card";
+import { useAuthForm } from "@/hooks/use-auth-form";
+import {
+  forgotPasswordSchema,
+  type ForgotPasswordFormData,
+} from "@/lib/validations/auth.validation";
 
 export default function ForgotPasswordPage() {
-  const [isSuccess, setIsSuccess] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false);
 
-  const {
-    fieldErrors,
-    globalError,
-    isPending,
-    handleSubmit,
-    clearFieldError,
-  } = useAuthForm<typeof forgotPasswordSchema>({
-    schema: forgotPasswordSchema,
-    redirectTo: '', // Tidak redirect, tampilkan pesan sukses
-    onSubmit: async (data: ForgotPasswordFormData, supabase) => {
-      // url param redirect jika user mengeklik link di email untuk reset
-      const { error } = await supabase.auth.resetPasswordForEmail(data.email, {
-        redirectTo: `${window.location.origin}/callback?next=/reset-password`,
-      })
-      if (!error) {
-        setIsSuccess(true)
-      }
-      return { error }
-    },
-  })
+  const { fieldErrors, globalError, isPending, handleSubmit, clearFieldError } =
+    useAuthForm<typeof forgotPasswordSchema>({
+      schema: forgotPasswordSchema,
+      redirectTo: "", // Tidak redirect, tampilkan pesan sukses
+      onSubmit: async (data: ForgotPasswordFormData, supabase) => {
+        // url param redirect jika user mengeklik link di email untuk reset
+        const { error } = await supabase.auth.resetPasswordForEmail(
+          data.email,
+          {
+            redirectTo: `${window.location.origin}/callback?next=/reset-password`,
+          },
+        );
+        if (!error) {
+          setIsSuccess(true);
+        }
+        return { error };
+      },
+    });
 
   return (
     <BentoAuthLayout>
@@ -61,7 +62,8 @@ export default function ForgotPasswordPage() {
               <div className="space-y-2">
                 <h3 className="text-lg font-semibold">Cek Email Anda</h3>
                 <p className="text-sm text-muted-foreground">
-                  Kami telah mengirimkan tautan reset password ke alamat email Anda. Silakan ikuti instruksi di dalamnya.
+                  Kami telah mengirimkan tautan reset password ke alamat email
+                  Anda. Silakan ikuti instruksi di dalamnya.
                 </p>
               </div>
             </div>
@@ -86,7 +88,7 @@ export default function ForgotPasswordPage() {
                   autoComplete="email"
                   required
                   error={fieldErrors.email}
-                  onChange={() => clearFieldError('email')}
+                  onChange={() => clearFieldError("email")}
                 />
 
                 <Button
@@ -100,7 +102,7 @@ export default function ForgotPasswordPage() {
                   ) : (
                     <Mail className="mr-2 h-4 w-4" />
                   )}
-                  {isPending ? 'Mengirim...' : 'Kirim Link Reset'}
+                  {isPending ? "Mengirim..." : "Kirim Link Reset"}
                 </Button>
               </form>
             </>
@@ -118,5 +120,5 @@ export default function ForgotPasswordPage() {
         </CardFooter>
       </Card>
     </BentoAuthLayout>
-  )
+  );
 }

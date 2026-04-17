@@ -143,11 +143,6 @@ export const SIDEBAR_MENU: SidebarMenuGroup[] = [
     allowedRoles: ["admin", "super_admin"],
     items: [
       {
-        title: "Dashboard OR",
-        icon: Home,
-        href: "/dashboard/or",
-      },
-      {
         title: "Pengaturan OR",
         icon: Settings,
         subItems: [
@@ -239,6 +234,8 @@ export const SIDEBAR_MENU: SidebarMenuGroup[] = [
         icon: Wrench,
         subItems: [
           { title: "Setup Magang", href: "/dashboard/or/magang/setup" },
+          { title: "Database Pendaftar", href: "/dashboard/or/magang/database" },
+          { title: "Verifikasi Penempatan", href: "/dashboard/or/magang/verifikasi" },
           { title: "Monitoring Logbook", href: "/dashboard/or/magang/logbook" },
         ],
       },

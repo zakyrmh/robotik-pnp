@@ -22,7 +22,6 @@ import {
   Trash2,
   Ban,
   CheckCircle2,
-  AlertTriangle,
   CalendarDays,
   Zap,
 } from 'lucide-react'
@@ -203,7 +202,7 @@ export function SpTerbitManager({ initialLetters, members, pointSummaries }: Pro
   const handleRevoke = (id: string) => {
     if (!revokeReason.trim()) { showFeedback('error', 'Alasan pencabutan wajib diisi.'); return }
     startTransition(async () => {
-      const result = await revokeWarningLetter(id, revokeReason)
+      const result = await revokeWarningLetter({ id, reason: revokeReason })
       if (result.error) showFeedback('error', result.error)
       else showFeedback('success', 'SP berhasil dicabut.')
       setRevokeReason('')

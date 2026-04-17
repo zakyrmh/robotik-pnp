@@ -11,7 +11,7 @@
     "db:migrate": "supabase db push",
     "db:new": "supabase migration new",
     "db:reset": "supabase db reset",
-    "db:types": "supabase gen types typescript --local > src/lib/db/types/database.types.ts"
+    "db:types": "supabase gen types typescript --project-id mtmgokvvgtcrrfipvrml > lib/supabase/database.types.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1003.0",
@@ -20,11 +20,18 @@
     "browser-image-compression": "^2.0.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "firebase-scrypt": "^2.2.0",
+    "framer-motion": "^12.38.0",
+    "html5-qrcode": "^2.3.8",
     "lucide-react": "^0.575.0",
     "next": "16.1.6",
+    "next-themes": "^0.4.6",
+    "qrcode": "^1.5.4",
     "radix-ui": "^1.4.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0",
     "zod": "^4.3.6"
   },
@@ -33,6 +40,7 @@
     "@commitlint/config-conventional": "^20.4.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/qrcode": "^1.5.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

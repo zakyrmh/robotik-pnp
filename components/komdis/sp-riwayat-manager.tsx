@@ -45,7 +45,6 @@ import type {
   KomdisSpStatus,
 } from '@/lib/db/schema/komdis'
 import {
-  KOMDIS_SP_LEVEL_LABELS,
   KOMDIS_SP_LEVEL_SHORT,
   KOMDIS_SP_STATUS_LABELS,
 } from '@/lib/db/schema/komdis'

@@ -63,7 +63,7 @@ interface Props {
   initialAssignments: PiketAssignmentWithUser[]
 }
 
-export function PiketScheduleManager({ periods: initPeriods, activePeriod: initActive, initialAssignments }: Props) {
+export function PiketScheduleManager({ activePeriod: initActive, initialAssignments }: Props) {
   const [isPending, startTransition] = useTransition()
   const [activePeriod, setActivePeriod] = useState(initActive)
   const [assignments, setAssignments] = useState(initialAssignments)
@@ -91,12 +91,12 @@ export function PiketScheduleManager({ periods: initPeriods, activePeriod: initA
       return
     }
     startTransition(async () => {
-      const result = await createPiketPeriod(
-        periodName,
+      const result = await createPiketPeriod({
+        name: periodName,
         startDate,
         endDate,
-        parseInt(fineAmount) || 10000,
-      )
+        fineAmount: parseInt(fineAmount) || 10000,
+      })
       if (result.error) {
         showFeedback('error', result.error)
       } else if (result.data) {
@@ -126,7 +126,7 @@ export function PiketScheduleManager({ periods: initPeriods, activePeriod: initA
   const handleWeekChange = (assignmentId: string, week: string) => {
     const w = parseInt(week)
     startTransition(async () => {
-      const result = await updateAssignmentWeek(assignmentId, w)
+      const result = await updateAssignmentWeek({ assignmentId, week: w })
       if (result.error) {
         showFeedback('error', result.error)
       } else {
@@ -145,7 +145,7 @@ export function PiketScheduleManager({ periods: initPeriods, activePeriod: initA
       return
     }
     startTransition(async () => {
-      const result = await updateFineAmount(activePeriod.id, val)
+      const result = await updateFineAmount({ periodId: activePeriod.id, amount: val })
       if (result.error) {
         showFeedback('error', result.error)
       } else if (result.data) {

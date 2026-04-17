@@ -9,68 +9,83 @@
  * Catatan: Proteksi autentikasi dilakukan di layout.tsx (private).
  */
 
-import { Suspense } from 'react'
-import { createClient } from '@/lib/supabase/server'
-import { Skeleton } from '@/components/ui/skeleton'
+import { Suspense } from "react";
+import { LayoutDashboard } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function DashboardPage() {
   return (
     <Suspense fallback={<DashboardSkeleton />}>
       <DashboardContent />
     </Suspense>
-  )
+  );
 }
 
 async function DashboardContent() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!user) return null
+  if (!user) return null;
 
   // Check user roles
   const { data: userRolesData } = await supabase
-    .from('user_roles')
-    .select('roles ( name )')
-    .eq('user_id', user.id)
+    .from("user_roles")
+    .select("roles ( name )")
+    .eq("user_id", user.id);
 
   const userRoles: string[] = (userRolesData ?? [])
     .map((row) => {
-      const role = row.roles
-      if (Array.isArray(role)) return role[0]?.name ?? null
-      if (role && typeof role === 'object' && 'name' in role) return (role as { name: string }).name
-      return null
+      const role = row.roles;
+      if (Array.isArray(role)) return role[0]?.name ?? null;
+      if (role && typeof role === "object" && "name" in role)
+        return (role as { name: string }).name;
+      return null;
     })
-    .filter((name): name is string => name !== null)
+    .filter((name): name is string => name !== null);
 
-  const isCaang = userRoles.includes('caang') && !userRoles.includes('admin') && !userRoles.includes('super_admin') && !userRoles.includes('pengurus') && !userRoles.includes('anggota')
+  const isCaang =
+    userRoles.includes("caang") &&
+    !userRoles.includes("admin") &&
+    !userRoles.includes("super_admin") &&
+    !userRoles.includes("pengurus") &&
+    !userRoles.includes("anggota");
 
   if (isCaang) {
     // Dynamic import caang content to keep bundle smaller
-    const { CaangDashboard } = await import('@/components/or/caang-dashboard')
-    return <CaangDashboard />
+    const { CaangDashboard } = await import("@/components/or/caang-dashboard");
+    return <CaangDashboard />;
   }
 
   // Default dashboard for other roles
   const { data: profile } = await supabase
-    .from('profiles')
-    .select('full_name')
-    .eq('user_id', user.id)
-    .single()
+    .from("profiles")
+    .select("full_name")
+    .eq("user_id", user.id)
+    .single();
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">
-          Selamat datang{profile?.full_name ? `, ${profile.full_name}` : ''}! Ini adalah Sistem Informasi UKM Robotik PNP.
-        </p>
+      <div className="flex items-start gap-4">
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-slate-500/10">
+          <LayoutDashboard className="size-5 text-slate-600" />
+        </div>
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-sm text-muted-foreground">
+            Selamat datang{profile?.full_name ? `, ${profile.full_name}` : ""}!
+            ...
+          </p>
+        </div>
       </div>
 
       <div className="grid auto-rows-min gap-4 md:grid-cols-3">
         {[
-          { label: 'Total Anggota', value: '—' },
-          { label: 'Calon Anggota', value: '—' },
-          { label: 'Kegiatan Aktif', value: '—' },
+          { label: "Total Anggota", value: "—" },
+          { label: "Calon Anggota", value: "—" },
+          { label: "Kegiatan Aktif", value: "—" },
         ].map((stat) => (
           <div
             key={stat.label}
@@ -101,7 +116,7 @@ async function DashboardContent() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 function DashboardSkeleton() {
@@ -113,9 +128,11 @@ function DashboardSkeleton() {
       </div>
       <Skeleton className="h-32 rounded-xl" />
       <div className="grid gap-4 sm:grid-cols-4">
-        {[1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-20 rounded-xl" />)}
+        {[1, 2, 3, 4].map((i) => (
+          <Skeleton key={i} className="h-20 rounded-xl" />
+        ))}
       </div>
       <Skeleton className="h-64 rounded-xl" />
     </div>
-  )
+  );
 }

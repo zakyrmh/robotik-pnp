@@ -1,0 +1,41 @@
+﻿
+> robotik-pnp@0.1.0 build
+> next build
+
+Γû▓ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+Γ£ô Compiled successfully in 12.9s
+  Running TypeScript ...
+node.exe : Failed to compile.
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program File
+s\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Failed to 
+    compile.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+./components/kestari/pelanggar-manager.tsx:113:61
+Type error: Expected 1 arguments, but got 2.
+
+[0m [90m 111 |[39m   [36mconst[39m handleGenerate 
+[33m=[39m () [33m=>[39m {
+ [90m 112 |[39m     startTransition([36masync[39m (
+) [33m=>[39m {
+[31m[1m>[22m[39m[90m 113 |[39m       [36mconst[
+39m result [33m=[39m [36mawait[39m generateFinesFor
+Month(period[33m.[39mid[33m,[39m generateMonth)[33
+m;[39m
+ [90m     |[39m                                      
+                       [31m[1m^[22m[39m
+ [90m 114 |[39m       [36mif[39m (result[33m.[39m
+error) {
+ [90m 115 |[39m         showFeedback([32m"error"[39
+m[33m,[39m result[33m.[39merror)[33m;[39m
+ [90m 116 |[39m       } [36melse[39m {[0m
+Next.js build worker exited with code: 1 and signal: nu
+ll

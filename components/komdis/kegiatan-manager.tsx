@@ -23,7 +23,6 @@ import {
   Square,
   Send,
   CheckCircle2,
-  Users,
   AlertTriangle,
   Timer,
 } from 'lucide-react'
@@ -140,11 +139,11 @@ export function KegiatanManager({ initialEvents }: Props) {
         title: form.title,
         description: form.description || undefined,
         location: form.location || undefined,
-        event_date: form.event_date,
-        start_time: form.start_time,
-        end_time: form.end_time || undefined,
-        late_tolerance: parseInt(form.late_tolerance) || 0,
-        points_per_late: parseInt(form.points_per_late) || 1,
+        eventDate: form.event_date,
+        startTime: form.start_time,
+        endTime: form.end_time || undefined,
+        lateTolerance: parseInt(form.late_tolerance) || 0,
+        pointsPerLate: parseInt(form.points_per_late) || 1,
       }
 
       if (editId) {

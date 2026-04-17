@@ -1,53 +1,53 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import Link from 'next/link'
-import { Lock, Loader2, CheckCircle2, ArrowRight } from 'lucide-react'
+import { useState } from "react";
+import Link from "next/link";
+import { Lock, Loader2, CheckCircle2, ArrowRight } from "lucide-react";
 
-import { BentoAuthLayout } from '@/components/auth/bento-auth-layout'
-import { AuthFormField } from '@/components/auth/auth-form-field'
-import { Button } from '@/components/ui/button'
+import { BentoAuthLayout } from "@/components/auth/bento-auth-layout";
+import { AuthFormField } from "@/components/auth/auth-form-field";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
-import { useAuthForm } from '@/hooks/use-auth-form'
-import { resetPasswordSchema, type ResetPasswordFormData } from '@/lib/validations/auth'
+} from "@/components/ui/card";
+import { useAuthForm } from "@/hooks/use-auth-form";
+import {
+  resetPasswordSchema,
+  type ResetPasswordFormData,
+} from "@/lib/validations/auth.validation";
 
 export default function ResetPasswordPage() {
-  const [isSuccess, setIsSuccess] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false);
 
-  const {
-    fieldErrors,
-    globalError,
-    isPending,
-    handleSubmit,
-    clearFieldError,
-  } = useAuthForm<typeof resetPasswordSchema>({
-    schema: resetPasswordSchema,
-    redirectTo: '', // Handle redirect/success locally
-    onSubmit: async (data: ResetPasswordFormData, supabase) => {
-      // Supabase OAuth Auth Flow: user will be authenticated automatically 
-      // when they reach this page via the callback link click.
-      // So we can directly update their password now.
-      const { error } = await supabase.auth.updateUser({
-        password: data.password,
-      })
-      if (!error) {
-        setIsSuccess(true)
-      }
-      return { error }
-    },
-  })
+  const { fieldErrors, globalError, isPending, handleSubmit, clearFieldError } =
+    useAuthForm<typeof resetPasswordSchema>({
+      schema: resetPasswordSchema,
+      redirectTo: "", // Handle redirect/success locally
+      onSubmit: async (data: ResetPasswordFormData, supabase) => {
+        // Supabase OAuth Auth Flow: user will be authenticated automatically
+        // when they reach this page via the callback link click.
+        // So we can directly update their password now.
+        const { error } = await supabase.auth.updateUser({
+          password: data.password,
+        });
+        if (!error) {
+          setIsSuccess(true);
+        }
+        return { error };
+      },
+    });
 
   return (
     <BentoAuthLayout>
       <Card className="border-0 shadow-none sm:border sm:shadow-sm">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Buat Password Baru</CardTitle>
+          <CardTitle className="text-2xl font-bold">
+            Buat Password Baru
+          </CardTitle>
           <CardDescription>
             Silakan masukkan password baru untuk akun Anda.
           </CardDescription>
@@ -60,9 +60,12 @@ export default function ResetPasswordPage() {
                 <CheckCircle2 className="size-8 text-emerald-600" />
               </div>
               <div className="space-y-2">
-                <h3 className="text-lg font-semibold">Password Berhasil Diubah!</h3>
+                <h3 className="text-lg font-semibold">
+                  Password Berhasil Diubah!
+                </h3>
                 <p className="text-sm text-muted-foreground">
-                  Akun Anda kini telah diamankan dengan password baru. Anda dapat melanjutkan mengakses sistem.
+                  Akun Anda kini telah diamankan dengan password baru. Anda
+                  dapat melanjutkan mengakses sistem.
                 </p>
               </div>
               <Button asChild className="mt-4 w-full cursor-pointer">
@@ -91,7 +94,7 @@ export default function ResetPasswordPage() {
                   placeholder="Masukkan password baru"
                   required
                   error={fieldErrors.password}
-                  onChange={() => clearFieldError('password')}
+                  onChange={() => clearFieldError("password")}
                 />
 
                 <AuthFormField
@@ -102,7 +105,7 @@ export default function ResetPasswordPage() {
                   placeholder="Ketik ulang password baru"
                   required
                   error={fieldErrors.confirmPassword}
-                  onChange={() => clearFieldError('confirmPassword')}
+                  onChange={() => clearFieldError("confirmPassword")}
                 />
 
                 <Button
@@ -116,7 +119,7 @@ export default function ResetPasswordPage() {
                   ) : (
                     <Lock className="mr-2 h-4 w-4" />
                   )}
-                  {isPending ? 'Menyimpan...' : 'Simpan Password Baru'}
+                  {isPending ? "Menyimpan..." : "Simpan Password Baru"}
                 </Button>
               </form>
             </>
@@ -124,5 +127,5 @@ export default function ResetPasswordPage() {
         </CardContent>
       </Card>
     </BentoAuthLayout>
-  )
+  );
 }

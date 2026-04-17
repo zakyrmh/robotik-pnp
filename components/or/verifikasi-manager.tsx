@@ -126,12 +126,12 @@ export function VerifikasiManager({ initialRegistrations }: Props) {
   const handleVerify = (decision: "accepted" | "rejected" | "revision") => {
     if (!selectedReg) return;
     startTransition(async () => {
-      const result = await verifyRegistration(
-        selectedReg.id,
+      const result = await verifyRegistration({
+        id: selectedReg.id,
         decision,
-        verifyNotes || undefined,
-        decision === "revision" ? revisionFields : undefined,
-      );
+        notes: verifyNotes || undefined,
+        revisionFields: decision === "revision" ? revisionFields : undefined,
+      });
       if (result.error) {
         showFeedback("error", result.error);
       } else {
@@ -794,14 +794,50 @@ export function VerifikasiManager({ initialRegistrations }: Props) {
 export function VerifikasiSkeleton() {
   return (
     <div className="space-y-4">
+      {/* Alert bar */}
       <Skeleton className="h-12 rounded-lg" />
-      <div className="flex gap-3">
-        <Skeleton className="h-9 w-[200px] rounded-md" />
-        <Skeleton className="h-9 w-[200px] rounded-md" />
+
+      {/* Filter row */}
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="space-y-1.5">
+          <Skeleton className="h-3 w-12" />
+          <Skeleton className="h-9 w-[200px] rounded-md" />
+        </div>
+        <div className="flex items-center gap-2">
+          <Skeleton className="size-4 rounded" />
+          <Skeleton className="h-9 w-[200px] rounded-md" />
+        </div>
         <Skeleton className="h-8 w-16 rounded-md" />
       </div>
-      {[1, 2, 3].map((i) => (
-        <Skeleton key={i} className="h-20 rounded-xl" />
+
+      {/* Registration cards */}
+      {Array.from({ length: 3 }).map((_, i) => (
+        <div
+          key={i}
+          className="rounded-xl border bg-card shadow-sm overflow-hidden"
+        >
+          <div className="flex items-center gap-4 px-4 py-3">
+            <Skeleton className="size-10 rounded-full" />
+            <div className="flex-1 space-y-1.5">
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-5 w-16 rounded-full" />
+                <Skeleton className="h-5 w-20 rounded-full" />
+              </div>
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-3 w-36" />
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-3 w-24" />
+              </div>
+            </div>
+            <div className="flex gap-1.5">
+              <Skeleton className="h-8 w-16 rounded-md" />
+              <Skeleton className="size-8 rounded-md" />
+              <Skeleton className="size-8 rounded-md" />
+              <Skeleton className="size-8 rounded-md" />
+            </div>
+          </div>
+        </div>
       ))}
     </div>
   );

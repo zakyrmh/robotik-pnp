@@ -257,3 +257,73 @@ export interface OrAttendanceToken {
   expires_at: string;
   created_at: string;
 }
+
+export const OR_PIPELINE_STATUS_LABELS: Record<string, string> = {
+  intro_demo: "Pengenalan & Demo Robot",
+  interview_1_passed: "Lulus Wawancara 1",
+  interview_1_failed: "Tidak Lulus Wawancara 1",
+  training: "Pelatihan",
+  family_gathering: "Family Gathering",
+  project: "Project Robot",
+  interview_2_passed: "Lulus Wawancara 2",
+  interview_2_failed: "Tidak Lulus Wawancara 2",
+  internship_rolling: "Magang Rolling",
+  internship_fixed: "Magang Tetap",
+  inducted: "Dilantik",
+  blacklisted: "Diblokir",
+};
+
+// ═══════════════════════════════════════════════════════
+// MODUL: MAGANG (FORMULIR MAGANG CAANG)
+// ═══════════════════════════════════════════════════════
+
+export interface OrInternshipApplication {
+  id: string;
+  user_id: string;
+
+  // Step 1
+  minat: string;
+  alasan_minat: string;
+  skill: string;
+
+  // Step 2
+  divisi_1_id: string;
+  yakin_divisi_1: string;
+  alasan_divisi_1: string;
+
+  divisi_2_id: string;
+  yakin_divisi_2: string;
+  alasan_divisi_2: string;
+
+  // Step 3
+  dept_1_id: string;
+  yakin_dept_1: string;
+  alasan_dept_1: string;
+
+  dept_2_id: string;
+  yakin_dept_2: string;
+  alasan_dept_2: string;
+
+  // Hasil Algoritma
+  recommended_divisi_id: string | null;
+  recommended_dept_id: string | null;
+
+  // Final Penempatan (Oleh Admin)
+  final_divisi_id: string | null;
+  final_dept_id: string | null;
+
+  status: "pending" | "approved" | "rejected";
+
+  is_manual_registration: boolean;
+
+  created_at: string;
+  updated_at: string;
+}
+
+/** Pengaturan Global Pendaftaran Magang */
+export interface OrInternshipSettings {
+  is_open: boolean;
+  start_date: string | null;
+  end_date: string | null;
+}
+

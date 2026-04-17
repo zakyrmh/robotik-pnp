@@ -54,10 +54,10 @@ import {
   savePayment,
   submitRegistration,
   getMyRegistration,
-} from "@/app/actions/or.action";
-import { uploadImageToSupabase } from "@/app/actions/upload.action";
+} from "@/app/actions/or-caang.action";
+import { uploadImage } from "@/app/actions/upload.action";
 import {
-  getPaymentAccounts,
+  getPublicPaymentAccounts,
   getRegistrationFee,
   OrBankAccount,
 } from "@/app/actions/or-settings.action";
@@ -147,19 +147,19 @@ export function CaangRegistrationWizard({
   // ── Payment form ──
   const [paymentUrl, setPaymentUrl] = useState(reg.payment_url || "");
   const [paymentFile, setPaymentFile] = useState<File | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState(
-    reg.payment_method || "transfer",
+  const [paymentMethod, setPaymentMethod] = useState<"transfer" | "offline">(
+    (reg.payment_method as "transfer" | "offline") || "transfer",
   );
-  
+
   const [paymentAccounts, setPaymentAccounts] = useState<OrBankAccount[]>([]);
   const [loadingAccounts, setLoadingAccounts] = useState(true);
   const [registrationFee, setRegistrationFee] = useState(50000);
 
   useEffect(() => {
-    Promise.all([getPaymentAccounts(), getRegistrationFee()]).then(
+    Promise.all([getPublicPaymentAccounts(), getRegistrationFee()]).then(
       ([accountsRes, feeRes]) => {
-        setPaymentAccounts(accountsRes.data.filter((acc) => acc.is_active));
-        setRegistrationFee(feeRes.data.amount);
+        setPaymentAccounts(accountsRes.data ?? []);
+        setRegistrationFee(feeRes.data?.amount ?? 50000);
         setLoadingAccounts(false);
       },
     );
@@ -216,7 +216,7 @@ export function CaangRegistrationWizard({
       const result = await saveBiodata({
         fullName,
         nickname: nickname || undefined,
-        gender: gender || undefined,
+        gender: (gender as "L" | "P") || undefined,
         birthPlace: birthPlace || undefined,
         birthDate: birthDate || undefined,
         phone: phone || undefined,
@@ -310,18 +310,17 @@ export function CaangRegistrationWizard({
           setUploadStatus((prev) => ({ ...prev, [field]: "uploading" }));
           const fd = new FormData();
           fd.append("file", file);
-          const res = await uploadImageToSupabase(
+          const res = await uploadImage(
             fd,
+            "or-documents",
             `caang/2026/${reg.user_id}`,
           );
-
-          if (!res.success) {
+          if (res.error) {
             setUploadStatus((prev) => ({ ...prev, [field]: "error" }));
-            throw new Error(String(res.error));
+            throw new Error(res.error);
           }
-
           setUploadStatus((prev) => ({ ...prev, [field]: "done" }));
-          return res.url as string;
+          return res.data!.signedUrl; // signedUrl untuk preview & disimpan ke DB
         };
 
         const newPhotoUrl = await uploadIfFile(
@@ -394,17 +393,16 @@ export function CaangRegistrationWizard({
           setUploadStatus((prev) => ({ ...prev, payment_url: "uploading" }));
           const fd = new FormData();
           fd.append("file", paymentFile);
-          const res = await uploadImageToSupabase(
+          const res = await uploadImage(
             fd,
+            "or-documents",
             `caang/2026/${reg.user_id}`,
           );
-
-          if (!res.success) {
+          if (res.error) {
             setUploadStatus((prev) => ({ ...prev, payment_url: "error" }));
-            throw new Error(String(res.error));
+            throw new Error(res.error);
           }
-
-          newPaymentUrl = res.url as string;
+          newPaymentUrl = res.data!.signedUrl;
           setUploadStatus((prev) => ({ ...prev, payment_url: "done" }));
         }
 
@@ -1006,7 +1004,9 @@ export function CaangRegistrationWizard({
                 <Label className="text-xs">Metode Pembayaran</Label>
                 <Select
                   value={paymentMethod}
-                  onValueChange={setPaymentMethod}
+                  onValueChange={(value) =>
+                    setPaymentMethod(value as "transfer" | "offline")
+                  }
                   disabled={isReadOnly}
                 >
                   <SelectTrigger>
@@ -1028,7 +1028,11 @@ export function CaangRegistrationWizard({
                 <div className="sm:col-span-2 rounded-lg border bg-muted/20 p-4 space-y-4">
                   <div>
                     <h3 className="text-sm font-semibold mb-1">
-                      Biaya Registrasi: {new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(registrationFee)}
+                      Biaya Registrasi:{" "}
+                      {new Intl.NumberFormat("id-ID", {
+                        style: "currency",
+                        currency: "IDR",
+                      }).format(registrationFee)}
                     </h3>
                     <p className="text-[10px] text-muted-foreground">
                       Silakan transfer biaya registrasi ke salah satu rekening
@@ -1040,11 +1044,15 @@ export function CaangRegistrationWizard({
                     {loadingAccounts ? (
                       <div className="sm:col-span-2 py-6 text-center text-muted-foreground flex flex-col items-center justify-center">
                         <Loader2 className="size-5 animate-spin mb-2" />
-                        <p className="text-xs font-medium">Memuat rekening...</p>
+                        <p className="text-xs font-medium">
+                          Memuat rekening...
+                        </p>
                       </div>
                     ) : paymentAccounts.length === 0 ? (
                       <div className="sm:col-span-2 py-6 text-center border-2 border-dashed rounded-md text-muted-foreground">
-                        <p className="text-xs">Belum ada rekening yang ditambahkan.</p>
+                        <p className="text-xs">
+                          Belum ada rekening yang ditambahkan.
+                        </p>
                       </div>
                     ) : (
                       paymentAccounts.map((acc, index) => (
@@ -1069,7 +1077,9 @@ export function CaangRegistrationWizard({
                               size="icon"
                               className="size-6 shrink-0 text-muted-foreground hover:text-foreground"
                               onClick={() => {
-                                navigator.clipboard.writeText(acc.account_number);
+                                navigator.clipboard.writeText(
+                                  acc.account_number,
+                                );
                                 showFeedback(
                                   "success",
                                   `Rekening ${acc.bank_name} tersalin!`,

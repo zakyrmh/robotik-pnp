@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 /**
  * Halaman Login — /login
@@ -19,14 +19,14 @@
  * Catatan: useSearchParams harus dibungkus Suspense Boundary (Next.js 16+)
  */
 
-import { Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
-import Link from 'next/link'
-import { LogIn, Loader2 } from 'lucide-react'
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { LogIn, Loader2 } from "lucide-react";
 
-import { BentoAuthLayout } from '@/components/auth/bento-auth-layout'
-import { AuthFormField } from '@/components/auth/auth-form-field'
-import { Button } from '@/components/ui/button'
+import { BentoAuthLayout } from "@/components/auth/bento-auth-layout";
+import { AuthFormField } from "@/components/auth/auth-form-field";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -34,9 +34,13 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from '@/components/ui/card'
-import { useAuthForm } from '@/hooks/use-auth-form'
-import { loginSchema, type LoginFormData } from '@/lib/validations/auth'
+} from "@/components/ui/card";
+import { useAuthForm } from "@/hooks/use-auth-form";
+import {
+  loginSchema,
+  type LoginFormData,
+} from "@/lib/validations/auth.validation";
+import { type AuthError } from "@supabase/supabase-js";
 
 /**
  * Komponen utama form login — dipisah agar bisa dibungkus Suspense.
@@ -44,28 +48,72 @@ import { loginSchema, type LoginFormData } from '@/lib/validations/auth'
  */
 function LoginForm() {
   /** Mengambil query parameter (contoh: ?message=...) */
-  const searchParams = useSearchParams()
-  const messageParam = searchParams.get('message')
+  const searchParams = useSearchParams();
+  const messageParam = searchParams.get("message");
 
   /** Hook yang mengelola state form, validasi, dan submit */
-  const {
-    fieldErrors,
-    globalError,
-    isPending,
-    handleSubmit,
-    clearFieldError,
-  } = useAuthForm<typeof loginSchema>({
-    schema: loginSchema,
-    redirectTo: '/dashboard',
-    onSubmit: async (data: LoginFormData, supabase) => {
-      // Memanggil Supabase Auth untuk proses login
-      const { error } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
-      })
-      return { error }
-    },
-  })
+  const { fieldErrors, globalError, isPending, handleSubmit, clearFieldError } =
+    useAuthForm<typeof loginSchema>({
+      schema: loginSchema,
+      redirectTo: "/dashboard",
+      onSubmit: async (data: LoginFormData, supabase) => {
+        // Langkah 1: Coba login normal ke Supabase
+        let { error } = await supabase.auth.signInWithPassword({
+          email: data.email,
+          password: data.password,
+        });
+
+        // Langkah 2: Cegat jika gagal karena password (kemungkinan akun Firebase lama)
+        if (error && error.message.includes("Invalid login credentials")) {
+          try {
+            // Tembak API Migrasi kita secara diam-diam
+            const res = await fetch("/api/migrate-password", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                email: data.email,
+                password: data.password,
+              }),
+            });
+
+            if (res.ok) {
+              // Langkah 3: Migrasi di server berhasil! Ulangi login normal.
+              const retryLogin = await supabase.auth.signInWithPassword({
+                email: data.email,
+                password: data.password,
+              });
+              error = retryLogin.error;
+            } else {
+              // Jika API menolak (misal: password lamanya memang salah ketik)
+              const errData = await res.json();
+
+              // FIX: Buat objek error yang sesuai dengan struktur AuthError Supabase
+              return {
+                error: {
+                  message: errData.error || "Password Anda salah.",
+                  name: "MigrationError",
+                  status: 400,
+                } as AuthError,
+              };
+            }
+          } catch (apiError) {
+            // FIX: Gunakan variabel apiError (cetak ke console untuk debugging)
+            console.error("Migrasi API Error:", apiError);
+
+            return {
+              error: {
+                message: "Terjadi gangguan saat memverifikasi akun lama Anda.",
+                name: "MigrationError",
+                status: 500,
+              } as AuthError,
+            };
+          }
+        }
+
+        // Kembalikan hasil akhir
+        return { error };
+      },
+    });
 
   return (
     <Card className="border-0 shadow-none sm:border sm:shadow-sm">
@@ -106,7 +154,7 @@ function LoginForm() {
             autoComplete="email"
             required
             error={fieldErrors.email}
-            onChange={() => clearFieldError('email')}
+            onChange={() => clearFieldError("email")}
           />
 
           <AuthFormField
@@ -129,7 +177,7 @@ function LoginForm() {
             autoComplete="current-password"
             required
             error={fieldErrors.password}
-            onChange={() => clearFieldError('password')}
+            onChange={() => clearFieldError("password")}
           />
 
           {/* Tombol submit dengan loading state */}
@@ -144,7 +192,7 @@ function LoginForm() {
             ) : (
               <LogIn className="size-4" />
             )}
-            {isPending ? 'Memproses...' : 'Masuk'}
+            {isPending ? "Memproses..." : "Masuk"}
           </Button>
         </form>
       </CardContent>
@@ -152,7 +200,7 @@ function LoginForm() {
       {/* Footer: link ke halaman register */}
       <CardFooter className="justify-center">
         <p className="text-sm text-muted-foreground">
-          Belum punya akun?{' '}
+          Belum punya akun?{" "}
           <Link
             href="/register"
             className="font-semibold text-primary underline-offset-4 hover:underline"
@@ -162,7 +210,7 @@ function LoginForm() {
         </p>
       </CardFooter>
     </Card>
-  )
+  );
 }
 
 /**
@@ -186,7 +234,7 @@ function LoginSkeleton() {
         <div className="h-10 animate-pulse rounded-md bg-muted" />
       </CardContent>
     </Card>
-  )
+  );
 }
 
 /**
@@ -200,5 +248,5 @@ export default function LoginPage() {
         <LoginForm />
       </Suspense>
     </BentoAuthLayout>
-  )
+  );
 }
