@@ -1,177 +1,243 @@
-import Image from "next/image";
+"use client";
+
+import React from "react";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import {
+  ArrowRight,
+  Settings,
+  Zap,
+  Cpu,
+  Trophy,
+  ChevronRight,
+} from "lucide-react";
 import Link from "next/link";
-import { HeroSection } from "./_components/HeroSection";
+import Image from "next/image";
 
-// Timeline Data
-const timeline = [
-  { step: 1, title: "Pendaftaran", date: "1 - 10 September 2025s" },
-  { step: 2, title: "Demo Robot", date: "28 September 2025" },
-  { step: 3, title: "Wawancara 1", date: "5 Oktober 2025" },
-  { step: 4, title: "Pelatihan", date: "19 Oktober - 21 Desember 2025" },
-];
+// Komponen Stat Card
+const StatCard = ({ label, value }: { label: string; value: string }) => (
+  <div className="flex flex-col items-center md:items-start">
+    <span className="text-4xl md:text-6xl font-black text-zinc-900 dark:text-white transition-colors">
+      {value}
+    </span>
+    <span className="text-[10px] tracking-[0.3em] text-zinc-500 dark:text-zinc-400 uppercase mt-2 font-bold">
+      {label}
+    </span>
+  </div>
+);
 
-// Tim KRI
-const teams = [
-  { name: "KRAI", desc: "Kontes Robot ABU Indonesia" },
-  { name: "KRSBI-B", desc: "Kontes Robot Sepak Bola Indonesia - Beroda" },
-  { name: "KRSBI-H", desc: "Kontes Robot Sepak Bola Indonesia - Humanoid" },
-  { name: "KRSRI", desc: "Kontes Robot SAR Indonesia" },
-  { name: "KRSTI", desc: "Kontes Robot Seni Tari Indonesia" },
-];
+export default function HomePage() {
+  const divisions = [
+    {
+      title: "KRAI",
+      icon: <Settings size={20} />,
+      desc: "Fokus pada efisiensi mekanik dan sinkronisasi antar robot untuk misi kompleks.",
+    },
+    {
+      title: "KRSBI-B",
+      icon: <Zap size={20} />,
+      desc: "Pengembangan robot sepak bola beroda dengan strategi multi-agent system.",
+    },
+    {
+      title: "KRSBI-H",
+      icon: <Cpu size={20} />,
+      desc: "Riset keseimbangan dinamis dan visi komputer untuk robot humanoid.",
+    },
+    {
+      title: "KRSTI",
+      icon: <Trophy size={20} />,
+      desc: "Harmonisasi teknologi robotika dengan estetika seni budaya melalui gerakan presisi.",
+    },
+    {
+      title: "KRSRI",
+      icon: <Settings size={20} />,
+      desc: "Navigasi medan sulit dalam simulasi misi penyelamatan (Search and Rescue).",
+    },
+  ];
 
-export default function Home() {
   return (
-    <main className="flex flex-col items-center">
-      <HeroSection />
+    <div className="relative min-h-screen transition-colors duration-500">
+      {/* Background Grid Pattern */}
+      <div className="absolute inset-0 z-0 pointer-events-none bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[40px_40px] dark:bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)]" />
 
-      {/* Ketua Umum */}
-      <section
-        id="ketua"
-        className="w-full py-20 bg-white dark:bg-slate-800 px-6 transition-colors"
-      >
-        <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-10 items-center">
+      {/* --- HERO SECTION --- */}
+      <section className="relative z-10 max-w-7xl mx-auto px-6 pt-16 md:pt-32 pb-20 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+        >
+          <div className="inline-flex items-center gap-2 py-1 px-3 rounded-full border border-blue-500/20 bg-blue-500/5 text-blue-600 dark:text-blue-400 text-[10px] font-bold tracking-widest uppercase mb-8">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+            </span>
+            Est. 2005 - UKM Robotik PNP
+          </div>
+
+          <h1 className="text-5xl md:text-8xl font-black tracking-tighter leading-[0.9] text-zinc-900 dark:text-white">
+            Eksplorasi <br />
+            <span className="text-blue-600 dark:text-blue-500">
+              Tanpa Batas
+            </span>
+            , <br />
+            Inovasi Tanpa Henti.
+          </h1>
+
+          <p className="mt-10 text-zinc-600 dark:text-zinc-400 max-w-lg text-lg leading-relaxed">
+            Pusat riset dan kreativitas teknologi di Politeknik Negeri Padang.
+            Kami mengubah kompleksitas menjadi solusi robotika yang presisi.
+          </p>
+
+          <div className="mt-12 flex flex-wrap gap-5">
+            <Button
+              size="lg"
+              className="bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600 px-10 rounded-none font-bold tracking-widest h-14 transition-all hover:gap-4"
+            >
+              JELAJAHI DIVISI <ArrowRight size={20} />
+            </Button>
+            <Button
+              size="lg"
+              variant="outline"
+              className="border-zinc-300 dark:border-zinc-800 rounded-none px-10 h-14 font-bold tracking-widest hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-colors"
+            >
+              GABUNG SEKARANG
+            </Button>
+          </div>
+        </motion.div>
+
+        {/* Abstract Robot Visual Placeholder */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1 }}
+          className="relative aspect-4/5 bg-zinc-100 dark:bg-zinc-900/50 border border-zinc-200 dark:border-white/5 backdrop-blur-sm overflow-hidden group"
+        >
+          {/* Layer Efek Cahaya di belakang gambar */}
+          <div className="absolute inset-0 z-0 opacity-30 dark:opacity-20 bg-[radial-gradient(circle_at_center,#2563eb_0,transparent_70%)]" />
+
+          {/* Render Image dari folder public/ */}
           <Image
-            src="/images/ketua_umum.jpg"
-            alt="Ketua Umum UKM Robotik"
-            width={400}
-            height={400}
-            priority
-            placeholder="blur"
-            blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAgEAYABgAAD/2wBD"
-            className="rounded-2xl object-cover shadow-md"
+            src="/images/humanoid-robotic.webp" // Path langsung ke folder public
+            alt="UKM Robotik PNP Visual"
+            fill // Mengisi container aspect-[4/5]
+            className="object-cover object-center transition-transform duration-700 group-hover:scale-105 z-10"
+            priority // Mempercepat loading karena ini elemen di atas (above the fold)
           />
-          <div>
-            <h2 className="text-3xl font-bold mb-4 text-slate-900 dark:text-white transition-colors">
-              Ketua Umum
+
+          {/* Overlay Gradient agar teks di bawah tetap terbaca jika gambar terang */}
+          <div className="absolute inset-0 bg-linear-to-t from-zinc-900/60 via-transparent to-transparent z-20 opacity-0 group-hover:opacity-100 transition-opacity" />
+
+          {/* Label Info */}
+          {/* <div className="absolute bottom-8 right-8 text-right z-30">
+            <span className="text-[10px] font-black tracking-[0.4em] text-zinc-400 dark:text-zinc-300 uppercase drop-shadow-md">
+              System Architecture
+            </span>
+            <p className="text-xs font-bold text-white drop-shadow-md">
+              PNP_BOT_V4.0.1
+            </p>
+          </div> */}
+        </motion.div>
+      </section>
+
+      {/* --- STATS SECTION --- */}
+      <section className="relative z-10 border-y border-zinc-200 dark:border-white/10 bg-white dark:bg-zinc-950 py-16 transition-colors">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8">
+          <StatCard label="Anggota Aktif" value="60+" />
+          <StatCard label="Penghargaan Nasional" value="20+" />
+          <StatCard label="Tahun Berdiri" value="2005" />
+        </div>
+      </section>
+
+      {/* --- DIVISI SECTION --- */}
+      <section className="relative z-10 max-w-7xl mx-auto px-6 py-32">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-16 gap-6">
+          <div className="max-w-xl">
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-zinc-900 dark:text-white">
+              Divisi KRI
             </h2>
-            <p className="text-lg text-slate-700 dark:text-slate-300 mb-2 transition-colors">
-              Nama: M. Fadhil Muzaffar Guci
+            <p className="text-zinc-500 mt-4 text-lg">
+              Spesialisasi teknis yang berkompetisi di ajang Kontes Robot
+              Indonesia.
             </p>
-            <p className="text-lg text-slate-700 dark:text-slate-300 mb-2 transition-colors">
-              Prodi: D4 Teknik Elektronika &apos;23
+          </div>
+          <button className="group flex items-center gap-2 text-blue-600 dark:text-blue-400 font-black tracking-[0.2em] text-xs uppercase transition-all">
+            Lihat Detail{" "}
+            <ChevronRight
+              size={16}
+              className="group-hover:translate-x-1 transition-transform"
+            />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          {divisions.map((div) => (
+            <motion.div
+              key={div.title}
+              whileHover={{ y: -5 }}
+              className="p-8 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/5 flex flex-col h-full group transition-all hover:border-blue-500/50"
+            >
+              <div className="w-12 h-12 flex items-center justify-center bg-zinc-100 dark:bg-zinc-800 text-blue-600 dark:text-blue-400 mb-6 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                {div.icon}
+              </div>
+              <h3 className="text-xl font-black text-zinc-900 dark:text-white mb-3">
+                {div.title}
+              </h3>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-relaxed mb-8 grow">
+                {div.desc}
+              </p>
+              <div className="h-[2px] w-8 bg-orange-500 transition-all group-hover:w-full" />
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* --- IDENTITAS SISTEM SECTION --- */}
+      <section className="relative z-10 bg-zinc-50 dark:bg-zinc-950/50 py-32 border-t border-zinc-200 dark:border-white/5">
+        <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
+          <div>
+            <span className="text-xs font-black tracking-[0.4em] text-blue-600 dark:text-blue-400 uppercase">
+              Core Competency
+            </span>
+            <h2 className="text-5xl md:text-6xl font-black mt-6 mb-8 text-zinc-900 dark:text-white leading-[1.1]">
+              Inovasi Berbasis <br /> Presisi
+            </h2>
+            <p className="text-zinc-600 dark:text-zinc-400 text-lg leading-relaxed mb-10">
+              Setiap robot di UKM Robotik PNP dibangun atas tiga pilar utama
+              disiplin rekayasa yang terintegrasi secara modular.
             </p>
-            {/* <p className="text-lg text-slate-700 dark:text-slate-300 transition-colors">
-              Visi: Membawa UKM Robotik menjadi pusat inovasi teknologi dan
-              juara kompetisi robotik nasional.
-            </p> */}
+            <Link
+              href="/about"
+              className="inline-flex items-center gap-4 text-sm font-black tracking-widest uppercase group text-zinc-900 dark:text-white"
+            >
+              Pelajari Struktur{" "}
+              <div className="h-[2px] w-12 bg-blue-600 group-hover:w-20 transition-all" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4">
+            {["MECHANICAL", "ELECTRICAL", "PROGRAMMING"].map((pilar, idx) => (
+              <div
+                key={pilar}
+                className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-white/10 p-10 flex justify-between items-center group hover:bg-blue-600 transition-all duration-500"
+              >
+                <div>
+                  <span className="text-[10px] text-zinc-400 group-hover:text-blue-200 font-bold tracking-widest">
+                    PILAR 0{idx + 1}
+                  </span>
+                  <h4 className="font-black text-2xl text-zinc-900 dark:text-white group-hover:text-white transition-colors">
+                    {pilar}
+                  </h4>
+                </div>
+                <ChevronRight
+                  className="text-zinc-300 dark:text-zinc-800 group-hover:text-white group-hover:translate-x-2 transition-all"
+                  size={32}
+                />
+              </div>
+            ))}
           </div>
         </div>
       </section>
-
-      {/* Video Perkenalan */}
-      <section
-        id="video"
-        className="w-full py-20 bg-slate-50 dark:bg-slate-900 px-6 text-center transition-colors"
-      >
-        <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-8 transition-colors">
-          Video Perkenalan
-        </h2>
-        <div className="max-w-3xl mx-auto aspect-video rounded-xl overflow-hidden shadow-md dark:shadow-slate-700">
-          <iframe
-            width="100%"
-            height="100%"
-            src="https://www.youtube.com/embed/Jnej-7H-1Q4?si=zMyFxG7bsL90UMb-"
-            title="Video Perkenalan UKM Robotik"
-            allowFullScreen
-            className="border-0"
-          ></iframe>
-        </div>
-      </section>
-
-      {/* Timeline Open Recruitment */}
-      <section
-        id="recruitment"
-        className="w-full py-20 bg-white dark:bg-slate-800 px-6 text-center transition-colors"
-      >
-        <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-12 transition-colors">
-          Timeline Open Recruitment
-        </h2>
-        <div className="max-w-4xl mx-auto grid md:grid-cols-3 gap-6">
-          {timeline.map((item) => (
-            <div
-              key={item.step}
-              className="bg-slate-50 dark:bg-slate-700 p-6 rounded-xl shadow hover:shadow-lg dark:shadow-slate-600 dark:hover:shadow-slate-600 transition-all"
-            >
-              <h3 className="text-xl font-semibold text-slate-800 dark:text-white mb-2 transition-colors">
-                {item.title}
-              </h3>
-              <p className="text-slate-600 dark:text-slate-300 transition-colors">
-                {item.date}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Daftar Tim KRI */}
-      <section
-        id="kri"
-        className="w-full py-20 bg-slate-50 dark:bg-slate-900 px-6 text-center transition-colors"
-      >
-        <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-12 transition-colors">
-          Daftar Tim KRI
-        </h2>
-        <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
-          {teams.map((team) => (
-            <div
-              key={team.name}
-              className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow hover:shadow-lg dark:shadow-slate-700 dark:hover:shadow-slate-600 transition-all"
-            >
-              <h3 className="text-xl font-semibold text-slate-800 dark:text-white mb-2 transition-colors">
-                {team.name}
-              </h3>
-              <p className="text-slate-600 dark:text-slate-300 transition-colors">
-                {team.desc}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Lokasi */}
-      <section
-        id="lokasi"
-        className="w-full py-20 bg-white dark:bg-slate-800 px-6 text-center transition-colors"
-      >
-        <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-8 transition-colors">
-          Lokasi
-        </h2>
-        <div className="max-w-4xl mx-auto rounded-xl overflow-hidden shadow-md dark:shadow-slate-700">
-          <iframe
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d349.56666415621277!2d100.46807153132339!3d-0.9146811910768018!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2fd4b7bbfa1dfc99%3A0xf0984f8a51acdad!2s3FP9%2B47V%2C%20Limau%20Manis%2C%20Kec.%20Pauh%2C%20Kota%20Padang%2C%20Sumatera%20Barat%2025175!5e0!3m2!1sid!2sid!4v1756969691580!5m2!1sid!2sid"
-            width="100%"
-            height="450"
-            loading="lazy"
-            className="w-full border-0"
-          ></iframe>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer
-        id="footer"
-        className="w-full bg-slate-800 dark:bg-slate-950 text-white px-6 py-8 text-center transition-colors"
-      >
-        <p className="mb-2 font-semibold text-white dark:text-slate-100">
-          UKM Robotik
-        </p>
-        <p className="text-slate-200 dark:text-slate-300 transition-colors">
-          Email: infokomrobotikpnp2024@gmail.com
-        </p>
-        <p className="text-slate-200 dark:text-slate-300 transition-colors">
-          Instagram:{" "}
-          <Link
-            href="https://www.instagram.com/robotikpnp/"
-            target="_blank"
-            className="text-blue-400 dark:text-blue-300 hover:text-blue-300 dark:hover:text-blue-200 transition-colors underline"
-          >
-            @robotikpnp
-          </Link>
-        </p>
-        <p className="mt-4 text-slate-400 dark:text-slate-500 text-sm transition-colors">
-          © {new Date().getFullYear()} UKM Robotik PNP. All rights reserved.
-        </p>
-      </footer>
-    </main>
+    </div>
   );
 }
