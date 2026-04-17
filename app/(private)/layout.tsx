@@ -1,7 +1,7 @@
 /**
  * Layout untuk halaman private (dashboard dan lainnya)
  */
-
+export const dynamic = "force-dynamic";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
