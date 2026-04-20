@@ -72,13 +72,13 @@ export default async function RegisterPage() {
 
   return (
     <BentoAuthLayout>
-      {resolved.status === "open" && <RegisterForm />}
+      {resolved.status === "open" && <RegistrationClosed />}
 
       {resolved.status === "countdown" && (
         <RegistrationCountdown startDateISO={resolved.startDateISO} />
       )}
 
-      {resolved.status === "closed" && <RegistrationClosed />}
+      {resolved.status === "closed" && <RegisterForm />}
     </BentoAuthLayout>
   );
 }
