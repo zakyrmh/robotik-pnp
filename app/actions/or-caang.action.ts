@@ -81,14 +81,33 @@ export async function getMyRegistration(): Promise<
 
     const supabase = await createClient();
 
-    const { data: reg, error } = await supabase
+    const { data, error } = await supabase
       .from("or_registrations")
       .select("*")
       .eq("user_id", auth.userId)
       .maybeSingle();
 
     if (error) return fail(error.message);
-    if (!reg) return ok(null);
+
+    let reg = data;
+
+    // Auto-create draft registration if it doesn't exist
+    if (!reg) {
+      const { data: newReg, error: insertError } = await supabase
+        .from("or_registrations")
+        .insert({
+          user_id: auth.userId,
+          status: "draft",
+          current_step: "biodata",
+        })
+        .select("*")
+        .single();
+
+      if (insertError) return fail(insertError.message);
+      reg = newReg;
+    }
+
+    if (!reg) return ok(null); // Fallback in case of an unexpected issue
 
     const [{ data: profile }, { data: usr }, { data: edu }] = await Promise.all(
       [
