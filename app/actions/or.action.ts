@@ -316,7 +316,8 @@ export async function verifyRegistration(
 
     const supabase = await createClient();
 
-    const updates: Record<string, unknown> = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updates: any = {
       status: parsed.data.decision,
       verified_by: auth.userId,
       verified_at: new Date().toISOString(),
@@ -339,7 +340,6 @@ export async function verifyRegistration(
 
     const { error } = await supabase
       .from("or_registrations")
-      // @ts-ignore
       .update(updates)
       .eq("id", parsed.data.id)
       .in("status", ["submitted", "revision"]);
@@ -368,7 +368,8 @@ export async function updatePipelineStatus(
 
     const supabase = await createClient();
 
-    const updates: Record<string, unknown> = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updates: any = {
       pipeline_status: parsed.data.pipelineStatus,
     };
 
@@ -381,7 +382,6 @@ export async function updatePipelineStatus(
 
     const { error } = await supabase
       .from("or_registrations")
-      // @ts-ignore
       .update(updates)
       .eq("user_id", parsed.data.userId)
       .eq("status", "accepted");
@@ -422,7 +422,6 @@ export async function adminUpdateRegistration(
     const supabase = await createClient();
     const { error } = await supabase
       .from("or_registrations")
-      // @ts-ignore
       .update(updates)
       .eq("id", id);
 
@@ -454,7 +453,6 @@ export async function adminUpdateProfile(
     const supabase = await createClient();
     const { error } = await supabase
       .from("profiles")
-      // @ts-ignore
       .update(updates)
       .eq("user_id", userId);
 

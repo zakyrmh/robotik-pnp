@@ -277,7 +277,8 @@ export async function updateKomdisEvent(
     if (!parsed.success) return fail(parsed.error.issues[0].message);
 
     // Remap camelCase ke snake_case
-    const updates: Record<string, unknown> = {};
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updates: any = {};
     if (parsed.data.title !== undefined) updates.title = parsed.data.title;
     if (parsed.data.description !== undefined)
       updates.description = parsed.data.description;
@@ -297,7 +298,6 @@ export async function updateKomdisEvent(
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("komdis_events")
-      // @ts-ignore
       .update(updates)
       .eq("id", id)
       .select()

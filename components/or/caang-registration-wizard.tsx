@@ -268,11 +268,15 @@ export function CaangRegistrationWizard({
     setFile: (f: File | null) => void,
     fieldName: string,
   ) => {
-    const file = e.target.files?.[0];
+    let file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      showFeedback("error", "Hanya gambar (JPG, PNG) yang diperbolehkan.");
+    // Check if it's an image or a HEIC file
+    const isImage = file.type.startsWith("image/");
+    const isHeic = file.type === "image/heic" || file.type === "image/heif" || file.name.toLowerCase().endsWith(".heic") || file.name.toLowerCase().endsWith(".heif");
+
+    if (!isImage && !isHeic) {
+      showFeedback("error", "Hanya gambar (JPG, PNG, WebP, HEIC) yang diperbolehkan.");
       e.target.value = "";
       return;
     }
@@ -281,6 +285,28 @@ export function CaangRegistrationWizard({
       showFeedback("error", `Ukuran ${file.name} melebihi 5MB.`);
       e.target.value = "";
       return;
+    }
+
+    if (isHeic) {
+      showFeedback("success", "Mengkonversi format HEIC...");
+      try {
+        const heic2any = (await import("heic2any")).default;
+        const convertedBlob = await heic2any({
+          blob: file,
+          toType: "image/jpeg",
+          quality: 0.8,
+        });
+
+        const blobToConvert = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+        file = new File([blobToConvert], file.name.replace(/\.heic$/i, ".jpg"), {
+          type: "image/jpeg",
+        });
+      } catch (err) {
+        console.error("Gagal mengkonversi HEIC:", err);
+        showFeedback("error", "Gagal mengkonversi gambar HEIC.");
+        e.target.value = "";
+        return;
+      }
     }
 
     // Special case for Pas Foto (requires cropping first)
@@ -1538,7 +1564,7 @@ export function CaangRegistrationWizard({
                 crop={crop}
                 onChange={(_, percentCrop) => setCrop(percentCrop)}
                 onComplete={(c) => setCompletedCrop(c)}
-                aspect={3 / 4}
+                aspect={1}
               >
                 <Image
                   ref={imgRef}

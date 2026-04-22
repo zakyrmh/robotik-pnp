@@ -221,13 +221,13 @@ export async function updateMrcRegistration(
     }
 
     // Build update payload
-    const updateData: Record<string, unknown> = { status };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updateData: any = { status };
     if (regOpen !== undefined) updateData.registration_open = regOpen;
     if (regClose !== undefined) updateData.registration_close = regClose;
 
     const { error } = await supabase
       .from("mrc_events")
-      // @ts-ignore
       .update(updateData)
       .eq("id", eventId);
 
@@ -621,13 +621,13 @@ export async function updateTeamDocStatus(
       };
     }
 
-    const updateData: Record<string, unknown> = { status };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updateData: any = {};
     if (reason !== undefined) updateData.rejection_reason = reason;
     if (notes !== undefined) updateData.notes = notes;
 
     const { error } = await supabase
       .from("mrc_teams")
-      // @ts-ignore
       .update(updateData)
       .eq("id", teamId);
 
@@ -753,7 +753,8 @@ export async function verifyPayment(
     }
 
     // Update status pembayaran
-    const paymentUpdate: Record<string, unknown> = {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const paymentUpdate: any = {
       status,
       verified_by: user.id,
       verified_at: new Date().toISOString(),
@@ -762,7 +763,6 @@ export async function verifyPayment(
 
     const { error: paymentError } = await supabase
       .from("mrc_payments")
-      // @ts-ignore
       .update(paymentUpdate)
       .eq("id", paymentId);
 
@@ -1090,7 +1090,8 @@ export async function scanQrToken(
     } as MrcQrCodeWithTeam;
 
     let message = "";
-    const updateData: Record<string, unknown> = {};
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updateData: any = {};
 
     switch (scanType) {
       case "checkin":
@@ -1139,7 +1140,6 @@ export async function scanQrToken(
 
     // Update QR state jika perlu
     if (Object.keys(updateData).length > 0) {
-      // @ts-ignore
       await supabase.from("mrc_qr_codes").update(updateData).eq("id", qr.id);
     }
 

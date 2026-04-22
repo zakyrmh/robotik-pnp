@@ -67,8 +67,11 @@ export async function uploadImage(
       return fail("Ukuran file terlalu besar (Maksimal 5MB).");
     }
 
-    if (!file.type.startsWith("image/")) {
-      return fail("Hanya file gambar yang diperbolehkan (JPG, PNG, WebP).");
+    const isImage = file.type.startsWith("image/");
+    const isHeic = file.type === "image/heic" || file.type === "image/heif" || file.name.toLowerCase().endsWith(".heic") || file.name.toLowerCase().endsWith(".heif");
+
+    if (!isImage && !isHeic) {
+      return fail("Hanya file gambar yang diperbolehkan (JPG, PNG, WebP, HEIC).");
     }
 
     // Bangun path unik
