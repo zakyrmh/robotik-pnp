@@ -23,6 +23,7 @@
     "date-fns": "^4.1.0",
     "firebase-scrypt": "^2.2.0",
     "framer-motion": "^12.38.0",
+    "heic2any": "^0.0.4",
     "html5-qrcode": "^2.3.8",
     "lucide-react": "^0.575.0",
     "next": "16.1.6",
@@ -31,6 +32,7 @@
     "radix-ui": "^1.4.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
+    "react-image-crop": "^11.0.10",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0",
     "zod": "^4.3.6"
