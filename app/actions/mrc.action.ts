@@ -227,6 +227,7 @@ export async function updateMrcRegistration(
 
     const { error } = await supabase
       .from("mrc_events")
+      // @ts-ignore
       .update(updateData)
       .eq("id", eventId);
 
@@ -626,6 +627,7 @@ export async function updateTeamDocStatus(
 
     const { error } = await supabase
       .from("mrc_teams")
+      // @ts-ignore
       .update(updateData)
       .eq("id", teamId);
 
@@ -760,6 +762,7 @@ export async function verifyPayment(
 
     const { error: paymentError } = await supabase
       .from("mrc_payments")
+      // @ts-ignore
       .update(paymentUpdate)
       .eq("id", paymentId);
 
@@ -1136,6 +1139,7 @@ export async function scanQrToken(
 
     // Update QR state jika perlu
     if (Object.keys(updateData).length > 0) {
+      // @ts-ignore
       await supabase.from("mrc_qr_codes").update(updateData).eq("id", qr.id);
     }
 

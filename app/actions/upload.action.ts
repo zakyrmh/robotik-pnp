@@ -24,6 +24,7 @@ const ALLOWED_BUCKETS = [
   "piket-proofs",
   "fine-payments",
   "point-proofs",
+  "profiles",
 ] as const;
 
 type AllowedBucket = (typeof ALLOWED_BUCKETS)[number];

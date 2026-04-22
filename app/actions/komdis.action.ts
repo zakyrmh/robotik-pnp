@@ -297,6 +297,7 @@ export async function updateKomdisEvent(
     const supabase = await createClient();
     const { data, error } = await supabase
       .from("komdis_events")
+      // @ts-ignore
       .update(updates)
       .eq("id", id)
       .select()

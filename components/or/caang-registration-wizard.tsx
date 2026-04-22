@@ -65,6 +65,18 @@ import imageCompression from "browser-image-compression";
 import type { OrRegistrationWithUser } from "@/lib/db/schema/or";
 import { OR_REGISTRATION_STATUS_LABELS } from "@/lib/db/schema/or";
 
+import ReactCrop, { type Crop, type PixelCrop } from "react-image-crop";
+import "react-image-crop/dist/ReactCrop.css";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { useRef } from "react";
+
 // ═══════════════════════════════════════════════
 
 const STEPS = [
@@ -143,6 +155,19 @@ export function CaangRegistrationWizard({
     Record<string, "pending" | "uploading" | "done" | "error">
   >({});
   const [previews, setPreviews] = useState<Record<string, string>>({});
+
+  // ── Crop State ──
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [cropImageSrc, setCropImageSrc] = useState("");
+  const [crop, setCrop] = useState<Crop>({
+    unit: "%",
+    width: 50,
+    height: 50,
+    x: 25,
+    y: 25,
+  });
+  const [completedCrop, setCompletedCrop] = useState<PixelCrop | null>(null);
+  const imgRef = useRef<HTMLImageElement | null>(null);
 
   // ── Payment form ──
   const [paymentUrl, setPaymentUrl] = useState(reg.payment_url || "");
@@ -258,15 +283,39 @@ export function CaangRegistrationWizard({
       return;
     }
 
+    // Special case for Pas Foto (requires cropping first)
+    if (fieldName === "photo_url") {
+      const reader = new FileReader();
+      reader.addEventListener("load", () => {
+        setCropImageSrc(reader.result?.toString() || "");
+        setCropModalOpen(true);
+      });
+      reader.readAsDataURL(file);
+      // Reset the file input so the same file can be selected again if needed
+      e.target.value = "";
+      return;
+    }
+
+    await processImageForUpload(file, setFile, fieldName);
+  };
+
+  const processImageForUpload = async (
+    file: File | Blob,
+    setFile: (f: File | null) => void,
+    fieldName: string,
+  ) => {
     try {
       showFeedback("success", `Mengkompresi gambar...`);
       setUploadStatus((prev) => ({ ...prev, [fieldName]: "pending" }));
-      const compressed = await imageCompression(file, {
+      const compressed = await imageCompression(file as File, {
         maxSizeMB: 1,
         maxWidthOrHeight: 1280,
         useWebWorker: true,
       });
-      const finalFile = new File([compressed], file.name, { type: file.type });
+      // Extract original filename or assign a default one
+      const fileName = file instanceof File ? file.name : "cropped.jpg";
+      const fileType = file.type || "image/jpeg";
+      const finalFile = new File([compressed], fileName, { type: fileType });
       setFile(finalFile);
 
       // Update preview immediately
@@ -276,8 +325,42 @@ export function CaangRegistrationWizard({
       }));
       showFeedback("success", `Gambar siap diunggah.`);
     } catch {
-      setFile(file);
+      if (file instanceof File) {
+        setFile(file);
+      }
     }
+  };
+
+  const onCropComplete = async () => {
+    if (!completedCrop || !imgRef.current) return;
+
+    const canvas = document.createElement("canvas");
+    const scaleX = imgRef.current.naturalWidth / imgRef.current.width;
+    const scaleY = imgRef.current.naturalHeight / imgRef.current.height;
+
+    canvas.width = completedCrop.width * scaleX;
+    canvas.height = completedCrop.height * scaleY;
+    const ctx = canvas.getContext("2d");
+
+    if (!ctx) return;
+
+    ctx.drawImage(
+      imgRef.current,
+      completedCrop.x * scaleX,
+      completedCrop.y * scaleY,
+      completedCrop.width * scaleX,
+      completedCrop.height * scaleY,
+      0,
+      0,
+      canvas.width,
+      canvas.height
+    );
+
+    canvas.toBlob(async (blob) => {
+      if (!blob) return;
+      await processImageForUpload(blob, setPhotoFile, "photo_url");
+      setCropModalOpen(false);
+    }, "image/jpeg");
   };
 
   const handleSaveDocuments = () => {
@@ -300,20 +383,29 @@ export function CaangRegistrationWizard({
 
     startTransition(async () => {
       try {
+        // Helper function for uploading files
         const uploadIfFile = async (
           file: File | null,
           existingUrl: string,
           field: string,
+          customBucket?: "or-documents" | "profiles",
+          customPath?: string
         ) => {
           if (!file) return existingUrl;
 
           setUploadStatus((prev) => ({ ...prev, [field]: "uploading" }));
           const fd = new FormData();
           fd.append("file", file);
+
+          const bucket = customBucket || "or-documents";
+          // Compute tahunMasukRobotik for default paths
+          const tahunMasukRobotik = reg.created_at ? new Date(reg.created_at).getFullYear() : new Date().getFullYear();
+          const folderPath = customPath || `caang/${tahunMasukRobotik}/${reg.user_id}`;
+
           const res = await uploadImage(
             fd,
-            "or-documents",
-            `caang/2026/${reg.user_id}`,
+            bucket,
+            folderPath,
           );
           if (res.error) {
             setUploadStatus((prev) => ({ ...prev, [field]: "error" }));
@@ -327,6 +419,8 @@ export function CaangRegistrationWizard({
           photoFile,
           photoUrl,
           "photo_url",
+          "profiles",
+          `${reg.user_id}`
         );
         const newKtmUrl = await uploadIfFile(ktmFile, ktmUrl, "ktm_url");
         const newIgFollowUrl = await uploadIfFile(
@@ -393,10 +487,12 @@ export function CaangRegistrationWizard({
           setUploadStatus((prev) => ({ ...prev, payment_url: "uploading" }));
           const fd = new FormData();
           fd.append("file", paymentFile);
+
+          const tahunMasukRobotik = reg.created_at ? new Date(reg.created_at).getFullYear() : new Date().getFullYear();
           const res = await uploadImage(
             fd,
             "or-documents",
-            `caang/2026/${reg.user_id}`,
+            `caang/${tahunMasukRobotik}/${reg.user_id}`,
           );
           if (res.error) {
             setUploadStatus((prev) => ({ ...prev, payment_url: "error" }));
@@ -1426,6 +1522,49 @@ export function CaangRegistrationWizard({
           {feedback.msg}
         </div>
       )}
+
+      {/* Crop Modal */}
+      <Dialog open={cropModalOpen} onOpenChange={setCropModalOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Crop Pas Foto</DialogTitle>
+            <DialogDescription>
+              Sesuaikan area gambar untuk pas foto Anda.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-center items-center p-4 bg-muted/50 rounded-lg max-h-[60vh] overflow-auto">
+            {cropImageSrc && (
+              <ReactCrop
+                crop={crop}
+                onChange={(_, percentCrop) => setCrop(percentCrop)}
+                onComplete={(c) => setCompletedCrop(c)}
+                aspect={3 / 4}
+              >
+                <Image
+                  ref={imgRef}
+                  src={cropImageSrc}
+                  alt="Crop preview"
+                  width={400}
+                  height={500}
+                  className="max-h-[50vh] w-auto object-contain"
+                  unoptimized
+                />
+              </ReactCrop>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setCropModalOpen(false)}
+            >
+              Batal
+            </Button>
+            <Button onClick={onCropComplete}>
+              Terapkan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
