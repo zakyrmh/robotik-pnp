@@ -273,10 +273,17 @@ export function CaangRegistrationWizard({
 
     // Check if it's an image or a HEIC file
     const isImage = file.type.startsWith("image/");
-    const isHeic = file.type === "image/heic" || file.type === "image/heif" || file.name.toLowerCase().endsWith(".heic") || file.name.toLowerCase().endsWith(".heif");
+    const isHeic =
+      file.type === "image/heic" ||
+      file.type === "image/heif" ||
+      file.name.toLowerCase().endsWith(".heic") ||
+      file.name.toLowerCase().endsWith(".heif");
 
     if (!isImage && !isHeic) {
-      showFeedback("error", "Hanya gambar (JPG, PNG, WebP, HEIC) yang diperbolehkan.");
+      showFeedback(
+        "error",
+        "Hanya gambar (JPG, PNG, WebP, HEIC) yang diperbolehkan.",
+      );
       e.target.value = "";
       return;
     }
@@ -297,10 +304,16 @@ export function CaangRegistrationWizard({
           quality: 0.8,
         });
 
-        const blobToConvert = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
-        file = new File([blobToConvert], file.name.replace(/\.heic$/i, ".jpg"), {
-          type: "image/jpeg",
-        });
+        const blobToConvert = Array.isArray(convertedBlob)
+          ? convertedBlob[0]
+          : convertedBlob;
+        file = new File(
+          [blobToConvert],
+          file.name.replace(/\.heic$/i, ".jpg"),
+          {
+            type: "image/jpeg",
+          },
+        );
       } catch (err) {
         console.error("Gagal mengkonversi HEIC:", err);
         showFeedback("error", "Gagal mengkonversi gambar HEIC.");
@@ -379,7 +392,7 @@ export function CaangRegistrationWizard({
       0,
       0,
       canvas.width,
-      canvas.height
+      canvas.height,
     );
 
     canvas.toBlob(async (blob) => {
@@ -415,7 +428,7 @@ export function CaangRegistrationWizard({
           existingUrl: string,
           field: string,
           customBucket?: "or-documents" | "profiles",
-          customPath?: string
+          customPath?: string,
         ) => {
           if (!file) return existingUrl;
 
@@ -425,14 +438,13 @@ export function CaangRegistrationWizard({
 
           const bucket = customBucket || "or-documents";
           // Compute tahunMasukRobotik for default paths
-          const tahunMasukRobotik = reg.created_at ? new Date(reg.created_at).getFullYear() : new Date().getFullYear();
-          const folderPath = customPath || `caang/${tahunMasukRobotik}/${reg.user_id}`;
+          const tahunMasukRobotik = reg.created_at
+            ? new Date(reg.created_at).getFullYear()
+            : new Date().getFullYear();
+          const folderPath =
+            customPath || `caang/${tahunMasukRobotik}/${reg.user_id}`;
 
-          const res = await uploadImage(
-            fd,
-            bucket,
-            folderPath,
-          );
+          const res = await uploadImage(fd, bucket, folderPath);
           if (res.error) {
             setUploadStatus((prev) => ({ ...prev, [field]: "error" }));
             throw new Error(res.error);
@@ -446,7 +458,7 @@ export function CaangRegistrationWizard({
           photoUrl,
           "photo_url",
           "profiles",
-          `${reg.user_id}`
+          `${reg.user_id}`,
         );
         const newKtmUrl = await uploadIfFile(ktmFile, ktmUrl, "ktm_url");
         const newIgFollowUrl = await uploadIfFile(
@@ -514,7 +526,9 @@ export function CaangRegistrationWizard({
           const fd = new FormData();
           fd.append("file", paymentFile);
 
-          const tahunMasukRobotik = reg.created_at ? new Date(reg.created_at).getFullYear() : new Date().getFullYear();
+          const tahunMasukRobotik = reg.created_at
+            ? new Date(reg.created_at).getFullYear()
+            : new Date().getFullYear();
           const res = await uploadImage(
             fd,
             "or-documents",
@@ -1579,15 +1593,10 @@ export function CaangRegistrationWizard({
             )}
           </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setCropModalOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setCropModalOpen(false)}>
               Batal
             </Button>
-            <Button onClick={onCropComplete}>
-              Terapkan
-            </Button>
+            <Button onClick={onCropComplete}>Terapkan</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

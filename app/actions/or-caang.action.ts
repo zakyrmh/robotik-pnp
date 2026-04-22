@@ -228,7 +228,7 @@ export async function saveDocuments(
     if (!parsed.success) return fail(parsed.error.issues[0].message);
 
     const supabase = await createClient();
-    const { error } = await supabase
+    const { error: regError } = await supabase
       .from("or_registrations")
       .update({
         photo_url: parsed.data.photoUrl ?? null,
@@ -240,7 +240,24 @@ export async function saveDocuments(
       })
       .eq("user_id", auth.userId);
 
-    if (error) return fail(error.message);
+    if (regError) return fail(regError.message);
+
+    // Otomatis sinkronisasi "pas foto" ke "avatar_url" di tabel profiles
+    if (parsed.data.photoUrl) {
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: parsed.data.photoUrl })
+        .eq("user_id", auth.userId);
+
+      if (profileError) {
+        console.error(
+          "[saveDocuments] Gagal sinkronisasi avatar:",
+          profileError.message,
+        );
+        // Kita tidak menggagalkan seluruh proses hanya karena gagal update avatar
+      }
+    }
+
     return ok({ success: true });
   } catch (err) {
     console.error("[saveDocuments]", err);

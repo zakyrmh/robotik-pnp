@@ -36,6 +36,7 @@ import {
   SidebarMenuSubItem,
   SidebarRail,
   SidebarSeparator,
+  useSidebar,
 } from '@/components/ui/sidebar'
 import { SidebarUserNav } from '@/components/dashboard/sidebar-user-nav'
 import {
@@ -75,6 +76,8 @@ function NavItemDirect({
   item: NavItem
   isActive: boolean
 }) {
+  const { setOpenMobile, isMobile } = useSidebar()
+
   return (
     <SidebarMenuItem>
       <SidebarMenuButton
@@ -82,7 +85,12 @@ function NavItemDirect({
         isActive={isActive}
         tooltip={item.title}
       >
-        <Link href={item.href!}>
+        <Link 
+          href={item.href!}
+          onClick={() => {
+            if (isMobile) setOpenMobile(false)
+          }}
+        >
           <item.icon />
           <span>{item.title}</span>
         </Link>
@@ -103,6 +111,8 @@ function NavItemCollapsible({
   item: NavItem
   pathname: string
 }) {
+  const { setOpenMobile, isMobile } = useSidebar()
+
   /** Cek apakah ada sub-item yang aktif (URL cocok) */
   const hasActiveChild = item.subItems?.some(
     (sub) => pathname === sub.href || pathname.startsWith(sub.href + '/')
@@ -132,7 +142,12 @@ function NavItemCollapsible({
                     pathname.startsWith(sub.href + '/')
                   }
                 >
-                  <Link href={sub.href}>
+                  <Link 
+                    href={sub.href}
+                    onClick={() => {
+                      if (isMobile) setOpenMobile(false)
+                    }}
+                  >
                     <span>{sub.title}</span>
                   </Link>
                 </SidebarMenuSubButton>
@@ -199,6 +214,7 @@ function NavGroup({
 
 export function AppSidebar({ userRoles, caangStatus, user, ...props }: AppSidebarProps) {
   const pathname = usePathname()
+  const { setOpenMobile, isMobile } = useSidebar()
 
   /** Filter menu berdasarkan role user (dan status caang jika relevan) */
   const visibleGroups = filterMenuByRoles(userRoles, caangStatus)
@@ -210,7 +226,12 @@ export function AppSidebar({ userRoles, caangStatus, user, ...props }: AppSideba
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild tooltip="UKM Robotik PNP">
-              <Link href="/dashboard">
+              <Link 
+                href="/dashboard"
+                onClick={() => {
+                  if (isMobile) setOpenMobile(false)
+                }}
+              >
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg">
                   <Image
                     src="/images/logo.png"
@@ -246,7 +267,12 @@ export function AppSidebar({ userRoles, caangStatus, user, ...props }: AppSideba
                 isActive={pathname === '/dashboard'}
                 tooltip="Dashboard"
               >
-                <Link href="/dashboard">
+                <Link 
+                  href="/dashboard"
+                  onClick={() => {
+                    if (isMobile) setOpenMobile(false)
+                  }}
+                >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="16"
