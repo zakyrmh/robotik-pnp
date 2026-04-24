@@ -23,6 +23,7 @@
     "date-fns": "^4.1.0",
     "firebase-scrypt": "^2.2.0",
     "framer-motion": "^12.38.0",
+    "heic2any": "^0.0.4",
     "html5-qrcode": "^2.3.8",
     "lucide-react": "^0.575.0",
     "next": "16.1.6",
