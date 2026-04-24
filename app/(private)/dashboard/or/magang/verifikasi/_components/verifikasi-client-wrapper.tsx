@@ -17,6 +17,16 @@ import {
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
+const PILIHAN_DEPARTEMEN = [
+  "Kestari",
+  "Maintanance",
+  "Produksi",
+  "Humas",
+  "Pubdok",
+  "Kpsdm",
+  "Ristek",
+];
+
 export function VerifikasiClientWrapper({ initialData }: { initialData: VerifikasiMagangData }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [isPending, setIsPending] = useState(false);
@@ -286,7 +296,11 @@ export function VerifikasiClientWrapper({ initialData }: { initialData: Verifika
                                   <SelectValue placeholder="Override Departemen" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {departments.map(d => (
+                                  {departments
+                                    .filter((d) =>
+                                      PILIHAN_DEPARTEMEN.includes(d.name)
+                                    )
+                                    .map(d => (
                                     <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
                                   ))}
                                 </SelectContent>
