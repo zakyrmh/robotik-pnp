@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, UserPlus, Eye } from "lucide-react";
+import { Search, UserPlus, Eye, Download } from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import type { CaangMagangRow } from "@/app/actions/magang-admin.action";
@@ -30,14 +30,22 @@ export function MagangDatabaseClient({ data }: { data: CaangMagangRow[] }) {
       <Card className="shadow-sm border-muted/60">
         <CardHeader className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between pb-4">
           <CardTitle className="text-lg">Daftar Status Caang ({data.length})</CardTitle>
-          <div className="relative w-full sm:w-80">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder="Ketik nama atau email caang..." 
-              className="pl-8 bg-muted/40" 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center w-full sm:w-auto">
+            <Button asChild size="sm" variant="secondary" className="whitespace-nowrap">
+              <a href="/api/or/magang/database/export">
+                <Download className="size-4" />
+                Export Excel
+              </a>
+            </Button>
+            <div className="relative w-full sm:w-80">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Ketik nama atau email caang..."
+                className="pl-8 bg-muted/40"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
           </div>
         </CardHeader>
         <CardContent className="p-0 border-t">

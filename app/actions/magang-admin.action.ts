@@ -105,9 +105,122 @@ export async function getMagangDatabaseData(): Promise<
   }
 }
 
+export interface MagangDatabaseExportRow {
+  full_name: string;
+  nim: string | null;
+  study_program_name: string | null;
+  phone: string | null;
+  divisi_penempatan: string | null;
+}
+
+export async function getMagangDatabaseExportData(): Promise<
+  ActionResult<MagangDatabaseExportRow[]>
+> {
+  try {
+    const auth = await requireModule("open-recruitment");
+    if ("error" in auth && !("userId" in auth)) return fail(auth.error!);
+
+    const supabase = await createClient();
+
+    const { data: roleData, error: roleError } = await supabase
+      .from("roles")
+      .select("id")
+      .eq("name", "caang")
+      .single();
+
+    if (roleError || !roleData) {
+      throw roleError || new Error("Role Caang tidak ditemukan");
+    }
+
+    const { data: userRoles, error: urErr } = await supabase
+      .from("user_roles")
+      .select(
+        "user_id, users!user_roles_user_id_fkey(email, profiles(full_name, phone))",
+      )
+      .eq("role_id", roleData.id);
+
+    if (urErr) throw urErr;
+
+    const userIds = (userRoles || []).map((ur) => ur.user_id);
+
+    const { data: apps, error: appErr } = await supabase
+      .from("or_internship_applications")
+      .select("user_id, final_divisi_id")
+      .in("user_id", userIds);
+
+    if (appErr) throw appErr;
+
+    const { data: eduData, error: eduErr } = await supabase
+      .from("education_details")
+      .select("user_id, nim, study_programs(name)")
+      .in("user_id", userIds);
+
+    if (eduErr) throw eduErr;
+
+    const divisionIds = (apps || [])
+      .map((app) => app.final_divisi_id)
+      .filter((id): id is string => !!id);
+
+    const { data: divisions, error: divErr } = await supabase
+      .from("divisions")
+      .select("id, name")
+      .in("id", divisionIds);
+
+    if (divErr) throw divErr;
+
+    const appsMap = new Map((apps || []).map((app) => [app.user_id, app]));
+    const eduMap = new Map((eduData || []).map((edu) => [edu.user_id, edu]));
+    const divisionMap = new Map(
+      (divisions || []).map((division) => [division.id, division.name]),
+    );
+
+    const result: MagangDatabaseExportRow[] = [];
+
+    for (const ur of userRoles || []) {
+      const userDetail = ur.users as {
+        email?: string | null;
+        profiles:
+          | { full_name: string | null; phone: string | null }
+          | { full_name: string | null; phone: string | null }[]
+          | null;
+      };
+
+      const profile = Array.isArray(userDetail.profiles)
+        ? userDetail.profiles[0]
+        : userDetail.profiles;
+      const appData = appsMap.get(ur.user_id);
+      const edu = eduMap.get(ur.user_id);
+      const sp = Array.isArray(edu?.study_programs)
+        ? edu.study_programs[0]
+        : edu?.study_programs;
+
+      result.push({
+        full_name: profile?.full_name || "Tanpa Nama",
+        nim: edu?.nim ?? null,
+        study_program_name: sp?.name ?? null,
+        phone: profile?.phone ?? null,
+        divisi_penempatan: appData?.final_divisi_id
+          ? divisionMap.get(appData.final_divisi_id) ?? ""
+          : null,
+      });
+    }
+
+    result.sort((a, b) => a.full_name.localeCompare(b.full_name));
+
+    return ok(result);
+  } catch (err: unknown) {
+    console.error("[getMagangDatabaseExportData]", err);
+    return fail(
+      err instanceof Error
+        ? err.message
+        : "Gagal mengekspor data database magang",
+    );
+  }
+}
+
 // ═══════════════════════════════════════════════════════
 // FITUR VERIFIKASI PLOTING
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════
 
 export interface VerifikasiRow {
   id: string;
