@@ -1,58 +1,40 @@
-'use client'
+"use client";
 
 /**
- * Overlay Match — /overlay/match?event=xxx&cat=xxx
- *
- * Overlay utama yang ditampilkan di OBS saat pertandingan berlangsung.
- * Menampilkan nama tim A & B + timer countdown.
- *
- * Elemen:
- * - Nama Tim A (kiri bawah)
- * - Nama Tim B (kanan bawah)
- * - Timer countdown (tengah atas)
- * - Skor (tengah bawah)
- *
- * Data diambil via Supabase Realtime subscription.
- * Background transparan — artwork overlay di-layer terpisah di OBS.
+ * Overlay Match — Tampil dengan Background Image
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { useSearchParams } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
-
-// ═══════════════════════════════════════════════
-// HELPER
-// ═══════════════════════════════════════════════
-
-function formatTime(seconds: number): string {
-  const m = Math.floor(Math.max(0, seconds) / 60)
-  const s = Math.max(0, seconds) % 60
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-}
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
+import { createClient } from "@/lib/supabase/client";
+import Image from "next/image";
 
 // ═══════════════════════════════════════════════
 // TIPE
 // ═══════════════════════════════════════════════
 
 interface MatchData {
-  id: string
-  team_a_id: string | null
-  team_b_id: string | null
-  score_a: number
-  score_b: number
-  current_round: number
-  total_rounds: number
-  is_swapped: boolean
-  status: string
-  timer_duration: number
-  timer_remaining: number
-  timer_status: string
-  timer_started_at: string | null
+  id: string;
+  team_a_id: string | null;
+  team_b_id: string | null;
+  is_swapped: boolean;
+  status: string;
+  score_a?: number | null;
+  score_b?: number | null;
 }
 
 interface TeamInfo {
-  team_name: string
-  institution: string
+  team_name: string;
+}
+
+interface TournamentMatchData {
+  id: string;
+  status: string | null;
+  field: string | null;
+  score_a: number | null;
+  score_b: number | null;
+  team_a: { name: string } | null;
+  team_b: { name: string } | null;
 }
 
 // ═══════════════════════════════════════════════
@@ -60,175 +42,193 @@ interface TeamInfo {
 // ═══════════════════════════════════════════════
 
 export default function MatchOverlayPage() {
-  const searchParams = useSearchParams()
-  const eventId = searchParams.get('event') ?? ''
-  const categoryId = searchParams.get('cat') ?? ''
+  const searchParams = useSearchParams();
+  const eventId = searchParams.get("event") ?? "";
+  const categoryId = searchParams.get("cat") ?? "";
+  const field = searchParams.get("field") ?? "arena_1";
+  const isTournamentMode = !eventId && !categoryId;
 
-  const supabase = createClient()
+  // Gunakan useMemo agar instance supabase tidak dibuat ulang setiap render
+  const supabase = useMemo(() => createClient(), []);
 
   // State
-  const [match, setMatch] = useState<MatchData | null>(null)
-  const [teamA, setTeamA] = useState<TeamInfo | null>(null)
-  const [teamB, setTeamB] = useState<TeamInfo | null>(null)
-  const [timerDisplay, setTimerDisplay] = useState(0)
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const [match, setMatch] = useState<MatchData | null>(null);
+  const [tournamentMatch, setTournamentMatch] =
+    useState<TournamentMatchData | null>(null);
+  const [teamA, setTeamA] = useState<TeamInfo | null>(null);
+  const [teamB, setTeamB] = useState<TeamInfo | null>(null);
 
-  /** Ambil data match live */
   const fetchLiveMatch = useCallback(async () => {
-    // Cari match yang sedang live untuk kategori ini
+    if (isTournamentMode) {
+      const { data } = await supabase
+        .from("matches")
+        .select(
+          `
+          id,
+          status,
+          field,
+          score_a,
+          score_b,
+          team_a:teams!matches_team_a_id_fkey(name),
+          team_b:teams!matches_team_b_id_fkey(name)
+        `,
+        )
+        .eq("field", field)
+        .eq("status", "live")
+        .limit(1)
+        .maybeSingle();
+
+      setTournamentMatch(data as unknown as TournamentMatchData | null);
+      return;
+    }
+
     const { data } = await supabase
-      .from('mrc_matches')
-      .select('*')
-      .eq('event_id', eventId)
-      .eq('category_id', categoryId)
-      .eq('status', 'live')
+      .from("mrc_matches")
+      .select("*")
+      .eq("event_id", eventId)
+      .eq("category_id", categoryId)
+      .eq("status", "live")
       .limit(1)
-      .single()
+      .single();
 
     if (data) {
-      setMatch(data as MatchData)
-      setTimerDisplay(data.timer_remaining)
+      setMatch(data as MatchData);
 
-      // Ambil nama tim
       if (data.team_a_id) {
         const { data: tA } = await supabase
-          .from('mrc_teams')
-          .select('team_name, institution')
-          .eq('id', data.team_a_id)
-          .single()
-        if (tA) setTeamA(tA)
+          .from("mrc_teams")
+          .select("team_name")
+          .eq("id", data.team_a_id)
+          .single();
+        if (tA) setTeamA(tA);
       }
       if (data.team_b_id) {
         const { data: tB } = await supabase
-          .from('mrc_teams')
-          .select('team_name, institution')
-          .eq('id', data.team_b_id)
-          .single()
-        if (tB) setTeamB(tB)
+          .from("mrc_teams")
+          .select("team_name")
+          .eq("id", data.team_b_id)
+          .single();
+        if (tB) setTeamB(tB);
       }
+    } else {
+      setMatch(null);
     }
-  }, [eventId, categoryId, supabase])
+  }, [eventId, categoryId, field, isTournamentMode, supabase]);
 
-  // Initial fetch
   useEffect(() => {
-    if (eventId && categoryId) fetchLiveMatch()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventId, categoryId])
+    if (isTournamentMode || (eventId && categoryId)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      fetchLiveMatch();
+    }
+  }, [eventId, categoryId, field, isTournamentMode, fetchLiveMatch]);
 
-  // Realtime subscription
+  // Efek Auto-Update (Realtime Subscriptions + Polling Fallback)
   useEffect(() => {
-    if (!eventId || !categoryId) return
+    // 1. Polling Fallback (setiap 2 detik refresh data)
+    // Berfungsi sebagai jaminan jika realtime tidak menyala atau terputus
+    const interval = setInterval(() => {
+      fetchLiveMatch();
+    }, 2000);
 
-    const channel = supabase
-      .channel('overlay-match')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'mrc_matches',
-          filter: `event_id=eq.${eventId}`,
-        },
-        (payload) => {
-          const newData = payload.new as MatchData
-          if (newData && newData.status === 'live') {
-            setMatch(newData)
-            // Sync timer
-            if (newData.timer_status === 'running' && newData.timer_started_at) {
-              const elapsed = Math.floor(
-                (Date.now() - new Date(newData.timer_started_at).getTime()) / 1000
-              )
-              setTimerDisplay(Math.max(0, newData.timer_remaining - elapsed))
-            } else {
-              setTimerDisplay(newData.timer_remaining)
-            }
-            // Reload team names jika berubah
-            fetchLiveMatch()
-          }
-        }
-      )
-      .subscribe()
+    // 2. Supabase Realtime Channels
+    let channel: ReturnType<typeof supabase.channel> | null = null;
 
-    return () => { supabase.removeChannel(channel) }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventId, categoryId])
-
-  // Timer countdown lokal
-  useEffect(() => {
-    if (timerRef.current) clearInterval(timerRef.current)
-
-    if (match?.timer_status === 'running' && timerDisplay > 0) {
-      timerRef.current = setInterval(() => {
-        setTimerDisplay((prev) => {
-          if (prev <= 0) {
-            if (timerRef.current) clearInterval(timerRef.current)
-            return 0
-          }
-          return prev - 1
-        })
-      }, 1000)
+    if (isTournamentMode) {
+      channel = supabase
+        .channel(`overlay-match-${field}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "matches",
+            filter: `field=eq.${field}`,
+          },
+          () => fetchLiveMatch(),
+        )
+        .subscribe();
+    } else if (eventId && categoryId) {
+      channel = supabase
+        .channel("overlay-match")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "mrc_matches",
+            filter: `event_id=eq.${eventId}`,
+          },
+          () => fetchLiveMatch(),
+        )
+        .subscribe();
     }
 
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current)
-    }
-  }, [match?.timer_status, timerDisplay])
+      clearInterval(interval);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
+  }, [eventId, categoryId, field, isTournamentMode, fetchLiveMatch, supabase]);
 
-  // Computed
-  const displayA = match?.is_swapped ? teamB : teamA
-  const displayB = match?.is_swapped ? teamA : teamB
-  const scoreA = match?.is_swapped ? match.score_b : match?.score_a ?? 0
-  const scoreB = match?.is_swapped ? match.score_a : match?.score_b ?? 0
-  const isTimerDanger = timerDisplay <= 30 && match?.timer_status === 'running'
+  const displayA = match?.is_swapped ? teamB : teamA;
+  const displayB = match?.is_swapped ? teamA : teamB;
 
-  if (!match) {
-    return <div className="fixed inset-0 bg-transparent" />
+  // === RENDER TOURNAMENT MODE ===
+  if (isTournamentMode) {
+    if (!tournamentMatch) return <div className="fixed inset-0" />;
+
+    return (
+      <div className="fixed inset-0 text-white overflow-hidden">
+        {/* GAMBAR BACKGROUND */}
+        <Image
+          src="/Overlay OBS.png"
+          alt="Overlay Background"
+          className="absolute inset-0 w-full h-full object-cover -z-10"
+          width={1920}
+          height={1080}
+        />
+
+        <div className="absolute bottom-[7%] left-[10%] w-[35%] h-[10%] flex items-center justify-center">
+          <p className="text-6xl font-black uppercase tracking-wide truncate drop-shadow-md">
+            {tournamentMatch.team_a?.name ?? "TIM A"}
+          </p>
+        </div>
+
+        <div className="absolute bottom-[7%] right-[10%] w-[35%] h-[10%] flex items-center justify-center">
+          <p className="text-6xl font-black uppercase tracking-wide truncate drop-shadow-md">
+            {tournamentMatch.team_b?.name ?? "TIM B"}
+          </p>
+        </div>
+      </div>
+    );
   }
 
+  // === RENDER NORMAL MODE ===
+  if (!match) return <div className="fixed inset-0" />;
+
   return (
-    <div className="fixed inset-0 bg-transparent text-white">
-      {/* Timer — tengah atas */}
-      <div className="absolute top-6 left-1/2 -translate-x-1/2">
-        <div className={`text-6xl font-black tabular-nums tracking-wider drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)] ${
-          isTimerDanger ? 'text-red-500 animate-pulse' : ''
-        }`}>
-          {formatTime(timerDisplay)}
-        </div>
-        <p className="text-center text-xs mt-1 opacity-70 drop-shadow-md">
-          Babak {match.current_round} dari {match.total_rounds}
+    <div className="fixed inset-0 text-white overflow-hidden">
+      {/* GAMBAR BACKGROUND */}
+      <Image
+        src="/overlay-bg.jpg"
+        alt="Overlay Background"
+        className="absolute inset-0 w-full h-full object-cover -z-10"
+        width={1920}
+        height={1080}
+      />
+
+      <div className="absolute bottom-[4%] left-[7.5%] w-[35%] h-[10%] flex items-center justify-center">
+        <p className="text-4xl font-black uppercase tracking-wide truncate drop-shadow-md">
+          {displayA?.team_name ?? "TIM A"}
         </p>
       </div>
 
-      {/* Nama Tim A — kiri bawah */}
-      <div className="absolute bottom-6 left-8">
-        <p className="text-2xl font-black uppercase tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
-          {displayA?.team_name ?? 'Tim A'}
-        </p>
-        <p className="text-xs opacity-70 drop-shadow-md">
-          {displayA?.institution ?? ''}
-        </p>
-      </div>
-
-      {/* Skor — tengah bawah */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4">
-        <span className="text-5xl font-black tabular-nums drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
-          {scoreA}
-        </span>
-        <span className="text-lg font-bold opacity-50 drop-shadow-md">VS</span>
-        <span className="text-5xl font-black tabular-nums drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
-          {scoreB}
-        </span>
-      </div>
-
-      {/* Nama Tim B — kanan bawah */}
-      <div className="absolute bottom-6 right-8 text-right">
-        <p className="text-2xl font-black uppercase tracking-wide drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
-          {displayB?.team_name ?? 'Tim B'}
-        </p>
-        <p className="text-xs opacity-70 drop-shadow-md">
-          {displayB?.institution ?? ''}
+      <div className="absolute bottom-[4%] right-[11.5%] w-[35%] h-[10%] flex items-center justify-center">
+        <p className="text-4xl font-black uppercase tracking-wide truncate drop-shadow-md">
+          {displayB?.team_name ?? "TIM B"}
         </p>
       </div>
     </div>
-  )
+  );
 }

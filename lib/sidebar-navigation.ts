@@ -39,12 +39,10 @@ import {
   // Divisi
   FlaskConical,
   // MRC
-  Shield,
-  Ticket,
   Trophy,
-  Video,
   // Super Admin
   Crown,
+  Shield,
 } from "lucide-react";
 
 // ═════════════════════════════════════════════════════
@@ -234,8 +232,14 @@ export const SIDEBAR_MENU: SidebarMenuGroup[] = [
         icon: Wrench,
         subItems: [
           { title: "Setup Magang", href: "/dashboard/or/magang/setup" },
-          { title: "Database Pendaftar", href: "/dashboard/or/magang/database" },
-          { title: "Verifikasi Penempatan", href: "/dashboard/or/magang/verifikasi" },
+          {
+            title: "Database Pendaftar",
+            href: "/dashboard/or/magang/database",
+          },
+          {
+            title: "Verifikasi Penempatan",
+            href: "/dashboard/or/magang/verifikasi",
+          },
           { title: "Monitoring Logbook", href: "/dashboard/or/magang/logbook" },
         ],
       },
@@ -361,89 +365,99 @@ export const SIDEBAR_MENU: SidebarMenuGroup[] = [
 
   // ── 5. Panitia / Operator MRC ──
   {
-    label: "MRC",
+    label: "Contest Robot Soccer",
     allowedRoles: ["pengurus", "super_admin"],
     items: [
       {
-        title: "Dashboard MRC",
-        icon: Home,
-        href: "/dashboard/mrc",
-      },
-      {
-        title: "Pengaturan Lomba",
+        title: "Setup Pertandingan",
         icon: Settings,
-        subItems: [
-          {
-            title: "Buka/Tutup Pendaftaran",
-            href: "/dashboard/mrc/pengaturan/pendaftaran",
-          },
-          {
-            title: "Kategori Lomba & Biaya",
-            href: "/dashboard/mrc/pengaturan/kategori",
-          },
-        ],
+        href: "/tournament/setup",
       },
       {
-        title: "Verifikasi Peserta",
+        title: "Pertandingan",
         icon: Shield,
-        subItems: [
-          {
-            title: "Verifikasi Berkas & Tim",
-            href: "/dashboard/mrc/peserta/berkas",
-          },
-          {
-            title: "Verifikasi Pembayaran",
-            href: "/dashboard/mrc/peserta/pembayaran",
-          },
-        ],
+        href: "/tournament/matches",
       },
       {
-        title: "Operasional Hari-H",
-        icon: Ticket,
-        subItems: [
-          {
-            title: "Pendaftaran Ulang",
-            href: "/dashboard/mrc/operasional/checkin",
-          },
-          {
-            title: "Generate & Cetak QR",
-            href: "/dashboard/mrc/operasional/qr",
-          },
-          {
-            title: "Scan QR Anti-Joki",
-            href: "/dashboard/mrc/operasional/scan",
-          },
-        ],
-      },
-      {
-        title: "Manajemen Pertandingan",
+        title: "Bracket",
         icon: Trophy,
-        subItems: [
-          {
-            title: "Drawing Grup",
-            href: "/dashboard/mrc/pertandingan/drawing",
-          },
-          {
-            title: "Klasemen & Bracket",
-            href: "/dashboard/mrc/pertandingan/bracket",
-          },
-          {
-            title: "Panel Operator",
-            href: "/dashboard/mrc/pertandingan/operator",
-          },
-        ],
+        href: "/tournament/bracket",
       },
-      {
-        title: "Streaming & Overlay",
-        icon: Video,
-        subItems: [
-          {
-            title: "Pengaturan Overlay",
-            href: "/dashboard/mrc/streaming/overlay",
-          },
-          { title: "Daftar Overlay", href: "/dashboard/mrc/streaming/daftar" },
-        ],
-      },
+      // {
+      //   title: "Pengaturan Lomba",
+      //   icon: Settings,
+      //   subItems: [
+      //     {
+      //       title: "Buka/Tutup Pendaftaran",
+      //       href: "/dashboard/mrc/pengaturan/pendaftaran",
+      //     },
+      //     {
+      //       title: "Kategori Lomba & Biaya",
+      //       href: "/dashboard/mrc/pengaturan/kategori",
+      //     },
+      //   ],
+      // },
+      // {
+      //   title: "Verifikasi Peserta",
+      //   icon: Shield,
+      //   subItems: [
+      //     {
+      //       title: "Verifikasi Berkas & Tim",
+      //       href: "/dashboard/mrc/peserta/berkas",
+      //     },
+      //     {
+      //       title: "Verifikasi Pembayaran",
+      //       href: "/dashboard/mrc/peserta/pembayaran",
+      //     },
+      //   ],
+      // },
+      // {
+      //   title: "Operasional Hari-H",
+      //   icon: Ticket,
+      //   subItems: [
+      //     {
+      //       title: "Pendaftaran Ulang",
+      //       href: "/dashboard/mrc/operasional/checkin",
+      //     },
+      //     {
+      //       title: "Generate & Cetak QR",
+      //       href: "/dashboard/mrc/operasional/qr",
+      //     },
+      //     {
+      //       title: "Scan QR Anti-Joki",
+      //       href: "/dashboard/mrc/operasional/scan",
+      //     },
+      //   ],
+      // },
+      // {
+      //   title: "Manajemen Pertandingan",
+      //   icon: Trophy,
+      //   subItems: [
+      //     {
+      //       title: "Drawing Grup",
+      //       href: "/dashboard/mrc/pertandingan/drawing",
+      //     },
+      //     {
+      //       title: "Klasemen & Bracket",
+      //       href: "/dashboard/mrc/pertandingan/bracket",
+      //     },
+      //     {
+      //       title: "Panel Operator",
+      //       href: "/dashboard/mrc/pertandingan/operator",
+      //     },
+      //   ],
+      // },
+      // {
+      //   title: "Streaming & Overlay",
+      //   icon: Video,
+      //   subItems: [
+      //     {
+      //       title: "Pengaturan Overlay",
+      //       href: "/dashboard/mrc/streaming/overlay",
+      //     },
+      //     { title: "Daftar Overlay", href: "/dashboard/mrc/streaming/daftar" },
+      //   ],
+      // },
     ],
   },
 
