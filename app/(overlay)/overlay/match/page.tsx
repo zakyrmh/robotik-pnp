@@ -190,15 +190,17 @@ export default function MatchOverlayPage() {
         />
 
         <div className="absolute bottom-[7%] left-[10%] w-[35%] h-[10%] flex items-center justify-center">
-          <p className="text-6xl font-black uppercase tracking-wide truncate drop-shadow-md">
-            {tournamentMatch.team_a?.name ?? "TIM A"}
-          </p>
+          <div className="text-6xl font-black uppercase tracking-wide drop-shadow-md flex items-center max-w-full">
+            <span className="truncate min-w-0">{tournamentMatch.team_a?.name ?? "TIM A"}</span>
+            <span className="shrink-0 whitespace-pre"> {tournamentMatch.score_a ?? 0}</span>
+          </div>
         </div>
 
         <div className="absolute bottom-[7%] right-[10%] w-[35%] h-[10%] flex items-center justify-center">
-          <p className="text-6xl font-black uppercase tracking-wide truncate drop-shadow-md">
-            {tournamentMatch.team_b?.name ?? "TIM B"}
-          </p>
+          <div className="text-6xl font-black uppercase tracking-wide drop-shadow-md flex items-center max-w-full">
+            <span className="shrink-0 whitespace-pre">{tournamentMatch.score_b ?? 0} </span>
+            <span className="truncate min-w-0">{tournamentMatch.team_b?.name ?? "TIM B"}</span>
+          </div>
         </div>
       </div>
     );
@@ -219,15 +221,17 @@ export default function MatchOverlayPage() {
       />
 
       <div className="absolute bottom-[4%] left-[7.5%] w-[35%] h-[10%] flex items-center justify-center">
-        <p className="text-4xl font-black uppercase tracking-wide truncate drop-shadow-md">
-          {displayA?.team_name ?? "TIM A"}
-        </p>
+        <div className="text-4xl font-black uppercase tracking-wide drop-shadow-md flex items-center max-w-full">
+          <span className="truncate min-w-0">{displayA?.team_name ?? "TIM A"}</span>
+          <span className="shrink-0 whitespace-pre"> {match?.is_swapped ? (match?.score_b ?? 0) : (match?.score_a ?? 0)}</span>
+        </div>
       </div>
 
       <div className="absolute bottom-[4%] right-[11.5%] w-[35%] h-[10%] flex items-center justify-center">
-        <p className="text-4xl font-black uppercase tracking-wide truncate drop-shadow-md">
-          {displayB?.team_name ?? "TIM B"}
-        </p>
+        <div className="text-4xl font-black uppercase tracking-wide drop-shadow-md flex items-center max-w-full">
+          <span className="shrink-0 whitespace-pre">{match?.is_swapped ? (match?.score_a ?? 0) : (match?.score_b ?? 0)} </span>
+          <span className="truncate min-w-0">{displayB?.team_name ?? "TIM B"}</span>
+        </div>
       </div>
     </div>
   );
