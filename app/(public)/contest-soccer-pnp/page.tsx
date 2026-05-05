@@ -37,6 +37,7 @@ type GroupStanding = {
   points: number;
   goalDifference: number;
   goalsFor: number;
+  totalScore: number;
 };
 
 type TeamSlot = {
@@ -79,23 +80,7 @@ const leftSessionThreeCodes = ["RS-S3-AB01", "RS-S3-CF01"];
 const rightSessionThreeCodes = ["RS-S3-DE01"];
 const groupGCodes = ["RS-GP-G01", "RS-GP-G02"];
 
-const STATUS_LABELS: Record<string, string> = {
-  pending: "Pending",
-  live: "Live",
-  finished: "Finished",
-};
 
-const STATUS_BADGE_VARIANTS: Record<string, "secondary" | "blue" | "success"> =
-  {
-    pending: "secondary",
-    live: "blue",
-    finished: "success",
-  };
-
-const FIELD_LABELS: Record<string, string> = {
-  arena_1: "Arena 1",
-  arena_2: "Arena 2",
-};
 
 // ═══════════════════════════════════════════════
 // HELPER FUNCTIONS
@@ -173,6 +158,7 @@ function buildStandingsByGroup(groups: any[], matches: any[]) {
         points: 0,
         goalDifference: 0,
         goalsFor: 0,
+        totalScore: 0,
       });
     }
 
@@ -192,6 +178,8 @@ function buildStandingsByGroup(groups: any[], matches: any[]) {
 
       const scoreA = match.score_a ?? 0;
       const scoreB = match.score_b ?? 0;
+      const penaltyA = match.penalty_a ?? 0;
+      const penaltyB = match.penalty_b ?? 0;
 
       teamAStanding.played += 1;
       teamBStanding.played += 1;
@@ -199,6 +187,8 @@ function buildStandingsByGroup(groups: any[], matches: any[]) {
       teamBStanding.goalsFor += scoreB;
       teamAStanding.goalDifference += scoreA - scoreB;
       teamBStanding.goalDifference += scoreB - scoreA;
+      teamAStanding.totalScore += penaltyA;
+      teamBStanding.totalScore += penaltyB;
 
       if (scoreA > scoreB) {
         teamAStanding.points += 3;
@@ -212,6 +202,7 @@ function buildStandingsByGroup(groups: any[], matches: any[]) {
 
     const standings = Array.from(standingsMap.values()).sort((a, b) => {
       return (
+        b.totalScore - a.totalScore ||
         b.points - a.points ||
         b.goalDifference - a.goalDifference ||
         b.goalsFor - a.goalsFor ||
@@ -390,7 +381,7 @@ export default async function PublicTournamentPage() {
   const { data: groupMatches } = await supabase
     .from("matches")
     .select(
-      `id, group_id, team_a_id, team_b_id, score_a, score_b, status, field, created_at, group:groups!matches_group_id_fkey(id, name), team_a:teams!matches_team_a_id_fkey(id, name, group_id), team_b:teams!matches_team_b_id_fkey(id, name, group_id)`,
+      `id, group_id, team_a_id, team_b_id, score_a, score_b, penalty_a, penalty_b, status, field, created_at, group:groups!matches_group_id_fkey(id, name), team_a:teams!matches_team_a_id_fkey(id, name, group_id), team_b:teams!matches_team_b_id_fkey(id, name, group_id)`,
     )
     .order("created_at", { ascending: true });
 
@@ -399,12 +390,7 @@ export default async function PublicTournamentPage() {
     groupMatches ?? [],
   );
 
-  // Sorting matches terlama di atas
-  const sortedGroupMatches = [...(groupMatches ?? [])].sort((a, b) => {
-    const dateA = a.created_at ? new Date(a.created_at).getTime() : 0;
-    const dateB = b.created_at ? new Date(b.created_at).getTime() : 0;
-    return dateA - dateB;
-  });
+
 
   // 2. Fetch Bracket Data
   const { data: tournament } = await supabase
@@ -473,161 +459,98 @@ export default async function PublicTournamentPage() {
           value="groups"
           className="mt-6 animate-in fade-in-50 duration-500"
         >
-          <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)] xl:grid-cols-[400px_minmax(0,1fr)]">
-            {/* Kolom Kiri: Klasemen */}
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Kualifikasi Grup</CardTitle>
-                  <CardDescription>
-                    Dua tim dengan poin tertinggi dari setiap grup lolos ke
-                    babak selanjutnya.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="px-0">
-                  <div className="divide-y px-4">
-                    {standingsByGroup.map(
-                      ({ groupId, groupName, standings }) => (
-                        <div
-                          key={groupId}
-                          className="py-4 first:pt-0 last:pb-0"
-                        >
-                          <div className="flex items-center justify-between mb-3">
-                            <span className="text-sm font-bold">
-                              {groupName}
-                            </span>
-                            <Badge variant="outline">
-                              {groupName?.trim()?.toUpperCase()?.endsWith("G")
-                                ? "Juara"
-                                : "Top 2"}{" "}
-                              lolos
-                            </Badge>
-                          </div>
-                          <div className="divide-y rounded-md border">
-                            {standings.length === 0 ? (
-                              <p className="px-3 py-3 text-xs text-muted-foreground text-center">
-                                Belum ada tim
-                              </p>
-                            ) : (
-                              standings.map((standing, index) => {
-                                const isGroupG = groupName
-                                  ?.trim()
-                                  ?.toUpperCase()
-                                  ?.endsWith("G");
-                                const isQualified = isGroupG
-                                  ? index < 1
-                                  : index < 2;
-
-                                return (
-                                  <div
-                                    key={standing.teamId}
-                                    className="grid grid-cols-[1.5rem_1fr_auto] items-center gap-2 px-3 py-2 text-sm"
-                                  >
-                                    <span className="text-muted-foreground text-xs">
-                                      {index + 1}
-                                    </span>
-                                    <span className="truncate font-medium">
-                                      {standing.teamName}
-                                    </span>
-                                    <div className="flex items-center gap-2">
-                                      <span className="text-xs font-mono text-muted-foreground w-12 text-right">
-                                        {standing.points} pts
-                                      </span>
-                                      {isQualified ? (
-                                        <Badge
-                                          variant="success"
-                                          className="text-[10px] h-5 px-1.5"
-                                        >
-                                          Lolos
-                                        </Badge>
-                                      ) : (
-                                        <span className="w-[38px]" />
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              })
-                            )}
-                          </div>
+          <div className="max-w-4xl mx-auto space-y-6">
+            {/* Kolom Tengah: Klasemen */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Kualifikasi Grup</CardTitle>
+                <CardDescription>
+                  Dua tim dengan poin tertinggi dari setiap grup lolos ke
+                  babak selanjutnya.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="px-0">
+                <div className="divide-y px-4">
+                  {standingsByGroup.map(
+                    ({ groupId, groupName, standings }) => (
+                      <div
+                        key={groupId}
+                        className="py-4 first:pt-0 last:pb-0"
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-sm font-bold">
+                            {groupName}
+                          </span>
+                          <Badge variant="outline">
+                            {groupName?.trim()?.toUpperCase()?.endsWith("G")
+                              ? "Juara"
+                              : "Top 2"}{" "}
+                            lolos
+                          </Badge>
                         </div>
-                      ),
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                        <div className="divide-y rounded-md border overflow-x-auto">
+                          {standings.length === 0 ? (
+                            <p className="px-3 py-3 text-xs text-muted-foreground text-center">
+                              Belum ada tim
+                            </p>
+                          ) : (
+                            <Table>
+                              <TableHeader>
+                                <TableRow className="text-[10px] sm:text-xs">
+                                  <TableHead className="w-8">#</TableHead>
+                                  <TableHead>Tim</TableHead>
+                                  <TableHead className="text-center px-2">Gol</TableHead>
+                                  <TableHead className="text-center px-2">Poin Akhir</TableHead>
+                                  <TableHead className="text-right">Status</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {standings.map((standing, index) => {
+                                  const isGroupG = groupName
+                                    ?.trim()
+                                    ?.toUpperCase()
+                                    ?.endsWith("G");
+                                  const isQualified = isGroupG
+                                    ? index < 1
+                                    : index < 2;
 
-            {/* Kolom Kanan: Daftar Pertandingan */}
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Pertandingan Grup</CardTitle>
-                  <CardDescription>
-                    Hasil skor akhir dan pertandingan yang sedang live.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="px-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Grup</TableHead>
-                        <TableHead>Pertandingan</TableHead>
-                        <TableHead className="w-32">Status</TableHead>
-                        <TableHead className="w-24 text-center">Skor</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {sortedGroupMatches.length === 0 ? (
-                        <TableRow>
-                          <TableCell
-                            colSpan={4}
-                            className="text-center text-muted-foreground h-24"
-                          >
-                            Belum ada pertandingan grup
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        sortedGroupMatches.map((match) => {
-                          const status = match.status ?? "pending";
-                          const field = match.field ?? "arena_1";
-
-                          return (
-                            <TableRow key={match.id}>
-                              <TableCell className="font-medium whitespace-nowrap">
-                                {match.group?.name ?? "-"}
-                              </TableCell>
-                              <TableCell>
-                                <span className="font-semibold text-foreground/80">
-                                  {match.team_a?.name ?? "-"}
-                                </span>
-                                <span className="mx-2 text-muted-foreground text-xs">
-                                  vs
-                                </span>
-                                <span className="font-semibold text-foreground/80">
-                                  {match.team_b?.name ?? "-"}
-                                </span>
-                              </TableCell>
-                              <TableCell>
-                                <Badge
-                                  variant={STATUS_BADGE_VARIANTS[status]}
-                                  className="text-[10px]"
-                                >
-                                  {STATUS_LABELS[status]} -{" "}
-                                  {FIELD_LABELS[field]}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-center font-mono font-bold tracking-widest bg-muted/30">
-                                {match.score_a ?? 0} - {match.score_b ?? 0}
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })
-                      )}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </div>
+                                  return (
+                                    <TableRow key={standing.teamId} className="text-[11px] sm:text-sm">
+                                      <TableCell className="font-medium text-muted-foreground">
+                                        {index + 1}
+                                      </TableCell>
+                                      <TableCell className="font-medium max-w-[140px] truncate sm:max-w-none">
+                                        {standing.teamName}
+                                      </TableCell>
+                                      <TableCell className="text-center px-2">
+                                        {standing.goalsFor}
+                                      </TableCell>
+                                      <TableCell className="text-center font-bold px-2">
+                                        {standing.totalScore}
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        {isQualified ? (
+                                          <Badge
+                                            variant="success"
+                                            className="text-[9px] sm:text-[10px] h-4 sm:h-5 px-1 sm:px-1.5"
+                                          >
+                                            Lolos
+                                          </Badge>
+                                        ) : null}
+                                      </TableCell>
+                                    </TableRow>
+                                  );
+                                })}
+                              </TableBody>
+                            </Table>
+                          )}
+                        </div>
+                      </div>
+                    ),
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
 

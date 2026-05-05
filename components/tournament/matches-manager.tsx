@@ -52,6 +52,8 @@ import {
 type MatchDraft = {
   scoreA: string;
   scoreB: string;
+  penaltyA: string;
+  penaltyB: string;
   status: MatchStatus;
   field: MatchField;
 };
@@ -63,6 +65,7 @@ type GroupStanding = {
   points: number;
   goalDifference: number;
   goalsFor: number;
+  totalScore: number;
 };
 
 const STATUS_LABELS: Record<MatchStatus, string> = {
@@ -230,9 +233,16 @@ export function MatchesManager() {
   const saveMatchResult = async (matchId: string, draft: MatchDraft) => {
     const scoreA = Number(draft.scoreA);
     const scoreB = Number(draft.scoreB);
+    const penaltyA = Number(draft.penaltyA);
+    const penaltyB = Number(draft.penaltyB);
 
-    if (!Number.isInteger(scoreA) || !Number.isInteger(scoreB)) {
-      toast.error("Skor harus berupa angka bulat");
+    if (
+      !Number.isInteger(scoreA) ||
+      !Number.isInteger(scoreB) ||
+      !Number.isInteger(penaltyA) ||
+      !Number.isInteger(penaltyB)
+    ) {
+      toast.error("Skor dan penyesuaian harus berupa angka bulat");
       return;
     }
 
@@ -241,6 +251,8 @@ export function MatchesManager() {
       matchId,
       scoreA,
       scoreB,
+      penaltyA,
+      penaltyB,
       status: draft.status,
       field: draft.field,
     });
@@ -256,6 +268,8 @@ export function MatchesManager() {
                 ...m,
                 score_a: scoreA,
                 score_b: scoreB,
+                penalty_a: penaltyA,
+                penalty_b: penaltyB,
                 status: draft.status,
                 field: draft.field,
               }
@@ -488,29 +502,44 @@ function GroupQualificationStandings({
               <span className="text-sm font-medium">{groupName}</span>
               <Badge variant="outline">Top 2 lolos</Badge>
             </div>
-            <div className="divide-y">
+            <div className="divide-y overflow-x-auto">
               {standings.length === 0 ? (
                 <p className="px-3 py-3 text-sm text-muted-foreground">
                   Belum ada tim di grup ini
                 </p>
               ) : (
-                standings.map((standing, index) => (
-                  <div
-                    key={standing.teamId}
-                    className="grid grid-cols-[2rem_1fr_auto] items-center gap-2 px-3 py-2 text-sm"
-                  >
-                    <span className="text-muted-foreground">{index + 1}</span>
-                    <span className="truncate font-medium">
-                      {standing.teamName}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground">
-                        {standing.points} poin
-                      </span>
-                      {index < 2 && <Badge variant="success">Lolos</Badge>}
-                    </div>
-                  </div>
-                ))
+                <Table>
+                  <TableHeader>
+                    <TableRow className="text-xs">
+                      <TableHead className="w-8">#</TableHead>
+                      <TableHead>Tim</TableHead>
+                      <TableHead className="text-center">Gol</TableHead>
+                      <TableHead className="text-center">Poin Akhir</TableHead>
+                      <TableHead className="text-right">Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {standings.map((standing, index) => (
+                      <TableRow key={standing.teamId}>
+                        <TableCell className="font-medium text-muted-foreground">
+                          {index + 1}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {standing.teamName}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {standing.goalsFor}
+                        </TableCell>
+                        <TableCell className="text-center font-bold">
+                          {standing.totalScore}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {index < 2 && <Badge variant="success">Lolos</Badge>}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               )}
             </div>
           </div>
@@ -559,7 +588,7 @@ function MatchesTable({
             <TableHead>Pertandingan</TableHead>
             <TableHead className="w-35">Arena</TableHead>
             <TableHead className="w-45">Status</TableHead>
-            <TableHead className="w-37.5">Skor</TableHead>
+            <TableHead className="w-40 text-center">Skor & Poin</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -617,29 +646,52 @@ function MatchesTable({
                   </Select>
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      min={0}
-                      type="number"
-                      value={draft?.scoreA ?? "0"}
-                      onChange={(event) =>
-                        onDraftChange(match.id, "scoreA", event.target.value)
-                      }
-                      className="h-9 w-16"
-                    />
-                    <span className="text-muted-foreground">-</span>
-                    <Input
-                      min={0}
-                      type="number"
-                      value={draft?.scoreB ?? "0"}
-                      onChange={(event) =>
-                        onDraftChange(match.id, "scoreB", event.target.value)
-                      }
-                      className="h-9 w-16"
-                    />
-                    {savingMatchId === match.id && (
-                      <Loader2 className="size-4 animate-spin text-muted-foreground ml-2" />
-                    )}
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="w-8 text-xs text-muted-foreground">Gol</span>
+                      <Input
+                        min={0}
+                        type="number"
+                        value={draft?.scoreA ?? "0"}
+                        onChange={(event) =>
+                          onDraftChange(match.id, "scoreA", event.target.value)
+                        }
+                        className="h-8 w-14"
+                      />
+                      <span className="text-muted-foreground">-</span>
+                      <Input
+                        min={0}
+                        type="number"
+                        value={draft?.scoreB ?? "0"}
+                        onChange={(event) =>
+                          onDraftChange(match.id, "scoreB", event.target.value)
+                        }
+                        className="h-8 w-14"
+                      />
+                      {savingMatchId === match.id && (
+                        <Loader2 className="size-4 animate-spin text-muted-foreground ml-2" />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-8 text-xs text-muted-foreground">Poin</span>
+                      <Input
+                        type="number"
+                        value={draft?.penaltyA ?? "0"}
+                        onChange={(event) =>
+                          onDraftChange(match.id, "penaltyA", event.target.value)
+                        }
+                        className="h-8 w-14"
+                      />
+                      <span className="text-muted-foreground">-</span>
+                      <Input
+                        type="number"
+                        value={draft?.penaltyB ?? "0"}
+                        onChange={(event) =>
+                          onDraftChange(match.id, "penaltyB", event.target.value)
+                        }
+                        className="h-8 w-14"
+                      />
+                    </div>
                   </div>
                 </TableCell>
               </TableRow>
@@ -687,6 +739,8 @@ function createDrafts(matches: MatchData[]) {
     acc[match.id] = {
       scoreA: String(match.score_a ?? 0),
       scoreB: String(match.score_b ?? 0),
+      penaltyA: String(match.penalty_a ?? 0),
+      penaltyB: String(match.penalty_b ?? 0),
       status: match.status ?? "pending",
       field: match.field ?? "arena_1",
     };
@@ -707,6 +761,7 @@ function buildStandingsByGroup(groups: GroupData[], matches: MatchData[]) {
         points: 0,
         goalDifference: 0,
         goalsFor: 0,
+        totalScore: 0,
       });
     }
 
@@ -726,6 +781,8 @@ function buildStandingsByGroup(groups: GroupData[], matches: MatchData[]) {
 
       const scoreA = match.score_a ?? 0;
       const scoreB = match.score_b ?? 0;
+      const penaltyA = match.penalty_a ?? 0;
+      const penaltyB = match.penalty_b ?? 0;
 
       teamAStanding.played += 1;
       teamBStanding.played += 1;
@@ -733,6 +790,8 @@ function buildStandingsByGroup(groups: GroupData[], matches: MatchData[]) {
       teamBStanding.goalsFor += scoreB;
       teamAStanding.goalDifference += scoreA - scoreB;
       teamBStanding.goalDifference += scoreB - scoreA;
+      teamAStanding.totalScore += penaltyA;
+      teamBStanding.totalScore += penaltyB;
 
       if (scoreA > scoreB) {
         teamAStanding.points += 3;
@@ -746,6 +805,7 @@ function buildStandingsByGroup(groups: GroupData[], matches: MatchData[]) {
 
     const standings = Array.from(standingsMap.values()).sort((a, b) => {
       return (
+        b.totalScore - a.totalScore ||
         b.points - a.points ||
         b.goalDifference - a.goalDifference ||
         b.goalsFor - a.goalsFor ||

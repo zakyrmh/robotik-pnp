@@ -63,6 +63,8 @@ const updateMatchResultSchema = z.object({
   matchId: z.string().uuid("ID pertandingan tidak valid"),
   scoreA: z.number().int().min(0, "Skor tim A tidak valid"),
   scoreB: z.number().int().min(0, "Skor tim B tidak valid"),
+  penaltyA: z.number().int(),
+  penaltyB: z.number().int(),
   status: z.enum(["pending", "live", "finished"]),
   field: z.enum(["arena_1", "arena_2"]),
 });
@@ -100,6 +102,8 @@ export interface MatchData {
   team_b_id: string | null;
   score_a: number | null;
   score_b: number | null;
+  penalty_a: number | null;
+  penalty_b: number | null;
   status: MatchStatus | null;
   field: MatchField | null;
   created_at: string | null;
@@ -515,6 +519,8 @@ export async function getMatches(): Promise<ActionResult<{ matches: MatchData[] 
       team_b_id,
       score_a,
       score_b,
+      penalty_a,
+      penalty_b,
       status,
       field,
       created_at,
@@ -601,6 +607,8 @@ export async function addMatch(input: unknown): Promise<ActionResult<MatchData>>
         team_b_id: teamBId,
         score_a: 0,
         score_b: 0,
+        penalty_a: 0,
+        penalty_b: 0,
         status: "pending",
       },
     ])
@@ -611,6 +619,8 @@ export async function addMatch(input: unknown): Promise<ActionResult<MatchData>>
       team_b_id,
       score_a,
       score_b,
+      penalty_a,
+      penalty_b,
       status,
       field,
       created_at,
@@ -689,6 +699,8 @@ export async function generateGroupMatches(): Promise<
     team_b_id: string;
     score_a: number;
     score_b: number;
+    penalty_a: number;
+    penalty_b: number;
     status: MatchStatus;
   }> = [];
 
@@ -724,6 +736,8 @@ export async function generateGroupMatches(): Promise<
           team_b_id: teamB.id,
           score_a: 0,
           score_b: 0,
+          penalty_a: 0,
+          penalty_b: 0,
           status: "pending",
         });
       }
@@ -763,7 +777,7 @@ export async function updateMatchResult(
     return fail(validationResult.error.issues[0]?.message ?? "Validasi gagal");
   }
 
-  const { matchId, scoreA, scoreB, status, field } = validationResult.data;
+  const { matchId, scoreA, scoreB, penaltyA, penaltyB, status, field } = validationResult.data;
   const supabase = (await createClient()) as unknown as SupabaseLooseClient;
 
   if (status === "live") {
@@ -785,6 +799,8 @@ export async function updateMatchResult(
     .update({
       score_a: scoreA,
       score_b: scoreB,
+      penalty_a: penaltyA,
+      penalty_b: penaltyB,
       status,
       field,
     })
@@ -796,6 +812,8 @@ export async function updateMatchResult(
       team_b_id,
       score_a,
       score_b,
+      penalty_a,
+      penalty_b,
       status,
       field,
       created_at,
