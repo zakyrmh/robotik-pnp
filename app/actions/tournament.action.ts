@@ -70,7 +70,7 @@ const updateMatchResultSchema = z.object({
 });
 
 const updateTournamentBracketMatchSchema = z.object({
-  matchId: z.string().uuid("ID pertandingan tidak valid"),
+  matchCode: z.string().min(1, "Kode pertandingan tidak valid"),
   teamAId: z.string().uuid("ID tim A tidak valid").nullable(),
   teamBId: z.string().uuid("ID tim B tidak valid").nullable(),
   scoreA: z.number().int().min(0, "Skor tim A tidak valid"),
@@ -1062,9 +1062,8 @@ export async function getTournamentBracket(): Promise<
       .eq("tournament_id", tournament.id)
       .order("sort_order", { ascending: true }),
     supabase
-      .from("tournament_teams")
-      .select("id, name, institution")
-      .eq("tournament_id", tournament.id)
+      .from("teams")
+      .select(`id, name, group_id, group:groups(name)`)
       .order("name", { ascending: true }),
   ]);
 
@@ -1078,10 +1077,18 @@ export async function getTournamentBracket(): Promise<
     return fail("Gagal memuat daftar tim bracket");
   }
 
+  // Map teams so that we format the name to include group name
+  type RawTeamRow = { id: string; name: string; group_id: string | null; group: { name: string } | null };
+  const mappedTeams = (teamsResult.data ?? [] as RawTeamRow[]).map((t: RawTeamRow) => ({
+    id: t.id,
+    name: t.group?.name ? `${t.name} (${t.group.name})` : t.name,
+    institution: null,
+  }));
+
   return ok({
     tournament: tournament as TournamentBracketData["tournament"],
     matches: (matchesResult.data ?? []) as TournamentBracketMatch[],
-    teams: (teamsResult.data ?? []) as TournamentBracketTeam[],
+    teams: mappedTeams as TournamentBracketTeam[],
   });
 }
 
@@ -1188,7 +1195,7 @@ export async function updateTournamentBracketMatch(
     return fail(validationResult.error.issues[0]?.message ?? "Validasi gagal");
   }
 
-  const { matchId, teamAId, teamBId, scoreA, scoreB, status } =
+  const { matchCode, teamAId, teamBId, scoreA, scoreB, status } =
     validationResult.data;
 
   if (teamAId && teamBId && teamAId === teamBId) {
@@ -1196,6 +1203,32 @@ export async function updateTournamentBracketMatch(
   }
 
   const supabase = (await createClient()) as unknown as SupabaseLooseClient;
+
+  let tournamentId = "";
+  const { data: existingTournament } = await supabase
+    .from("tournaments")
+    .select("id")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (existingTournament?.id) {
+    tournamentId = existingTournament.id;
+  } else {
+    const { data: newTournament, error: createTournamentError } = await supabase
+      .from("tournaments")
+      .insert({
+        name: DEFAULT_TOURNAMENT_NAME,
+        category: "robot_soccer",
+      })
+      .select("id")
+      .single();
+
+    if (createTournamentError) {
+      return fail("Gagal membuat tournament");
+    }
+    tournamentId = newTournament.id;
+  }
 
   let winnerTeamId: string | null = null;
   let winnerLabel: string | null = null;
@@ -1208,19 +1241,87 @@ export async function updateTournamentBracketMatch(
     }
   }
 
+  // Ensure teams exist in tournament_teams to satisfy FK constraints
+  for (const tId of [teamAId, teamBId]) {
+    if (!tId) continue;
+    const { data: existingTT } = await supabase
+      .from("tournament_teams")
+      .select("id")
+      .eq("id", tId)
+      .maybeSingle();
+    if (!existingTT) {
+      const { data: sourceTeam } = await supabase
+        .from("teams")
+        .select("name")
+        .eq("id", tId)
+        .single();
+      if (sourceTeam) {
+        await supabase.from("tournament_teams").insert({
+          id: tId,
+          tournament_id: tournamentId,
+          name: sourceTeam.name,
+        });
+      }
+    }
+  }
+
+  const { data: existingMatch } = await supabase
+    .from("tournament_matches")
+    .select("id")
+    .eq("tournament_id", tournamentId)
+    .eq("match_code", matchCode)
+    .maybeSingle();
+
+  let matchId = existingMatch?.id;
+
+  if (!matchId) {
+    const defaultMatch = DEFAULT_BRACKET_MATCHES.find(m => m.match_code === matchCode);
+    if (!defaultMatch) return fail("Kode pertandingan tidak valid");
+
+    const { data: insertedMatch, error: insertError } = await supabase
+      .from("tournament_matches")
+      .insert({
+        ...defaultMatch,
+        tournament_id: tournamentId,
+        team_a_id: teamAId,
+        team_b_id: teamBId,
+        score_a: scoreA,
+        score_b: scoreB,
+        status,
+        winner_team_id: winnerTeamId,
+        winner_label: winnerLabel,
+      })
+      .select("id")
+      .single();
+
+    if (insertError) {
+      console.error("[updateTournamentBracketMatch Insert Error]", insertError);
+      return fail("Gagal membuat pertandingan bracket");
+    }
+    matchId = insertedMatch.id;
+  } else {
+    const { error: updateError } = await supabase
+      .from("tournament_matches")
+      .update({
+        team_a_id: teamAId,
+        team_b_id: teamBId,
+        score_a: scoreA,
+        score_b: scoreB,
+        status,
+        winner_team_id: winnerTeamId,
+        winner_label: winnerLabel,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", matchId);
+
+    if (updateError) {
+      console.error("[updateTournamentBracketMatch Update Error]", updateError);
+      return fail("Gagal menyimpan pertandingan bracket");
+    }
+  }
+
   const { data, error } = await supabase
     .from("tournament_matches")
-    .update({
-      team_a_id: teamAId,
-      team_b_id: teamBId,
-      score_a: scoreA,
-      score_b: scoreB,
-      status,
-      winner_team_id: winnerTeamId,
-      winner_label: winnerLabel,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", matchId)
     .select(`
       id,
       tournament_id,
@@ -1246,11 +1347,12 @@ export async function updateTournamentBracketMatch(
       team_b:tournament_teams!tournament_matches_team_b_id_fkey(id, name, institution),
       winner_team:tournament_teams!tournament_matches_winner_team_id_fkey(id, name, institution)
     `)
+    .eq("id", matchId)
     .single();
 
   if (error) {
-    console.error("[updateTournamentBracketMatch Error]", error);
-    return fail("Gagal menyimpan pertandingan bracket");
+    console.error("[updateTournamentBracketMatch Fetch Error]", error);
+    return fail("Gagal memuat ulang data pertandingan");
   }
 
   revalidatePath("/tournament/bracket");
