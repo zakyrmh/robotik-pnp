@@ -25,6 +25,7 @@
     "eslint-config-next": "16.2.5",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.2",
+    "supabase": "^2.98.2",
     "tailwindcss": "^4",
     "typescript": "^5"
   },
