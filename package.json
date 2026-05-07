@@ -1,13 +1,14 @@
 {
   "name": "robotik-pnp",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "prepare": "husky"
+    "prepare": "husky",
+    "release": "standard-version"
   },
   "dependencies": {
     "next": "16.2.5",
@@ -25,6 +26,7 @@
     "eslint-config-next": "16.2.5",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.2",
+    "standard-version": "^9.5.0",
     "supabase": "^2.98.2",
     "tailwindcss": "^4",
     "typescript": "^5"
