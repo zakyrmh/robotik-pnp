@@ -1,19 +1,29 @@
-import { type NextRequest } from 'next/server'
-import { updateSession } from '@/lib/supabase/proxy'
+import { type NextRequest } from "next/server";
+import { updateSession } from "@/lib/supabase/proxy";
 
+/**
+ * Fungsi ini bertindak sebagai gerbang utama.
+ * Setiap request yang lewat akan diproses oleh updateSession untuk mengecek
+ * status login, konfirmasi email, dan status onboarding.
+ */
 export async function proxy(request: NextRequest) {
-  return await updateSession(request)
+  return await updateSession(request);
 }
 
+/**
+ * Konfigurasi Matcher:
+ * Menentukan halaman mana saja yang akan dipantau oleh middleware.
+ * Kita mengecualikan file statis agar tidak membebani performa laptop.
+ */
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public assets (svg, png, jpg, etc.)
+     * Match semua path request kecuali yang dimulai dengan:
+     * - _next/static (file statis Next.js)
+     * - _next/image (optimasi gambar)
+     * - favicon.ico (ikon browser)
+     * - File publik (svg, png, jpg, jpeg, gif, webp)
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
-}
+};

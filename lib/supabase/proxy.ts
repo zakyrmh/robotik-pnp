@@ -26,55 +26,67 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
+  // 1. Ambil data user dari Auth
   const {
     data: { user },
   } = await supabase.auth.getUser();
   const { pathname } = request.nextUrl;
 
-  // 1. Definisikan pengecualian rute verifikasi
-  const isAuthCallback = pathname === "/callback";
-  const isVerifyPage = pathname === "/verify-email";
-  const isAuthGroup = pathname.startsWith("/auth/");
+  // 2. Ambil data profil (is_onboarded) jika user sudah login
+  let profile = null;
+  if (user) {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("role, is_onboarded")
+      .eq("id", user.id)
+      .single();
 
+    if (error) {
+      console.error("Kesalahan kueri profil:", error.message);
+    } else {
+      profile = data;
+    }
+  }
+
+  // Definisi Rute
   const authRoutes = ["/register", "/login"];
-  const protectedRoutes = ["/dashboard", "/onboarding"];
+  const protectedRoutes = ["/dashboard", "/onboarding", "/pendaftaran"];
+  const isAuthCallback = pathname === "/callback";
 
-  // 2. Cegah redirect loop jika sedang di rute callback
   if (isAuthCallback) return supabaseResponse;
 
-  // 3. Redirect unauthenticated
+  // 3. LOGIKA REDIRECT
+
+  // Kasus: User Belum Login
   if (!user && protectedRoutes.some((r) => pathname.startsWith(r))) {
     const url = request.nextUrl.clone();
-    url.hostname = "localhost"; // Paksa tetap di IP
-    url.pathname = "/register";
-    return NextResponse.redirect(url);
-  }
-
-  // 4. Redirect confirmed users away from auth
-  if (
-    user &&
-    user.email_confirmed_at &&
-    authRoutes.some((r) => pathname.startsWith(r))
-  ) {
-    const url = request.nextUrl.clone();
     url.hostname = "localhost";
-    url.pathname = "/dashboard";
+    url.pathname = "/login";
     return NextResponse.redirect(url);
   }
 
-  // 5. PERBAIKAN: Izinkan rute callback untuk user yang belum konfirmasi
-  if (
-    user &&
-    !user.email_confirmed_at &&
-    !isVerifyPage &&
-    !isAuthGroup &&
-    !isAuthCallback
-  ) {
-    if (!authRoutes.some((r) => pathname.startsWith(r))) {
-      const url = request.nextUrl.clone();
-      url.hostname = "localhost";
-      url.pathname = "/verify-email";
-      return NextResponse.redirect(url);
+  // Kasus: User Sudah Login
+  if (user) {
+    // A. Belum Onboarding (is_onboarded = false)
+    // Jika mencoba akses apapun selain /onboarding, tendang ke /onboarding
+    if (profile && !profile.is_onboarded && pathname !== "/onboarding") {
+      if (!authRoutes.includes(pathname)) {
+        const url = request.nextUrl.clone();
+        url.hostname = "localhost";
+        url.pathname = "/onboarding";
+        return NextResponse.redirect(url);
+      }
+    }
+
+    // B. Sudah Onboarding (is_onboarded = true)
+    // Jika mencoba akses /onboarding atau halaman login, tendang ke /dashboard
+    if (profile?.is_onboarded) {
+      if (pathname === "/onboarding" || authRoutes.includes(pathname)) {
+        const url = request.nextUrl.clone();
+        url.hostname = "localhost";
+        url.pathname = "/dashboard";
+        return NextResponse.redirect(url);
+      }
     }
   }
 
