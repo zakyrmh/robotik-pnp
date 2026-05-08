@@ -1,8 +1,9 @@
-import { createServerClient } from '@supabase/ssr'
-import { NextResponse, type NextRequest } from 'next/server'
+// lib/supabase/proxy.ts
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
 
 export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request })
+  let supabaseResponse = NextResponse.next({ request });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -10,54 +11,72 @@ export async function updateSession(request: NextRequest) {
     {
       cookies: {
         getAll() {
-          return request.cookies.getAll()
+          return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          )
-          supabaseResponse = NextResponse.next({ request })
+            request.cookies.set(name, value),
+          );
+          supabaseResponse = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          )
+            supabaseResponse.cookies.set(name, value, options),
+          );
         },
       },
-    }
-  )
+    },
+  );
 
-  // PENTING: Gunakan getClaims() bukan getSession() untuk validasi JWT
   const {
     data: { user },
-  } = await supabase.auth.getUser()
+  } = await supabase.auth.getUser();
+  const { pathname } = request.nextUrl;
 
-  const { pathname } = request.nextUrl
+  // 1. Definisikan pengecualian rute verifikasi
+  const isAuthCallback = pathname === "/callback";
+  const isVerifyPage = pathname === "/verify-email";
+  const isAuthGroup = pathname.startsWith("/auth/");
 
-  // Route definitions
-  const authRoutes = ['/register', '/login']
-  const protectedRoutes = ['/dashboard', '/onboarding']
+  const authRoutes = ["/register", "/login"];
+  const protectedRoutes = ["/dashboard", "/onboarding"];
 
-  // Redirect unauthenticated users away from protected routes
+  // 2. Cegah redirect loop jika sedang di rute callback
+  if (isAuthCallback) return supabaseResponse;
+
+  // 3. Redirect unauthenticated
   if (!user && protectedRoutes.some((r) => pathname.startsWith(r))) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/register'
-    return NextResponse.redirect(url)
+    const url = request.nextUrl.clone();
+    url.hostname = "localhost"; // Paksa tetap di IP
+    url.pathname = "/register";
+    return NextResponse.redirect(url);
   }
 
-  // Redirect authenticated + confirmed users away from auth routes
-  if (user && user.email_confirmed_at && authRoutes.some((r) => pathname.startsWith(r))) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
-    return NextResponse.redirect(url)
+  // 4. Redirect confirmed users away from auth
+  if (
+    user &&
+    user.email_confirmed_at &&
+    authRoutes.some((r) => pathname.startsWith(r))
+  ) {
+    const url = request.nextUrl.clone();
+    url.hostname = "localhost";
+    url.pathname = "/dashboard";
+    return NextResponse.redirect(url);
   }
 
-  // Redirect authenticated but unconfirmed users to verify-email
-  if (user && !user.email_confirmed_at && pathname !== '/verify-email' && !pathname.startsWith('/auth/')) {
+  // 5. PERBAIKAN: Izinkan rute callback untuk user yang belum konfirmasi
+  if (
+    user &&
+    !user.email_confirmed_at &&
+    !isVerifyPage &&
+    !isAuthGroup &&
+    !isAuthCallback
+  ) {
     if (!authRoutes.some((r) => pathname.startsWith(r))) {
-      const url = request.nextUrl.clone()
-      url.pathname = '/verify-email'
-      return NextResponse.redirect(url)
+      const url = request.nextUrl.clone();
+      url.hostname = "localhost";
+      url.pathname = "/verify-email";
+      return NextResponse.redirect(url);
     }
   }
 
-  return supabaseResponse
+  return supabaseResponse;
 }
