@@ -53,6 +53,41 @@ export async function register(prevState: RegisterState, formData: FormData) {
 }
 
 // ============================================================
+// Login Action
+// ============================================================
+export async function login(prevState: RegisterState, formData: FormData) {
+  const email = formData.get("email") as string;
+  const password = formData.get("password") as string;
+
+  if (!email || !password) {
+    return { error: "Email dan password wajib diisi." };
+  }
+
+  const supabase = await createClient();
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
+
+  if (error) {
+    // Penanganan error spesifik untuk pengalaman pengguna yang lebih baik
+    if (error.message.includes("Invalid login credentials")) {
+      return { error: "Email atau password salah." };
+    }
+    if (error.message.includes("Email not confirmed")) {
+      return {
+        error: "Email Anda belum dikonfirmasi. Silahkan cek inbox Anda.",
+      };
+    }
+    return { error: error.message };
+  }
+
+  revalidatePath("/", "layout");
+  redirect("/dashboard");
+}
+
+// ============================================================
 // Auth Callback (Email Verification)
 // ============================================================
 export async function exchangeCodeForSession(code: string) {
