@@ -26,6 +26,7 @@ import { createClient } from "@/lib/supabase/client";
 import { compressImage } from "@/lib/utils/upload";
 import { saveFinalData } from "@/lib/actions/registration";
 import { toast } from "sonner";
+import { ImageCropperModal } from "./image-cropper-modal";
 
 interface StepUploadProps {
   onPrev: () => void;
@@ -45,6 +46,19 @@ export function StepUpload({ onPrev, onSuccess, initialPaymentMethod }: StepUplo
   // Status upload granular untuk feedback ke user
   const [uploadLabel, setUploadLabel] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
+
+  // State untuk modal crop
+  const [cropperModalOpen, setCropperModalOpen] = useState(false);
+  const [selectedImageForCrop, setSelectedImageForCrop] = useState<string | null>(null);
+
+  const handlePasFotoChange = (file: File | null) => {
+    if (file) {
+      setSelectedImageForCrop(URL.createObjectURL(file));
+      setCropperModalOpen(true);
+    } else {
+      setPasFoto(null);
+    }
+  };
 
   const handleSubmit = () => {
     // Validasi sebelum masuk transition
@@ -176,7 +190,7 @@ export function StepUpload({ onPrev, onSuccess, initialPaymentMethod }: StepUplo
             hint="Formal · JPG/PNG · Max 5MB"
             accept="image/jpeg,image/png"
             file={pasFoto}
-            onChange={setPasFoto}
+            onChange={handlePasFotoChange}
             disabled={isPending}
           />
           <UploadTile
@@ -297,6 +311,20 @@ export function StepUpload({ onPrev, onSuccess, initialPaymentMethod }: StepUplo
           )}
         </Button>
       </div>
+
+      <ImageCropperModal
+        isOpen={cropperModalOpen}
+        imageSrc={selectedImageForCrop}
+        onClose={() => setCropperModalOpen(false)}
+        onCropComplete={(croppedFile) => {
+          setPasFoto(croppedFile);
+          setCropperModalOpen(false);
+          setSelectedImageForCrop(null);
+        }}
+        onChangeImage={() => {
+          setCropperModalOpen(false);
+        }}
+      />
     </motion.div>
   );
 }
