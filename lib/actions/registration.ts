@@ -261,6 +261,7 @@ export async function saveFinalData(data: FinalData) {
         ktm_url: data.ktmUrl ?? null,
         payment_proof_url: data.paymentProofUrl,
         payment_method: data.paymentMethod,
+        status: "pending",
         updated_at: new Date().toISOString(),
       })
       .eq("profile_id", user.id);
