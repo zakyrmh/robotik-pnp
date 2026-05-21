@@ -9,8 +9,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/useAuth";
+import Image from "next/image";
 
 export function Header() {
+  const { user } = useAuth();
+
   return (
     <header className="sticky top-0 z-30 flex h-16 w-full items-center border-b border-border/50 bg-background/80 backdrop-blur-md px-4 lg:px-8">
       {/* Mobile Menu Toggle */}
@@ -49,15 +53,26 @@ export function Header() {
         <div className="flex items-center gap-3 pl-2">
           <div className="hidden flex-col items-end lg:flex">
             <span className="text-sm font-semibold leading-none">
-              Zaky Ramadhan
+              {user?.name || "Guest User"}
             </span>
             <span className="mt-1 text-[10px] font-bold uppercase tracking-wider text-indigo-500">
-              Super Admin
+              {user?.role || "User"}
             </span>
           </div>
           <div className="h-9 w-9 rounded-xl bg-linear-to-br from-indigo-500 to-purple-600 p-[1.5px]">
-            <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-card text-xs font-bold">
-              ZR
+            <div className="flex h-full w-full items-center justify-center rounded-[10px] bg-card overflow-hidden text-xs font-bold">
+              {user?.photo_url ? (
+                <Image
+                  src={user.photo_url}
+                  alt={user.name || "User Avatar"}
+                  width={36}
+                  height={36}
+                  className="h-full w-full object-cover"
+                  unoptimized
+                />
+              ) : (
+                user?.name ? user.name.charAt(0).toUpperCase() : "G"
+              )}
             </div>
           </div>
         </div>

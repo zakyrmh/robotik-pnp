@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import type { RegisterState } from "@/lib/types/auth";
 
 // ============================================================
@@ -121,7 +122,58 @@ export async function getCurrentUser() {
     .eq("id", user.id)
     .single();
 
-  return { user, profile };
+  if (!profile) return null;
+
+  let name = "";
+  let photoUrl = "";
+
+  // 1. Cek registrations untuk caang/pendaftar
+  const { data: reg } = await supabase
+    .from("registrations")
+    .select("full_name, photo_url")
+    .eq("profile_id", user.id)
+    .maybeSingle();
+
+  if (reg) {
+    name = reg.full_name || "";
+    photoUrl = reg.photo_url || "";
+  }
+
+  // 2. Cek legacy_members untuk anggota
+  if (!name && profile.nim) {
+    const supabaseAdmin = createSupabaseClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+    const { data: legacy } = await supabaseAdmin
+      .from("legacy_members")
+      .select("full_name")
+      .eq("profile_id", user.id)
+      .maybeSingle();
+
+    if (legacy) {
+      name = legacy.full_name || "";
+    }
+  }
+
+  // Fallback ke metadata atau email jika nama masih kosong
+  if (!name) {
+    name =
+      user.user_metadata?.full_name ||
+      user.user_metadata?.name ||
+      user.email?.split("@")[0] ||
+      "User";
+  }
+
+  return {
+    id: user.id,
+    email: user.email,
+    name,
+    role: profile.role,
+    photo_url: photoUrl,
+    nim: profile.nim,
+    is_onboarded: profile.is_onboarded,
+  };
 }
 
 // ============================================================
