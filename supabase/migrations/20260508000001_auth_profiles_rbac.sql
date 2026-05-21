@@ -1,6 +1,6 @@
 -- 1. Setup Jenis Data & Tabel
 DO $$ BEGIN
-    CREATE TYPE public.user_role AS ENUM ('super-admin', 'admin-or', 'anggota', 'caang');
+    CREATE TYPE public.user_role AS ENUM ('super-admin', 'admin-or', 'admin-komdis', 'anggota', 'caang');
 EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 CREATE TABLE IF NOT EXISTS public.profiles (

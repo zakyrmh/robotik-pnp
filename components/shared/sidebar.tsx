@@ -95,6 +95,7 @@ const allMenuItems = {
 const roleMenuKeys: Record<string, (keyof typeof allMenuItems)[]> = {
   caang: ["dashboard", "kegiatan", "absensi", "tugas", "magang"],
   anggota: ["dashboard", "kegiatan", "absensi", "piket"],
+  "admin-komdis": ["dashboard", "kegiatan", "absensi", "piket"],
   "admin-or": [
     "dashboard",
     "pengaturanOr",
@@ -126,7 +127,9 @@ export function Sidebar() {
   const { user, loading } = useAuth();
 
   const role = user?.role;
-  const menuKeys = role && roleMenuKeys[role] ? roleMenuKeys[role] : ["dashboard"];
+  const menuKeys = (role && roleMenuKeys[role]
+    ? roleMenuKeys[role]
+    : ["dashboard"]) as (keyof typeof allMenuItems)[];
 
   return (
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-border/50 bg-card/30 backdrop-blur-xl lg:flex">

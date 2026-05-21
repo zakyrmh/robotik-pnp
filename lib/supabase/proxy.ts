@@ -68,7 +68,7 @@ export async function updateSession(request: NextRequest) {
 
   // Definisi Rute
   const authRoutes = ["/register", "/login"];
-  const protectedRoutes = ["/dashboard", "/onboarding", "/pendaftaran", "/waiting", "/rejected"];
+  const protectedRoutes = ["/dashboard", "/onboarding", "/pendaftaran", "/waiting", "/rejected", "/kegiatan"];
   const isAuthCallback = pathname === "/callback";
 
   if (isAuthCallback) return supabaseResponse;
@@ -89,7 +89,7 @@ export async function updateSession(request: NextRequest) {
   if (user && profile) {
     let targetRoute = null;
 
-    if (["anggota", "super-admin", "admin-or"].includes(profile.role)) {
+    if (["anggota", "super-admin", "admin-or", "admin-komdis"].includes(profile.role)) {
       // Role admin/anggota: bisa ke /dashboard, tidak bisa ke /onboarding, /waiting, /rejected
       if (
         isAuthRoute ||
