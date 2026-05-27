@@ -4,7 +4,7 @@ import React, { useState, useCallback } from "react";
 import Cropper, { Area } from "react-easy-crop";
 import { motion, AnimatePresence } from "framer-motion";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { TickDouble02Icon, Image01Icon, ArrowLeft02Icon } from "@hugeicons/core-free-icons";
+import { Image01Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import getCroppedImg from "@/lib/utils/cropImage";
 import { toast } from "sonner";
@@ -14,7 +14,6 @@ interface ImageCropperModalProps {
   imageSrc: string | null;
   onClose: () => void;
   onCropComplete: (croppedFile: File) => void;
-  onChangeImage: () => void;
 }
 
 export function ImageCropperModal({
@@ -22,7 +21,6 @@ export function ImageCropperModal({
   imageSrc,
   onClose,
   onCropComplete,
-  onChangeImage,
 }: ImageCropperModalProps) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -115,15 +113,14 @@ export function ImageCropperModal({
               <span className="text-sm font-medium text-neutral-500">+</span>
             </div>
 
-            {/* Footer Actions */}
             <div className="p-6 pt-4 flex items-center justify-between gap-3 border-t border-neutral-100 dark:border-neutral-800">
               <Button
                 variant="outline"
-                onClick={onChangeImage}
+                onClick={onClose}
                 disabled={isProcessing}
-                className="h-11 px-5 rounded-xl gap-2 font-medium"
+                className="h-11 px-5 rounded-xl font-medium"
               >
-                <HugeiconsIcon icon={ArrowLeft02Icon} size={16} /> Ganti Image
+                Batal
               </Button>
               
               <Button
@@ -131,8 +128,7 @@ export function ImageCropperModal({
                 disabled={isProcessing}
                 className="h-11 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold gap-2 shadow-lg shadow-blue-500/25 disabled:opacity-70 flex-1 sm:flex-none"
               >
-                {isProcessing ? "Menyimpan..." : "Simpan & Lanjutkan"}
-                {!isProcessing && <HugeiconsIcon icon={TickDouble02Icon} size={18} />}
+                {isProcessing ? "Menyimpan..." : "Simpan"}
               </Button>
             </div>
           </motion.div>

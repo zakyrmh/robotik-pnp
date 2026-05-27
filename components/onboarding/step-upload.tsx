@@ -315,14 +315,14 @@ export function StepUpload({ onPrev, onSuccess, initialPaymentMethod }: StepUplo
       <ImageCropperModal
         isOpen={cropperModalOpen}
         imageSrc={selectedImageForCrop}
-        onClose={() => setCropperModalOpen(false)}
+        onClose={() => {
+          setCropperModalOpen(false);
+          setSelectedImageForCrop(null);
+        }}
         onCropComplete={(croppedFile) => {
           setPasFoto(croppedFile);
           setCropperModalOpen(false);
           setSelectedImageForCrop(null);
-        }}
-        onChangeImage={() => {
-          setCropperModalOpen(false);
         }}
       />
     </motion.div>
