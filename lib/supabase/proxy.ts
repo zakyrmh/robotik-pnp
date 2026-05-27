@@ -45,8 +45,8 @@ export async function updateSession(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // 2. Ambil data profil (is_onboarded) dan registrasi jika user sudah login
-  let profile = null;
-  let regStatus = null;
+  let profile: { role: string; is_onboarded: boolean } | null = null;
+  let regStatus: string | null = null;
   if (user) {
     const { data, error } = await supabase
       .from("profiles")
@@ -56,26 +56,49 @@ export async function updateSession(request: NextRequest) {
 
     if (error) {
       console.error("Kesalahan kueri profil:", error.message);
-    } else {
-      profile = data;
+    } else if (data) {
+      profile = {
+        role: data.role,
+        is_onboarded: data.is_onboarded,
+      };
       if (data.registrations) {
-        regStatus = Array.isArray(data.registrations)
-          ? data.registrations[0]?.status
-          : (data.registrations as { status: string }).status;
+        const regs = data.registrations;
+        if (Array.isArray(regs)) {
+          regStatus = regs[0]?.status || null;
+        } else {
+          regStatus = (regs as { status: string }).status || null;
+        }
       }
     }
   }
 
   // Definisi Rute
-  const authRoutes = ["/register", "/login"];
-  const protectedRoutes = ["/dashboard", "/onboarding", "/pendaftaran", "/waiting", "/rejected", "/kegiatan"];
+  const authRoutes = ["/register", "/login", "/verify-email"];
+  const internalProtectedRoutes = [
+    "/dashboard",
+    "/kegiatan",
+    "/absensi",
+    "/tugas",
+    "/magang",
+    "/piket",
+    "/manajemen-kelompok"
+  ];
+  const protectedRoutes = [
+    ...internalProtectedRoutes,
+    "/onboarding",
+    "/waiting",
+    "/rejected"
+  ];
   const isAuthCallback = pathname === "/callback";
 
   if (isAuthCallback) return supabaseResponse;
 
-  // 3. LOGIKA REDIRECT
-  const isProtectedRoute = protectedRoutes.some((r) => pathname.startsWith(r));
-  const isAuthRoute = authRoutes.includes(pathname);
+  const matchRoute = (path: string, route: string) => {
+    return path === route || path.startsWith(route + "/");
+  };
+
+  const isProtectedRoute = protectedRoutes.some((r) => matchRoute(pathname, r));
+  const isAuthRoute = authRoutes.some((r) => matchRoute(pathname, r));
 
   // Kasus: User Belum Login
   if (!user && isProtectedRoute) {
@@ -87,58 +110,47 @@ export async function updateSession(request: NextRequest) {
 
   // Kasus: User Sudah Login
   if (user && profile) {
-    let targetRoute = null;
+    let targetRoute: string | null = null;
 
-    if (["anggota", "super-admin", "admin-or", "admin-komdis"].includes(profile.role)) {
-      // Role admin/anggota: bisa ke /dashboard, tidak bisa ke /onboarding, /waiting, /rejected
-      if (
-        isAuthRoute ||
-        pathname.startsWith("/onboarding") ||
-        pathname.startsWith("/waiting") ||
-        pathname.startsWith("/rejected")
-      ) {
-        targetRoute = "/dashboard";
-      }
-    } else if (profile.role === "caang") {
-      // Prioritaskan regStatus jika sudah ada (walaupun is_onboarded mungkin masih false)
-      if (regStatus === "process") {
-        // Hanya boleh di /onboarding
-        if (isAuthRoute || (isProtectedRoute && !pathname.startsWith("/onboarding"))) {
+    if (profile.role === "caang" && !profile.is_onboarded) {
+      // 1. role === 'caang' AND is_onboarded === false AND registrations.status === 'process'
+      if (regStatus === "process" || !regStatus) {
+        if (!matchRoute(pathname, "/onboarding") && (isProtectedRoute || isAuthRoute)) {
           targetRoute = "/onboarding";
         }
-      } else if (regStatus === "pending") {
-        // User minta pending dialihkan ke /dashboard
-        if (
-          isAuthRoute ||
-          pathname.startsWith("/onboarding") ||
-          pathname.startsWith("/waiting") ||
-          pathname.startsWith("/rejected")
-        ) {
-          targetRoute = "/dashboard";
+      }
+      // 2. role === 'caang' AND is_onboarded === false AND registrations.status === 'pending'
+      else if (regStatus === "pending") {
+        if (!matchRoute(pathname, "/waiting") && (isProtectedRoute || isAuthRoute)) {
+          targetRoute = "/waiting";
         }
-      } else if (regStatus === "verified") {
-        if (
-          isAuthRoute ||
-          pathname.startsWith("/onboarding") ||
-          pathname.startsWith("/waiting") ||
-          pathname.startsWith("/rejected")
-        ) {
-          targetRoute = "/dashboard";
-        }
-      } else if (regStatus === "rejected") {
-        if (isAuthRoute || (isProtectedRoute && !pathname.startsWith("/rejected"))) {
+      }
+      // 3. role === 'caang' AND is_onboarded === false AND registrations.status === 'rejected'
+      else if (regStatus === "rejected") {
+        if (!matchRoute(pathname, "/rejected") && (isProtectedRoute || isAuthRoute)) {
           targetRoute = "/rejected";
         }
-      } else if (!profile.is_onboarded) {
-        // Belum onboarded: hanya boleh di /onboarding
-        if (isAuthRoute || (isProtectedRoute && !pathname.startsWith("/onboarding"))) {
-          targetRoute = "/onboarding";
-        }
-      } else {
-        // Fallback
-        if (isAuthRoute || pathname.startsWith("/onboarding")) {
+      }
+      // Fallback jika statusnya verified tapi is_onboarded masih false
+      else if (regStatus === "verified") {
+        if (
+          isAuthRoute ||
+          matchRoute(pathname, "/onboarding") ||
+          matchRoute(pathname, "/waiting") ||
+          matchRoute(pathname, "/rejected")
+        ) {
           targetRoute = "/dashboard";
         }
+      }
+    } else {
+      // User sudah onboarded (is_onboarded === true) ATAU role bukan caang (anggota, admin, dll)
+      if (
+        isAuthRoute ||
+        matchRoute(pathname, "/onboarding") ||
+        matchRoute(pathname, "/waiting") ||
+        matchRoute(pathname, "/rejected")
+      ) {
+        targetRoute = "/dashboard";
       }
     }
 

@@ -2,18 +2,18 @@ import { type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/proxy";
 
 /**
- * Fungsi ini bertindak sebagai gerbang utama.
+ * Fungsi ini bertindak sebagai gerbang utama Next.js Middleware.
  * Setiap request yang lewat akan diproses oleh updateSession untuk mengecek
  * status login, konfirmasi email, dan status onboarding.
  */
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   return await updateSession(request);
 }
 
 /**
  * Konfigurasi Matcher:
  * Menentukan halaman mana saja yang akan dipantau oleh middleware.
- * Kita mengecualikan file statis agar tidak membebani performa laptop.
+ * Kita mengecualikan file statis agar tidak membebani performa.
  */
 export const config = {
   matcher: [
