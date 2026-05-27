@@ -113,4 +113,86 @@ describe("Group Generation Action", () => {
     expect(res.success).toBe(true);
     expect(res.message).toContain("Semi-Queue Tiering");
   });
+
+  it("should successfully generate groups with 32 Caangs distributed evenly into 4 groups (TS-ALG-01)", async () => {
+    mockSupabase.auth.getUser.mockResolvedValueOnce({ data: { user: { id: "admin-id" } } });
+    mockSupabase.single.mockResolvedValueOnce({ data: { role: "admin-or" } });
+
+    // Setup 32 mock caangs
+    const mockCaangs = Array.from({ length: 32 }, (_, i) => ({ id: `caang-${i + 1}` }));
+    
+    // Create random grades (some high, some low)
+    const mockSubmissions = mockCaangs.map((c, i) => ({
+      profile_id: c.id,
+      grade: 50 + (i % 5) * 10,
+    }));
+
+    const mockAttendances = mockCaangs.map((c) => ({
+      profile_id: c.id,
+      status: "hadir",
+    }));
+
+    const mockInsertedGroups = Array.from({ length: 4 }, (_, i) => ({
+      id: `group-${i + 1}-id`,
+      name: `Kelompok ${i + 1}`,
+    }));
+
+    // Setup dynamic mocks
+    let selectCallCount = 0;
+    mockSupabase.select = vi.fn().mockImplementation(() => {
+      selectCallCount++;
+      if (selectCallCount === 1 || selectCallCount === 2) {
+        return mockSupabase;
+      }
+      if (selectCallCount === 3) {
+        return Promise.resolve({ data: mockSubmissions });
+      }
+      if (selectCallCount === 4) {
+        return Promise.resolve({ data: mockAttendances });
+      }
+      return Promise.resolve({ data: mockInsertedGroups });
+    });
+
+    let insertCallCount = 0;
+    let insertedMembers: { group_id: string; profile_id: string }[] = [];
+    mockSupabase.insert = vi.fn().mockImplementation((data) => {
+      insertCallCount++;
+      if (insertCallCount === 1) {
+        return mockSupabase;
+      }
+      insertedMembers = data;
+      return Promise.resolve({ error: null });
+    });
+
+    let eqCallCount = 0;
+    mockSupabase.eq = vi.fn().mockImplementation(() => {
+      eqCallCount++;
+      if (eqCallCount === 1) {
+        return mockSupabase;
+      }
+      return Promise.resolve({ data: mockCaangs });
+    });
+
+    mockSupabase.single = vi.fn().mockResolvedValue({ data: { role: "admin-or" } });
+    mockSupabase.neq = vi.fn().mockResolvedValue({ error: null });
+    mockSupabase.delete = vi.fn().mockReturnThis();
+
+    const res = await generateGroupsAlgorithmic(4, "score");
+    console.log("Groups 32 Generation Result: ", JSON.stringify(res, null, 2));
+    expect(res.success).toBe(true);
+    expect(res.message).toContain("32 Caang secara merata ke dalam 4 kelompok");
+
+    // Ensure all 32 members were inserted and groups have 8 members each
+    expect(insertedMembers.length).toBe(32);
+    
+    const counts: Record<string, number> = {};
+    insertedMembers.forEach((m) => {
+      counts[m.group_id] = (counts[m.group_id] || 0) + 1;
+    });
+
+    expect(counts["group-1-id"]).toBe(8);
+    expect(counts["group-2-id"]).toBe(8);
+    expect(counts["group-3-id"]).toBe(8);
+    expect(counts["group-4-id"]).toBe(8);
+  });
 });

@@ -175,6 +175,23 @@ describe("Attendance Server Actions", () => {
       expect(res.data?.qrString).toBeTypeOf("string");
       expect(res.data?.expiresAt).toBeTypeOf("string");
     });
+
+    it("should succeed and return encrypted token even if coordinates are not provided (TS-ABS-02)", async () => {
+      mockSupabase.auth.getUser.mockResolvedValueOnce({ data: { user: { id: "user-id" } } });
+      mockSupabase.from.mockReturnThis();
+      mockSupabase.select.mockReturnThis();
+      mockSupabase.eq.mockReturnThis();
+      mockSupabase.single.mockResolvedValueOnce({ data: { role: "caang" } });
+
+      const pastStart = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+      const futureEnd = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+      mockSupabase.single.mockResolvedValueOnce({ data: { start_date: pastStart, end_date: futureEnd } });
+
+      const res = await generateAttendanceQR("activity-id");
+      expect(res.success).toBe(true);
+      expect(res.data?.qrString).toBeTypeOf("string");
+      expect(res.data?.expiresAt).toBeTypeOf("string");
+    });
   });
 
   describe("scanAttendanceQR", () => {
