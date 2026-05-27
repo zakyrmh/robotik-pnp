@@ -10,8 +10,8 @@ export default function PrivateLayout({
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
-      {/* 256px adalah lebar sidebar (w-64) */}
-      <div className="lg:pl-64">
+      {/* Dynamic sidebar width support */}
+      <div className="lg:pl-[var(--sidebar-width,16rem)] transition-[padding] duration-300 ease-in-out">
         <Header />
         <main className="p-4 lg:p-8">{children}</main>
       </div>
