@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Cropper, { Area } from "react-easy-crop";
 import { motion, AnimatePresence } from "framer-motion";
 import { HugeiconsIcon } from "@hugeicons/react";
@@ -22,7 +23,14 @@ export function ImageCropperModal({
   onClose,
   onCropComplete,
 }: ImageCropperModalProps) {
+  const [mounted, setMounted] = useState(false);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -53,7 +61,9 @@ export function ImageCropperModal({
     }
   };
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && imageSrc && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
@@ -134,6 +144,7 @@ export function ImageCropperModal({
           </motion.div>
         </div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
