@@ -10,7 +10,7 @@
  * - OnboardingClient diuji sebagai integrasi ringan untuk alur stepper (step 1 → 2).
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
