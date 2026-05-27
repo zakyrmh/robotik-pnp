@@ -226,7 +226,7 @@ export function Sidebar() {
                       />
                       <motion.div
                         layoutId="active-tricolor"
-                        className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-[#0066b1] via-[#1c69d4] to-[#e22718] z-10"
+                        className="absolute left-0 top-0 bottom-0 w-[3px] bg-linear-to-b from-[#0066b1] via-[#1c69d4] to-[#e22718] z-10"
                         transition={{ type: "spring", stiffness: 380, damping: 30 }}
                       />
                     </>
@@ -359,7 +359,7 @@ export function Sidebar() {
                             />
                             <motion.div
                               layoutId="active-tricolor-mobile"
-                              className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-[#0066b1] via-[#1c69d4] to-[#e22718] z-10"
+                              className="absolute left-0 top-0 bottom-0 w-[3px] bg-linear-to-b from-[#0066b1] via-[#1c69d4] to-[#e22718] z-10"
                               transition={{ type: "spring", stiffness: 380, damping: 30 }}
                             />
                           </>

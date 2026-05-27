@@ -17,7 +17,7 @@ export function Header() {
   const { user } = useAuth();
 
   return (
-    <header className="sticky top-0 z-40 flex h-16 w-full items-center border-b border-zinc-200/50 dark:border-zinc-800/50 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md px-4 lg:px-8 relative shadow-sm">
+    <header className="sticky top-0 z-40 flex h-16 w-full items-center border-b border-zinc-200/50 dark:border-zinc-800/50 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md px-4 lg:px-8 shadow-sm">
       {/* Mobile Menu Toggle */}
       <motion.div
         whileHover={{ scale: 1.05 }}
@@ -97,7 +97,7 @@ export function Header() {
       </div>
 
       {/* Tricolor Tech Stripe bottom border */}
-      <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-gradient-to-r from-[#0066b1] via-[#1c69d4] to-[#e22718]" />
+      <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-linear-to-r from-[#0066b1] via-[#1c69d4] to-[#e22718]" />
     </header>
   );
 }
