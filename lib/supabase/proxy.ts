@@ -142,8 +142,22 @@ export async function updateSession(request: NextRequest) {
           targetRoute = "/dashboard";
         }
       }
+    } else if (profile.role === "caang" && profile.is_onboarded) {
+      // Kondisi 5: Caang Resmi Terverifikasi (Masa Pembinaan/OR)
+      const allowedCaangRoutes = ["/dashboard", "/absensi", "/kegiatan", "/tugas"];
+      const isAllowed = allowedCaangRoutes.some((r) => matchRoute(pathname, r));
+      if (!isAllowed && (isProtectedRoute || isAuthRoute)) {
+        targetRoute = "/dashboard";
+      }
+    } else if (profile.role === "anggota") {
+      // Kondisi 6: Anggota Tetap / Pengurus Lama (Legacy Member)
+      const allowedAnggotaRoutes = ["/dashboard", "/absensi", "/kegiatan", "/piket"];
+      const isAllowed = allowedAnggotaRoutes.some((r) => matchRoute(pathname, r));
+      if (!isAllowed && (isProtectedRoute || isAuthRoute)) {
+        targetRoute = "/dashboard";
+      }
     } else {
-      // User sudah onboarded (is_onboarded === true) ATAU role bukan caang (anggota, admin, dll)
+      // User sudah onboarded (is_onboarded === true) ATAU role bukan caang/anggota (admin, dll)
       if (
         isAuthRoute ||
         matchRoute(pathname, "/onboarding") ||
