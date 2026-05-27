@@ -127,9 +127,15 @@ export function Sidebar() {
   const { user, loading } = useAuth();
 
   const role = user?.role;
-  const menuKeys = (role && roleMenuKeys[role]
+  const isOnboarded = user?.is_onboarded;
+
+  let menuKeys = (role && roleMenuKeys[role]
     ? roleMenuKeys[role]
     : ["dashboard"]) as (keyof typeof allMenuItems)[];
+
+  if (isOnboarded === false) {
+    menuKeys = ["dashboard"];
+  }
 
   return (
     <aside className="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col border-r border-border/50 bg-card/30 backdrop-blur-xl lg:flex">
