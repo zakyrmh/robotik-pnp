@@ -43,49 +43,49 @@ export async function getCaangList() {
 
   try {
     const { data, error } = await supabaseAdmin
-      .from("profiles")
+      .from("registrations")
       .select(`
         id,
-        email,
-        nim,
-        role,
-        is_onboarded,
-        registrations (
+        full_name,
+        nickname,
+        gender,
+        pob,
+        dob,
+        phone_number,
+        origin_address,
+        domicile_address,
+        high_school,
+        current_class,
+        entry_year,
+        motivation,
+        org_experience,
+        achievements,
+        photo_url,
+        ktm_url,
+        proof_follow_robotik,
+        proof_follow_mrc,
+        proof_sub_yt,
+        payment_proof_url,
+        payment_method,
+        status,
+        profiles!inner (
           id,
-          full_name,
-          nickname,
-          gender,
-          pob,
-          dob,
-          phone_number,
-          origin_address,
-          domicile_address,
-          high_school,
-          current_class,
-          entry_year,
-          motivation,
-          org_experience,
-          achievements,
-          photo_url,
-          ktm_url,
-          proof_follow_robotik,
-          proof_follow_mrc,
-          proof_sub_yt,
-          payment_proof_url,
-          payment_method,
-          status,
-          study_programs (
+          email,
+          nim,
+          role,
+          is_onboarded
+        ),
+        study_programs (
+          id,
+          name,
+          degree,
+          majors (
             id,
-            name,
-            degree,
-            majors (
-              id,
-              name
-            )
+            name
           )
         )
       `)
-      .eq("role", "caang")
+      .eq("profiles.role", "caang")
       .order("created_at", { ascending: false });
 
     if (error) {
