@@ -827,6 +827,104 @@ export function CaangClient({ initialCaang, studyPrograms }: CaangClientProps) {
                     </div>
                   </div>
                 </div>
+
+                {/* Section 6: Bukti Follow & Subscribe Media Sosial */}
+                <div className="space-y-3 border-t border-zinc-200 dark:border-zinc-800 pt-4">
+                  <h4 className="font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+                    Bukti Media Sosial
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    {/* Follow Robotik PNP */}
+                    <div className="bg-zinc-50 dark:bg-zinc-900/30 p-3 border border-zinc-150 dark:border-zinc-900 flex flex-col justify-between">
+                      <div>
+                        <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">Follow IG Robotik PNP</span>
+                        {viewingCaang.proofFollowRobotik ? (
+                          <div className="relative h-32 w-full mt-2 border border-zinc-200 dark:border-zinc-850 overflow-hidden bg-black/10">
+                            <Image
+                              src={viewingCaang.proofFollowRobotik}
+                              alt="Bukti Follow Instagram Robotik"
+                              fill
+                              className="object-contain"
+                              unoptimized
+                            />
+                          </div>
+                        ) : (
+                          <p className="text-xs text-zinc-500 italic mt-2">Tidak diunggah</p>
+                        )}
+                      </div>
+                      {viewingCaang.proofFollowRobotik && (
+                        <a
+                          href={viewingCaang.proofFollowRobotik}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-3 block text-center font-mono text-[10px] font-bold uppercase text-[#1c69d4] hover:underline"
+                        >
+                          Buka Gambar Penuh
+                        </a>
+                      )}
+                    </div>
+
+                    {/* Follow MRC */}
+                    <div className="bg-zinc-50 dark:bg-zinc-900/30 p-3 border border-zinc-150 dark:border-zinc-900 flex flex-col justify-between">
+                      <div>
+                        <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">Follow IG Minangkabau Robo</span>
+                        {viewingCaang.proofFollowMrc ? (
+                          <div className="relative h-32 w-full mt-2 border border-zinc-200 dark:border-zinc-850 overflow-hidden bg-black/10">
+                            <Image
+                              src={viewingCaang.proofFollowMrc}
+                              alt="Bukti Follow Instagram MRC"
+                              fill
+                              className="object-contain"
+                              unoptimized
+                            />
+                          </div>
+                        ) : (
+                          <p className="text-xs text-zinc-500 italic mt-2">Tidak diunggah</p>
+                        )}
+                      </div>
+                      {viewingCaang.proofFollowMrc && (
+                        <a
+                          href={viewingCaang.proofFollowMrc}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-3 block text-center font-mono text-[10px] font-bold uppercase text-[#1c69d4] hover:underline"
+                        >
+                          Buka Gambar Penuh
+                        </a>
+                      )}
+                    </div>
+
+                    {/* Subscribe YouTube */}
+                    <div className="bg-zinc-50 dark:bg-zinc-900/30 p-3 border border-zinc-150 dark:border-zinc-900 flex flex-col justify-between">
+                      <div>
+                        <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">Subscribe YouTube UKM</span>
+                        {viewingCaang.proofSubYt ? (
+                          <div className="relative h-32 w-full mt-2 border border-zinc-200 dark:border-zinc-850 overflow-hidden bg-black/10">
+                            <Image
+                              src={viewingCaang.proofSubYt}
+                              alt="Bukti Subscribe YouTube"
+                              fill
+                              className="object-contain"
+                              unoptimized
+                            />
+                          </div>
+                        ) : (
+                          <p className="text-xs text-zinc-500 italic mt-2">Tidak diunggah</p>
+                        )}
+                      </div>
+                      {viewingCaang.proofSubYt && (
+                        <a
+                          href={viewingCaang.proofSubYt}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-3 block text-center font-mono text-[10px] font-bold uppercase text-[#1c69d4] hover:underline"
+                        >
+                          Buka Gambar Penuh
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <DialogFooter className="border-t border-zinc-200 dark:border-zinc-800 pt-3">
