@@ -148,10 +148,17 @@ export async function updateCaang(
   profileId: string,
   data: {
     fullName: string;
-    nim: string;
-    email: string;
+    nickname: string;
+    gender: string;
+    pob: string;
+    dob: string;
     phoneNumber: string;
-    studyProgramId: string;
+    originAddress: string;
+    domicileAddress: string;
+    highSchool: string;
+    currentClass: string;
+    entryYear: number;
+    status: string;
   }
 ) {
   const authCheck = await verifyAdminAccess();
@@ -165,45 +172,29 @@ export async function updateCaang(
   );
 
   try {
-    // 1. Update profiles table (NIM, email)
-    const { error: profileError } = await supabaseAdmin
-      .from("profiles")
-      .update({
-        nim: data.nim,
-        email: data.email,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", profileId);
-
-    if (profileError) {
-      console.error("Error updating profile:", profileError);
-      return { success: false, error: "Gagal memperbarui NIM atau Email." };
-    }
-
-    // 2. Update auth user email if changed
-    const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
-      profileId,
-      { email: data.email }
-    );
-    if (authError) {
-      console.error("Error updating auth email:", authError);
-      // We don't fail the whole transaction as user is updated in profiles
-    }
-
-    // 3. Update registrations table
+    // Update registrations table with all 12 registration fields
     const { error: regError } = await supabaseAdmin
       .from("registrations")
       .update({
         full_name: data.fullName,
+        nickname: data.nickname,
+        gender: data.gender,
+        pob: data.pob,
+        dob: data.dob,
         phone_number: data.phoneNumber,
-        study_program_id: data.studyProgramId,
+        origin_address: data.originAddress,
+        domicile_address: data.domicileAddress,
+        high_school: data.highSchool || null,
+        current_class: data.currentClass || null,
+        entry_year: data.entryYear,
+        status: data.status,
         updated_at: new Date().toISOString(),
       })
       .eq("profile_id", profileId);
 
     if (regError) {
       console.error("Error updating registration:", regError);
-      return { success: false, error: "Gagal memperbarui biodata Caang." };
+      return { success: false, error: "Gagal memperbarui data pendaftaran Caang." };
     }
 
     revalidatePath("/manajemen-caang");

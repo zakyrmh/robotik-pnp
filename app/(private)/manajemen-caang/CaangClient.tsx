@@ -51,22 +51,11 @@ interface CaangItem {
   majorName: string;
 }
 
-interface StudyProgramOption {
-  id: string;
-  name: string;
-  degree: string;
-  major: {
-    id: string;
-    name: string;
-  };
-}
-
 interface CaangClientProps {
   initialCaang: CaangItem[];
-  studyPrograms: StudyProgramOption[];
 }
 
-export function CaangClient({ initialCaang, studyPrograms }: CaangClientProps) {
+export function CaangClient({ initialCaang }: CaangClientProps) {
   const router = useRouter();
 
   // Search & Filter state
@@ -86,10 +75,17 @@ export function CaangClient({ initialCaang, studyPrograms }: CaangClientProps) {
   // Edit form state
   const [editForm, setEditForm] = useState({
     fullName: "",
-    nim: "",
-    email: "",
+    nickname: "",
+    gender: "",
+    pob: "",
+    dob: "",
     phoneNumber: "",
-    studyProgramId: "",
+    originAddress: "",
+    domicileAddress: "",
+    highSchool: "",
+    currentClass: "",
+    entryYear: 0,
+    status: "",
   });
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
 
@@ -142,10 +138,17 @@ export function CaangClient({ initialCaang, studyPrograms }: CaangClientProps) {
     setEditingCaang(item);
     setEditForm({
       fullName: item.fullName,
-      nim: item.nim,
-      email: item.email,
+      nickname: item.nickname,
+      gender: item.gender,
+      pob: item.pob,
+      dob: item.dob,
       phoneNumber: item.phoneNumber,
-      studyProgramId: item.studyProgramId,
+      originAddress: item.originAddress,
+      domicileAddress: item.domicileAddress,
+      highSchool: item.highSchool,
+      currentClass: item.currentClass,
+      entryYear: item.entryYear || 0,
+      status: item.status,
     });
   };
 
@@ -153,8 +156,19 @@ export function CaangClient({ initialCaang, studyPrograms }: CaangClientProps) {
     e.preventDefault();
     if (!editingCaang) return;
 
-    if (!editForm.fullName || !editForm.nim || !editForm.email || !editForm.phoneNumber || !editForm.studyProgramId) {
-      toast.error("Semua kolom formulir wajib diisi.");
+    if (
+      !editForm.fullName ||
+      !editForm.nickname ||
+      !editForm.gender ||
+      !editForm.pob ||
+      !editForm.dob ||
+      !editForm.phoneNumber ||
+      !editForm.originAddress ||
+      !editForm.domicileAddress ||
+      !editForm.entryYear ||
+      !editForm.status
+    ) {
+      toast.error("Kolom bertanda bintang / wajib diisi tidak boleh kosong.");
       return;
     }
 
@@ -821,7 +835,7 @@ export function CaangClient({ initialCaang, studyPrograms }: CaangClientProps) {
                           rel="noreferrer"
                           className="mt-3 block text-center font-mono text-[10px] font-bold uppercase text-[#1c69d4] hover:underline"
                         >
-                          Buka Gambar Penuh
+                          Buka Gambar Penuh 
                         </a>
                       )}
                     </div>
@@ -944,7 +958,7 @@ export function CaangClient({ initialCaang, studyPrograms }: CaangClientProps) {
           MODAL: EDIT CAANG
           ======================================================= */}
       <Dialog open={!!editingCaang} onOpenChange={(open) => !open && setEditingCaang(null)}>
-        <DialogContent className="rounded-none max-w-md bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800">
+        <DialogContent className="rounded-none max-w-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 overflow-y-auto max-h-[90vh]">
           {editingCaang && (
             <form onSubmit={handleEditSubmit}>
               <DialogHeader className="border-b border-zinc-200 dark:border-zinc-800 pb-3">
@@ -956,10 +970,10 @@ export function CaangClient({ initialCaang, studyPrograms }: CaangClientProps) {
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="space-y-4 py-4 font-sans">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4 font-sans">
                 {/* Full Name */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="edit-name" className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Nama Lengkap</Label>
+                  <Label htmlFor="edit-name" className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Nama Lengkap *</Label>
                   <Input
                     id="edit-name"
                     value={editForm.fullName}
@@ -968,32 +982,35 @@ export function CaangClient({ initialCaang, studyPrograms }: CaangClientProps) {
                   />
                 </div>
 
-                {/* NIM */}
+                {/* Nickname */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="edit-nim" className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">NIM</Label>
+                  <Label htmlFor="edit-nickname" className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Nama Panggilan *</Label>
                   <Input
-                    id="edit-nim"
-                    value={editForm.nim}
-                    onChange={(e) => setEditForm((prev) => ({ ...prev, nim: e.target.value }))}
-                    className="rounded-none border border-zinc-200 dark:border-zinc-800 text-sm h-10 font-mono focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600"
-                  />
-                </div>
-
-                {/* Email */}
-                <div className="space-y-1.5">
-                  <Label htmlFor="edit-email" className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Email</Label>
-                  <Input
-                    id="edit-email"
-                    type="email"
-                    value={editForm.email}
-                    onChange={(e) => setEditForm((prev) => ({ ...prev, email: e.target.value }))}
+                    id="edit-nickname"
+                    value={editForm.nickname}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, nickname: e.target.value }))}
                     className="rounded-none border border-zinc-200 dark:border-zinc-800 text-sm h-10 focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600"
                   />
                 </div>
 
+                {/* Gender */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-gender" className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Jenis Kelamin *</Label>
+                  <select
+                    id="edit-gender"
+                    value={editForm.gender}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, gender: e.target.value }))}
+                    className="h-10 w-full bg-transparent px-3 rounded-none border border-zinc-200 dark:border-zinc-800 text-sm text-zinc-900 dark:text-zinc-50 focus:outline-hidden focus:border-zinc-400 dark:focus:border-zinc-600"
+                  >
+                    <option value="" disabled className="dark:bg-zinc-950">Pilih Jenis Kelamin</option>
+                    <option value="L" className="dark:bg-zinc-950">Laki-laki (L)</option>
+                    <option value="P" className="dark:bg-zinc-950">Perempuan (P)</option>
+                  </select>
+                </div>
+
                 {/* Phone */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="edit-phone" className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">No. Telepon / WA</Label>
+                  <Label htmlFor="edit-phone" className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">No. Telepon / WA *</Label>
                   <Input
                     id="edit-phone"
                     value={editForm.phoneNumber}
@@ -1002,22 +1019,101 @@ export function CaangClient({ initialCaang, studyPrograms }: CaangClientProps) {
                   />
                 </div>
 
-                {/* Program Studi */}
+                {/* Tempat Lahir */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="edit-prodi" className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Program Studi</Label>
+                  <Label htmlFor="edit-pob" className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Tempat Lahir *</Label>
+                  <Input
+                    id="edit-pob"
+                    value={editForm.pob}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, pob: e.target.value }))}
+                    className="rounded-none border border-zinc-200 dark:border-zinc-800 text-sm h-10 focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600"
+                  />
+                </div>
+
+                {/* Tanggal Lahir */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-dob" className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Tanggal Lahir *</Label>
+                  <Input
+                    id="edit-dob"
+                    type="date"
+                    value={editForm.dob}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, dob: e.target.value }))}
+                    className="rounded-none border border-zinc-200 dark:border-zinc-800 text-sm h-10 font-mono focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600"
+                  />
+                </div>
+
+                {/* Sekolah Asal */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-highschool" className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Sekolah Asal</Label>
+                  <Input
+                    id="edit-highschool"
+                    value={editForm.highSchool}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, highSchool: e.target.value }))}
+                    className="rounded-none border border-zinc-200 dark:border-zinc-800 text-sm h-10 focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600"
+                  />
+                </div>
+
+                {/* Kelas Sekarang */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-class" className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Kelas Sekarang</Label>
+                  <Input
+                    id="edit-class"
+                    value={editForm.currentClass}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, currentClass: e.target.value }))}
+                    className="rounded-none border border-zinc-200 dark:border-zinc-800 text-sm h-10 focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600"
+                  />
+                </div>
+
+                {/* entry_year */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-entryyear" className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Tahun Masuk *</Label>
+                  <Input
+                    id="edit-entryyear"
+                    type="number"
+                    value={editForm.entryYear || ""}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, entryYear: e.target.value ? parseInt(e.target.value) : 0 }))}
+                    className="rounded-none border border-zinc-200 dark:border-zinc-800 text-sm h-10 font-mono focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600"
+                  />
+                </div>
+
+                {/* Status */}
+                <div className="space-y-1.5">
+                  <Label htmlFor="edit-status" className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Status Pendaftaran *</Label>
                   <select
-                    id="edit-prodi"
-                    value={editForm.studyProgramId}
-                    onChange={(e) => setEditForm((prev) => ({ ...prev, studyProgramId: e.target.value }))}
+                    id="edit-status"
+                    value={editForm.status}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, status: e.target.value }))}
                     className="h-10 w-full bg-transparent px-3 rounded-none border border-zinc-200 dark:border-zinc-800 text-sm text-zinc-900 dark:text-zinc-50 focus:outline-hidden focus:border-zinc-400 dark:focus:border-zinc-600"
                   >
-                    <option value="" disabled className="dark:bg-zinc-950">Pilih Program Studi</option>
-                    {studyPrograms.map((sp) => (
-                      <option key={sp.id} value={sp.id} className="dark:bg-zinc-950">
-                        {sp.degree} {sp.name} ({sp.major.name})
-                      </option>
-                    ))}
+                    <option value="process" className="dark:bg-zinc-950">PROCESS</option>
+                    <option value="pending" className="dark:bg-zinc-950">PENDING</option>
+                    <option value="verified" className="dark:bg-zinc-950">VERIFIED</option>
+                    <option value="rejected" className="dark:bg-zinc-950">REJECTED</option>
                   </select>
+                </div>
+
+                {/* Alamat Asal */}
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label htmlFor="edit-origin" className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Alamat Asal *</Label>
+                  <textarea
+                    id="edit-origin"
+                    value={editForm.originAddress}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, originAddress: e.target.value }))}
+                    rows={2}
+                    className="w-full bg-transparent p-2.5 rounded-none border border-zinc-200 dark:border-zinc-800 text-sm text-zinc-900 dark:text-zinc-50 focus:outline-hidden focus:border-zinc-400 dark:focus:border-zinc-600"
+                  />
+                </div>
+
+                {/* Alamat Domisili */}
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label htmlFor="edit-domicile" className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Alamat Domisili *</Label>
+                  <textarea
+                    id="edit-domicile"
+                    value={editForm.domicileAddress}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, domicileAddress: e.target.value }))}
+                    rows={2}
+                    className="w-full bg-transparent p-2.5 rounded-none border border-zinc-200 dark:border-zinc-800 text-sm text-zinc-900 dark:text-zinc-50 focus:outline-hidden focus:border-zinc-400 dark:focus:border-zinc-600"
+                  />
                 </div>
               </div>
 

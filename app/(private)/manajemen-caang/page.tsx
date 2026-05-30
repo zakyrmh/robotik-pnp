@@ -1,20 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { getCaangList, getAllStudyProgramsWithMajors } from "@/lib/actions/caang";
+import { getCaangList } from "@/lib/actions/caang";
 import { CaangClient } from "./CaangClient";
-
-interface RawStudyProgram {
-  id: string;
-  name: string;
-  degree: string;
-  major: {
-    id: string;
-    name: string;
-  } | {
-    id: string;
-    name: string;
-  }[] | null;
-}
 
 interface RawRegistration {
   id: string;
@@ -91,24 +78,6 @@ export default async function ManajemenCaangPage() {
   const caangRes = await getCaangList();
   const caangData = (caangRes.success && caangRes.data ? caangRes.data : []) as unknown as RawRegistration[];
 
-  // Fetch study programs for edit modal selector
-  const spRes = await getAllStudyProgramsWithMajors();
-  const studyProgramsData = (spRes.success && spRes.data ? spRes.data : []) as unknown as RawStudyProgram[];
-
-  // Format Study Programs data
-  const formattedStudyPrograms = studyProgramsData.map((sp) => {
-    const majorData = Array.isArray(sp.major) ? sp.major[0] : sp.major;
-    return {
-      id: sp.id || "",
-      name: sp.name || "",
-      degree: sp.degree || "",
-      major: {
-        id: majorData?.id || "",
-        name: majorData?.name || "",
-      },
-    };
-  });
-
   // Format Caang data for the client component
   const formattedCaang = caangData.map((reg) => {
     const profile = Array.isArray(reg.profiles)
@@ -157,7 +126,6 @@ export default async function ManajemenCaangPage() {
   return (
     <CaangClient
       initialCaang={formattedCaang}
-      studyPrograms={formattedStudyPrograms}
     />
   );
 }
