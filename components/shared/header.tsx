@@ -1,10 +1,13 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Notification01Icon,
   Search01Icon,
   Menu01Icon,
+  Sun01Icon,
+  Moon01Icon,
 } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +18,28 @@ import { motion } from "framer-motion";
 
 export function Header() {
   const { user } = useAuth();
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMounted(true);
+      const isDark = document.documentElement.classList.contains("dark");
+      setTheme(isDark ? "dark" : "light");
+    }, 0);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const toggleTheme = () => {
+    const newTheme = theme === "light" ? "dark" : "light";
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme);
+    if (newTheme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  };
 
   return (
     <header className="sticky top-0 z-40 flex h-16 w-full items-center border-b border-zinc-200/50 dark:border-zinc-800/50 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md px-4 lg:px-8 shadow-sm">
@@ -48,7 +73,32 @@ export function Header() {
 
       {/* Right Side Controls */}
       <div className="ml-auto flex items-center gap-2 lg:gap-4">
+        {/* Tombol Ganti Tema */}
         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            className="rounded-none border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 hover:dark:text-zinc-50 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-all"
+            aria-label="Toggle Theme"
+          >
+            {mounted ? (
+              <motion.div
+                key={theme}
+                initial={{ rotate: -90, opacity: 0, scale: 0.8 }}
+                animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                transition={{ duration: 0.15 }}
+              >
+                <HugeiconsIcon icon={theme === "light" ? Moon01Icon : Sun01Icon} size={20} />
+              </motion.div>
+            ) : (
+              <div className="h-5 w-5" />
+            )}
+          </Button>
+        </motion.div>
+
+        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          {/* Tombol Notifikasi */}
           <Button
             variant="ghost"
             size="icon"
