@@ -68,12 +68,12 @@ const allMenuItems = {
     icon: UserGroupIcon,
   },
   kegiatanAbsensiCaang: {
-    title: "Kegiatan & Absensi Caang",
+    title: "Kegiatan & Absensi",
     href: "/kegiatan-absensi-caang",
     icon: CalendarAdd01Icon,
   },
   manajemenKelompokCaang: {
-    title: "Manajemen Kelompok Caang",
+    title: "Manajemen Kelompok",
     href: "/manajemen-kelompok",
     icon: UserMultiple02Icon,
   },
