@@ -157,6 +157,34 @@ export function Sidebar() {
     menuKeys = ["dashboard"];
   }
 
+  const sections = [
+    {
+      title: "KEANGGOTAAN UKM",
+      keys: [
+        "dashboard",
+        "kegiatan",
+        "absensi",
+        "tugas",
+        "magang",
+        "piket",
+        "manajemenAkun",
+        "auditLogSistem",
+      ].filter((key) => menuKeys.includes(key as keyof typeof allMenuItems)),
+    },
+    {
+      title: "OPEN RECRUITMENT",
+      keys: [
+        "pengaturanOr",
+        "manajemenCaang",
+        "kegiatanAbsensiCaang",
+        "manajemenKelompokCaang",
+        "manajemenMagang",
+      ].filter((key) => menuKeys.includes(key as keyof typeof allMenuItems)),
+    },
+  ];
+
+  const hasMultipleSections = sections.filter((s) => s.keys.length > 0).length > 1;
+
   // Prevent flash or SSR mismatch
   if (!mounted) {
     return null;
@@ -199,52 +227,65 @@ export function Sidebar() {
               ))}
             </div>
           ) : (
-            menuKeys.map((key) => {
-              const item = allMenuItems[key];
-              const isActive =
-                item.href === "/dashboard"
-                  ? pathname === "/dashboard"
-                  : pathname.startsWith(item.href);
+            sections.map((section, sIndex) => {
+              if (section.keys.length === 0) return null;
 
               return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "group relative flex items-center gap-3 px-3 py-3 text-xs font-mono font-semibold uppercase tracking-widest transition-all rounded-none overflow-hidden",
-                    isActive
-                      ? "text-zinc-900 dark:text-zinc-50 font-bold"
-                      : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 hover:dark:text-zinc-50 hover:bg-zinc-100/50 dark:hover:bg-zinc-900/50"
+                <div key={section.title} className={cn("space-y-1.5", sIndex > 0 && "mt-6")}>
+                  {hasMultipleSections && (
+                    <div className="px-3 pb-2 text-[9px] font-mono font-bold uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-500">
+                      {section.title}
+                    </div>
                   )}
-                >
-                  {isActive && (
-                    <>
-                      <motion.div
-                        layoutId="active-bg"
-                        className="absolute inset-0 bg-zinc-100/80 dark:bg-zinc-900/80 z-0"
-                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                      />
-                      <motion.div
-                        layoutId="active-tricolor"
-                        className="absolute left-0 top-0 bottom-0 w-[3px] bg-linear-to-b from-[#0066b1] via-[#1c69d4] to-[#e22718] z-10"
-                        transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                      />
-                    </>
-                  )}
-                  <div className="relative z-10 flex items-center gap-3 w-full">
-                    <HugeiconsIcon
-                      icon={item.icon}
-                      size={18}
-                      className={cn(
-                        "transition-colors shrink-0",
-                        isActive
-                          ? "text-[#1c69d4] dark:text-[#0066b1]"
-                          : "text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 group-hover:dark:text-zinc-50"
-                      )}
-                    />
-                    <span className="whitespace-nowrap">{item.title}</span>
-                  </div>
-                </Link>
+                  {section.keys.map((key) => {
+                    const item = allMenuItems[key as keyof typeof allMenuItems];
+                    const isActive =
+                      item.href === "/dashboard"
+                        ? pathname === "/dashboard"
+                        : pathname.startsWith(item.href);
+
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={cn(
+                          "group relative flex items-center gap-3 px-3 py-3 text-xs font-mono font-semibold uppercase tracking-widest transition-all rounded-none overflow-hidden",
+                          isActive
+                            ? "text-zinc-900 dark:text-zinc-50 font-bold"
+                            : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 hover:dark:text-zinc-50 hover:bg-zinc-100/50 dark:hover:bg-zinc-900/50"
+                        )}
+                      >
+                        {isActive && (
+                          <>
+                            <motion.div
+                              layoutId="active-bg"
+                              className="absolute inset-0 bg-zinc-100/80 dark:bg-zinc-900/80 z-0"
+                              transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                            />
+                            <motion.div
+                              layoutId="active-tricolor"
+                              className="absolute left-0 top-0 bottom-0 w-[3px] bg-linear-to-b from-[#0066b1] via-[#1c69d4] to-[#e22718] z-10"
+                              transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                            />
+                          </>
+                        )}
+                        <div className="relative z-10 flex items-center gap-3 w-full">
+                          <HugeiconsIcon
+                            icon={item.icon}
+                            size={18}
+                            className={cn(
+                              "transition-colors shrink-0",
+                              isActive
+                                ? "text-[#1c69d4] dark:text-[#0066b1]"
+                                : "text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 group-hover:dark:text-zinc-50"
+                            )}
+                          />
+                          <span className="whitespace-nowrap">{item.title}</span>
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
               );
             })
           )}
@@ -331,53 +372,66 @@ export function Sidebar() {
                     ))}
                   </div>
                 ) : (
-                  menuKeys.map((key) => {
-                    const item = allMenuItems[key];
-                    const isActive =
-                      item.href === "/dashboard"
-                        ? pathname === "/dashboard"
-                        : pathname.startsWith(item.href);
+                  sections.map((section, sIndex) => {
+                    if (section.keys.length === 0) return null;
 
                     return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={() => setIsMobileOpen(false)}
-                        className={cn(
-                          "group relative flex items-center gap-3 px-3 py-3 text-xs font-mono font-semibold uppercase tracking-widest transition-all rounded-none overflow-hidden",
-                          isActive
-                            ? "text-zinc-900 dark:text-zinc-50 font-bold"
-                            : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 hover:dark:text-zinc-50 hover:bg-zinc-100/50 dark:hover:bg-zinc-900/50"
+                      <div key={section.title} className={cn("space-y-1.5", sIndex > 0 && "mt-6")}>
+                        {hasMultipleSections && (
+                          <div className="px-3 pb-2 text-[9px] font-mono font-bold uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-500">
+                            {section.title}
+                          </div>
                         )}
-                      >
-                        {isActive && (
-                          <>
-                            <motion.div
-                              layoutId="active-bg-mobile"
-                              className="absolute inset-0 bg-zinc-100/80 dark:bg-zinc-900/80 z-0"
-                              transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                            />
-                            <motion.div
-                              layoutId="active-tricolor-mobile"
-                              className="absolute left-0 top-0 bottom-0 w-[3px] bg-linear-to-b from-[#0066b1] via-[#1c69d4] to-[#e22718] z-10"
-                              transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                            />
-                          </>
-                        )}
-                        <div className="relative z-10 flex items-center gap-3 w-full">
-                          <HugeiconsIcon
-                            icon={item.icon}
-                            size={18}
-                            className={cn(
-                              "transition-colors shrink-0",
-                              isActive
-                                ? "text-[#1c69d4] dark:text-[#0066b1]"
-                                : "text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 group-hover:dark:text-zinc-50"
-                            )}
-                          />
-                          <span className="whitespace-nowrap">{item.title}</span>
-                        </div>
-                      </Link>
+                        {section.keys.map((key) => {
+                          const item = allMenuItems[key as keyof typeof allMenuItems];
+                          const isActive =
+                            item.href === "/dashboard"
+                              ? pathname === "/dashboard"
+                              : pathname.startsWith(item.href);
+
+                          return (
+                            <Link
+                              key={item.href}
+                              href={item.href}
+                              onClick={() => setIsMobileOpen(false)}
+                              className={cn(
+                                "group relative flex items-center gap-3 px-3 py-3 text-xs font-mono font-semibold uppercase tracking-widest transition-all rounded-none overflow-hidden",
+                                isActive
+                                  ? "text-zinc-900 dark:text-zinc-50 font-bold"
+                                  : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 hover:dark:text-zinc-50 hover:bg-zinc-100/50 dark:hover:bg-zinc-900/50"
+                              )}
+                            >
+                              {isActive && (
+                                <>
+                                  <motion.div
+                                    layoutId="active-bg-mobile"
+                                    className="absolute inset-0 bg-zinc-100/80 dark:bg-zinc-900/80 z-0"
+                                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                                  />
+                                  <motion.div
+                                    layoutId="active-tricolor-mobile"
+                                    className="absolute left-0 top-0 bottom-0 w-[3px] bg-linear-to-b from-[#0066b1] via-[#1c69d4] to-[#e22718] z-10"
+                                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                                  />
+                                </>
+                              )}
+                              <div className="relative z-10 flex items-center gap-3 w-full">
+                                <HugeiconsIcon
+                                  icon={item.icon}
+                                  size={18}
+                                  className={cn(
+                                    "transition-colors shrink-0",
+                                    isActive
+                                      ? "text-[#1c69d4] dark:text-[#0066b1]"
+                                      : "text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 group-hover:dark:text-zinc-50"
+                                  )}
+                                />
+                                <span className="whitespace-nowrap">{item.title}</span>
+                              </div>
+                            </Link>
+                          );
+                        })}
+                      </div>
                     );
                   })
                 )}
