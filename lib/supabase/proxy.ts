@@ -86,7 +86,8 @@ export async function updateSession(request: NextRequest) {
     "/magang",
     "/piket",
     "/manajemen-kelompok",
-    "/manajemen-caang"
+    "/manajemen-caang",
+    "/kegiatan-absensi-caang"
   ];
   const protectedRoutes = [
     ...internalProtectedRoutes,
