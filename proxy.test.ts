@@ -11,6 +11,7 @@ process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'mock-anon-key';
 let mockUser: any = null;
 let mockProfile: any = null;
 let mockRegStatus: any = null;
+let mockRegDeletedAt: any = null;
 let mockQueryError: any = null;
 
 // Mock @supabase/ssr
@@ -39,7 +40,10 @@ vi.mock('@supabase/ssr', () => {
                 data: {
                   role: mockProfile.role,
                   is_onboarded: mockProfile.is_onboarded,
-                  registrations: mockRegStatus ? { status: mockRegStatus } : null,
+                  registrations: mockRegStatus || mockRegDeletedAt ? {
+                    status: mockRegStatus,
+                    deleted_at: mockRegDeletedAt,
+                  } : null,
                 },
                 error: null,
               };
@@ -114,6 +118,7 @@ describe('Next.js Proxy Layer - Route Guarding tests', () => {
     mockUser = null;
     mockProfile = null;
     mockRegStatus = null;
+    mockRegDeletedAt = null;
     mockQueryError = null;
   });
 
@@ -305,6 +310,45 @@ describe('Next.js Proxy Layer - Route Guarding tests', () => {
         expect(res.redirected).toBe(true);
         expect(res.url).toBe('/dashboard');
       }
+    });
+  });
+
+  describe('[Kondisi 7] Caang di Soft-Delete / Nonaktif', () => {
+    beforeEach(() => {
+      mockUser = { id: 'user-123', email: 'deletedcaang@robotik.org' };
+      mockProfile = { role: 'caang', is_onboarded: false };
+      mockRegStatus = 'process';
+      mockRegDeletedAt = '2026-05-30T15:00:00Z';
+    });
+
+    it('should redirect internal, onboarding, waiting, and auth routes to /deleted', async () => {
+      const routes = [
+        '/dashboard',
+        '/kegiatan',
+        '/absensi',
+        '/tugas',
+        '/magang',
+        '/piket',
+        '/manajemen-kelompok',
+        '/manajemen-caang',
+        '/onboarding',
+        '/waiting',
+        '/rejected',
+        '/login'
+      ];
+      for (const route of routes) {
+        const req = createMockRequest(route);
+        const res = await proxy(req);
+        expect(res.redirected).toBe(true);
+        expect(res.url).toBe('/deleted');
+      }
+    });
+
+    it('should allow accessing /deleted route', async () => {
+      const req = createMockRequest('/deleted');
+      const res = await proxy(req);
+      expect(res.redirected).toBeUndefined();
+      expect(res.status).toBe(200);
     });
   });
 });
