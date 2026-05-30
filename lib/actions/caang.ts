@@ -68,6 +68,8 @@ export async function getCaangList() {
         payment_proof_url,
         payment_method,
         status,
+        deleted_at,
+        delete_reason,
         profiles!inner (
           id,
           email,
@@ -86,6 +88,7 @@ export async function getCaangList() {
         )
       `)
       .eq("profiles.role", "caang")
+      .is("deleted_at", null)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -100,8 +103,8 @@ export async function getCaangList() {
   }
 }
 
-// Delete a caang (Auth user deletion, cascading to profile and registrations)
-export async function deleteCaang(profileId: string) {
+// Delete a caang (Soft delete by setting deleted_at and delete_reason)
+export async function deleteCaang(profileId: string, reason: string) {
   const authCheck = await verifyAdminAccess();
   if (!authCheck.authorized) {
     return { success: false, error: authCheck.error };
@@ -127,16 +130,22 @@ export async function deleteCaang(profileId: string) {
       return { success: false, error: "Aksi ditolak. Hanya data Caang yang dapat dihapus." };
     }
 
-    // Delete auth user (this cascades to profiles and registrations)
-    const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(profileId);
+    // Soft delete by updating registrations
+    const { error: deleteError } = await supabaseAdmin
+      .from("registrations")
+      .update({
+        deleted_at: new Date().toISOString(),
+        delete_reason: reason,
+      })
+      .eq("profile_id", profileId);
 
     if (deleteError) {
-      console.error("Error deleting user from auth:", deleteError);
-      return { success: false, error: "Gagal menghapus pengguna." };
+      console.error("Error soft deleting registration:", deleteError);
+      return { success: false, error: "Gagal menghapus data pendaftaran." };
     }
 
     revalidatePath("/manajemen-caang");
-    return { success: true, message: "Data Caang berhasil dihapus." };
+    return { success: true, message: "Data Caang berhasil dihapus (soft delete)." };
   } catch (err) {
     console.error("Unexpected error deleting caang:", err);
     return { success: false, error: "Terjadi kesalahan tidak terduga." };

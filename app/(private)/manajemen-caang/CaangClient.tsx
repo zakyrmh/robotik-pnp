@@ -49,6 +49,8 @@ interface CaangItem {
   studyProgramId: string;
   studyProgramName: string;
   majorName: string;
+  deletedAt?: string | null;
+  deleteReason?: string | null;
 }
 
 interface CaangClientProps {
@@ -70,6 +72,7 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
   const [viewingCaang, setViewingCaang] = useState<CaangItem | null>(null);
   const [editingCaang, setEditingCaang] = useState<CaangItem | null>(null);
   const [deletingCaangId, setDeletingCaangId] = useState<string | null>(null);
+  const [deleteReasonText, setDeleteReasonText] = useState("");
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   // Edit form state
@@ -195,17 +198,24 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
     }
   };
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!deletingCaangId) return;
 
-    const toastId = toast.loading("Menghapus akun Caang...");
+    if (!deleteReasonText.trim()) {
+      toast.error("Alasan menghapus wajib diisi.");
+      return;
+    }
+
+    const toastId = toast.loading("Menghapus data Caang...");
     try {
-      const res = await deleteCaang(deletingCaangId);
+      const res = await deleteCaang(deletingCaangId, deleteReasonText.trim());
       toast.dismiss(toastId);
 
       if (res.success) {
         toast.success(res.message);
         setDeletingCaangId(null);
+        setDeleteReasonText("");
         setSelectedIds((prev) => prev.filter((id) => id !== deletingCaangId));
         router.refresh();
       } else {
@@ -234,7 +244,7 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
 
     for (const id of selectedIds) {
       try {
-        const res = await deleteCaang(id);
+        const res = await deleteCaang(id, "Penghapusan massal oleh admin");
         if (res.success) {
           successCount++;
         } else {
@@ -526,7 +536,10 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                             variant="ghost"
                             size="icon"
                             title="Hapus Akun"
-                            onClick={() => setDeletingCaangId(item.profileId)}
+                            onClick={() => {
+                              setDeletingCaangId(item.profileId);
+                              setDeleteReasonText("");
+                            }}
                             className="h-8 w-8 rounded-none border border-zinc-200 dark:border-zinc-800 text-[#e22718] hover:bg-zinc-100 dark:hover:bg-zinc-900"
                           >
                             <HugeiconsIcon icon={Delete01Icon} size={16} />
@@ -634,7 +647,10 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setDeletingCaangId(item.profileId)}
+                      onClick={() => {
+                        setDeletingCaangId(item.profileId);
+                        setDeleteReasonText("");
+                      }}
                       className="rounded-none border border-zinc-200 dark:border-zinc-800 text-[#e22718] font-mono text-[10px] uppercase tracking-wider px-3 h-8 hover:bg-zinc-100 dark:hover:bg-zinc-900"
                     >
                       <HugeiconsIcon icon={Delete01Icon} size={14} className="mr-1.5" />
@@ -1140,38 +1156,54 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
       </Dialog>
 
       {/* =======================================================
-          MODAL: DELETE CONFIRMATION
+          MODAL: DELETE CONFIRMATION (SOFT DELETE)
           ======================================================= */}
       <Dialog open={!!deletingCaangId} onOpenChange={(open) => !open && setDeletingCaangId(null)}>
-        <DialogContent className="rounded-none max-w-sm bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800">
-          <DialogHeader>
-            <DialogTitle className="font-sans text-base font-bold uppercase tracking-widest text-[#e22718]">
-              Hapus Akun Caang
-            </DialogTitle>
-          </DialogHeader>
+        <DialogContent className="rounded-none max-w-md bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800">
+          <form onSubmit={handleDeleteConfirm}>
+            <DialogHeader className="border-b border-zinc-200 dark:border-zinc-800 pb-3">
+              <DialogTitle className="font-sans text-base font-bold uppercase tracking-widest text-[#e22718]">
+                Hapus Data Caang (Soft Delete)
+              </DialogTitle>
+            </DialogHeader>
 
-          <div className="py-2 text-xs text-zinc-600 dark:text-zinc-400 font-sans space-y-2">
-            <p>Apakah Anda yakin ingin menghapus akun Calon Anggota ini?</p>
-            <p className="font-bold text-[#e22718]">
-              Perhatian: Tindakan ini bersifat permanen dan akan menghapus seluruh data rekrutmen serta akun login pengguna yang bersangkutan.
-            </p>
-          </div>
+            <div className="py-4 space-y-4 font-sans text-xs">
+              <p className="text-zinc-600 dark:text-zinc-400">
+                Apakah Anda yakin ingin menonaktifkan data calon anggota ini? Tindakan ini akan menyembunyikan data dari daftar pendaftaran aktif.
+              </p>
+              
+              <div className="space-y-1.5">
+                <Label htmlFor="delete-reason" className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Alasan Penghapusan *</Label>
+                <textarea
+                  id="delete-reason"
+                  placeholder="Tulis alasan penonaktifan data di sini..."
+                  value={deleteReasonText}
+                  onChange={(e) => setDeleteReasonText(e.target.value)}
+                  rows={3}
+                  className="w-full bg-transparent p-2.5 rounded-none border border-zinc-200 dark:border-zinc-800 text-sm text-zinc-900 dark:text-zinc-50 focus:outline-hidden focus:border-zinc-400 dark:focus:border-zinc-600 placeholder:text-zinc-400 placeholder:text-xs"
+                  required
+                />
+              </div>
+            </div>
 
-          <DialogFooter className="border-t border-zinc-200 dark:border-zinc-800 pt-3 mt-4">
-            <Button
-              variant="ghost"
-              onClick={() => setDeletingCaangId(null)}
-              className="rounded-none border border-zinc-200 dark:border-zinc-800 font-mono text-xs uppercase tracking-wider h-9 px-4"
-            >
-              Batal
-            </Button>
-            <Button
-              onClick={handleDeleteConfirm}
-              className="rounded-none bg-[#e22718] hover:bg-[#c81e12] text-white font-mono text-xs uppercase tracking-wider h-9 px-4 shadow-[0_0_8px_rgba(226,39,24,0.2)]"
-            >
-              Hapus Permanen
-            </Button>
-          </DialogFooter>
+            <DialogFooter className="border-t border-zinc-200 dark:border-zinc-800 pt-3">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setDeletingCaangId(null)}
+                className="rounded-none border border-zinc-200 dark:border-zinc-800 font-mono text-xs uppercase tracking-wider h-10 px-4"
+              >
+                Batal
+              </Button>
+              <Button
+                type="submit"
+                disabled={!deleteReasonText.trim()}
+                className="rounded-none bg-[#e22718] hover:bg-[#c81e12] disabled:opacity-50 disabled:cursor-not-allowed text-white font-mono text-xs uppercase tracking-wider h-10 px-4 shadow-[0_0_8px_rgba(226,39,24,0.15)]"
+              >
+                Konfirmasi Hapus
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

@@ -27,6 +27,8 @@ interface RawRegistration {
   payment_proof_url: string | null;
   payment_method: string | null;
   status: string | null;
+  deleted_at: string | null;
+  delete_reason: string | null;
   profiles: {
     id: string;
     email: string;
@@ -120,6 +122,8 @@ export default async function ManajemenCaangPage() {
       studyProgramId: sp.id || "",
       studyProgramName: sp.name ? `${sp.degree} ${sp.name}` : "",
       majorName: major.name || "",
+      deletedAt: reg.deleted_at || null,
+      deleteReason: reg.delete_reason || null,
     };
   });
 
