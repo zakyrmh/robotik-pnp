@@ -60,6 +60,47 @@ interface CaangClientProps {
 export function CaangClient({ initialCaang }: CaangClientProps) {
   const router = useRouter();
 
+  // Calculate statistics from initialCaang
+  const stats = useMemo(() => {
+    let male = 0;
+    let female = 0;
+    const majors: Record<string, number> = {};
+    const statusCounts: Record<string, number> = {
+      process: 0,
+      pending: 0,
+      verified: 0,
+      rejected: 0,
+    };
+
+    initialCaang.forEach((item) => {
+      // 1. Gender
+      if (item.gender === "L") male++;
+      else if (item.gender === "P") female++;
+
+      // 2. Jurusan
+      const major = item.majorName || "Belum Memilih";
+      majors[major] = (majors[major] || 0) + 1;
+
+      // 3. Status
+      const statusKey = item.status || "process";
+      if (statusKey in statusCounts) {
+        statusCounts[statusKey]++;
+      } else {
+        statusCounts.process++;
+      }
+    });
+
+    const total = initialCaang.length;
+
+    return {
+      male,
+      female,
+      majors: Object.entries(majors).sort((a, b) => b[1] - a[1]),
+      status: statusCounts,
+      total,
+    };
+  }, [initialCaang]);
+
   // Search & Filter state
   const [search, setSearch] = useState("");
   const [selectedMajor, setSelectedMajor] = useState("all");
@@ -332,6 +373,180 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
             <Badge className="bg-zinc-100 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800 px-3 py-1.5 rounded-none font-mono text-[10px] uppercase tracking-wider">
               TOTAL CAANG: {initialCaang.length}
             </Badge>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Card 1: Total pendaftar berdasarkan jenis kelamin */}
+        <div className="relative border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-5 rounded-none overflow-hidden flex flex-col justify-between min-h-[160px]">
+          {/* Subtle Accent Line */}
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-[#0066b1]" />
+          <div>
+            <h3 className="font-mono text-[10px] font-medium uppercase tracking-widest text-zinc-500 flex items-center justify-between">
+              <span>GENDER TELEMETRY</span>
+              <span className="text-[9px] bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 px-1.5 py-0.5 rounded-none font-bold">TOTAL: {stats.total}</span>
+            </h3>
+            
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              <div className="space-y-1">
+                <span className="font-mono text-[9px] uppercase tracking-wider text-zinc-400 block">LAKI-LAKI (L)</span>
+                <span className="font-sans text-2xl font-extrabold text-zinc-900 dark:text-zinc-100 tracking-tight flex items-baseline gap-1">
+                  {stats.male}
+                  <span className="font-mono text-[10px] text-zinc-500 font-medium">({stats.total > 0 ? Math.round((stats.male / stats.total) * 100) : 0}%)</span>
+                </span>
+              </div>
+              
+              <div className="space-y-1">
+                <span className="font-mono text-[9px] uppercase tracking-wider text-zinc-400 block">PEREMPUAN (P)</span>
+                <span className="font-sans text-2xl font-extrabold text-zinc-900 dark:text-zinc-100 tracking-tight flex items-baseline gap-1">
+                  {stats.female}
+                  <span className="font-mono text-[10px] text-zinc-500 font-medium">({stats.total > 0 ? Math.round((stats.female / stats.total) * 100) : 0}%)</span>
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-2 mt-4">
+            <div className="h-2 w-full bg-zinc-100 dark:bg-zinc-900 rounded-none overflow-hidden flex">
+              {stats.male > 0 && (
+                <div 
+                  className="h-full bg-[#0066b1]" 
+                  style={{ width: `${stats.total > 0 ? (stats.male / stats.total) * 100 : 0}%` }}
+                />
+              )}
+              {stats.female > 0 && (
+                <div 
+                  className="h-full bg-[#1c69d4]" 
+                  style={{ width: `${stats.total > 0 ? (stats.female / stats.total) * 100 : 0}%` }}
+                />
+              )}
+            </div>
+            <div className="flex justify-between text-[9px] font-mono text-zinc-400">
+              <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-[#0066b1]" /> MALE</span>
+              <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-[#1c69d4]" /> FEMALE</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 2: Total pendaftar berdasarkan jurusan */}
+        <div className="relative border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-5 rounded-none overflow-hidden flex flex-col justify-between min-h-[160px]">
+          {/* Subtle Accent Line */}
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-[#1c69d4]" />
+          <div>
+            <h3 className="font-mono text-[10px] font-medium uppercase tracking-widest text-zinc-500 flex items-center justify-between mb-3">
+              <span>DEPARTMENT DISTRIBUTION</span>
+              <span className="text-[9px] bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 px-1.5 py-0.5 rounded-none font-bold">MAJORS: {stats.majors.length}</span>
+            </h3>
+            
+            <div className="space-y-2.5 max-h-[110px] overflow-y-auto pr-1">
+              {stats.majors.length === 0 ? (
+                <p className="text-[10px] font-mono text-zinc-400 uppercase py-2">Tidak ada data jurusan</p>
+              ) : (
+                stats.majors.map(([major, count]) => {
+                  const percentage = stats.total > 0 ? (count / stats.total) * 100 : 0;
+                  return (
+                    <div key={major} className="space-y-1">
+                      <div className="flex justify-between text-[10px] font-mono">
+                        <span className="truncate max-w-[170px] uppercase text-zinc-600 dark:text-zinc-400 font-semibold">{major}</span>
+                        <span className="font-bold text-zinc-900 dark:text-zinc-100">{count} ({Math.round(percentage)}%)</span>
+                      </div>
+                      <div className="h-1.5 w-full bg-zinc-100 dark:bg-zinc-900 rounded-none overflow-hidden">
+                        <div 
+                          className="h-full bg-zinc-400 dark:bg-zinc-600" 
+                          style={{ width: `${percentage}%` }} 
+                        />
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Card 3: Chart pendaftar berdasarkan status */}
+        <div className="relative border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-5 rounded-none overflow-hidden flex flex-col justify-between min-h-[160px]">
+          {/* Subtle Accent Line */}
+          <div className="absolute top-0 left-0 right-0 h-[2px] bg-[#e22718]" />
+          <div>
+            <h3 className="font-mono text-[10px] font-medium uppercase tracking-widest text-zinc-500 mb-3">
+              REGISTRATION STATUS
+            </h3>
+            
+            {/* Segmented Progress Bar */}
+            <div className="h-3 w-full bg-zinc-100 dark:bg-zinc-900 rounded-none overflow-hidden flex">
+              {stats.total > 0 ? (
+                <>
+                  {stats.status.verified > 0 && (
+                    <div 
+                      className="h-full bg-[#10b981]" 
+                      style={{ width: `${(stats.status.verified / stats.total) * 100}%` }} 
+                      title={`Verified: ${stats.status.verified}`}
+                    />
+                  )}
+                  {stats.status.process > 0 && (
+                    <div 
+                      className="h-full bg-zinc-400 dark:bg-zinc-600" 
+                      style={{ width: `${(stats.status.process / stats.total) * 100}%` }} 
+                      title={`Process: ${stats.status.process}`}
+                    />
+                  )}
+                  {stats.status.pending > 0 && (
+                    <div 
+                      className="h-full bg-amber-500" 
+                      style={{ width: `${(stats.status.pending / stats.total) * 100}%` }} 
+                      title={`Pending: ${stats.status.pending}`}
+                    />
+                  )}
+                  {stats.status.rejected > 0 && (
+                    <div 
+                      className="h-full bg-[#e22718]" 
+                      style={{ width: `${(stats.status.rejected / stats.total) * 100}%` }} 
+                      title={`Rejected: ${stats.status.rejected}`}
+                    />
+                  )}
+                </>
+              ) : (
+                <div className="h-full w-full bg-zinc-200 dark:bg-zinc-800" />
+              )}
+            </div>
+            
+            {/* Legend Grid */}
+            <div className="grid grid-cols-2 gap-x-3 gap-y-2 mt-4 text-[9px] font-mono">
+              <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-900 pb-1">
+                <div className="flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 bg-[#10b981] inline-block" />
+                  <span className="text-zinc-600 dark:text-zinc-400">VERIFIED</span>
+                </div>
+                <span className="font-bold text-zinc-900 dark:text-zinc-100">{stats.status.verified}</span>
+              </div>
+              
+              <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-900 pb-1">
+                <div className="flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 bg-zinc-400 dark:bg-zinc-600 inline-block" />
+                  <span className="text-zinc-600 dark:text-zinc-400">PROCESS</span>
+                </div>
+                <span className="font-bold text-zinc-900 dark:text-zinc-100">{stats.status.process}</span>
+              </div>
+              
+              <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-900 pb-1">
+                <div className="flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 bg-amber-500 inline-block" />
+                  <span className="text-zinc-600 dark:text-zinc-400">PENDING</span>
+                </div>
+                <span className="font-bold text-zinc-900 dark:text-zinc-100">{stats.status.pending}</span>
+              </div>
+              
+              <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-900 pb-1">
+                <div className="flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 bg-[#e22718] inline-block" />
+                  <span className="text-zinc-600 dark:text-zinc-400">REJECTED</span>
+                </div>
+                <span className="font-bold text-zinc-900 dark:text-zinc-100">{stats.status.rejected}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
