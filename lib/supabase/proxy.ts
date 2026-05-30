@@ -47,10 +47,11 @@ export async function updateSession(request: NextRequest) {
   // 2. Ambil data profil (is_onboarded) dan registrasi jika user sudah login
   let profile: { role: string; is_onboarded: boolean } | null = null;
   let regStatus: string | null = null;
+  let deletedAt: string | null = null;
   if (user) {
     const { data, error } = await supabase
       .from("profiles")
-      .select("role, is_onboarded, registrations(status)")
+      .select("role, is_onboarded, registrations(status, deleted_at, delete_reason)")
       .eq("id", user.id)
       .single();
 
@@ -65,8 +66,11 @@ export async function updateSession(request: NextRequest) {
         const regs = data.registrations;
         if (Array.isArray(regs)) {
           regStatus = regs[0]?.status || null;
+          deletedAt = regs[0]?.deleted_at || null;
         } else {
-          regStatus = (regs as { status: string }).status || null;
+          const regObj = regs as unknown as { status: string | null; deleted_at: string | null; delete_reason: string | null };
+          regStatus = regObj.status || null;
+          deletedAt = regObj.deleted_at || null;
         }
       }
     }
@@ -87,7 +91,8 @@ export async function updateSession(request: NextRequest) {
     ...internalProtectedRoutes,
     "/onboarding",
     "/waiting",
-    "/rejected"
+    "/rejected",
+    "/deleted"
   ];
   const isAuthCallback = pathname === "/callback";
 
@@ -112,7 +117,12 @@ export async function updateSession(request: NextRequest) {
   if (user && profile) {
     let targetRoute: string | null = null;
 
-    if (profile.role === "caang" && !profile.is_onboarded) {
+    if (profile.role === "caang" && deletedAt) {
+      // Jika calon anggota di soft-delete, arahkan ke halaman /deleted
+      if (!matchRoute(pathname, "/deleted") && (isProtectedRoute || isAuthRoute)) {
+        targetRoute = "/deleted";
+      }
+    } else if (profile.role === "caang" && !profile.is_onboarded) {
       // 1. role === 'caang' AND is_onboarded === false AND registrations.status === 'process'
       if (regStatus === "process" || !regStatus) {
         if (!matchRoute(pathname, "/onboarding") && (isProtectedRoute || isAuthRoute)) {
@@ -137,7 +147,8 @@ export async function updateSession(request: NextRequest) {
           isAuthRoute ||
           matchRoute(pathname, "/onboarding") ||
           matchRoute(pathname, "/waiting") ||
-          matchRoute(pathname, "/rejected")
+          matchRoute(pathname, "/rejected") ||
+          matchRoute(pathname, "/deleted")
         ) {
           targetRoute = "/dashboard";
         }
@@ -162,7 +173,8 @@ export async function updateSession(request: NextRequest) {
         isAuthRoute ||
         matchRoute(pathname, "/onboarding") ||
         matchRoute(pathname, "/waiting") ||
-        matchRoute(pathname, "/rejected")
+        matchRoute(pathname, "/rejected") ||
+        matchRoute(pathname, "/deleted")
       ) {
         targetRoute = "/dashboard";
       }
