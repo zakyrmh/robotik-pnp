@@ -19,6 +19,7 @@ import {
   Cancel01Icon,
   Upload01Icon,
   Archive01Icon,
+  QrCode01Icon,
 } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -98,10 +99,6 @@ function formatDate(dateStr: string) {
   });
 }
 
-function formatDateTime(dateStr: string) {
-  const d = new Date(dateStr);
-  return `${d.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })} ${d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })} WIB`;
-}
 
 function toLocalDatetimeInput(dateStr: string) {
   const d = new Date(dateStr);
@@ -378,6 +375,18 @@ export function KegiatanAbsensiClient({
                 className="mr-2 text-zinc-500"
               />
               Trash
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => router.push("/kegiatan-absensi-caang/scan")}
+              className="rounded-none border border-zinc-200 dark:border-zinc-800 font-mono text-xs uppercase tracking-wider px-4 py-2 h-9 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+            >
+              <HugeiconsIcon
+                icon={QrCode01Icon}
+                size={16}
+                className="mr-2 text-zinc-500"
+              />
+              Scan QR Absensi
             </Button>
             <Button
               onClick={openAddForm}

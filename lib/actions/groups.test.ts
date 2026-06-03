@@ -14,6 +14,8 @@ const { mockSupabase } = vi.hoisted(() => {
       delete: vi.fn().mockReturnThis(),
       neq: vi.fn().mockReturnThis(),
       insert: vi.fn().mockReturnThis(),
+      is: vi.fn().mockReturnThis(),
+      in: vi.fn().mockResolvedValue({ error: null }),
     },
   };
 });
@@ -31,7 +33,7 @@ describe("Group Generation Action", () => {
     mockSupabase.auth.getUser.mockResolvedValueOnce({ data: { user: { id: "admin-id" } } });
     mockSupabase.single.mockResolvedValueOnce({ data: { role: "caang" } });
 
-    const res = await generateGroupsAlgorithmic(4, "score");
+    const res = await generateGroupsAlgorithmic("parent-group-id", 4, "score");
     expect(res.success).toBe(false);
     expect(res.error?.code).toBe("FORBIDDEN");
   });
@@ -40,7 +42,7 @@ describe("Group Generation Action", () => {
     mockSupabase.auth.getUser.mockResolvedValueOnce({ data: { user: { id: "admin-id" } } });
     mockSupabase.single.mockResolvedValueOnce({ data: { role: "admin-or" } });
 
-    const res = await generateGroupsAlgorithmic(0, "score");
+    const res = await generateGroupsAlgorithmic("parent-group-id", 0, "score");
     expect(res.success).toBe(false);
     expect(res.error?.code).toBe("BAD_REQUEST");
   });
@@ -74,13 +76,13 @@ describe("Group Generation Action", () => {
     let selectCallCount = 0;
     mockSupabase.select = vi.fn().mockImplementation(() => {
       selectCallCount++;
-      if (selectCallCount === 1 || selectCallCount === 2) {
-        return mockSupabase; // select("role") or select("id")
-      }
-      if (selectCallCount === 3) {
-        return Promise.resolve({ data: mockSubmissions }); // select("profile_id, grade")
+      if (selectCallCount === 1 || selectCallCount === 2 || selectCallCount === 3 || selectCallCount === 6) {
+        return mockSupabase; // select("role") or select("id, name") or select("id") or select("id")
       }
       if (selectCallCount === 4) {
+        return Promise.resolve({ data: mockSubmissions }); // select("profile_id, grade")
+      }
+      if (selectCallCount === 5) {
         return Promise.resolve({ data: mockAttendances }); // select("profile_id, status")
       }
       return Promise.resolve({ data: mockInsertedGroups }); // select()
@@ -98,17 +100,23 @@ describe("Group Generation Action", () => {
     let eqCallCount = 0;
     mockSupabase.eq = vi.fn().mockImplementation(() => {
       eqCallCount++;
-      if (eqCallCount === 1) {
-        return mockSupabase; // eq("id", adminUser.id)
+      if (eqCallCount === 1 || eqCallCount === 2) {
+        return mockSupabase; // eq("id", adminUser.id) or eq("id", parentGroupId)
       }
-      return Promise.resolve({ data: mockCaangs }); // eq("role", "caang")
+      if (eqCallCount === 3) {
+        return Promise.resolve({ data: mockCaangs }); // eq("role", "caang")
+      }
+      if (eqCallCount === 4) {
+        return Promise.resolve({ data: [{ id: "sub-1" }] }); // eq("parent_id", parentGroupId)
+      }
+      return Promise.resolve({ error: null }); // eq("parent_id", parentGroupId) for delete
     });
 
-    mockSupabase.single = vi.fn().mockResolvedValue({ data: { role: "admin-or" } });
+    mockSupabase.single = vi.fn().mockResolvedValue({ data: { role: "admin-or", name: "Kelompok Induk" } });
     mockSupabase.neq = vi.fn().mockResolvedValue({ error: null });
     mockSupabase.delete = vi.fn().mockReturnThis();
 
-    const res = await generateGroupsAlgorithmic(2, "score");
+    const res = await generateGroupsAlgorithmic("parent-group-id", 2, "score");
     console.log("Groups Generation Result: ", JSON.stringify(res, null, 2));
     expect(res.success).toBe(true);
     expect(res.message).toContain("Semi-Queue Tiering");
@@ -141,13 +149,13 @@ describe("Group Generation Action", () => {
     let selectCallCount = 0;
     mockSupabase.select = vi.fn().mockImplementation(() => {
       selectCallCount++;
-      if (selectCallCount === 1 || selectCallCount === 2) {
+      if (selectCallCount === 1 || selectCallCount === 2 || selectCallCount === 3 || selectCallCount === 6) {
         return mockSupabase;
       }
-      if (selectCallCount === 3) {
+      if (selectCallCount === 4) {
         return Promise.resolve({ data: mockSubmissions });
       }
-      if (selectCallCount === 4) {
+      if (selectCallCount === 5) {
         return Promise.resolve({ data: mockAttendances });
       }
       return Promise.resolve({ data: mockInsertedGroups });
@@ -167,20 +175,26 @@ describe("Group Generation Action", () => {
     let eqCallCount = 0;
     mockSupabase.eq = vi.fn().mockImplementation(() => {
       eqCallCount++;
-      if (eqCallCount === 1) {
+      if (eqCallCount === 1 || eqCallCount === 2) {
         return mockSupabase;
       }
-      return Promise.resolve({ data: mockCaangs });
+      if (eqCallCount === 3) {
+        return Promise.resolve({ data: mockCaangs });
+      }
+      if (eqCallCount === 4) {
+        return Promise.resolve({ data: [{ id: "sub-1" }] });
+      }
+      return Promise.resolve({ error: null });
     });
 
-    mockSupabase.single = vi.fn().mockResolvedValue({ data: { role: "admin-or" } });
+    mockSupabase.single = vi.fn().mockResolvedValue({ data: { role: "admin-or", name: "Kelompok Induk" } });
     mockSupabase.neq = vi.fn().mockResolvedValue({ error: null });
     mockSupabase.delete = vi.fn().mockReturnThis();
 
-    const res = await generateGroupsAlgorithmic(4, "score");
+    const res = await generateGroupsAlgorithmic("parent-group-id", 4, "score");
     console.log("Groups 32 Generation Result: ", JSON.stringify(res, null, 2));
     expect(res.success).toBe(true);
-    expect(res.message).toContain("32 Caang secara merata ke dalam 4 kelompok");
+    expect(res.message).toContain("membagi 32 Caang ke dalam 4 sub kelompok");
 
     // Ensure all 32 members were inserted and groups have 8 members each
     expect(insertedMembers.length).toBe(32);

@@ -74,19 +74,24 @@ export async function generateAttendanceQR(
     const startDate = new Date(activity.start_date);
     const endDate = new Date(activity.end_date);
 
-    if (now < startDate) {
+    // Absensi dibuka 2 jam sebelum kegiatan dimulai
+    const attendanceOpen = new Date(startDate.getTime() - 2 * 60 * 60 * 1000);
+    // Absensi ditutup 2 jam setelah kegiatan berakhir
+    const attendanceClose = new Date(endDate.getTime() + 2 * 60 * 60 * 1000);
+
+    if (now < attendanceOpen) {
       return {
         success: false,
-        message: "Absensi belum dibuka. Kegiatan belum dimulai.",
-        error: { code: "BAD_REQUEST", details: "Activity has not started yet" }
+        message: "Absensi belum dibuka. Absensi dapat diakses mulai 2 jam sebelum kegiatan.",
+        error: { code: "BAD_REQUEST", details: "Activity has not reached its attendance window yet" }
       };
     }
 
-    if (now > endDate) {
+    if (now > attendanceClose) {
       return {
         success: false,
-        message: "Absensi sudah ditutup. Kegiatan telah berakhir.",
-        error: { code: "BAD_REQUEST", details: "Activity has already ended" }
+        message: "Absensi sudah ditutup. Batas akhir absensi adalah 2 jam setelah kegiatan selesai.",
+        error: { code: "BAD_REQUEST", details: "Activity attendance window has already closed" }
       };
     }
 
@@ -134,12 +139,16 @@ export async function generateAttendanceQR(
 export async function scanAttendanceQR(
   qrString: string
 ): Promise<ServerActionResponse<{ name: string; status: "hadir" | "telat" }>> {
+  console.log("=== SERVER DEBUG: scanAttendanceQR STARTED ===");
+  console.log("qrString received:", qrString);
   try {
     const supabase = await createClient();
 
     // 1. Verify that the scanning user is an admin
     const { data: { user: adminUser }, error: authError } = await supabase.auth.getUser();
+    console.log("Auth user retrieval completed. adminUser ID:", adminUser?.id, "Error if any:", authError);
     if (authError || !adminUser) {
+      console.warn("Auth check failed or no user logged in.");
       return {
         success: false,
         message: "Sesi tidak ditemukan. Silakan login kembali.",
@@ -153,7 +162,9 @@ export async function scanAttendanceQR(
       .eq("id", adminUser.id)
       .single();
 
+    console.log("Admin profile check completed. Role:", adminProfile?.role, "Error if any:", adminProfileError);
     if (adminProfileError || !adminProfile) {
+      console.warn("Failed to find admin profile in DB.");
       return {
         success: false,
         message: "Profil admin tidak ditemukan.",
@@ -163,6 +174,7 @@ export async function scanAttendanceQR(
 
     const allowedRoles = ["admin-komdis", "admin-or", "super-admin"];
     if (!allowedRoles.includes(adminProfile.role)) {
+      console.warn("Role not authorized. Required: admin, got:", adminProfile.role);
       return {
         success: false,
         message: "Hanya Admin yang dapat memindai QR Code absensi.",
@@ -174,8 +186,10 @@ export async function scanAttendanceQR(
     let payload: DecryptedPayload;
     try {
       payload = decryptToken(qrString) as unknown as DecryptedPayload;
+      console.log("Successfully decrypted token. Payload:", payload);
     } catch (e: unknown) {
       const errorMsg = e instanceof Error ? e.message : String(e);
+      console.error("Token decryption failed. Error details:", errorMsg);
       return {
         success: false,
         message: "QR Code tidak valid.",
@@ -185,6 +199,7 @@ export async function scanAttendanceQR(
 
     const { profile_id, activity_id, generated_at, coordinates } = payload;
     if (!profile_id || !activity_id || !generated_at) {
+      console.warn("Payload is missing required parameters.");
       return {
         success: false,
         message: "Struktur QR Code tidak valid.",
@@ -193,7 +208,9 @@ export async function scanAttendanceQR(
     }
 
     const now = Date.now();
+    console.log("Checking token age. Token generated_at:", generated_at, "Current time:", now, "Diff (ms):", now - generated_at);
     if (now > generated_at + 5 * 60 * 1000) {
+      console.warn("Token has expired. Age exceeds 5 minutes limit.");
       return {
         success: false,
         message: "QR Code Expired.",
@@ -208,7 +225,9 @@ export async function scanAttendanceQR(
       .eq("id", activity_id)
       .single();
 
+    console.log("Fetched activity details. Start date:", activity?.start_date, "Error if any:", activityError);
     if (activityError || !activity) {
+      console.warn("Activity not found in DB.");
       return {
         success: false,
         message: "Kegiatan tidak ditemukan.",
@@ -222,6 +241,7 @@ export async function scanAttendanceQR(
     const toleranceLimit = new Date(startTime.getTime() + 15 * 60 * 1000);
 
     const status: "hadir" | "telat" = checkInTime > toleranceLimit ? "telat" : "hadir";
+    console.log("Check-in calculation. Time:", checkInTime.toISOString(), "Limit:", toleranceLimit.toISOString(), "Status assigned:", status);
 
     // 4. Fetch user's profile and name
     const { data: targetProfile, error: targetProfileError } = await supabase
@@ -230,7 +250,9 @@ export async function scanAttendanceQR(
       .eq("id", profile_id)
       .single();
 
+    console.log("Fetched target student profile. Role:", targetProfile?.role, "NIM:", targetProfile?.nim, "Error if any:", targetProfileError);
     if (targetProfileError || !targetProfile) {
+      console.warn("Student profile not found in DB.");
       return {
         success: false,
         message: "Profil mahasiswa tidak ditemukan.",
@@ -254,8 +276,10 @@ export async function scanAttendanceQR(
         .maybeSingle();
       name = legacy?.full_name || "Anggota";
     }
+    console.log("Resolved target student name:", name);
 
     // 5. Upsert attendance record
+    console.log("Attempting database upsert on attendances table...");
     const { error: upsertError } = await supabase
       .from("attendances")
       .upsert({
@@ -270,6 +294,9 @@ export async function scanAttendanceQR(
       });
 
     if (upsertError) {
+      console.error("=== SERVER DATABASE UPSERT ERROR ===");
+      console.error("Message:", upsertError.message);
+      console.error("Full details object:", JSON.stringify(upsertError, null, 2));
       return {
         success: false,
         message: "Gagal mencatat absensi ke database.",
@@ -277,6 +304,7 @@ export async function scanAttendanceQR(
       };
     }
 
+    console.log("Database upsert success! Attendance logged successfully.");
     return {
       success: true,
       message: "Absensi berhasil dicatat.",
@@ -287,11 +315,15 @@ export async function scanAttendanceQR(
     };
   } catch (err: unknown) {
     const errMsg = err instanceof Error ? err.message : String(err);
+    console.error("=== SERVER UNEXPECTED EXCEPTION ===");
+    console.error(errMsg);
     return {
       success: false,
       message: "Gagal memproses pemindaian QR Code absensi.",
       error: { code: "SERVER_ERROR", details: errMsg }
     };
+  } finally {
+    console.log("=== SERVER DEBUG: scanAttendanceQR FINISHED ===");
   }
 }
 

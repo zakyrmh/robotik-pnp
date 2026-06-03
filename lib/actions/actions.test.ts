@@ -132,8 +132,8 @@ describe("Attendance Server Actions", () => {
       mockSupabase.eq.mockReturnThis();
       mockSupabase.single.mockResolvedValueOnce({ data: { role: "caang" } });
 
-      const futureStart = new Date(Date.now() + 60 * 60 * 1000).toISOString();
-      const futureEnd = new Date(Date.now() + 120 * 60 * 1000).toISOString();
+      const futureStart = new Date(Date.now() + 180 * 60 * 1000).toISOString();
+      const futureEnd = new Date(Date.now() + 240 * 60 * 1000).toISOString();
       mockSupabase.single.mockResolvedValueOnce({ data: { start_date: futureStart, end_date: futureEnd } });
 
       const res = await generateAttendanceQR("activity-id");
@@ -149,8 +149,8 @@ describe("Attendance Server Actions", () => {
       mockSupabase.eq.mockReturnThis();
       mockSupabase.single.mockResolvedValueOnce({ data: { role: "caang" } });
 
-      const pastStart = new Date(Date.now() - 120 * 60 * 1000).toISOString();
-      const pastEnd = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      const pastStart = new Date(Date.now() - 240 * 60 * 1000).toISOString();
+      const pastEnd = new Date(Date.now() - 180 * 60 * 1000).toISOString();
       mockSupabase.single.mockResolvedValueOnce({ data: { start_date: pastStart, end_date: pastEnd } });
 
       const res = await generateAttendanceQR("activity-id");
