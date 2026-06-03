@@ -14,12 +14,33 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import Image from "next/image";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+
+// Custom SVG Icon for Logout
+const LogoutIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
+  </svg>
+);
 
 export function Header() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [mounted, setMounted] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!isDropdownOpen) return;
+    const handleOutsideClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest("#avatar-dropdown-container")) {
+        setIsDropdownOpen(false);
+      }
+    };
+    window.addEventListener("click", handleOutsideClick);
+    return () => window.removeEventListener("click", handleOutsideClick);
+  }, [isDropdownOpen]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -114,8 +135,8 @@ export function Header() {
         <div className="h-8 w-px bg-zinc-200 dark:bg-zinc-800 mx-1 hidden lg:block" />
 
         {/* User Profile Info */}
-        <div className="flex items-center gap-3 pl-2">
-          <div className="hidden flex-col items-end lg:flex">
+        <div id="avatar-dropdown-container" className="relative flex items-center gap-3 pl-2">
+          <div className="hidden flex-col items-end lg:flex select-none">
             <span className="text-sm font-bold tracking-tight text-zinc-900 dark:text-zinc-50 uppercase">
               {user?.name || "GUEST USER"}
             </span>
@@ -126,6 +147,7 @@ export function Header() {
           
           <motion.div 
             whileHover={{ scale: 1.05 }}
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className="h-9 w-9 rounded-none border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-[1.5px] cursor-pointer hover:border-zinc-400 dark:hover:border-zinc-600 transition-colors relative"
           >
             <div className="flex h-full w-full items-center justify-center rounded-none bg-zinc-50 dark:bg-zinc-950 overflow-hidden text-xs font-mono font-bold text-zinc-900 dark:text-zinc-50">
@@ -143,6 +165,39 @@ export function Header() {
               )}
             </div>
           </motion.div>
+
+          <AnimatePresence>
+            {isDropdownOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                transition={{ duration: 0.15 }}
+                className="absolute right-0 top-full mt-2 w-48 rounded-none border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-lg z-50 overflow-hidden"
+              >
+                {/* User info for mobile screen inside dropdown */}
+                <div className="px-4 py-2 border-b border-zinc-100 dark:border-zinc-900 lg:hidden block">
+                  <p className="text-xs font-bold text-zinc-900 dark:text-zinc-50 uppercase truncate">
+                    {user?.name || "GUEST USER"}
+                  </p>
+                  <p className="text-[8px] font-mono font-bold tracking-wider text-[#1c69d4] dark:text-[#0066b1] uppercase mt-0.5">
+                    {user?.role || "USER"}
+                  </p>
+                </div>
+                
+                <button
+                  onClick={async () => {
+                    setIsDropdownOpen(false);
+                    await logout();
+                  }}
+                  className="flex w-full items-center gap-2.5 px-4 py-2.5 font-mono text-xs uppercase tracking-wider text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 hover:text-[#e22718] dark:hover:text-[#e22718] transition-colors rounded-none text-left cursor-pointer border-none"
+                >
+                  <LogoutIcon />
+                  LOGOUT
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
