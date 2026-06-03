@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { getCurrentUser, signOut as serverSignOut } from '@/lib/actions/auth';
 
@@ -21,6 +22,7 @@ interface AuthContextType {
 }
 
 export const useAuth = (): AuthContextType => {
+    const router = useRouter();
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -110,9 +112,12 @@ export const useAuth = (): AuthContextType => {
         try {
             await supabase.auth.signOut();
             await serverSignOut();
+        } catch {
+            // Next.js redirect in server actions throws an error which can be caught here
+            console.log('Sign out redirected or complete');
+        } finally {
             setUser(null);
-        } catch (err) {
-            console.error('Logout error:', err);
+            router.push('/login');
         }
     };
 
