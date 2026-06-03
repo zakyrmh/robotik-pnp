@@ -35,6 +35,7 @@ export function OnboardingClient({ initialProgress }: OnboardingClientProps) {
   // NIM pre-filled dari profiles.nim (untuk StepIdentity)
   const [nim, setNim] = useState(initialProgress.nim ?? "");
   const [isCheckingNim, setIsCheckingNim] = useState(false);
+  const [closedError, setClosedError] = useState<string | null>(null);
 
   const nextStep = () => setStep((s) => Math.min(s + 1, 5));
   const prevStep = () => setStep((s) => Math.max(s - 1, 1));
@@ -44,11 +45,22 @@ export function OnboardingClient({ initialProgress }: OnboardingClientProps) {
   // ──────────────────────────────────────────────
   const handleCheckNim = async () => {
     setIsCheckingNim(true);
+    setClosedError(null);
     try {
-      const result = await checkLegacyMember(nim);
+      const result = await checkLegacyMember(nim) as {
+        success: boolean;
+        isLegacy?: boolean;
+        isClosed?: boolean;
+        error?: string;
+        message?: string;
+      };
 
       if (!result.success) {
-        toast.error(result.error || "Gagal memeriksa NIM");
+        if (result.isClosed) {
+          setClosedError(result.error || "Pendaftaran saat ini ditutup.");
+        } else {
+          toast.error(result.error || "Gagal memeriksa NIM");
+        }
         return;
       }
 
@@ -85,6 +97,7 @@ export function OnboardingClient({ initialProgress }: OnboardingClientProps) {
                 onLegacyMemberFound={() => router.push("/dashboard")}
                 isChecking={isCheckingNim}
                 setIsChecking={setIsCheckingNim}
+                closedError={closedError}
               />
             )}
             {step === 2 && (

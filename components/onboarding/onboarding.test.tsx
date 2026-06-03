@@ -725,4 +725,23 @@ describe('Integrasi — OnboardingClient: Alur Stepper & Logika Legacy Member', 
     );
     expect(screen.getByText('Data Pribadi & Kontak')).toBeInTheDocument();
   });
+
+  it('[INT-TC6] Skenario NIM gagal karena pendaftaran ditutup: checkLegacyMember returns success:false, isClosed:true → closedError ditunjukkan di UI', async () => {
+    mockCheckLegacyResult = { success: false, isClosed: true, error: 'Pendaftaran ditutup. Silakan tunggu pendaftaran selanjutnya.' };
+    render(<OnboardingClient initialProgress={defaultProgress} />);
+
+    const input = screen.getByTestId('Contoh: 22110830XX');
+    fireEvent.change(input, { target: { value: '22110830AA' } });
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: /Cek Validasi NIM/i }));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Pendaftaran Ditutup')).toBeInTheDocument();
+      expect(screen.getByText('Pendaftaran ditutup. Silakan tunggu pendaftaran selanjutnya.')).toBeInTheDocument();
+    });
+    // Tetap di step 1
+    expect(screen.getByText('Validasi Identitas')).toBeInTheDocument();
+  });
 });

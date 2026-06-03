@@ -17,6 +17,7 @@ interface StepIdentityProps {
   onLegacyMemberFound: () => void;
   isChecking: boolean;
   setIsChecking: (value: boolean) => void;
+  closedError?: string | null;
 }
 
 export function StepIdentity({
@@ -24,6 +25,7 @@ export function StepIdentity({
   setNim,
   onNext,
   isChecking,
+  closedError,
 }: StepIdentityProps) {
   return (
     <motion.div
@@ -55,6 +57,21 @@ export function StepIdentity({
           diarahkan ke dashboard.
         </p>
       </div>
+
+      {closedError && (
+        <div className="mb-6 flex gap-3 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-100 dark:border-red-900/60 px-4 py-3 text-sm text-red-700 dark:text-red-300 shadow-[0_0_12px_rgba(226,39,24,0.05)]">
+          <HugeiconsIcon
+            icon={InformationCircleIcon}
+            size={18}
+            className="mt-0.5 shrink-0 text-[#e22718]"
+          />
+          <div>
+            <p className="font-bold font-mono text-xs uppercase tracking-wider text-[#e22718]">Pendaftaran Ditutup</p>
+            <p className="mt-1 text-xs leading-relaxed">{closedError}</p>
+            <p className="mt-2 text-[10px] font-mono uppercase tracking-wider text-neutral-400">Silakan tunggu pendaftaran selanjutnya.</p>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label

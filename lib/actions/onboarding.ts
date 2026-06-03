@@ -120,6 +120,36 @@ export async function checkLegacyMember(nim: string) {
     }
 
     // NIM tidak ditemukan di legacy_members — caang baru
+    // Cek status pendaftaran OR dan rentang waktu pembukaan pendaftaran
+    const { data: orSettings, error: settingsError } = await supabase
+      .from("or_settings")
+      .select("status_pendaftaran, tanggal_mulai, tanggal_selesai")
+      .eq("id", "00000000-0000-0000-0000-000000000000")
+      .single();
+
+    if (settingsError || !orSettings) {
+      console.error("Error fetching OR settings:", settingsError);
+      return {
+        success: false,
+        error: "Gagal memproses pendaftaran. Pengaturan pendaftaran tidak ditemukan.",
+      };
+    }
+
+    const now = new Date();
+    const isStatusOpen = orSettings.status_pendaftaran === true;
+    const startDate = orSettings.tanggal_mulai ? new Date(orSettings.tanggal_mulai) : null;
+    const endDate = orSettings.tanggal_selesai ? new Date(orSettings.tanggal_selesai) : null;
+
+    const isWithinRange = (!startDate || now >= startDate) && (!endDate || now <= endDate);
+
+    if (!isStatusOpen || !isWithinRange) {
+      return {
+        success: false,
+        isClosed: true,
+        error: "Pendaftaran calon anggota baru saat ini ditutup. Silakan tunggu pembukaan pendaftaran selanjutnya.",
+      };
+    }
+
     // Simpan NIM ke profiles agar step Academic bisa mengekstrak entry_year
     const { error: nimUpdateError } = await supabase
       .from("profiles")
