@@ -4,6 +4,29 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ================================================================
+   CYBER-INDUSTRIAL FUSION — Brand Design Tokens
+   ================================================================ */
+@theme inline {
+  /* Brand Colors */
+  --color-cyber-blue: #0066b1;
+  --color-tech-navy: #1c69d4;
+  --color-crimson-red: #e22718;
+
+  /* Canvas / Surface */
+  --color-canvas-dark: #0a0f24;
+  --color-canvas-light: #ffffff;
+  --color-surface-card-dark: #131a3a;
+  --color-surface-soft-light: #f5f7fa;
+
+  /* Hairlines */
+  --color-hairline-dark: #222b54;
+  --color-hairline-light: #e2e8f0;
+
+  /* Font override for mono */
+  --font-jetbrains: "JetBrains Mono", "Geist Mono", monospace;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
