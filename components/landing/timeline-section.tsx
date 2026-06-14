@@ -11,8 +11,8 @@ const steps = [
     phase: "Rekrutmen",
     title: "Pendaftaran & Seleksi Anggota",
     description:
-      "Buka pendaftaran setiap awal semester. Calon anggota mengikuti seleksi berkas, tes dasar robotika, dan wawancara divisi.",
-    duration: "Februari & Agustus",
+      "Buka pendaftaran setiap awal semester ganjil. Calon anggota mengikuti seleksi berkas, tes dasar robotika, dan wawancara divisi.",
+    duration: "September",
     status: "recurring",
     details: [
       "Tes pengetahuan dasar",
@@ -32,16 +32,16 @@ const steps = [
   },
   {
     number: "03",
-    phase: "Kompetisi Internal",
-    title: "Uji Coba & Sparring Divisi",
+    phase: "Research & Development",
+    title: "Perancangan Robot & Riset",
     description:
-      "Simulasi kompetisi internal antar divisi sebelum turun ke arena nasional. Evaluasi performa dan perbaikan sistem.",
-    duration: "Setiap Kuartal",
+      "Pengembangan robot baru sesuai dengan regulasi kompetisi tahun berjalan. Riset teknologi terbaru untuk keunggulan kompetitif.",
+    duration: "Oktober - Maret",
     status: "competition",
     details: [
-      "Arena uji coba internal",
-      "Evaluasi teknis tim",
-      "Iterasi sistem robot",
+      "Desain mekanikal",
+      "Perakitan prototipe",
+      "Programming & sensor",
     ],
   },
   {
@@ -60,7 +60,7 @@ const steps = [
     title: "Review & Pengembangan Robot Baru",
     description:
       "Setelah kompetisi, tim melakukan evaluasi mendalam dan mulai mengembangkan generasi robot berikutnya untuk musim depan.",
-    duration: "November — Januari",
+    duration: "Juli - September",
     status: "done",
     details: ["Laporan teknis", "Desain robot baru", "Transfer ilmu ke junior"],
   },

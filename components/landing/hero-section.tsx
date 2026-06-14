@@ -93,7 +93,8 @@ export function HeroSection() {
             >
               Unit Kegiatan Mahasiswa Robotika PNP adalah pusat inovasi rekayasa
               robot terdepan di Sumatera Barat — membawa misi meraih podium
-              nasional di KRAI, KRSBI, KRSTI, dan KRSRI setiap tahunnya.
+              nasional di KRAI, KRSBI-B, KRSBI-H, KRSTI, dan KRSRI setiap
+              tahunnya.
             </motion.p>
 
             {/* CTA Buttons */}
@@ -195,7 +196,7 @@ export function HeroSection() {
 
                 {/* Corner data tags */}
                 <div className="absolute top-3 left-3 font-mono text-[9px] text-cyber-blue/60 uppercase tracking-wider">
-                  SYS/ROBOT_V4.2
+                  SYS/ROBOT_V2
                 </div>
                 <div className="absolute top-3 right-3 font-mono text-[9px] text-white/30 uppercase tracking-wider">
                   ONLINE
@@ -223,7 +224,7 @@ export function HeroSection() {
               />
               <div>
                 <p className="font-mono text-[20px] font-bold text-white leading-none">
-                  47+
+                  40+
                 </p>
                 <p className="font-mono text-[9px] uppercase tracking-[1.5px] text-white/40 mt-0.5">
                   Total Prestasi
@@ -244,7 +245,7 @@ export function HeroSection() {
               />
               <div>
                 <p className="font-mono text-[20px] font-bold text-white leading-none">
-                  120+
+                  60+
                 </p>
                 <p className="font-mono text-[9px] uppercase tracking-[1.5px] text-white/40 mt-0.5">
                   Anggota Aktif

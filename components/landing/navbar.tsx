@@ -5,6 +5,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Menu01Icon, Cancel01Icon } from "@hugeicons/core-free-icons";
+import Image from "next/image";
 
 const navLinks = [
   { href: "/", label: "Beranda" },
@@ -44,10 +45,14 @@ export function LandingNavbar() {
         <div className="max-w-[1320px] mx-auto h-full px-6 flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-9 h-9 bg-linear-to-br from-cyber-blue to-tech-navy flex items-center justify-center">
-              <span className="text-white font-mono font-bold text-sm tracking-wider">
-                R
-              </span>
+            <div className="w-9 h-9 flex items-center justify-center">
+              <Image
+                src="/images/logo-ukm-robotik-pnp.webp"
+                alt="Logo UKM Robotik PNP"
+                width={32}
+                height={32}
+                className="rounded-full object-cover"
+              />
             </div>
             <div className="flex flex-col leading-none">
               <span
@@ -88,7 +93,7 @@ export function LandingNavbar() {
 
           {/* CTA Button */}
           <Link
-            href="/keanggotaan"
+            href="/register"
             className={`hidden lg:block font-mono text-[11px] font-medium uppercase tracking-[1.5px] px-5 py-2.5 border transition-all duration-200 ${
               scrolled
                 ? "bg-canvas-dark text-white border-canvas-dark hover:bg-transparent hover:text-canvas-dark"

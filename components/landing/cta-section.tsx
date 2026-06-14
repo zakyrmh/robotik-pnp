@@ -62,7 +62,7 @@ export function CtaSection() {
             {/* CTA Buttons */}
             <div className="flex flex-wrap gap-4">
               <Link
-                href="/keanggotaan"
+                href="/register"
                 className="inline-flex items-center gap-3 font-mono text-[12px] font-medium uppercase tracking-[1.5px] px-8 py-4 bg-white text-canvas-dark hover:bg-transparent hover:text-white border border-white transition-all duration-200 group"
               >
                 Daftar Sekarang
@@ -103,31 +103,10 @@ export function CtaSection() {
                     Email
                   </p>
                   <a
-                    href="mailto:robotika@pnp.ac.id"
+                    href="mailto:infokomrobotikpnp2024@gmail.com"
                     className="font-mono text-[13px] text-white hover:text-cyber-blue transition-colors duration-200"
                   >
-                    robotika@pnp.ac.id
-                  </a>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-surface-card-dark border border-hairline-dark p-6">
-              <div className="flex items-start gap-3">
-                <HugeiconsIcon
-                  icon={SmartPhone01Icon}
-                  size={18}
-                  className="text-cyber-blue shrink-0 mt-0.5"
-                />
-                <div>
-                  <p className="font-mono text-[10px] uppercase tracking-[1px] text-white/40 mb-1">
-                    WhatsApp
-                  </p>
-                  <a
-                    href="https://wa.me/6281234567890"
-                    className="font-mono text-[13px] text-white hover:text-cyber-blue transition-colors duration-200"
-                  >
-                    +62 812-3456-7890
+                    infokomrobotikpnp2024@gmail.com
                   </a>
                 </div>
               </div>
@@ -138,11 +117,11 @@ export function CtaSection() {
                 Sekretariat
               </p>
               <p className="font-mono text-[12px] text-white leading-relaxed">
-                Gedung Teknik Elektro Lt. 2,
+                Gedung P Lt. 2,
                 <br />
                 Politeknik Negeri Padang,
                 <br />
-                Limau Manis, Padang 25164
+                Limau Manis, Padang
               </p>
             </div>
           </motion.div>

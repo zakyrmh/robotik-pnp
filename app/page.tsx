@@ -1,23 +1,32 @@
-import type { Metadata } from 'next';
-import { LandingNavbar } from '@/components/landing/navbar';
-import { HeroSection } from '@/components/landing/hero-section';
-import { StatsSection } from '@/components/landing/stats-section';
-import { DivisionsSection } from '@/components/landing/divisions-section';
-import { GallerySection } from '@/components/landing/gallery-section';
-import { TimelineSection } from '@/components/landing/timeline-section';
-import { CtaSection } from '@/components/landing/cta-section';
-import { LandingFooter } from '@/components/landing/footer';
+import type { Metadata } from "next";
+import { LandingNavbar } from "@/components/landing/navbar";
+import { HeroSection } from "@/components/landing/hero-section";
+import { StatsSection } from "@/components/landing/stats-section";
+import { DivisionsSection } from "@/components/landing/divisions-section";
+import { GallerySection } from "@/components/landing/gallery-section";
+import { TimelineSection } from "@/components/landing/timeline-section";
+import { CtaSection } from "@/components/landing/cta-section";
+import { LandingFooter } from "@/components/landing/footer";
 
 export const metadata: Metadata = {
-  title: 'UKM Robotika PNP — Mesin. Logika. Juara.',
+  title: "UKM Robotika PNP — Mesin. Logika. Juara.",
   description:
-    'Unit Kegiatan Mahasiswa Robotika Politeknik Negeri Padang. Tim robot kompetisi unggulan di KRAI, KRSBI-B, KRSBI-H, KRSTI, dan KRSRI. Bergabunglah dan berikan prestasi terbaik untuk PNP.',
-  keywords: ['robotika', 'PNP', 'KRAI', 'KRSBI', 'KRSTI', 'KRSRI', 'robot kompetisi', 'Padang'],
+    "Unit Kegiatan Mahasiswa Robotika Politeknik Negeri Padang. Tim robot kompetisi unggulan di KRAI, KRSBI-B, KRSBI-H, KRSTI, dan KRSRI. Bergabunglah dan berikan prestasi terbaik untuk PNP.",
+  keywords: [
+    "robotika",
+    "PNP",
+    "KRAI",
+    "KRSBI",
+    "KRSTI",
+    "KRSRI",
+    "robot kompetisi",
+    "Padang",
+  ],
   openGraph: {
-    title: 'UKM Robotika PNP — Mesin. Logika. Juara.',
+    title: "UKM Robotika PNP — Mesin. Logika. Juara.",
     description:
-      'Unit Kegiatan Mahasiswa Robotika Politeknik Negeri Padang — Bergerak dengan Presisi, Bersaing di Pentas Nasional.',
-    type: 'website',
+      "Unit Kegiatan Mahasiswa Robotika Politeknik Negeri Padang — Bergerak dengan Presisi, Bersaing di Pentas Nasional.",
+    type: "website",
   },
 };
 
@@ -38,7 +47,7 @@ export default function HomePage() {
         <DivisionsSection />
 
         {/* 4. Galeri Prestasi & Showcase */}
-        <GallerySection />
+        {/* <GallerySection /> */}
 
         {/* 5. Alur Kegiatan */}
         <TimelineSection />

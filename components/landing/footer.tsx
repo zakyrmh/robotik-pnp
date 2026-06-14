@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { InstagramIcon, YoutubeIcon } from "@hugeicons/core-free-icons";
+import Image from "next/image";
 
 const navGroups = [
   {
@@ -44,10 +45,13 @@ export function LandingFooter() {
           <div className="col-span-2 lg:col-span-2">
             {/* Logo */}
             <div className="flex items-center gap-3 mb-5">
-              <div className="w-10 h-10 bg-linear-to-br from-cyber-blue to-tech-navy flex items-center justify-center shrink-0">
-                <span className="text-white font-mono font-bold text-sm tracking-wider">
-                  R
-                </span>
+              <div className="w-10 h-10 flex items-center justify-center shrink-0">
+                <Image
+                  src="/images/logo-ukm-robotik-pnp.webp"
+                  alt="Logo"
+                  width={100}
+                  height={100}
+                />
               </div>
               <div className="flex flex-col leading-none">
                 <span className="font-mono font-bold text-sm uppercase tracking-[2px] text-white">
@@ -67,7 +71,7 @@ export function LandingFooter() {
             {/* Social links */}
             <div className="flex gap-3">
               <a
-                href="https://instagram.com/robotika_pnp"
+                href="https://www.instagram.com/robotikpnp/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-9 h-9 border border-hairline-dark flex items-center justify-center text-white/40 hover:text-white hover:border-cyber-blue hover:bg-cyber-blue/10 transition-all duration-200"
@@ -76,7 +80,7 @@ export function LandingFooter() {
                 <HugeiconsIcon icon={InstagramIcon} size={16} />
               </a>
               <a
-                href="https://youtube.com/@robotika_pnp"
+                href="https://www.youtube.com/@robotikpnp"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-9 h-9 border border-hairline-dark flex items-center justify-center text-white/40 hover:text-white hover:border-crimson-red hover:bg-crimson-red/10 transition-all duration-200"
@@ -116,7 +120,7 @@ export function LandingFooter() {
             All Rights Reserved.
           </p>
           <p className="font-mono text-[10px] uppercase tracking-[1px] text-white/20">
-            SYS_VERSION: 4.2.0 — BUILD: STABLE
+            SYS_VERSION: 2.0.0 — BUILD: STABLE
           </p>
         </div>
       </div>
