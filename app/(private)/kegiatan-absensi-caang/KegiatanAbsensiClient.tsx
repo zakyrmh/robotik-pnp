@@ -829,7 +829,7 @@ export function KegiatanAbsensiClient({
                           const status = item.attendances[
                             act.id
                           ] as StatusAbsensi | null;
-                          const cfg = status ? STATUS_CONFIG[status] : null;
+                          const cfg = (status && STATUS_CONFIG[status]) ? STATUS_CONFIG[status] : null;
                           const isOpen =
                             overrideCell?.profileId === item.profileId &&
                             overrideCell?.activityId === act.id;
@@ -964,7 +964,7 @@ export function KegiatanAbsensiClient({
                           const status = item.attendances[
                             act.id
                           ] as StatusAbsensi | null;
-                          const cfg = status
+                          const cfg = (status && STATUS_CONFIG[status])
                             ? STATUS_CONFIG[status]
                             : STATUS_CONFIG.alfa;
                           return (
