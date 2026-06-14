@@ -110,7 +110,7 @@ export async function updateSession(request: NextRequest) {
   // Kasus: User Belum Login
   if (!user && isProtectedRoute) {
     const url = request.nextUrl.clone();
-    url.hostname = "localhost";
+    // url.hostname = "localhost";
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
@@ -184,7 +184,7 @@ export async function updateSession(request: NextRequest) {
 
     if (targetRoute && pathname !== targetRoute) {
       const url = request.nextUrl.clone();
-      url.hostname = "localhost";
+      // url.hostname = "localhost";
       url.pathname = targetRoute;
       return NextResponse.redirect(url);
     }
