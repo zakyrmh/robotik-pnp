@@ -1,1 +1,72 @@
-pnpm exec lint-staged
+#!/usr/bin/env sh
+# Advanced pre-commit hook — Next.js 16 + Supabase + Tailwind/Shadcn (Windows Fix)
+
+set -e
+
+# Gunakan printf agar escape sequence warna berfungsi di MINGW64/Windows
+RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'
+log() { printf "%b\n" "$1"; }
+
+log "${BLUE}🚀 Running pre-commit checks...${NC}"
+
+STAGED=$(git diff --cached --name-only --diff-filter=ACM)
+
+# 1. Cegah .env (kecuali .env.example) ter-commit
+if echo "$STAGED" | grep -E "^\.env(\.|$)" | grep -vq "\.example$"; then
+  log "${RED}❌ File .env terdeteksi di staging! Unstage: git restore --staged .env${NC}"
+  exit 1
+fi
+
+# 2. Cek konflik marker
+if [ -n "$STAGED" ] && echo "$STAGED" | xargs -r grep -lE "^<<<<<<< |^>>>>>>> " 2>/dev/null; then
+  log "${RED}❌ Conflict marker ditemukan. Resolve dulu!${NC}"
+  exit 1
+fi
+
+# 3. Cek file besar (>500KB)
+MAX_SIZE=512000
+LARGE_FILES=$(echo "$STAGED" | while read -r f; do
+  if [ -f "$f" ]; then
+    # Bersihkan spasi dari output wc (sering terjadi di Windows/MINGW)
+    FILE_SIZE=$(wc -c < "$f" 2>/dev/null | tr -d ' ')
+    if [ -n "$FILE_SIZE" ] && [ "$FILE_SIZE" -gt "$MAX_SIZE" ]; then
+      echo "$f"
+    fi
+  fi
+done || true) # || true mencegah set -e berhenti jika tidak ada file besar
+if [ -n "$LARGE_FILES" ]; then
+  log "${RED}❌ File >500KB:${NC}"
+  echo "$LARGE_FILES"
+  exit 1
+fi
+
+# 4. Cek statement debug pada kode (bukan di folder lib/utils atau fixtures)
+# Tambahkan || true agar tidak exit saat grep tidak menemukan console.log
+DEBUG_FILES=$(echo "$STAGED" | grep -E "\.(ts|tsx)$" | grep -vE "(test|spec|fixture)" | xargs -r grep -lnE "\bconsole\.(log|debug)\b|\bdebugger\b" 2>/dev/null || true)
+if [ -n "$DEBUG_FILES" ]; then
+  log "${YELLOW}⚠️  Statement debug ditemukan:${NC}"
+  echo "$DEBUG_FILES"
+  log "${YELLOW}   Hapus atau gunakan logger sebelum commit.${NC}"
+  # Uncomment baris di bawah untuk memblok:
+  # exit 1
+fi
+
+# 5. Validasi Supabase migrations
+if echo "$STAGED" | grep -q "^supabase/migrations/.*\.sql$"; then
+  log "${BLUE}🗄️  Validating Supabase migrations...${NC}"
+  if command -v supabase >/dev/null 2>&1; then
+    pnpm exec supabase db lint || log "${YELLOW}⚠️  Supabase db lint gagal${NC}"
+  fi
+fi
+
+# 6. Type check (hanya jika ada file TS berubah)
+if echo "$STAGED" | grep -qE "\.(ts|tsx)$"; then
+  log "${BLUE}🔍 TypeScript type check...${NC}"
+  pnpm typecheck
+fi
+
+# 7. Lint + format file yang di-stage
+log "${BLUE}🧹 Running lint-staged (ESLint + Prettier)...${NC}"
+pnpm lint:staged
+
+log "${GREEN}✅ Pre-commit checks passed!${NC}"

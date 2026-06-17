@@ -11,7 +11,9 @@
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "prepare": "husky",
-    "release": "standard-version"
+    "release": "standard-version",
+    "lint:staged": "lint-staged",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.1.1",
@@ -39,6 +41,7 @@
   "devDependencies": {
     "@commitlint/cli": "^20.5.3",
     "@commitlint/config-conventional": "^20.5.3",
+    "@commitlint/types": "^21.0.1",
     "@tailwindcss/postcss": "^4",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -53,14 +56,22 @@
     "husky": "^9.1.7",
     "jsdom": "^29.1.1",
     "lint-staged": "^17.0.2",
+    "prettier": "^3.8.4",
     "standard-version": "^9.5.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.6"
   },
   "lint-staged": {
-    "*.{js,jsx,ts,tsx}": [
-      "eslint --fix"
+    "*.{ts,tsx,js,jsx}": [
+      "pnpm exec eslint --fix",
+      "pnpm exec prettier --write"
+    ],
+    "*.{json,md,mdx,css,scss}": [
+      "pnpm exec prettier --write"
+    ],
+    "supabase/migrations/*.sql": [
+      "echo skip"
     ]
   }
 }
