@@ -64,8 +64,8 @@ export function LandingFooter() {
             </div>
 
             <p className="text-white/40 text-sm font-light leading-relaxed max-w-xs mb-6">
-              Unit Kegiatan Mahasiswa Robotika Politeknik Negeri Padang —
-              Bergerak dengan Presisi, Bersaing di Pentas Nasional.
+              Unit Kegiatan Mahasiswa Robotika Politeknik Negeri Padang — We
+              Play with Technology.
             </p>
 
             {/* Social links */}
