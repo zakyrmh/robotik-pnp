@@ -12,9 +12,13 @@ import {
 
 interface HeroSectionProps {
   activeMemberCount?: number;
+  totalAchievements?: number;
 }
 
-export function HeroSection({ activeMemberCount = 60 }: HeroSectionProps) {
+export function HeroSection({
+  activeMemberCount = 60,
+  totalAchievements = 40,
+}: HeroSectionProps) {
   return (
     <section className="relative min-h-screen bg-canvas-dark overflow-hidden flex items-center">
       {/* Animated grid background */}
@@ -120,7 +124,7 @@ export function HeroSection({ activeMemberCount = 60 }: HeroSectionProps) {
                 />
               </Link>
               <Link
-                href="/keanggotaan"
+                href="/register"
                 className="inline-flex items-center gap-3 font-mono text-[12px] font-medium uppercase tracking-[1.5px] px-7 py-3.5 bg-transparent text-white border border-hairline-dark hover:border-cyber-blue hover:bg-cyber-blue/10 transition-all duration-200"
               >
                 Bergabung Sekarang
@@ -228,7 +232,7 @@ export function HeroSection({ activeMemberCount = 60 }: HeroSectionProps) {
               />
               <div>
                 <p className="font-mono text-[20px] font-bold text-white leading-none">
-                  40+
+                  {totalAchievements}+
                 </p>
                 <p className="font-mono text-[9px] uppercase tracking-[1.5px] text-white/40 mt-0.5">
                   Total Prestasi

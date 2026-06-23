@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { LandingNavbar } from "@/components/landing/navbar";
 import { HeroSection } from "@/components/landing/hero-section";
 import { getActiveMemberCountAction } from "@/lib/actions/profiles";
+import { getAchievementCountAction } from "@/lib/actions/achievements";
 import { StatsSection } from "@/components/landing/stats-section";
 import { DivisionsSection } from "@/components/landing/divisions-section";
 import { GallerySection } from "@/components/landing/gallery-section";
@@ -33,10 +34,17 @@ export const metadata: Metadata = {
 
 export default async function HomePage() {
   let memberCount = 60;
+  let achievementCount = 40;
   try {
     memberCount = await getActiveMemberCountAction();
   } catch (error) {
     console.error("Error loading active member count:", error);
+  }
+
+  try {
+    achievementCount = await getAchievementCountAction();
+  } catch (error) {
+    console.error("Error loading achievements count:", error);
   }
 
   return (
@@ -46,7 +54,10 @@ export default async function HomePage() {
 
       <main className="flex-1">
         {/* 1. Hero Section */}
-        <HeroSection activeMemberCount={memberCount} />
+        <HeroSection
+          activeMemberCount={memberCount}
+          totalAchievements={achievementCount}
+        />
 
         {/* 2. Statistika & Peta Kekuatan (Social Proof) */}
         <StatsSection />
