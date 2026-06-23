@@ -6,7 +6,30 @@ import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
 
-const divisions = [
+interface DBDivision {
+  slug: string;
+  name: string;
+  short_description: string;
+  badge_label: string | null;
+  badge_color: string | null;
+  accent_color: string | null;
+  sort_order: number;
+  tags: string[];
+}
+
+interface DivisionsSectionProps {
+  divisions?: DBDivision[];
+}
+
+const longNameMap: Record<string, string> = {
+  krai: "Kontes Robot ABU Indonesia",
+  "krsbi-b": "Sepak Bola Robot Beroda",
+  "krsbi-h": "Sepak Bola Robot Humanoid",
+  krsti: "Kontes Robot Seni Tari Indonesia",
+  krsri: "Kontes Robot SAR Indonesia",
+};
+
+const defaultDivisions = [
   {
     id: "krai",
     code: "KRAI",
@@ -37,7 +60,7 @@ const divisions = [
     name: "Sepak Bola Robot Humanoid",
     category: "Divisi 03",
     description:
-      "Robot humanoid bipedal yang bergerak layaknya manusia dan bertanding dalam pertandingan sepak bola 5 lawan 5.",
+      "Robot humanoid bipedal yang bergerak layaknya manusia and bertanding dalam pertandingan sepak bola 5 lawan 5.",
     skills: ["Bipedal Walking", "Balance Control", "AI Decision"],
     accent: "#0066b1",
     tag: "Humanoid",
@@ -69,9 +92,26 @@ const divisions = [
   },
 ];
 
-export function DivisionsSection() {
+export function DivisionsSection({
+  divisions: dbDivisions,
+}: DivisionsSectionProps) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-60px" });
+
+  const renderedDivisions =
+    dbDivisions && dbDivisions.length > 0
+      ? dbDivisions.map((div) => ({
+          id: div.slug,
+          code: div.name,
+          name: longNameMap[div.slug] || div.name,
+          category: `Divisi ${String(div.sort_order).padStart(2, "0")}`,
+          description: div.short_description,
+          skills: div.tags,
+          accent: div.accent_color || "#0066b1",
+          tag: div.badge_label || "Robot",
+          tagColor: div.badge_color || "#0066b1",
+        }))
+      : defaultDivisions;
 
   return (
     <section className="bg-surface-soft-light py-20" ref={ref}>
@@ -108,7 +148,7 @@ export function DivisionsSection() {
 
         {/* Divisions grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-px bg-hairline-light">
-          {divisions.map((div, i) => (
+          {renderedDivisions.map((div, i) => (
             <motion.div
               key={div.id}
               initial={{ opacity: 0, y: 30 }}

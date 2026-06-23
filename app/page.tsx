@@ -3,7 +3,11 @@ import { LandingNavbar } from "@/components/landing/navbar";
 import { HeroSection } from "@/components/landing/hero-section";
 import { getActiveMemberCountAction } from "@/lib/actions/profiles";
 import { getAchievementCountAction } from "@/lib/actions/achievements";
-import { getDivisionCountAction } from "@/lib/actions/divisions";
+import {
+  getDivisionCountAction,
+  getDivisionsAction,
+} from "@/lib/actions/divisions";
+import type { Division } from "@/lib/repositories/divisions";
 import { StatsSection } from "@/components/landing/stats-section";
 import { DivisionsSection } from "@/components/landing/divisions-section";
 import { GallerySection } from "@/components/landing/gallery-section";
@@ -56,6 +60,13 @@ export default async function HomePage() {
     console.error("Error loading division count:", error);
   }
 
+  let divisionsList: Division[] = [];
+  try {
+    divisionsList = await getDivisionsAction();
+  } catch (error) {
+    console.error("Error loading divisions list:", error);
+  }
+
   const currentYear = new Date().getFullYear();
   const yearFounded = parseInt(process.env.YEAR_FOUNDED || "2005", 10);
   const yearsStanding = currentYear - yearFounded;
@@ -81,7 +92,7 @@ export default async function HomePage() {
         />
 
         {/* 3. Eksplorasi Divisi Robot */}
-        <DivisionsSection />
+        <DivisionsSection divisions={divisionsList} />
 
         {/* 4. Galeri Prestasi & Showcase */}
         {/* <GallerySection /> */}
