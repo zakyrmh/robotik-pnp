@@ -10,48 +10,6 @@ import {
   Calendar01Icon,
 } from "@hugeicons/core-free-icons";
 
-const stats = [
-  {
-    icon: ChampionIcon,
-    value: "40+",
-    label: "Total Prestasi",
-    sublabel: "Nasional & Regional",
-    color: "#0066b1",
-  },
-  {
-    icon: UserGroupIcon,
-    value: "60+",
-    label: "Anggota Aktif",
-    sublabel: "Tersebar di 5 Divisi",
-    color: "#1c69d4",
-  },
-  {
-    icon: BuildingIcon,
-    value: "5",
-    label: "Divisi Robot",
-    sublabel: "Aktif Berkompetisi",
-    color: "#0066b1",
-  },
-  {
-    icon: Calendar01Icon,
-    value: "21+",
-    label: "Tahun Berdiri",
-    sublabel: "Pengalaman Rekayasa",
-    color: "#e22718",
-  },
-];
-
-const partners = [
-  "PENS",
-  "ITS",
-  "UGM",
-  "ITB",
-  "UNAND",
-  "POLMED",
-  "POLBAN",
-  "KEMENRISTEKDIKTI",
-];
-
 function AnimatedCounter({ value }: { value: string }) {
   return (
     <span className="font-sans font-bold text-[40px] leading-none text-white">
@@ -60,9 +18,52 @@ function AnimatedCounter({ value }: { value: string }) {
   );
 }
 
-export function StatsSection() {
+interface StatsSectionProps {
+  totalAchievements?: number;
+  activeMemberCount?: number;
+  divisionCount?: number;
+  yearsStanding?: number;
+}
+
+export function StatsSection({
+  totalAchievements = 40,
+  activeMemberCount = 60,
+  divisionCount = 5,
+  yearsStanding = 21,
+}: StatsSectionProps) {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
+
+  const stats = [
+    {
+      icon: ChampionIcon,
+      value: `${totalAchievements}+`,
+      label: "Total Prestasi",
+      sublabel: "Nasional & Regional",
+      color: "#0066b1",
+    },
+    {
+      icon: UserGroupIcon,
+      value: `${activeMemberCount}+`,
+      label: "Anggota Aktif",
+      sublabel: `Tersebar di ${divisionCount} Divisi`,
+      color: "#1c69d4",
+    },
+    {
+      icon: BuildingIcon,
+      value: `${divisionCount}`,
+      label: "Divisi Robot",
+      sublabel: "Aktif Berkompetisi",
+      color: "#0066b1",
+    },
+    {
+      icon: Calendar01Icon,
+      value: `${yearsStanding}+`,
+      label: "Tahun Berdiri",
+      sublabel: "Pengalaman Rekayasa",
+      color: "#e22718",
+    },
+  ];
 
   return (
     <section className="bg-canvas-dark border-t border-hairline-dark" ref={ref}>
