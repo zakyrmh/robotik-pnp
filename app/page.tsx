@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { LandingNavbar } from "@/components/landing/navbar";
 import { HeroSection } from "@/components/landing/hero-section";
+import { getActiveMemberCountAction } from "@/lib/actions/profiles";
 import { StatsSection } from "@/components/landing/stats-section";
 import { DivisionsSection } from "@/components/landing/divisions-section";
 import { GallerySection } from "@/components/landing/gallery-section";
@@ -30,7 +31,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function HomePage() {
+export default async function HomePage() {
+  let memberCount = 60;
+  try {
+    memberCount = await getActiveMemberCountAction();
+  } catch (error) {
+    console.error("Error loading active member count:", error);
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Sticky Navbar */}
@@ -38,7 +46,7 @@ export default function HomePage() {
 
       <main className="flex-1">
         {/* 1. Hero Section */}
-        <HeroSection />
+        <HeroSection activeMemberCount={memberCount} />
 
         {/* 2. Statistika & Peta Kekuatan (Social Proof) */}
         <StatsSection />

@@ -10,7 +10,11 @@ import {
   UserGroupIcon,
 } from "@hugeicons/core-free-icons";
 
-export function HeroSection() {
+interface HeroSectionProps {
+  activeMemberCount?: number;
+}
+
+export function HeroSection({ activeMemberCount = 60 }: HeroSectionProps) {
   return (
     <section className="relative min-h-screen bg-canvas-dark overflow-hidden flex items-center">
       {/* Animated grid background */}
@@ -245,7 +249,7 @@ export function HeroSection() {
               />
               <div>
                 <p className="font-mono text-[20px] font-bold text-white leading-none">
-                  60+
+                  {activeMemberCount}+
                 </p>
                 <p className="font-mono text-[9px] uppercase tracking-[1.5px] text-white/40 mt-0.5">
                   Anggota Aktif
