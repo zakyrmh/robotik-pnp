@@ -6,7 +6,6 @@ import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Mail01Icon,
-  SmartPhone01Icon,
   ArrowRight01Icon,
 } from "@hugeicons/core-free-icons";
 

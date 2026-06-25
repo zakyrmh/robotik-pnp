@@ -10,7 +10,6 @@ import {
 import type { Division } from "@/lib/repositories/divisions";
 import { StatsSection } from "@/components/landing/stats-section";
 import { DivisionsSection } from "@/components/landing/divisions-section";
-import { GallerySection } from "@/components/landing/gallery-section";
 import { TimelineSection } from "@/components/landing/timeline-section";
 import { CtaSection } from "@/components/landing/cta-section";
 import { LandingFooter } from "@/components/landing/footer";
