@@ -40,8 +40,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# documents
-/docs
-
 # Supabase data dumps (ignore all data SQL files)
 data*.sql
