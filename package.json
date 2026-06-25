@@ -13,7 +13,8 @@
     "prepare": "husky",
     "release": "standard-version",
     "lint:staged": "lint-staged",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "gen:types": "supabase gen types typescript --project-id qtblwlzbxfopcvyvplfh > types/database.types.ts"
   },
   "dependencies": {
     "@hugeicons/core-free-icons": "^4.1.1",
@@ -58,6 +59,7 @@
     "lint-staged": "^17.0.2",
     "prettier": "^3.8.4",
     "standard-version": "^9.5.0",
+    "supabase": "^2.107.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.6"
