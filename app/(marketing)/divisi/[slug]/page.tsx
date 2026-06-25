@@ -2,8 +2,6 @@ import React from "react";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { divisionsData } from "@/lib/data/divisions";
-import { LandingNavbar } from "@/components/landing/navbar";
-import { LandingFooter } from "@/components/landing/footer";
 
 import { HeroSection } from "@/components/divisi/HeroSection";
 import { TechSpecsTabs } from "@/components/divisi/TechSpecsTabs";
@@ -67,32 +65,26 @@ export default async function DivisionDetailPage({
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <LandingNavbar />
+    <div className="bg-canvas-dark">
+      {/* SECTION 1: HERO */}
+      <HeroSection
+        badge={staticData.hero.badge}
+        title={staticData.hero.title}
+        subtitle={staticData.hero.subtitle}
+        image={staticData.hero.image}
+      />
 
-      <main className="flex-1 bg-canvas-dark">
-        {/* SECTION 1: HERO */}
-        <HeroSection
-          badge={staticData.hero.badge}
-          title={staticData.hero.title}
-          subtitle={staticData.hero.subtitle}
-          image={staticData.hero.image}
-        />
+      {/* SECTION 2: TECH SPECS */}
+      <TechSpecsTabs specs={staticData.specs} />
 
-        {/* SECTION 2: TECH SPECS */}
-        <TechSpecsTabs specs={staticData.specs} />
+      {/* SECTION 3: LINE-UP */}
+      <DivisionLineUp members={staticData.team} />
 
-        {/* SECTION 3: LINE-UP */}
-        <DivisionLineUp members={staticData.team} />
+      {/* SECTION 4: MILESTONES (DYNAMIC) */}
+      <BentoMilestones milestones={milestones} />
 
-        {/* SECTION 4: MILESTONES (DYNAMIC) */}
-        <BentoMilestones milestones={milestones} />
-
-        {/* SECTION 5: GALLERY */}
-        <ResearchGallery items={staticData.gallery} />
-      </main>
-
-      <LandingFooter />
+      {/* SECTION 5: GALLERY */}
+      <ResearchGallery items={staticData.gallery} />
     </div>
   );
 }

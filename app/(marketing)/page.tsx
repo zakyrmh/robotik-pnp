@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { LandingNavbar } from "@/components/landing/navbar";
 import { HeroSection } from "@/components/landing/hero-section";
 import { getActiveMemberCountAction } from "@/lib/actions/profiles";
 import { getAchievementCountAction } from "@/lib/actions/achievements";
@@ -12,7 +11,6 @@ import { StatsSection } from "@/components/landing/stats-section";
 import { DivisionsSection } from "@/components/landing/divisions-section";
 import { TimelineSection } from "@/components/landing/timeline-section";
 import { CtaSection } from "@/components/landing/cta-section";
-import { LandingFooter } from "@/components/landing/footer";
 
 export const metadata: Metadata = {
   title: "UKM Robotika PNP — Mesin. Logika. Juara.",
@@ -71,40 +69,32 @@ export default async function HomePage() {
   const yearsStanding = currentYear - yearFounded;
 
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* Sticky Navbar */}
-      <LandingNavbar />
+    <>
+      {/* 1. Hero Section */}
+      <HeroSection
+        activeMemberCount={memberCount}
+        totalAchievements={achievementCount}
+      />
 
-      <main className="flex-1">
-        {/* 1. Hero Section */}
-        <HeroSection
-          activeMemberCount={memberCount}
-          totalAchievements={achievementCount}
-        />
+      {/* 2. Statistika & Peta Kekuatan (Social Proof) */}
+      <StatsSection
+        activeMemberCount={memberCount}
+        totalAchievements={achievementCount}
+        divisionCount={divisionCount}
+        yearsStanding={yearsStanding}
+      />
 
-        {/* 2. Statistika & Peta Kekuatan (Social Proof) */}
-        <StatsSection
-          activeMemberCount={memberCount}
-          totalAchievements={achievementCount}
-          divisionCount={divisionCount}
-          yearsStanding={yearsStanding}
-        />
+      {/* 3. Eksplorasi Divisi Robot */}
+      <DivisionsSection divisions={divisionsList} />
 
-        {/* 3. Eksplorasi Divisi Robot */}
-        <DivisionsSection divisions={divisionsList} />
+      {/* 4. Galeri Prestasi & Showcase */}
+      {/* <GallerySection /> */}
 
-        {/* 4. Galeri Prestasi & Showcase */}
-        {/* <GallerySection /> */}
+      {/* 5. Alur Kegiatan */}
+      <TimelineSection />
 
-        {/* 5. Alur Kegiatan */}
-        <TimelineSection />
-
-        {/* 6. CTA Section */}
-        <CtaSection />
-      </main>
-
-      {/* Footer */}
-      <LandingFooter />
-    </div>
+      {/* 6. CTA Section */}
+      <CtaSection />
+    </>
   );
 }

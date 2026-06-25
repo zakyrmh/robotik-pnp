@@ -1,8 +1,6 @@
 import React from "react";
 import { createClient } from "@/lib/supabase/server";
 import { divisionsData } from "@/lib/data/divisions";
-import { LandingNavbar } from "@/components/landing/navbar";
-import { LandingFooter } from "@/components/landing/footer";
 import { DivisiIndexClient } from "@/components/divisi/DivisiIndexClient";
 
 export const metadata = {
@@ -37,14 +35,10 @@ export default async function DivisiIndexPage() {
   });
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <LandingNavbar />
-      <div className="bg-canvas-dark min-h-screen text-white pt-24 pb-20">
-        <div className="max-w-[1320px] mx-auto px-4 lg:px-8">
-          <DivisiIndexClient divisions={divisions} />
-        </div>
+    <div className="bg-canvas-dark min-h-screen text-white pt-24 pb-20">
+      <div className="max-w-[1320px] mx-auto px-4 lg:px-8">
+        <DivisiIndexClient divisions={divisions} />
       </div>
-      <LandingFooter />
     </div>
   );
 }
