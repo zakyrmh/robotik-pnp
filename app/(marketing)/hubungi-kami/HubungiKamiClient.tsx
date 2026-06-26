@@ -175,17 +175,13 @@ export default function HubungiKamiClient() {
 
           <div className="bg-surface-card-dark border border-hairline-dark p-2 rounded-sm h-[300px] relative overflow-hidden group">
             <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.3100492018326!2d100.45742541475396!3d-0.9145624993336338!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2fd4b7be9e52a171%3A0x609ef1cc57a38e32!2sPoliteknik%20Negeri%20Padang!5e0!3m2!1sen!2sid!4v1689234857398!5m2!1sen!2sid"
-              width="100%"
-              height="100%"
-              style={{
-                border: 0,
-                filter: "grayscale(100%) invert(90%) contrast(1.2)",
-              }}
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d443.50713584004745!2d100.46835127221689!3d-0.91458339006708!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2fd4b7bbfa1dfc99%3A0xf0984f8a51acdad!2s3FP9%2B47V%2C%20Limau%20Manis%2C%20Kec.%20Pauh%2C%20Kota%20Padang%2C%20Sumatera%20Barat%2025175!5e1!3m2!1sid!2sid!4v1782489926618!5m2!1sid!2sid"
+              width="600"
+              height="450"
+              style={{ border: 0 }}
               allowFullScreen={false}
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
-              className="rounded-sm opacity-80 group-hover:opacity-100 group-hover:filter-none transition-all duration-700"
             ></iframe>
           </div>
         </motion.div>
