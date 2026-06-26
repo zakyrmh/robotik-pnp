@@ -2,16 +2,14 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { MapPin, Mail, Send, Loader2, CheckCircle, Globe } from "lucide-react";
+import Link from "next/link";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  MapPin,
-  Mail,
-  Send,
-  Loader2,
-  CheckCircle,
-  Globe,
-  Hash,
-  Info,
-} from "lucide-react";
+  InstagramIcon,
+  YoutubeIcon,
+  TiktokIcon,
+} from "@hugeicons/core-free-icons";
 export default function HubungiKamiClient() {
   const [formData, setFormData] = useState({
     fullName: "",
@@ -114,15 +112,14 @@ export default function HubungiKamiClient() {
                   Alamat Sekretariat
                 </h3>
                 <p className="text-foreground text-sm leading-relaxed">
-                  Gedung Pusat Kegiatan Mahasiswa (PKM) Lt. 2, Kampus Politeknik
-                  Negeri Padang, Limau Manis, Kec. Pauh, Kota Padang, Sumatera
-                  Barat.
+                  Gedung P Lt. 2, Kampus Politeknik Negeri Padang, Limau Manis,
+                  Kec. Pauh, Kota Padang, Sumatera Barat.
                 </p>
               </div>
             </div>
 
             <a
-              href="mailto:robotik@pnp.ac.id"
+              href="mailto:infokomrobotikpnp2024@gmail.com"
               className="bg-surface-card-dark border border-hairline-dark p-6 flex items-start gap-4 rounded-sm hover:border-cyber-blue/50 transition-colors group cursor-pointer"
             >
               <div className="w-12 h-12 bg-cyber-blue/10 rounded-sm flex items-center justify-center text-cyber-blue shrink-0 group-hover:bg-cyber-blue group-hover:text-white transition-colors">
@@ -133,7 +130,7 @@ export default function HubungiKamiClient() {
                   Email Resmi
                 </h3>
                 <p className="text-foreground text-lg font-bold group-hover:text-cyber-blue transition-colors">
-                  robotik@pnp.ac.id
+                  infokomrobotikpnp2024@gmail.com
                 </p>
               </div>
             </a>
@@ -147,18 +144,30 @@ export default function HubungiKamiClient() {
                   Media Sosial Resmi
                 </h3>
                 <div className="flex gap-4">
-                  <a
-                    href="#"
+                  <Link
+                    href="https://www.instagram.com/robotikpnp/"
                     className="w-10 h-10 border border-hairline-dark rounded-sm flex items-center justify-center text-muted-foreground hover:bg-cyber-blue hover:text-white hover:border-cyber-blue transition-colors"
+                    target="_blank"
+                    rel="noopener noreferrer"
                   >
-                    <Hash className="w-5 h-5" />
-                  </a>
-                  <a
-                    href="#"
+                    <HugeiconsIcon icon={InstagramIcon} size={20} />
+                  </Link>
+                  <Link
+                    href="https://www.youtube.com/@robotikpnp"
                     className="w-10 h-10 border border-hairline-dark rounded-sm flex items-center justify-center text-muted-foreground hover:bg-cyber-blue hover:text-white hover:border-cyber-blue transition-colors"
+                    target="_blank"
+                    rel="noopener noreferrer"
                   >
-                    <Info className="w-5 h-5" />
-                  </a>
+                    <HugeiconsIcon icon={YoutubeIcon} size={20} />
+                  </Link>
+                  <Link
+                    href="https://www.tiktok.com/@robotikpnp"
+                    className="w-10 h-10 border border-hairline-dark rounded-sm flex items-center justify-center text-muted-foreground hover:bg-cyber-blue hover:text-white hover:border-cyber-blue transition-colors"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <HugeiconsIcon icon={TiktokIcon} size={20} />
+                  </Link>
                 </div>
               </div>
             </div>
