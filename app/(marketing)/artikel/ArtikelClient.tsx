@@ -4,15 +4,22 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, ArrowRight, Clock } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import type { Database } from "@/types/database.types";
-
 
 type ArticleRow = Database["public"]["Tables"]["articles"]["Row"];
 type ProfileRow = Database["public"]["Tables"]["profiles"]["Row"];
 
 export type ArticleWithAuthor = Pick<
   ArticleRow,
-  "id" | "title" | "slug" | "excerpt" | "content" | "category" | "cover_image_url" | "published_at"
+  | "id"
+  | "title"
+  | "slug"
+  | "excerpt"
+  | "content"
+  | "category"
+  | "cover_image_url"
+  | "published_at"
 > & {
   profiles: Pick<ProfileRow, "id" | "email" | "nim"> | null;
 };
@@ -21,62 +28,34 @@ interface ArtikelClientProps {
   articles: ArticleWithAuthor[];
 }
 
-const CATEGORIES = ["Semua", "Riset & Teknologi", "Kabar Robotik", "Kompetisi", "Tutorial"];
-
-// Mock articles to display if the database is empty (as per instructions)
-const MOCK_ARTICLES: ArticleWithAuthor[] = [
-  {
-    id: "m1",
-    title: "Optimasi Deteksi Bola Menggunakan YOLOv8 pada Edge Device",
-    slug: "optimasi-deteksi-bola-yolov8",
-    excerpt: "Pendekatan ringan menggunakan YOLOv8 untuk deteksi bola real-time pada robot KRSBI-Beroda.",
-    content: "Konten lengkap artikel ini...",
-    category: "Riset & Teknologi",
-    cover_image_url: null,
-    published_at: new Date().toISOString(),
-    profiles: { id: "p1", email: "author@robotik.pnp", nim: "123456" }
-  },
-  {
-    id: "m2",
-    title: "Kilas Balik Perjuangan Tim GipzySpark di Ajang Nasional Gemastik",
-    slug: "kilas-balik-gipzyspark-gemastik",
-    excerpt: "Bagaimana tim berhasil menembus final dan memenangkan penghargaan desain terbaik.",
-    content: "Konten lengkap artikel ini...",
-    category: "Kompetisi",
-    cover_image_url: null,
-    published_at: new Date(Date.now() - 86400000 * 2).toISOString(),
-    profiles: { id: "p1", email: "author@robotik.pnp", nim: "123456" }
-  },
-  {
-    id: "m3",
-    title: "Panduan Dasar Desain PCB Menggunakan KiCad untuk Pemula",
-    slug: "panduan-dasar-desain-pcb-kicad",
-    excerpt: "Langkah-langkah membuat skematik dan layout PCB sederhana untuk proyek robotika.",
-    content: "Konten lengkap artikel ini...",
-    category: "Tutorial",
-    cover_image_url: null,
-    published_at: new Date(Date.now() - 86400000 * 5).toISOString(),
-    profiles: { id: "p2", email: "tech@robotik.pnp", nim: "654321" }
-  }
+const CATEGORIES = [
+  "Semua",
+  "Riset & Teknologi",
+  "Kabar Robotik",
+  "Kompetisi",
+  "Tutorial",
 ];
 
 export default function ArtikelClient({ articles }: ArtikelClientProps) {
   const [activeCategory, setActiveCategory] = useState("Semua");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const displayArticles = articles.length > 0 ? articles : MOCK_ARTICLES;
+  const displayArticles = articles;
 
   const filteredArticles = displayArticles.filter((article) => {
     const matchesSearch =
       article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (article.excerpt && article.excerpt.toLowerCase().includes(searchQuery.toLowerCase()));
+      (article.excerpt &&
+        article.excerpt.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    const matchesCategory = activeCategory === "Semua" || article.category === activeCategory;
+    const matchesCategory =
+      activeCategory === "Semua" || article.category === activeCategory;
 
     return matchesSearch && matchesCategory;
   });
 
-  const featuredArticle = filteredArticles.length > 0 ? filteredArticles[0] : null;
+  const featuredArticle =
+    filteredArticles.length > 0 ? filteredArticles[0] : null;
   const gridArticles = filteredArticles.slice(1);
 
   return (
@@ -91,31 +70,54 @@ export default function ArtikelClient({ articles }: ArtikelClientProps) {
           >
             <div className="grid grid-cols-1 lg:grid-cols-2">
               <div className="relative h-64 lg:h-auto min-h-[400px] bg-canvas-dark overflow-hidden">
-                 {/* Mock Cover Image */}
-                 <div className="absolute inset-0 bg-gradient-to-tr from-cyber-blue/20 to-surface-card-dark z-0 group-hover:scale-105 transition-transform duration-700"></div>
-                 <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="font-jetbrains text-display-xl text-foreground opacity-10">ROBOTIK</span>
-                 </div>
+                {featuredArticle.cover_image_url ? (
+                  <Image
+                    src={featuredArticle.cover_image_url}
+                    alt={featuredArticle.title}
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-700"
+                    priority
+                  />
+                ) : (
+                  <>
+                    <div className="absolute inset-0 bg-linear-to-tr from-cyber-blue/20 to-surface-card-dark z-0 group-hover:scale-105 transition-transform duration-700"></div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="font-jetbrains text-display-xl text-foreground opacity-10">
+                        ROBOTIK
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
               <div className="p-8 lg:p-12 flex flex-col justify-center space-y-6">
-                 <div className="flex items-center gap-4 text-mono-eyebrow font-jetbrains text-muted-foreground uppercase">
-                    <span className="text-cyber-blue bg-cyber-blue/10 px-3 py-1">{featuredArticle.category}</span>
-                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> 5 min read</span>
-                 </div>
-                 <h2 className="text-display-lg font-bold text-foreground leading-tight">
-                    {featuredArticle.title}
-                 </h2>
-                 <p className="text-body-md text-muted-foreground line-clamp-3">
-                    {featuredArticle.excerpt}
-                 </p>
-                 <div className="pt-4 flex items-center justify-between border-t border-hairline-dark">
-                    <div className="text-sm font-jetbrains text-muted-foreground">
-                       {featuredArticle.profiles?.email || "Admin"} • {new Date(featuredArticle.published_at || "").toLocaleDateString('id-ID')}
-                    </div>
-                    <Link href={`/artikel/${featuredArticle.slug}`} className="flex items-center gap-2 text-primary bg-foreground text-background px-6 py-3 font-jetbrains text-mono-button hover:bg-cyber-blue hover:text-white transition-colors uppercase rounded-none">
-                       Baca <ArrowRight className="w-4 h-4" />
-                    </Link>
-                 </div>
+                <div className="flex items-center gap-4 text-mono-eyebrow font-jetbrains text-muted-foreground uppercase">
+                  <span className="text-cyber-blue bg-cyber-blue/10 px-3 py-1">
+                    {featuredArticle.category}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-3 h-3" /> 5 min read
+                  </span>
+                </div>
+                <h2 className="text-display-lg font-bold text-foreground leading-tight">
+                  {featuredArticle.title}
+                </h2>
+                <p className="text-body-md text-muted-foreground line-clamp-3">
+                  {featuredArticle.excerpt}
+                </p>
+                <div className="pt-4 flex items-center justify-between border-t border-hairline-dark">
+                  <div className="text-sm font-jetbrains text-muted-foreground">
+                    {featuredArticle.profiles?.email || "Admin"} •{" "}
+                    {new Date(
+                      featuredArticle.published_at || "",
+                    ).toLocaleDateString("id-ID")}
+                  </div>
+                  <Link
+                    href={`/artikel/${featuredArticle.slug}`}
+                    className="flex items-center gap-2 bg-foreground text-background px-6 py-3 font-jetbrains text-mono-button hover:bg-cyber-blue hover:text-white transition-colors uppercase rounded-none"
+                  >
+                    Baca <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </div>
               </div>
             </div>
           </motion.div>
@@ -156,7 +158,10 @@ export default function ArtikelClient({ articles }: ArtikelClientProps) {
       </section>
 
       {/* Article Grid */}
-      <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <motion.div
+        layout
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+      >
         <AnimatePresence mode="popLayout">
           {gridArticles.map((article, index) => (
             <motion.div
@@ -169,19 +174,40 @@ export default function ArtikelClient({ articles }: ArtikelClientProps) {
               whileHover={{ y: -8 }}
               className="group bg-surface-card-dark border border-hairline-dark rounded-sm overflow-hidden hover:shadow-[0_0_12px_rgba(0,102,177,0.15)] hover:border-cyber-blue/50 transition-all duration-300 flex flex-col"
             >
-              <Link href={`/artikel/${article.slug}`} className="flex-1 flex flex-col">
+              <Link
+                href={`/artikel/${article.slug}`}
+                className="flex-1 flex flex-col"
+              >
                 <div className="relative aspect-video bg-canvas-dark overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-tr from-surface-card-dark to-tech-navy/20 z-0"></div>
-                  <div className="absolute inset-0 flex items-center justify-center opacity-20 group-hover:scale-105 transition-transform duration-700">
-                    <span className="font-jetbrains text-xl text-foreground">ROBOTIK</span>
-                  </div>
+                  {article.cover_image_url ? (
+                    <Image
+                      src={article.cover_image_url}
+                      alt={article.title}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-700"
+                    />
+                  ) : (
+                    <>
+                      <div className="absolute inset-0 bg-linear-to-tr from-surface-card-dark to-tech-navy/20 z-0"></div>
+                      <div className="absolute inset-0 flex items-center justify-center opacity-20 group-hover:scale-105 transition-transform duration-700">
+                        <span className="font-jetbrains text-xl text-foreground">
+                          ROBOTIK
+                        </span>
+                      </div>
+                    </>
+                  )}
                   <div className="absolute top-3 left-3 z-10">
-                    <span className={`inline-block px-2 py-1 text-[10px] font-jetbrains uppercase text-white rounded-sm ${
-                      article.category === "Tutorial" ? "bg-green-600" :
-                      article.category === "Kompetisi" ? "bg-crimson-red" :
-                      article.category === "Riset & Teknologi" ? "bg-tech-navy" :
-                      "bg-cyber-blue"
-                    }`}>
+                    <span
+                      className={`inline-block px-2 py-1 text-[10px] font-jetbrains uppercase text-white rounded-sm ${
+                        article.category === "Tutorial"
+                          ? "bg-green-600"
+                          : article.category === "Kompetisi"
+                            ? "bg-crimson-red"
+                            : article.category === "Riset & Teknologi"
+                              ? "bg-tech-navy"
+                              : "bg-cyber-blue"
+                      }`}
+                    >
                       {article.category}
                     </span>
                   </div>
@@ -198,11 +224,18 @@ export default function ArtikelClient({ articles }: ArtikelClientProps) {
                   <div className="mt-6 pt-4 border-t border-hairline-dark flex items-center justify-between text-xs font-jetbrains text-muted-foreground">
                     <span className="flex items-center gap-2">
                       <div className="w-5 h-5 rounded-full bg-cyber-blue/20 flex items-center justify-center text-cyber-blue">
-                        {article.profiles?.email?.charAt(0).toUpperCase() || "A"}
+                        {article.profiles?.email?.charAt(0).toUpperCase() ||
+                          "A"}
                       </div>
-                      <span className="truncate max-w-[100px]">{article.profiles?.email || "Admin"}</span>
+                      <span className="truncate max-w-[100px]">
+                        {article.profiles?.email || "Admin"}
+                      </span>
                     </span>
-                    <span>{new Date(article.published_at || "").toLocaleDateString('id-ID')}</span>
+                    <span>
+                      {new Date(article.published_at || "").toLocaleDateString(
+                        "id-ID",
+                      )}
+                    </span>
                   </div>
                 </div>
               </Link>
@@ -213,7 +246,9 @@ export default function ArtikelClient({ articles }: ArtikelClientProps) {
 
       {filteredArticles.length === 0 && (
         <div className="text-center py-24">
-          <p className="font-jetbrains text-muted-foreground">Tidak ada artikel yang cocok dengan pencarian.</p>
+          <p className="font-jetbrains text-muted-foreground">
+            Tidak ada artikel yang cocok dengan pencarian.
+          </p>
         </div>
       )}
     </div>
