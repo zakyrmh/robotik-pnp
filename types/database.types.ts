@@ -283,6 +283,42 @@ export type Database = {
           },
         ];
       };
+      contact_messages: {
+        Row: {
+          category: string;
+          created_at: string;
+          email: string;
+          full_name: string;
+          id: string;
+          message: string;
+          organization: string | null;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          category: string;
+          created_at?: string;
+          email: string;
+          full_name: string;
+          id?: string;
+          message: string;
+          organization?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          category?: string;
+          created_at?: string;
+          email?: string;
+          full_name?: string;
+          id?: string;
+          message?: string;
+          organization?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       divisions: {
         Row: {
           accent_color: string | null;

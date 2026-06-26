@@ -2,19 +2,29 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { MapPin, Mail, Send, Loader2, CheckCircle, Globe, Hash, Info } from "lucide-react";
-import { submitContactMessage } from "@/lib/actions/contact";
-
+import {
+  MapPin,
+  Mail,
+  Send,
+  Loader2,
+  CheckCircle,
+  Globe,
+  Hash,
+  Info,
+} from "lucide-react";
 export default function HubungiKamiClient() {
   const [formData, setFormData] = useState({
     fullName: "",
     organization: "",
     email: "",
     category: "",
-    message: ""
+    message: "",
+    website: "", // Honeypot field
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
+  const [submitStatus, setSubmitStatus] = useState<
+    "idle" | "success" | "error"
+  >("idle");
   const [errorMessage, setErrorMessage] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -24,10 +34,26 @@ export default function HubungiKamiClient() {
     setErrorMessage("");
 
     try {
-      const result = await submitContactMessage(formData);
-      if (result.success) {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
         setSubmitStatus("success");
-        setFormData({ fullName: "", organization: "", email: "", category: "", message: "" });
+        setFormData({
+          fullName: "",
+          organization: "",
+          email: "",
+          category: "",
+          message: "",
+          website: "",
+        });
       } else {
         setSubmitStatus("error");
         setErrorMessage(result.error || "Terjadi kesalahan.");
@@ -40,7 +66,11 @@ export default function HubungiKamiClient() {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -60,7 +90,9 @@ export default function HubungiKamiClient() {
             Mari Berkolaborasi dan Terhubung
           </h1>
           <p className="text-body-md text-muted-foreground">
-            Memiliki pertanyaan seputar riset kami, kerja sama sponsor, atau tertarik mengundang UKM Robotik PNP dalam event Anda? Hubungi kami sekarang.
+            Memiliki pertanyaan seputar riset kami, kerja sama sponsor, atau
+            tertarik mengundang UKM Robotik PNP dalam event Anda? Hubungi kami
+            sekarang.
           </p>
         </motion.div>
       </section>
@@ -78,19 +110,28 @@ export default function HubungiKamiClient() {
                 <MapPin className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="font-jetbrains text-mono-eyebrow text-muted-foreground uppercase mb-2">Alamat Sekretariat</h3>
+                <h3 className="font-jetbrains text-mono-eyebrow text-muted-foreground uppercase mb-2">
+                  Alamat Sekretariat
+                </h3>
                 <p className="text-foreground text-sm leading-relaxed">
-                  Gedung Pusat Kegiatan Mahasiswa (PKM) Lt. 2, Kampus Politeknik Negeri Padang, Limau Manis, Kec. Pauh, Kota Padang, Sumatera Barat.
+                  Gedung Pusat Kegiatan Mahasiswa (PKM) Lt. 2, Kampus Politeknik
+                  Negeri Padang, Limau Manis, Kec. Pauh, Kota Padang, Sumatera
+                  Barat.
                 </p>
               </div>
             </div>
 
-            <a href="mailto:robotik@pnp.ac.id" className="bg-surface-card-dark border border-hairline-dark p-6 flex items-start gap-4 rounded-sm hover:border-cyber-blue/50 transition-colors group block cursor-pointer">
+            <a
+              href="mailto:robotik@pnp.ac.id"
+              className="bg-surface-card-dark border border-hairline-dark p-6 flex items-start gap-4 rounded-sm hover:border-cyber-blue/50 transition-colors group cursor-pointer"
+            >
               <div className="w-12 h-12 bg-cyber-blue/10 rounded-sm flex items-center justify-center text-cyber-blue shrink-0 group-hover:bg-cyber-blue group-hover:text-white transition-colors">
                 <Mail className="w-6 h-6" />
               </div>
               <div>
-                <h3 className="font-jetbrains text-mono-eyebrow text-muted-foreground uppercase mb-2">Email Resmi</h3>
+                <h3 className="font-jetbrains text-mono-eyebrow text-muted-foreground uppercase mb-2">
+                  Email Resmi
+                </h3>
                 <p className="text-foreground text-lg font-bold group-hover:text-cyber-blue transition-colors">
                   robotik@pnp.ac.id
                 </p>
@@ -102,12 +143,20 @@ export default function HubungiKamiClient() {
                 <Globe className="w-6 h-6" />
               </div>
               <div className="w-full">
-                <h3 className="font-jetbrains text-mono-eyebrow text-muted-foreground uppercase mb-3">Media Sosial Resmi</h3>
+                <h3 className="font-jetbrains text-mono-eyebrow text-muted-foreground uppercase mb-3">
+                  Media Sosial Resmi
+                </h3>
                 <div className="flex gap-4">
-                  <a href="#" className="w-10 h-10 border border-hairline-dark rounded-sm flex items-center justify-center text-muted-foreground hover:bg-cyber-blue hover:text-white hover:border-cyber-blue transition-colors">
+                  <a
+                    href="#"
+                    className="w-10 h-10 border border-hairline-dark rounded-sm flex items-center justify-center text-muted-foreground hover:bg-cyber-blue hover:text-white hover:border-cyber-blue transition-colors"
+                  >
                     <Hash className="w-5 h-5" />
                   </a>
-                  <a href="#" className="w-10 h-10 border border-hairline-dark rounded-sm flex items-center justify-center text-muted-foreground hover:bg-cyber-blue hover:text-white hover:border-cyber-blue transition-colors">
+                  <a
+                    href="#"
+                    className="w-10 h-10 border border-hairline-dark rounded-sm flex items-center justify-center text-muted-foreground hover:bg-cyber-blue hover:text-white hover:border-cyber-blue transition-colors"
+                  >
                     <Info className="w-5 h-5" />
                   </a>
                 </div>
@@ -120,7 +169,10 @@ export default function HubungiKamiClient() {
               src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3989.3100492018326!2d100.45742541475396!3d-0.9145624993336338!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2fd4b7be9e52a171%3A0x609ef1cc57a38e32!2sPoliteknik%20Negeri%20Padang!5e0!3m2!1sen!2sid!4v1689234857398!5m2!1sen!2sid"
               width="100%"
               height="100%"
-              style={{ border: 0, filter: "grayscale(100%) invert(90%) contrast(1.2)" }}
+              style={{
+                border: 0,
+                filter: "grayscale(100%) invert(90%) contrast(1.2)",
+              }}
               allowFullScreen={false}
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
@@ -135,12 +187,16 @@ export default function HubungiKamiClient() {
           transition={{ duration: 0.5, delay: 0.4 }}
           className="bg-surface-card-dark border border-hairline-dark rounded-none p-8"
         >
-          <h2 className="text-display-md font-bold uppercase mb-8">Kirim Pesan</h2>
+          <h2 className="text-display-md font-bold uppercase mb-8">
+            Kirim Pesan
+          </h2>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2 group">
-                <label className="font-jetbrains text-mono-eyebrow text-muted-foreground uppercase">Nama Lengkap *</label>
+                <label className="font-jetbrains text-mono-eyebrow text-muted-foreground uppercase">
+                  Nama Lengkap *
+                </label>
                 <input
                   type="text"
                   name="fullName"
@@ -152,7 +208,9 @@ export default function HubungiKamiClient() {
                 />
               </div>
               <div className="space-y-2 group">
-                <label className="font-jetbrains text-mono-eyebrow text-muted-foreground uppercase">Instansi / Organisasi</label>
+                <label className="font-jetbrains text-mono-eyebrow text-muted-foreground uppercase">
+                  Instansi / Organisasi
+                </label>
                 <input
                   type="text"
                   name="organization"
@@ -165,7 +223,9 @@ export default function HubungiKamiClient() {
             </div>
 
             <div className="space-y-2 group">
-              <label className="font-jetbrains text-mono-eyebrow text-muted-foreground uppercase">Alamat Email *</label>
+              <label className="font-jetbrains text-mono-eyebrow text-muted-foreground uppercase">
+                Alamat Email *
+              </label>
               <input
                 type="email"
                 name="email"
@@ -178,7 +238,9 @@ export default function HubungiKamiClient() {
             </div>
 
             <div className="space-y-2 group">
-              <label className="font-jetbrains text-mono-eyebrow text-muted-foreground uppercase">Kategori Pesan *</label>
+              <label className="font-jetbrains text-mono-eyebrow text-muted-foreground uppercase">
+                Kategori Pesan *
+              </label>
               <select
                 name="category"
                 required
@@ -186,16 +248,43 @@ export default function HubungiKamiClient() {
                 onChange={handleChange}
                 className="w-full bg-canvas-dark border border-hairline-dark rounded-none px-4 py-3 text-sm focus:border-cyber-blue focus:shadow-[0_0_8px_rgba(0,102,177,0.3)] focus:outline-none transition-all appearance-none"
               >
-                <option value="" disabled>Pilih Kategori</option>
-                <option value="Sponsorship & Kerja Sama">Sponsorship & Kerja Sama</option>
-                <option value="Undangan Event / Eksibisi">Undangan Event / Eksibisi</option>
-                <option value="Pertanyaan Seputar Rekrutmen">Pertanyaan Seputar Rekrutmen (Caang)</option>
-                <option value="Kritik & Saran / Lainnya">Kritik & Saran / Lainnya</option>
+                <option value="" disabled>
+                  Pilih Kategori
+                </option>
+                <option value="Sponsorship & Kerja Sama">
+                  Sponsorship & Kerja Sama
+                </option>
+                <option value="Undangan Event / Eksibisi">
+                  Undangan Event / Eksibisi
+                </option>
+                <option value="Pertanyaan Seputar Rekrutmen">
+                  Pertanyaan Seputar Rekrutmen (Caang)
+                </option>
+                <option value="Kritik & Saran / Lainnya">
+                  Kritik & Saran / Lainnya
+                </option>
               </select>
             </div>
 
+            {/* Honeypot field for bot detection (hidden from human users) */}
+            <div className="hidden" aria-hidden="true">
+              <label className="font-jetbrains text-mono-eyebrow text-muted-foreground uppercase">
+                Website
+              </label>
+              <input
+                type="text"
+                name="website"
+                value={formData.website}
+                onChange={handleChange}
+                tabIndex={-1}
+                autoComplete="off"
+              />
+            </div>
+
             <div className="space-y-2 group">
-              <label className="font-jetbrains text-mono-eyebrow text-muted-foreground uppercase">Isi Pesan *</label>
+              <label className="font-jetbrains text-mono-eyebrow text-muted-foreground uppercase">
+                Isi Pesan *
+              </label>
               <textarea
                 name="message"
                 required
@@ -215,7 +304,8 @@ export default function HubungiKamiClient() {
 
             {submitStatus === "success" && (
               <div className="p-4 bg-green-500/10 border border-green-500/50 text-green-500 text-sm flex items-center gap-2">
-                <CheckCircle className="w-5 h-5" /> Pesan Anda telah berhasil dikirim!
+                <CheckCircle className="w-5 h-5" /> Pesan Anda telah berhasil
+                dikirim!
               </div>
             )}
 
@@ -225,11 +315,17 @@ export default function HubungiKamiClient() {
               className="w-full bg-primary text-primary-foreground font-jetbrains text-mono-button px-6 py-4 rounded-none hover:bg-cyber-blue hover:text-white transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed border border-transparent hover:border-cyber-blue"
             >
               {isSubmitting ? (
-                <><Loader2 className="w-4 h-4 animate-spin" /> Mengirim...</>
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" /> Mengirim...
+                </>
               ) : submitStatus === "success" ? (
-                <><CheckCircle className="w-4 h-4" /> Terkirim</>
+                <>
+                  <CheckCircle className="w-4 h-4" /> Terkirim
+                </>
               ) : (
-                <><Send className="w-4 h-4" /> Kirim Pesan</>
+                <>
+                  <Send className="w-4 h-4" /> Kirim Pesan
+                </>
               )}
             </button>
           </form>

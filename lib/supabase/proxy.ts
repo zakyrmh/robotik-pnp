@@ -2,6 +2,11 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
+// Rate limiting cache (in-memory)
+const ipCache = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 menit
+const MAX_REQUESTS = 3; // Maksimal 3 request per IP per menit
+
 export async function updateSession(request: NextRequest) {
   // -------------------------------------------------------
   // PENTING: Next.js Server Actions dikirim sebagai POST
@@ -12,6 +17,40 @@ export async function updateSession(request: NextRequest) {
   const isServerAction = request.headers.has("next-action");
   if (isServerAction) {
     return NextResponse.next({ request });
+  }
+
+  // Rate Limiting untuk API Hubungi Kami
+  const { pathname } = request.nextUrl;
+  if (pathname === "/api/contact" && request.method === "POST") {
+    const ip =
+      request.headers.get("x-forwarded-for")?.split(",")[0] ||
+      request.headers.get("x-real-ip") ||
+      "127.0.0.1";
+    const now = Date.now();
+    const clientRate = ipCache.get(ip);
+
+    if (!clientRate) {
+      ipCache.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    } else {
+      if (now > clientRate.resetTime) {
+        ipCache.set(ip, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+      } else {
+        if (clientRate.count >= MAX_REQUESTS) {
+          return new NextResponse(
+            JSON.stringify({
+              success: false,
+              error:
+                "Terlalu banyak permintaan. Silakan coba lagi dalam beberapa menit.",
+            }),
+            {
+              status: 429,
+              headers: { "Content-Type": "application/json" },
+            },
+          );
+        }
+        clientRate.count += 1;
+      }
+    }
   }
 
   const supabaseResponse = NextResponse.next({ request });
@@ -42,7 +81,6 @@ export async function updateSession(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const { pathname } = request.nextUrl;
 
   // 2. Ambil data profil (is_onboarded) dan registrasi jika user sudah login
   let profile: { role: string; is_onboarded: boolean } | null = null;
@@ -51,7 +89,9 @@ export async function updateSession(request: NextRequest) {
   if (user) {
     const { data, error } = await supabase
       .from("profiles")
-      .select("role, is_onboarded, registrations(status, deleted_at, delete_reason)")
+      .select(
+        "role, is_onboarded, registrations(status, deleted_at, delete_reason)",
+      )
       .eq("id", user.id)
       .single();
 
@@ -68,7 +108,11 @@ export async function updateSession(request: NextRequest) {
           regStatus = regs[0]?.status || null;
           deletedAt = regs[0]?.deleted_at || null;
         } else {
-          const regObj = regs as unknown as { status: string | null; deleted_at: string | null; delete_reason: string | null };
+          const regObj = regs as unknown as {
+            status: string | null;
+            deleted_at: string | null;
+            delete_reason: string | null;
+          };
           regStatus = regObj.status || null;
           deletedAt = regObj.deleted_at || null;
         }
@@ -87,14 +131,14 @@ export async function updateSession(request: NextRequest) {
     "/piket",
     "/manajemen-kelompok",
     "/manajemen-caang",
-    "/kegiatan-absensi-caang"
+    "/kegiatan-absensi-caang",
   ];
   const protectedRoutes = [
     ...internalProtectedRoutes,
     "/onboarding",
     "/waiting",
     "/rejected",
-    "/deleted"
+    "/deleted",
   ];
   const isAuthCallback = pathname === "/callback";
 
@@ -121,25 +165,37 @@ export async function updateSession(request: NextRequest) {
 
     if (profile.role === "caang" && deletedAt) {
       // Jika calon anggota di soft-delete, arahkan ke halaman /deleted
-      if (!matchRoute(pathname, "/deleted") && (isProtectedRoute || isAuthRoute)) {
+      if (
+        !matchRoute(pathname, "/deleted") &&
+        (isProtectedRoute || isAuthRoute)
+      ) {
         targetRoute = "/deleted";
       }
     } else if (profile.role === "caang" && !profile.is_onboarded) {
       // 1. role === 'caang' AND is_onboarded === false AND registrations.status === 'process'
       if (regStatus === "process" || !regStatus) {
-        if (!matchRoute(pathname, "/onboarding") && (isProtectedRoute || isAuthRoute)) {
+        if (
+          !matchRoute(pathname, "/onboarding") &&
+          (isProtectedRoute || isAuthRoute)
+        ) {
           targetRoute = "/onboarding";
         }
       }
       // 2. role === 'caang' AND is_onboarded === false AND registrations.status === 'pending'
       else if (regStatus === "pending") {
-        if (!matchRoute(pathname, "/waiting") && (isProtectedRoute || isAuthRoute)) {
+        if (
+          !matchRoute(pathname, "/waiting") &&
+          (isProtectedRoute || isAuthRoute)
+        ) {
           targetRoute = "/waiting";
         }
       }
       // 3. role === 'caang' AND is_onboarded === false AND registrations.status === 'rejected'
       else if (regStatus === "rejected") {
-        if (!matchRoute(pathname, "/rejected") && (isProtectedRoute || isAuthRoute)) {
+        if (
+          !matchRoute(pathname, "/rejected") &&
+          (isProtectedRoute || isAuthRoute)
+        ) {
           targetRoute = "/rejected";
         }
       }
@@ -157,15 +213,27 @@ export async function updateSession(request: NextRequest) {
       }
     } else if (profile.role === "caang" && profile.is_onboarded) {
       // Kondisi 5: Caang Resmi Terverifikasi (Masa Pembinaan/OR)
-      const allowedCaangRoutes = ["/dashboard", "/absensi", "/kegiatan", "/tugas"];
+      const allowedCaangRoutes = [
+        "/dashboard",
+        "/absensi",
+        "/kegiatan",
+        "/tugas",
+      ];
       const isAllowed = allowedCaangRoutes.some((r) => matchRoute(pathname, r));
       if (!isAllowed && (isProtectedRoute || isAuthRoute)) {
         targetRoute = "/dashboard";
       }
     } else if (profile.role === "anggota") {
       // Kondisi 6: Anggota Tetap / Pengurus Lama (Legacy Member)
-      const allowedAnggotaRoutes = ["/dashboard", "/absensi", "/kegiatan", "/piket"];
-      const isAllowed = allowedAnggotaRoutes.some((r) => matchRoute(pathname, r));
+      const allowedAnggotaRoutes = [
+        "/dashboard",
+        "/absensi",
+        "/kegiatan",
+        "/piket",
+      ];
+      const isAllowed = allowedAnggotaRoutes.some((r) =>
+        matchRoute(pathname, r),
+      );
       if (!isAllowed && (isProtectedRoute || isAuthRoute)) {
         targetRoute = "/dashboard";
       }
