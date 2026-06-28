@@ -477,7 +477,6 @@ export type Database = {
         Row: {
           avatar_url: string | null;
           created_at: string | null;
-          division_id: string | null;
           full_name: string;
           gender: string | null;
           nim: string;
@@ -487,7 +486,6 @@ export type Database = {
         Insert: {
           avatar_url?: string | null;
           created_at?: string | null;
-          division_id?: string | null;
           full_name: string;
           gender?: string | null;
           nim: string;
@@ -497,7 +495,6 @@ export type Database = {
         Update: {
           avatar_url?: string | null;
           created_at?: string | null;
-          division_id?: string | null;
           full_name?: string;
           gender?: string | null;
           nim?: string;
@@ -505,13 +502,6 @@ export type Database = {
           study_program_id?: string | null;
         };
         Relationships: [
-          {
-            foreignKeyName: "legacy_members_division_id_fkey";
-            columns: ["division_id"];
-            isOneToOne: false;
-            referencedRelation: "divisions";
-            referencedColumns: ["id"];
-          },
           {
             foreignKeyName: "legacy_members_profile_id_fkey";
             columns: ["profile_id"];
@@ -635,7 +625,7 @@ export type Database = {
           id?: string;
           nim_member: string;
           period_id: string;
-          role_name: string;
+          role_name?: string;
           sort_order?: number | null;
           sub_section?: string | null;
           updated_at?: string;
@@ -661,7 +651,7 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "org_histories_division_fkey";
+            foreignKeyName: "org_histories_division_id_fkey";
             columns: ["division_id"];
             isOneToOne: false;
             referencedRelation: "divisions";

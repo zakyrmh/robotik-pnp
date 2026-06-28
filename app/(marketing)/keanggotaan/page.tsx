@@ -13,8 +13,8 @@ function deriveLevel(
   roleName: string,
 ): "Ketua" | "Wakil" | "Koordinator" | "Anggota" {
   const lower = roleName.toLowerCase();
-  if (lower.includes("ketua")) return "Ketua";
   if (lower.includes("wakil")) return "Wakil";
+  if (lower.includes("ketua")) return "Ketua";
   if (lower.includes("koordinator")) return "Koordinator";
   return "Anggota";
 }
@@ -107,7 +107,7 @@ export default async function KeanggotaanPage() {
           division_id,
           departments:org_histories_department_fkey ( id, name, category, sort_order ),
           legacy_members:org_histories_member_fkey ( full_name, avatar_url ),
-          divisions:org_histories_division_fkey ( id, name )
+          divisions:org_histories_division_id_fkey ( id, name )
         `,
         )
         .eq("period_id", periodId)
@@ -146,8 +146,8 @@ export default async function KeanggotaanPage() {
       id: row.id,
       name: lm.full_name,
       avatarUrl: lm.avatar_url ?? null,
-      role: row.role_name,
-      level: deriveLevel(row.role_name),
+      role: dept.name,
+      level: deriveLevel(dept.name),
       subSection: row.sub_section ?? null,
       sortOrder: row.sort_order ?? 999,
     };
@@ -164,7 +164,7 @@ export default async function KeanggotaanPage() {
 
     const sec = sectionMap.get(dept.id)!;
 
-    if (div) {
+    if (div && dept.category.toLowerCase() === "departemen") {
       if (!sec.divisionMap.has(div.id)) {
         sec.divisionMap.set(div.id, { divName: div.name, members: [] });
       }
