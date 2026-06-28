@@ -472,8 +472,9 @@ export type Database = {
       };
       legacy_members: {
         Row: {
+          avatar_url: string | null;
           created_at: string | null;
-          division: string | null;
+          division_id: string | null;
           full_name: string;
           gender: string | null;
           nim: string;
@@ -481,8 +482,9 @@ export type Database = {
           study_program_id: string | null;
         };
         Insert: {
+          avatar_url?: string | null;
           created_at?: string | null;
-          division?: string | null;
+          division_id?: string | null;
           full_name: string;
           gender?: string | null;
           nim: string;
@@ -490,8 +492,9 @@ export type Database = {
           study_program_id?: string | null;
         };
         Update: {
+          avatar_url?: string | null;
           created_at?: string | null;
-          division?: string | null;
+          division_id?: string | null;
           full_name?: string;
           gender?: string | null;
           nim?: string;
@@ -499,6 +502,13 @@ export type Database = {
           study_program_id?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: "legacy_members_division_id_fkey";
+            columns: ["division_id"];
+            isOneToOne: false;
+            referencedRelation: "divisions";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "legacy_members_profile_id_fkey";
             columns: ["profile_id"];
