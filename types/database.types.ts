@@ -283,6 +283,66 @@ export type Database = {
           },
         ];
       };
+      contact_messages: {
+        Row: {
+          category: string;
+          created_at: string;
+          email: string;
+          full_name: string;
+          id: string;
+          message: string;
+          organization: string | null;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          category: string;
+          created_at?: string;
+          email: string;
+          full_name: string;
+          id?: string;
+          message: string;
+          organization?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          category?: string;
+          created_at?: string;
+          email?: string;
+          full_name?: string;
+          id?: string;
+          message?: string;
+          organization?: string | null;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      departments: {
+        Row: {
+          category: string;
+          created_at: string;
+          id: string;
+          name: string;
+          sort_order: number | null;
+        };
+        Insert: {
+          category?: string;
+          created_at?: string;
+          id?: string;
+          name: string;
+          sort_order?: number | null;
+        };
+        Update: {
+          category?: string;
+          created_at?: string;
+          id?: string;
+          name?: string;
+          sort_order?: number | null;
+        };
+        Relationships: [];
+      };
       divisions: {
         Row: {
           accent_color: string | null;
@@ -415,8 +475,8 @@ export type Database = {
       };
       legacy_members: {
         Row: {
+          avatar_url: string | null;
           created_at: string | null;
-          division: string | null;
           full_name: string;
           gender: string | null;
           nim: string;
@@ -424,8 +484,8 @@ export type Database = {
           study_program_id: string | null;
         };
         Insert: {
+          avatar_url?: string | null;
           created_at?: string | null;
-          division?: string | null;
           full_name: string;
           gender?: string | null;
           nim: string;
@@ -433,8 +493,8 @@ export type Database = {
           study_program_id?: string | null;
         };
         Update: {
+          avatar_url?: string | null;
           created_at?: string | null;
-          division?: string | null;
           full_name?: string;
           gender?: string | null;
           nim?: string;
@@ -473,6 +533,30 @@ export type Database = {
           created_at?: string | null;
           id?: string;
           name?: string;
+        };
+        Relationships: [];
+      };
+      membership_periods: {
+        Row: {
+          created_at: string;
+          id: string;
+          is_active: boolean;
+          period_name: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          period_name: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          period_name?: string;
+          updated_at?: string;
         };
         Relationships: [];
       };
@@ -520,6 +604,74 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [];
+      };
+      organizational_histories: {
+        Row: {
+          created_at: string;
+          department_id: string;
+          division_id: string | null;
+          id: string;
+          nim_member: string;
+          period_id: string;
+          role_name: string;
+          sort_order: number | null;
+          sub_section: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          department_id: string;
+          division_id?: string | null;
+          id?: string;
+          nim_member: string;
+          period_id: string;
+          role_name?: string;
+          sort_order?: number | null;
+          sub_section?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          department_id?: string;
+          division_id?: string | null;
+          id?: string;
+          nim_member?: string;
+          period_id?: string;
+          role_name?: string;
+          sort_order?: number | null;
+          sub_section?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "org_histories_department_fkey";
+            columns: ["department_id"];
+            isOneToOne: false;
+            referencedRelation: "departments";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "org_histories_division_id_fkey";
+            columns: ["division_id"];
+            isOneToOne: false;
+            referencedRelation: "divisions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "org_histories_member_fkey";
+            columns: ["nim_member"];
+            isOneToOne: false;
+            referencedRelation: "legacy_members";
+            referencedColumns: ["nim"];
+          },
+          {
+            foreignKeyName: "org_histories_period_fkey";
+            columns: ["period_id"];
+            isOneToOne: false;
+            referencedRelation: "membership_periods";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       piket_logs: {
         Row: {

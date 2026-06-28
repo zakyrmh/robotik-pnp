@@ -14,7 +14,7 @@ const navLinks = [
   { href: "/prestasi", label: "Prestasi" },
   { href: "/keanggotaan", label: "Keanggotaan" },
   { href: "/artikel", label: "Artikel" },
-  { href: "/hubungi", label: "Hubungi Kami" },
+  { href: "/hubungi-kami", label: "Hubungi Kami" },
 ];
 
 export function LandingNavbar() {

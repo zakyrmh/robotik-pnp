@@ -1,76 +1,102 @@
 "use client";
 
-import React from "react";
 import { motion } from "framer-motion";
+import Image from "next/image";
 
-export interface HeroSectionProps {
+interface HeroSectionProps {
   badge: string;
   title: string;
   subtitle: string;
   image: string;
 }
 
-export const HeroSection: React.FC<HeroSectionProps> = ({
+export function HeroSection({
   badge,
   title,
   subtitle,
   image,
-}) => {
+}: HeroSectionProps) {
+  // Animasi masuk (entrance animation) dari halaman utama divisi
+  const containerVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.6, ease: "easeOut" as const, staggerChildren: 0.2 },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 10 },
+    visible: { opacity: 1, y: 0 },
+  };
+
   return (
-    <section className="bg-canvas-dark text-white pt-20 pb-20 relative overflow-hidden">
-      {/* Tech Tricolor Divider at the top */}
-      <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-cyber-blue via-tech-navy to-crimson-red" />
+    <section className="relative w-full bg-canvas-dark text-foreground pt-24 pb-16 overflow-hidden">
+      {/* Dynamic Background Glow */}
+      <div
+        className="absolute inset-0 opacity-20 pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(circle at 70% 50%, var(--color-cyber-blue) 0%, transparent 60%)",
+        }}
+      />
 
-      <div className="max-w-[1320px] mx-auto px-4 lg:px-8 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
-        {/* Left Column: Content */}
-        <div className="space-y-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="inline-block border border-hairline-dark px-3 py-1 bg-surface-card-dark rounded-sm"
-          >
-            <span className="font-mono text-[12px] uppercase tracking-[1.5px] font-medium text-cyber-blue">
-              {badge}
-            </span>
-          </motion.div>
-
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="font-sans text-[40px] md:text-[64px] font-bold uppercase tracking-normal leading-tight text-white"
-          >
-            {title}
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, delay: 0.2 }}
-            className="font-sans text-[16px] font-light leading-relaxed text-gray-300 max-w-lg"
-          >
-            {subtitle}
-          </motion.p>
-        </div>
-
-        {/* Right Column: Visual */}
+      <div className="container mx-auto px-4 max-w-7xl relative z-10">
         <motion.div
-          initial={{ opacity: 0, x: 24 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.6, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-          className="relative h-[300px] sm:h-[400px] lg:h-[500px] w-full bg-surface-card-dark border border-hairline-dark"
+          className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
         >
-          {/* We use a placeholder image for now, keeping rounded-none and strict edges */}
-          <div className="absolute inset-0 bg-linear-to-tr from-cyber-blue/20 to-transparent z-10" />
-          <img
-            src={image}
-            alt={title}
-            className="object-cover w-full h-full grayscale hover:grayscale-0 transition-all duration-500"
-            style={{ borderRadius: "0px" }}
-          />
+          {/* Kolom Kiri: Identitas */}
+          <div className="space-y-6">
+            <motion.div variants={itemVariants} className="inline-block">
+              <span className="px-3 py-1 font-jetbrains text-mono-eyebrow rounded-sm uppercase tracking-wider text-white bg-cyber-blue">
+                {badge}
+              </span>
+            </motion.div>
+
+            <motion.div variants={itemVariants}>
+              <h1 className="text-display-lg md:text-display-xl font-bold uppercase tracking-tight leading-none mb-4">
+                {title}
+              </h1>
+              <div className="w-16 h-1 bg-crimson-red" />
+            </motion.div>
+
+            <motion.p
+              variants={itemVariants}
+              className="text-body-md text-muted-foreground leading-relaxed max-w-lg"
+            >
+              {subtitle}
+            </motion.p>
+          </div>
+
+          {/* Kolom Kanan: Aset Visual Utama */}
+          <motion.div
+            variants={itemVariants}
+            className="relative h-[400px] lg:h-[500px] w-full"
+          >
+            <div className="absolute inset-0 border border-hairline-dark bg-surface-card-dark rounded-sm overflow-hidden relative w-full h-full">
+              <Image
+                src={image}
+                alt={`Robot ${title}`}
+                className="object-cover opacity-80 mix-blend-luminosity hover:mix-blend-normal transition-all duration-700 hover:scale-105"
+                fill
+                priority
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-canvas-dark via-transparent to-transparent opacity-80" />
+            </div>
+
+            {/* Dekorasi HUD Cyber */}
+            <div className="absolute bottom-4 left-4 font-jetbrains text-xs text-cyber-blue uppercase tracking-widest opacity-60">
+              SYS_ACTIVE :: {title.split("-")[0]}
+            </div>
+            <div className="absolute top-4 right-4 w-4 h-4 border-t-2 border-r-2 border-crimson-red opacity-80" />
+            <div className="absolute bottom-4 right-4 w-4 h-4 border-b-2 border-r-2 border-crimson-red opacity-80" />
+          </motion.div>
         </motion.div>
       </div>
     </section>
   );
-};
+}
