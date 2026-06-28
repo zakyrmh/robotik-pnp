@@ -13,8 +13,8 @@ function deriveLevel(
   roleName: string,
 ): "Ketua" | "Wakil" | "Koordinator" | "Anggota" {
   const lower = roleName.toLowerCase();
-  if (lower.includes("wakil")) return "Wakil";
   if (lower.includes("ketua")) return "Ketua";
+  if (lower.includes("wakil")) return "Wakil";
   if (lower.includes("koordinator")) return "Koordinator";
   return "Anggota";
 }
@@ -146,8 +146,8 @@ export default async function KeanggotaanPage() {
       id: row.id,
       name: lm.full_name,
       avatarUrl: lm.avatar_url ?? null,
-      role: dept.name,
-      level: deriveLevel(dept.name),
+      role: row.role_name,
+      level: deriveLevel(row.role_name),
       subSection: row.sub_section ?? null,
       sortOrder: row.sort_order ?? 999,
     };
