@@ -319,6 +319,27 @@ export type Database = {
         };
         Relationships: [];
       };
+      departments: {
+        Row: {
+          created_at: string;
+          id: string;
+          name: string;
+          sort_order: number | null;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          name: string;
+          sort_order?: number | null;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          name?: string;
+          sort_order?: number | null;
+        };
+        Relationships: [];
+      };
       divisions: {
         Row: {
           accent_color: string | null;
@@ -512,6 +533,30 @@ export type Database = {
         };
         Relationships: [];
       };
+      membership_periods: {
+        Row: {
+          created_at: string;
+          id: string;
+          is_active: boolean;
+          period_name: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          period_name: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          is_active?: boolean;
+          period_name?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       or_settings: {
         Row: {
           biaya_pendaftaran: number;
@@ -556,6 +601,74 @@ export type Database = {
           updated_at?: string | null;
         };
         Relationships: [];
+      };
+      organizational_histories: {
+        Row: {
+          created_at: string;
+          department_id: string;
+          division_id: string | null;
+          id: string;
+          nim_member: string;
+          period_id: string;
+          role_name: string;
+          sort_order: number | null;
+          sub_section: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          department_id: string;
+          division_id?: string | null;
+          id?: string;
+          nim_member: string;
+          period_id: string;
+          role_name: string;
+          sort_order?: number | null;
+          sub_section?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          department_id?: string;
+          division_id?: string | null;
+          id?: string;
+          nim_member?: string;
+          period_id?: string;
+          role_name?: string;
+          sort_order?: number | null;
+          sub_section?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "org_histories_department_fkey";
+            columns: ["department_id"];
+            isOneToOne: false;
+            referencedRelation: "departments";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "org_histories_division_fkey";
+            columns: ["division_id"];
+            isOneToOne: false;
+            referencedRelation: "divisions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "org_histories_member_fkey";
+            columns: ["nim_member"];
+            isOneToOne: false;
+            referencedRelation: "legacy_members";
+            referencedColumns: ["nim"];
+          },
+          {
+            foreignKeyName: "org_histories_period_fkey";
+            columns: ["period_id"];
+            isOneToOne: false;
+            referencedRelation: "membership_periods";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       piket_logs: {
         Row: {
