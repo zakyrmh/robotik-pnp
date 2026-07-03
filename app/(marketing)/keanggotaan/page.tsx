@@ -21,9 +21,9 @@ function deriveLevel(
 
 // -----------------------------------------------------------------------
 // Raw row types setelah Supabase join.
-// Relasi Many-to-One (org_histories → departments / legacy_members /
-// divisions) selalu dikembalikan sebagai OBJEK TUNGGAL oleh Supabase JS
-// Client, bukan array. TypeScript inference kadang memunculkan union dengan
+// Relasi Many-to-One (org_histories → departments / legacy_members)
+// selalu dikembalikan sebagai OBJEK TUNGGAL oleh Supabase JS Client,
+// bukan array. TypeScript inference kadang memunculkan union dengan
 // array – kita cast secara eksplisit via helper di bawah.
 // -----------------------------------------------------------------------
 type RawDept = {
@@ -36,11 +36,6 @@ type RawDept = {
 type RawLegacyMember = {
   full_name: string;
   avatar_url: string | null;
-};
-
-type RawDivision = {
-  id: string;
-  name: string;
 };
 
 /** Normalise a Many-to-One Supabase join result to a single object or null. */
@@ -89,7 +84,6 @@ export default async function KeanggotaanPage() {
   // Catatan relasi di tabel organizational_histories:
   //   - department_id  → departments   (Many-to-One) → hasil: objek tunggal
   //   - nim_member     → legacy_members (Many-to-One) → hasil: objek tunggal
-  //   - division_id    → divisions     (Many-to-One, nullable) → objek/null
   //
   // Gunakan FK hint eksplisit `tabel!nama_fk_constraint(kolom)` untuk
   // mencegah ambiguitas "Could not embed because more than one relationship
@@ -104,10 +98,8 @@ export default async function KeanggotaanPage() {
           role_name,
           sort_order,
           sub_section,
-          division_id,
           departments:org_histories_department_fkey ( id, name, category, sort_order ),
-          legacy_members:org_histories_member_fkey ( full_name, avatar_url ),
-          divisions:org_histories_division_id_fkey ( id, name )
+          legacy_members:org_histories_member_fkey ( full_name, avatar_url )
         `,
         )
         .eq("period_id", periodId)
@@ -124,7 +116,6 @@ export default async function KeanggotaanPage() {
     deptName: string;
     deptSortOrder: number;
     members: OrgMember[];
-    divisionMap: Map<string, { divName: string; members: OrgMember[] }>;
   };
 
   const sectionMap = new Map<string, SectionEntry>();
@@ -137,7 +128,6 @@ export default async function KeanggotaanPage() {
     const lm = toSingle(
       row.legacy_members as RawLegacyMember | RawLegacyMember[] | null,
     );
-    const div = toSingle(row.divisions as RawDivision | RawDivision[] | null);
 
     // Lewati baris yang tidak punya departemen atau anggota
     if (!dept || !lm) continue;
@@ -158,28 +148,15 @@ export default async function KeanggotaanPage() {
         deptName: dept.name,
         deptSortOrder: dept.sort_order ?? 999,
         members: [],
-        divisionMap: new Map(),
       });
     }
 
-    const sec = sectionMap.get(dept.id)!;
-
-    if (div && dept.category.toLowerCase() === "departemen") {
-      if (!sec.divisionMap.has(div.id)) {
-        sec.divisionMap.set(div.id, { divName: div.name, members: [] });
-      }
-      sec.divisionMap.get(div.id)!.members.push(member);
-    } else {
-      sec.members.push(member);
-    }
+    sectionMap.get(dept.id)!.members.push(member);
   }
 
-  // Sort members within each section / division by sortOrder
+  // Sort members within each section by sortOrder
   for (const sec of sectionMap.values()) {
     sec.members.sort((a, b) => a.sortOrder - b.sortOrder);
-    for (const div of sec.divisionMap.values()) {
-      div.members.sort((a, b) => a.sortOrder - b.sortOrder);
-    }
   }
 
   // Validasi nilai category — harus salah satu dari tiga nilai yang valid.
@@ -202,13 +179,6 @@ export default async function KeanggotaanPage() {
       category: sec.category.toLowerCase() as OrgSection["category"],
       deptName: sec.deptName,
       members: sec.members,
-      divisions:
-        sec.divisionMap.size > 0
-          ? [...sec.divisionMap.values()].map((d) => ({
-              divName: d.divName,
-              members: d.members,
-            }))
-          : undefined,
     }));
 
   return (

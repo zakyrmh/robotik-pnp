@@ -20,12 +20,11 @@ export type OrgSection = {
    * Maps to `departments.category`:
    *   "presidium"  → Pengurus Harian Inti
    *   "adhoc"      → Badan Ad-Hoc (Komdis / Oprec, via subSection)
-   *   "departemen" → Departemen (with nested divisions)
+   *   "departemen" → Departemen
    */
   category: "presidium" | "adhoc" | "departemen";
   deptName: string;
   members: OrgMember[];
-  divisions?: { divName: string; members: OrgMember[] }[];
 };
 
 // --- Sub-components ---
@@ -189,12 +188,7 @@ function DepartemenSection({
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
     const membersMatch = sec.members.some(matchesSearch);
-    const divsMatch = (sec.divisions ?? []).some(
-      (d) =>
-        d.divName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        d.members.some(matchesSearch),
-    );
-    return nameMatch || membersMatch || divsMatch;
+    return nameMatch || membersMatch;
   });
 
   if (visible.length === 0) return null;
@@ -234,49 +228,12 @@ function DepartemenSection({
                   exit={{ height: 0, opacity: 0 }}
                   className="overflow-hidden border-t border-hairline-dark"
                 >
-                  <div className="p-6 space-y-8">
-                    {/* Dept-level members (coordinator / vice) */}
-                    {dept.members.filter(matchesSearch).length > 0 && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {dept.members.filter(matchesSearch).map((m) => (
-                          <MemberCard key={m.id} member={m} />
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Divisions */}
-                    {(dept.divisions ?? []).map((div, i) => {
-                      const divMembers = div.members.filter(matchesSearch);
-                      if (searchQuery && divMembers.length === 0) return null;
-                      const [head, ...rest] = divMembers;
-
-                      return (
-                        <motion.div
-                          key={div.divName}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: i * 0.1 }}
-                          className="space-y-4"
-                        >
-                          <h4 className="font-jetbrains text-mono-eyebrow text-muted-foreground uppercase">
-                            {div.divName}
-                          </h4>
-                          {head && head.level !== "Anggota" && (
-                            <div className="w-full md:w-1/2">
-                              <MemberCard member={head} />
-                            </div>
-                          )}
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {(head?.level !== "Anggota"
-                              ? rest
-                              : divMembers
-                            ).map((m) => (
-                              <MemberCard key={m.id} member={m} />
-                            ))}
-                          </div>
-                        </motion.div>
-                      );
-                    })}
+                  <div className="p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {dept.members.filter(matchesSearch).map((m) => (
+                        <MemberCard key={m.id} member={m} />
+                      ))}
+                    </div>
                   </div>
                 </motion.div>
               )}
@@ -372,12 +329,8 @@ export default function KeanggotaanClient({
           adhocSections.every((s) =>
             s.members.every((m) => !matchesSearch(m)),
           ) &&
-          departemenSections.every(
-            (s) =>
-              s.members.every((m) => !matchesSearch(m)) &&
-              (s.divisions ?? []).every((d) =>
-                d.members.every((m) => !matchesSearch(m)),
-              ),
+          departemenSections.every((s) =>
+            s.members.every((m) => !matchesSearch(m)),
           ) && (
             <div className="text-center py-20 text-muted-foreground font-jetbrains">
               <p className="text-lg">Tidak ditemukan anggota untuk</p>
