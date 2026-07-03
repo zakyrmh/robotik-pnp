@@ -37,7 +37,7 @@ function MemberCard({ member }: { member: OrgMember }) {
   return (
     <motion.div
       whileHover={{ y: -4, scale: 1.02 }}
-      className={`relative p-4 rounded-sm border bg-surface-card-dark transition-all duration-300 ${
+      className={`p-4 rounded-sm border bg-surface-card-dark transition-all duration-300 ${
         isLeader
           ? "border-cyber-blue shadow-[0_0_12px_rgba(0,102,177,0.15)]"
           : isVice
@@ -68,19 +68,6 @@ function MemberCard({ member }: { member: OrgMember }) {
           </p>
         </div>
       </div>
-      {(isLeader || isVice) && (
-        <div className="absolute -top-3 -right-2">
-          <span
-            className={`px-2 py-0.5 text-[10px] font-jetbrains uppercase rounded-sm ${
-              isLeader
-                ? "bg-cyber-blue text-white"
-                : "bg-tech-navy/20 text-cyber-blue border border-tech-navy/30"
-            }`}
-          >
-            {member.level}
-          </span>
-        </div>
-      )}
     </motion.div>
   );
 }
