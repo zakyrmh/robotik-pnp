@@ -183,8 +183,31 @@ export default async function KeanggotaanPage() {
       members: sec.members,
     }));
 
+  const siteUrl = (
+    process.env.NEXT_PUBLIC_SITE_URL || "https://robotik-pnp.vercel.app"
+  ).replace(/\/$/, "");
+
+  const webpageJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "@id": `${siteUrl}/keanggotaan/#webpage`,
+    url: `${siteUrl}/keanggotaan`,
+    name: "Struktur Organisasi & Keanggotaan | UKM Robotika PNP",
+    description:
+      "Sinergi di Balik Inovasi. Kenali talenta-talenta berbakat Politeknik Negeri Padang yang menggerakkan roda organisasi dan riset robotika.",
+    isPartOf: {
+      "@id": `${siteUrl}/#website`,
+    },
+  };
+
   return (
     <div className="bg-canvas-dark text-foreground min-h-screen pt-20">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(webpageJsonLd),
+        }}
+      />
       <KeanggotaanClient sections={orgSections} />
     </div>
   );

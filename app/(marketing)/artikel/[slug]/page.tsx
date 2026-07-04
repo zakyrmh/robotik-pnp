@@ -23,7 +23,7 @@ export async function generateMetadata({
   return {
     title: `${article.title} — UKM Robotik PNP`,
     description:
-      article.excerpt || "Artikel dari UKM Robotika Politeknik Negeri Padang",
+      article.excerpt || "Artikel dari UKM Robotik Politeknik Negeri Padang",
   };
 }
 
@@ -41,8 +41,37 @@ export default async function ArticleDetailPage({
     notFound();
   }
 
+  const siteUrl = (
+    process.env.NEXT_PUBLIC_SITE_URL || "https://robotik-pnp.vercel.app"
+  ).replace(/\/$/, "");
+
+  const blogPostJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "@id": `${siteUrl}/artikel/${article.slug}/#post`,
+    headline: article.title,
+    description: article.excerpt || article.title,
+    datePublished: article.published_at || undefined,
+    dateModified: article.published_at || undefined,
+    mainEntityOfPage: `${siteUrl}/artikel/${article.slug}`,
+    image: article.cover_image_url ? [article.cover_image_url] : [],
+    author: {
+      "@type": "Person",
+      name: article.profiles?.email || "Tim Publikasi UKM Robotik PNP",
+    },
+    publisher: {
+      "@id": `${siteUrl}/#organization`,
+    },
+  };
+
   return (
     <div className="bg-canvas-light text-foreground min-h-screen pt-24 pb-24">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(blogPostJsonLd),
+        }}
+      />
       {/* Switch polarity: Dark canvas header, Light canvas content (The Typographic Joke & Polarity rules) */}
       <article className="max-w-3xl mx-auto px-4">
         <Link
@@ -91,7 +120,7 @@ export default async function ArticleDetailPage({
 
         {/* Cover Image */}
         {article?.cover_image_url ? (
-          <div className="relative w-full h-80 md:h-[400px] mb-12 overflow-hidden border border-hairline-light">
+          <div className="relative w-full h-80 md:h-100 mb-12 overflow-hidden border border-hairline-light">
             <Image
               src={article.cover_image_url}
               alt={article.title}

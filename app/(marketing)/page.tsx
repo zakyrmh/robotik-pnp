@@ -13,11 +13,11 @@ import { TimelineSection } from "@/components/landing/timeline-section";
 import { CtaSection } from "@/components/landing/cta-section";
 
 export const metadata: Metadata = {
-  title: "UKM Robotika PNP — Mesin. Logika. Juara.",
+  title: "UKM Robotik PNP — Mesin. Logika. Juara.",
   description:
-    "Unit Kegiatan Mahasiswa Robotika Politeknik Negeri Padang. Tim robot kompetisi unggulan di KRAI, KRSBI-B, KRSBI-H, KRSTI, dan KRSRI. Bergabunglah dan berikan prestasi terbaik untuk PNP.",
+    "Unit Kegiatan Mahasiswa Robotik Politeknik Negeri Padang. Tim robot kompetisi unggulan di KRAI, KRSBI-B, KRSBI-H, KRSTI, dan KRSRI. Bergabunglah dan berikan prestasi terbaik untuk PNP.",
   keywords: [
-    "robotika",
+    "robotik",
     "PNP",
     "KRAI",
     "KRSBI",
@@ -27,9 +27,9 @@ export const metadata: Metadata = {
     "Padang",
   ],
   openGraph: {
-    title: "UKM Robotika PNP — Mesin. Logika. Juara.",
+    title: "UKM Robotik PNP — Mesin. Logika. Juara.",
     description:
-      "Unit Kegiatan Mahasiswa Robotika Politeknik Negeri Padang — Bergerak dengan Presisi, Bersaing di Pentas Nasional.",
+      "Unit Kegiatan Mahasiswa Robotik Politeknik Negeri Padang — Bergerak dengan Presisi, Bersaing di Pentas Nasional.",
     type: "website",
   },
 };
@@ -68,8 +68,31 @@ export default async function HomePage() {
   const yearFounded = parseInt(process.env.YEAR_FOUNDED || "2005", 10);
   const yearsStanding = currentYear - yearFounded;
 
+  const siteUrl = (
+    process.env.NEXT_PUBLIC_SITE_URL || "https://robotik-pnp.vercel.app"
+  ).replace(/\/$/, "");
+
+  const websiteJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": `${siteUrl}/#website`,
+    url: siteUrl,
+    name: "UKM Robotik PNP",
+    description:
+      "Unit Kegiatan Mahasiswa Robotik Politeknik Negeri Padang — We Play with Technology",
+    publisher: {
+      "@id": `${siteUrl}/#organization`,
+    },
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(websiteJsonLd),
+        }}
+      />
       {/* 1. Hero Section */}
       <HeroSection
         activeMemberCount={memberCount}
