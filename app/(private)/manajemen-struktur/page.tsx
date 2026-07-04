@@ -28,13 +28,14 @@ export default async function ManajemenStrukturPage() {
     redirect("/dashboard");
   }
 
-  // Fetch all 5 tables to pass to the client component
+  // Fetch all 5 tables + study_programs to pass to the client component
   const [
     { data: periods },
     { data: departments },
     { data: legacyMembers },
     { data: divisions },
     { data: orgHistories },
+    { data: studyPrograms },
   ] = await Promise.all([
     supabase
       .from("membership_periods")
@@ -64,6 +65,10 @@ export default async function ManajemenStrukturPage() {
     `,
       )
       .order("sort_order", { ascending: true }),
+    supabase
+      .from("study_programs")
+      .select("id, name")
+      .order("name", { ascending: true }),
   ]);
 
   return (
@@ -73,6 +78,7 @@ export default async function ManajemenStrukturPage() {
       initialLegacyMembers={legacyMembers || []}
       initialDivisions={divisions || []}
       initialOrgHistories={orgHistories || []}
+      initialStudyPrograms={studyPrograms || []}
     />
   );
 }

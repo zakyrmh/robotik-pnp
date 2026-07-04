@@ -29,6 +29,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 
 import {
   createMembershipPeriod,
@@ -69,7 +82,13 @@ interface LegacyMember {
   nim: string;
   full_name: string;
   gender: string | null;
+  study_program_id: string | null;
   study_program: { name: string } | null;
+}
+
+interface StudyProgram {
+  id: string;
+  name: string;
 }
 
 interface Division {
@@ -102,6 +121,7 @@ interface StructureClientProps {
   initialLegacyMembers: LegacyMember[];
   initialDivisions: Division[];
   initialOrgHistories: OrgHistory[];
+  initialStudyPrograms: StudyProgram[];
 }
 
 export function StructureClient({
@@ -110,6 +130,7 @@ export function StructureClient({
   initialLegacyMembers,
   initialDivisions,
   initialOrgHistories,
+  initialStudyPrograms,
 }: StructureClientProps) {
   const router = useRouter();
 
@@ -132,6 +153,7 @@ export function StructureClient({
   );
   const [formData, setFormData] = useState<Record<string, unknown>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [studyProgramOpen, setStudyProgramOpen] = useState(false);
 
   // Helper to open dialog
   const handleOpenDialog = (
@@ -195,6 +217,7 @@ export function StructureClient({
           nim: (formData.nim as string) || "",
           full_name: (formData.full_name as string) || "",
           gender: (formData.gender as string) || null,
+          study_program_id: (formData.study_program_id as string) || null,
         };
         if (dialogType === "update" && !activeItem?.nim) return;
         result =
@@ -410,6 +433,69 @@ export function StructureClient({
                 <SelectItem value="P">Perempuan (P)</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="study_program_id">Program Studi</Label>
+            <Popover open={studyProgramOpen} onOpenChange={setStudyProgramOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={studyProgramOpen}
+                  className="w-full justify-between rounded-none font-normal text-xs"
+                >
+                  {formData.study_program_id
+                    ? initialStudyPrograms.find(
+                        (sp) => sp.id === formData.study_program_id,
+                      )?.name || "Pilih Program Studi"
+                    : "Pilih Program Studi"}
+                  <HugeiconsIcon
+                    icon={Search01Icon}
+                    size={14}
+                    className="ml-2 shrink-0 opacity-50"
+                  />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent
+                className="w-[var(--radix-popover-trigger-width)] p-0 rounded-none"
+                align="start"
+              >
+                <Command>
+                  <CommandInput placeholder="Cari program studi..." />
+                  <CommandList>
+                    <CommandEmpty>Program studi tidak ditemukan.</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        value="__none__"
+                        onSelect={() => {
+                          setFormData({ ...formData, study_program_id: null });
+                          setStudyProgramOpen(false);
+                        }}
+                        data-checked={!formData.study_program_id}
+                      >
+                        -- Tidak ada --
+                      </CommandItem>
+                      {initialStudyPrograms.map((sp) => (
+                        <CommandItem
+                          key={sp.id}
+                          value={sp.name}
+                          onSelect={() => {
+                            setFormData({
+                              ...formData,
+                              study_program_id: sp.id,
+                            });
+                            setStudyProgramOpen(false);
+                          }}
+                          data-checked={formData.study_program_id === sp.id}
+                        >
+                          {sp.name}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
         </>
       );

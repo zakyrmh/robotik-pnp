@@ -14,7 +14,10 @@ async function verifyAdminAccess() {
   } = await supabase.auth.getUser();
 
   if (error || !user) {
-    return { authorized: false, error: "Sesi tidak ditemukan. Silakan login kembali." };
+    return {
+      authorized: false,
+      error: "Sesi tidak ditemukan. Silakan login kembali.",
+    };
   }
 
   const { data: profile } = await supabase
@@ -23,8 +26,14 @@ async function verifyAdminAccess() {
     .eq("id", user.id)
     .single();
 
-  if (!profile || (profile.role !== "super-admin" && profile.role !== "admin-or")) {
-    return { authorized: false, error: "Akses ditolak. Anda tidak memiliki izin." };
+  if (
+    !profile ||
+    (profile.role !== "super-admin" && profile.role !== "admin-or")
+  ) {
+    return {
+      authorized: false,
+      error: "Akses ditolak. Anda tidak memiliki izin.",
+    };
   }
 
   return { authorized: true, user, role: profile.role };
@@ -39,31 +48,43 @@ const membershipPeriodSchema = z.object({
   is_active: z.boolean(),
 });
 
-export async function createMembershipPeriod(data: z.infer<typeof membershipPeriodSchema>) {
+export async function createMembershipPeriod(
+  data: z.infer<typeof membershipPeriodSchema>,
+) {
   const auth = await verifyAdminAccess();
   if (!auth.authorized) return { success: false, error: auth.error };
 
   const parsed = membershipPeriodSchema.safeParse(data);
-  if (!parsed.success) return { success: false, error: parsed.error.issues[0].message };
+  if (!parsed.success)
+    return { success: false, error: parsed.error.issues[0].message };
 
   const supabase = await createClient();
   try {
-    const { error } = await supabase.from("membership_periods").insert(parsed.data);
+    const { error } = await supabase
+      .from("membership_periods")
+      .insert(parsed.data);
     if (error) return { success: false, error: error.message };
 
     revalidatePath("/manajemen-struktur");
     return { success: true };
   } catch (err: unknown) {
-    return { success: false, error: err instanceof Error ? err.message : "Terjadi kesalahan" };
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Terjadi kesalahan",
+    };
   }
 }
 
-export async function updateMembershipPeriod(id: string, data: z.infer<typeof membershipPeriodSchema>) {
+export async function updateMembershipPeriod(
+  id: string,
+  data: z.infer<typeof membershipPeriodSchema>,
+) {
   const auth = await verifyAdminAccess();
   if (!auth.authorized) return { success: false, error: auth.error };
 
   const parsed = membershipPeriodSchema.safeParse(data);
-  if (!parsed.success) return { success: false, error: parsed.error.issues[0].message };
+  if (!parsed.success)
+    return { success: false, error: parsed.error.issues[0].message };
 
   const supabase = await createClient();
   try {
@@ -77,7 +98,10 @@ export async function updateMembershipPeriod(id: string, data: z.infer<typeof me
     revalidatePath("/manajemen-struktur");
     return { success: true };
   } catch (err: unknown) {
-    return { success: false, error: err instanceof Error ? err.message : "Terjadi kesalahan" };
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Terjadi kesalahan",
+    };
   }
 }
 
@@ -87,16 +111,21 @@ export async function deleteMembershipPeriod(id: string) {
 
   const supabase = await createClient();
   try {
-    const { error } = await supabase.from("membership_periods").delete().eq("id", id);
+    const { error } = await supabase
+      .from("membership_periods")
+      .delete()
+      .eq("id", id);
     if (error) return { success: false, error: error.message };
 
     revalidatePath("/manajemen-struktur");
     return { success: true };
   } catch (err: unknown) {
-    return { success: false, error: err instanceof Error ? err.message : "Terjadi kesalahan" };
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Terjadi kesalahan",
+    };
   }
 }
-
 
 // ==========================================
 // DEPARTMENTS
@@ -113,7 +142,8 @@ export async function createDepartment(data: z.infer<typeof departmentSchema>) {
   if (!auth.authorized) return { success: false, error: auth.error };
 
   const parsed = departmentSchema.safeParse(data);
-  if (!parsed.success) return { success: false, error: parsed.error.issues[0].message };
+  if (!parsed.success)
+    return { success: false, error: parsed.error.issues[0].message };
 
   const supabase = await createClient();
   try {
@@ -123,16 +153,23 @@ export async function createDepartment(data: z.infer<typeof departmentSchema>) {
     revalidatePath("/manajemen-struktur");
     return { success: true };
   } catch (err: unknown) {
-    return { success: false, error: err instanceof Error ? err.message : "Terjadi kesalahan" };
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Terjadi kesalahan",
+    };
   }
 }
 
-export async function updateDepartment(id: string, data: z.infer<typeof departmentSchema>) {
+export async function updateDepartment(
+  id: string,
+  data: z.infer<typeof departmentSchema>,
+) {
   const auth = await verifyAdminAccess();
   if (!auth.authorized) return { success: false, error: auth.error };
 
   const parsed = departmentSchema.safeParse(data);
-  if (!parsed.success) return { success: false, error: parsed.error.issues[0].message };
+  if (!parsed.success)
+    return { success: false, error: parsed.error.issues[0].message };
 
   const supabase = await createClient();
   try {
@@ -146,7 +183,10 @@ export async function updateDepartment(id: string, data: z.infer<typeof departme
     revalidatePath("/manajemen-struktur");
     return { success: true };
   } catch (err: unknown) {
-    return { success: false, error: err instanceof Error ? err.message : "Terjadi kesalahan" };
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Terjadi kesalahan",
+    };
   }
 }
 
@@ -162,10 +202,12 @@ export async function deleteDepartment(id: string) {
     revalidatePath("/manajemen-struktur");
     return { success: true };
   } catch (err: unknown) {
-    return { success: false, error: err instanceof Error ? err.message : "Terjadi kesalahan" };
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Terjadi kesalahan",
+    };
   }
 }
-
 
 // ==========================================
 // LEGACY MEMBERS
@@ -175,14 +217,18 @@ const legacyMemberSchema = z.object({
   nim: z.string().min(1, "NIM harus diisi"),
   full_name: z.string().min(1, "Nama lengkap harus diisi"),
   gender: z.string().nullable().optional(),
+  study_program_id: z.string().nullable().optional(),
 });
 
-export async function createLegacyMember(data: z.infer<typeof legacyMemberSchema>) {
+export async function createLegacyMember(
+  data: z.infer<typeof legacyMemberSchema>,
+) {
   const auth = await verifyAdminAccess();
   if (!auth.authorized) return { success: false, error: auth.error };
 
   const parsed = legacyMemberSchema.safeParse(data);
-  if (!parsed.success) return { success: false, error: parsed.error.issues[0].message };
+  if (!parsed.success)
+    return { success: false, error: parsed.error.issues[0].message };
 
   const supabase = await createClient();
   try {
@@ -192,16 +238,23 @@ export async function createLegacyMember(data: z.infer<typeof legacyMemberSchema
     revalidatePath("/manajemen-struktur");
     return { success: true };
   } catch (err: unknown) {
-    return { success: false, error: err instanceof Error ? err.message : "Terjadi kesalahan" };
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Terjadi kesalahan",
+    };
   }
 }
 
-export async function updateLegacyMember(nim: string, data: z.infer<typeof legacyMemberSchema>) {
+export async function updateLegacyMember(
+  nim: string,
+  data: z.infer<typeof legacyMemberSchema>,
+) {
   const auth = await verifyAdminAccess();
   if (!auth.authorized) return { success: false, error: auth.error };
 
   const parsed = legacyMemberSchema.safeParse(data);
-  if (!parsed.success) return { success: false, error: parsed.error.issues[0].message };
+  if (!parsed.success)
+    return { success: false, error: parsed.error.issues[0].message };
 
   const supabase = await createClient();
   try {
@@ -215,7 +268,10 @@ export async function updateLegacyMember(nim: string, data: z.infer<typeof legac
     revalidatePath("/manajemen-struktur");
     return { success: true };
   } catch (err: unknown) {
-    return { success: false, error: err instanceof Error ? err.message : "Terjadi kesalahan" };
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Terjadi kesalahan",
+    };
   }
 }
 
@@ -225,16 +281,21 @@ export async function deleteLegacyMember(nim: string) {
 
   const supabase = await createClient();
   try {
-    const { error } = await supabase.from("legacy_members").delete().eq("nim", nim);
+    const { error } = await supabase
+      .from("legacy_members")
+      .delete()
+      .eq("nim", nim);
     if (error) return { success: false, error: error.message };
 
     revalidatePath("/manajemen-struktur");
     return { success: true };
   } catch (err: unknown) {
-    return { success: false, error: err instanceof Error ? err.message : "Terjadi kesalahan" };
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Terjadi kesalahan",
+    };
   }
 }
-
 
 // ==========================================
 // DIVISIONS
@@ -257,29 +318,37 @@ export async function createDivision(data: z.infer<typeof divisionSchema>) {
   if (!auth.authorized) return { success: false, error: auth.error };
 
   const parsed = divisionSchema.safeParse(data);
-  if (!parsed.success) return { success: false, error: parsed.error.issues[0].message };
+  if (!parsed.success)
+    return { success: false, error: parsed.error.issues[0].message };
 
   const supabase = await createClient();
   try {
     const { error } = await supabase.from("divisions").insert({
       ...parsed.data,
-      tags: []
+      tags: [],
     });
     if (error) return { success: false, error: error.message };
 
     revalidatePath("/manajemen-struktur");
     return { success: true };
   } catch (err: unknown) {
-    return { success: false, error: err instanceof Error ? err.message : "Terjadi kesalahan" };
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Terjadi kesalahan",
+    };
   }
 }
 
-export async function updateDivision(id: string, data: z.infer<typeof divisionSchema>) {
+export async function updateDivision(
+  id: string,
+  data: z.infer<typeof divisionSchema>,
+) {
   const auth = await verifyAdminAccess();
   if (!auth.authorized) return { success: false, error: auth.error };
 
   const parsed = divisionSchema.safeParse(data);
-  if (!parsed.success) return { success: false, error: parsed.error.issues[0].message };
+  if (!parsed.success)
+    return { success: false, error: parsed.error.issues[0].message };
 
   const supabase = await createClient();
   try {
@@ -293,7 +362,10 @@ export async function updateDivision(id: string, data: z.infer<typeof divisionSc
     revalidatePath("/manajemen-struktur");
     return { success: true };
   } catch (err: unknown) {
-    return { success: false, error: err instanceof Error ? err.message : "Terjadi kesalahan" };
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Terjadi kesalahan",
+    };
   }
 }
 
@@ -309,10 +381,12 @@ export async function deleteDivision(id: string) {
     revalidatePath("/manajemen-struktur");
     return { success: true };
   } catch (err: unknown) {
-    return { success: false, error: err instanceof Error ? err.message : "Terjadi kesalahan" };
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Terjadi kesalahan",
+    };
   }
 }
-
 
 // ==========================================
 // ORGANIZATIONAL HISTORIES
@@ -333,26 +407,36 @@ export async function createOrgHistory(data: z.infer<typeof orgHistorySchema>) {
   if (!auth.authorized) return { success: false, error: auth.error };
 
   const parsed = orgHistorySchema.safeParse(data);
-  if (!parsed.success) return { success: false, error: parsed.error.issues[0].message };
+  if (!parsed.success)
+    return { success: false, error: parsed.error.issues[0].message };
 
   const supabase = await createClient();
   try {
-    const { error } = await supabase.from("organizational_histories").insert(parsed.data);
+    const { error } = await supabase
+      .from("organizational_histories")
+      .insert(parsed.data);
     if (error) return { success: false, error: error.message };
 
     revalidatePath("/manajemen-struktur");
     return { success: true };
   } catch (err: unknown) {
-    return { success: false, error: err instanceof Error ? err.message : "Terjadi kesalahan" };
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Terjadi kesalahan",
+    };
   }
 }
 
-export async function updateOrgHistory(id: string, data: z.infer<typeof orgHistorySchema>) {
+export async function updateOrgHistory(
+  id: string,
+  data: z.infer<typeof orgHistorySchema>,
+) {
   const auth = await verifyAdminAccess();
   if (!auth.authorized) return { success: false, error: auth.error };
 
   const parsed = orgHistorySchema.safeParse(data);
-  if (!parsed.success) return { success: false, error: parsed.error.issues[0].message };
+  if (!parsed.success)
+    return { success: false, error: parsed.error.issues[0].message };
 
   const supabase = await createClient();
   try {
@@ -366,7 +450,10 @@ export async function updateOrgHistory(id: string, data: z.infer<typeof orgHisto
     revalidatePath("/manajemen-struktur");
     return { success: true };
   } catch (err: unknown) {
-    return { success: false, error: err instanceof Error ? err.message : "Terjadi kesalahan" };
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Terjadi kesalahan",
+    };
   }
 }
 
@@ -376,12 +463,18 @@ export async function deleteOrgHistory(id: string) {
 
   const supabase = await createClient();
   try {
-    const { error } = await supabase.from("organizational_histories").delete().eq("id", id);
+    const { error } = await supabase
+      .from("organizational_histories")
+      .delete()
+      .eq("id", id);
     if (error) return { success: false, error: error.message };
 
     revalidatePath("/manajemen-struktur");
     return { success: true };
   } catch (err: unknown) {
-    return { success: false, error: err instanceof Error ? err.message : "Terjadi kesalahan" };
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Terjadi kesalahan",
+    };
   }
 }
