@@ -4,10 +4,7 @@ import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  Mail01Icon,
-  ArrowRight01Icon,
-} from "@hugeicons/core-free-icons";
+import { Mail01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons";
 
 export function CtaSection() {
   const ref = useRef<HTMLDivElement>(null);
@@ -72,7 +69,7 @@ export function CtaSection() {
                 />
               </Link>
               <Link
-                href="/hubungi"
+                href="/hubungi-kami"
                 className="inline-flex items-center gap-3 font-mono text-[12px] font-medium uppercase tracking-[1.5px] px-8 py-4 bg-transparent text-white border border-hairline-dark hover:border-cyber-blue hover:bg-cyber-blue/10 transition-all duration-200"
               >
                 Hubungi Kami

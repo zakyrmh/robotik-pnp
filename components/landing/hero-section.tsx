@@ -99,10 +99,12 @@ export function HeroSection({
               transition={{ duration: 0.6, delay: 0.25 }}
               className="text-white/60 text-base font-light leading-relaxed max-w-xl mb-10"
             >
-              Unit Kegiatan Mahasiswa Robotika PNP adalah pusat inovasi rekayasa
-              robot terdepan di Sumatera Barat — membawa misi meraih podium
-              nasional di KRAI, KRSBI-B, KRSBI-H, KRSTI, dan KRSRI setiap
-              tahunnya.
+              Unit Kegiatan Mahasiswa Robotik Politeknik Negeri Padang (UKM-R
+              PNP) adalah wadah pengembangan bakat, minat, dan kreativitas
+              mahasiswa di bidang rekayasa teknologi robotika. Bersama moto
+              &quot;No Victory Without Sacrifice&quot; dan slogan &quot;We Play
+              With Technology&quot;, kami berkomitmen mencetak juara di tingkat
+              nasional.
             </motion.p>
 
             {/* CTA Buttons */}

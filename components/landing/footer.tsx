@@ -18,7 +18,7 @@ const navGroups = [
     links: [
       { href: "/keanggotaan", label: "Keanggotaan" },
       { href: "/artikel", label: "Artikel & Blog" },
-      { href: "/hubungi", label: "Hubungi Kami" },
+      { href: "/hubungi-kami", label: "Hubungi Kami" },
     ],
   },
   {

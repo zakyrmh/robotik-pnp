@@ -9,7 +9,9 @@ export function HeroSection() {
       <div className="absolute inset-0 z-0">
         <div
           className="absolute inset-0 bg-cover bg-center opacity-40 mix-blend-luminosity"
-          style={{ backgroundImage: 'url("/images/logo-ukm-robotik-pnp.webp")' }}
+          style={{
+            backgroundImage: 'url("/images/logo-ukm-robotik-pnp.webp")',
+          }}
         />
         {/* Dark overlay to ensure text readability according to guidelines */}
         <div className="absolute inset-0 bg-linear-to-b from-canvas-dark/80 via-canvas-dark/60 to-canvas-dark" />
@@ -51,7 +53,8 @@ export function HeroSection() {
           transition={{ duration: 0.7, delay: 0.1 }}
           className="font-sans font-bold text-[40px] md:text-[64px] leading-[1.1] uppercase text-white mb-8 max-w-4xl"
         >
-          Dapur Inovasi & Pusat Riset Teknologi Robotika <span className="text-cyber-blue">Politeknik Negeri Padang</span>
+          Dapur Inovasi & Pusat Riset Teknologi Robotika{" "}
+          <span className="text-cyber-blue">Politeknik Negeri Padang</span>
         </motion.h1>
 
         {/* Sub headline */}
@@ -61,7 +64,12 @@ export function HeroSection() {
           transition={{ duration: 0.6, delay: 0.25 }}
           className="text-white/70 text-[16px] font-light leading-relaxed max-w-3xl"
         >
-          Wadah bagi mahasiswa kreatif, solutif, dan inovatif untuk mengeksplorasi potensi di bidang robotika, otomatisasi, dan kecerdasan buatan demi mengharumkan nama institusi di kancah nasional maupun internasional.
+          Unit Kegiatan Mahasiswa Robotik Politeknik Negeri Padang (UKM-R PNP)
+          merupakan wadah pengembangan bakat, minat, dan kreativitas mahasiswa
+          di bidang robotika. Terbuka bagi seluruh mahasiswa PNP dari berbagai
+          jurusan, kami berfokus pada mekanikal, elektrikal, pemrograman, dan
+          kerja sama tim untuk menghadapi perkembangan teknologi dunia yang
+          pesat.
         </motion.p>
       </div>
 

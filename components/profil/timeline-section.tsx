@@ -6,25 +6,27 @@ export function TimelineSection() {
   const milestones = [
     {
       year: "2005",
-      title: "Awal Mula",
-      description: "Berawal dari sekelompok mahasiswa PNP yang menginisiasi komunitas robotik, hingga akhirnya resmi diakui sebagai Unit Kegiatan Mahasiswa formal kampus."
+      title: "Pendirian Resmi",
+      description:
+        "UKM Robotik PNP resmi berdiri pada tanggal 22 Juli 2005, diresmikan oleh Ir. Suhendrik Anwar, MT (Direktur PNP saat itu). Terbentuknya organisasi ini diawali dari keikutsertaan PNP dalam Kontes Robot Indonesia (KRI) sejak tahun 2003.",
     },
     {
       year: "2010",
       title: "Fasilitas Workshop",
-      description: "Peresmian ruang workshop khusus sebagai laboratorium pusat riset mandiri bagi anggota UKM untuk merancang dan merakit robot secara intensif."
+      description:
+        "Peresmian ruang workshop khusus sebagai laboratorium pusat riset mandiri bagi anggota UKM untuk merancang dan merakit robot secara intensif.",
     },
     {
       year: "2018",
       title: "Pencapaian Divisi",
-      description: "UKM mulai membentuk 5 divisi kompetisi utama dan berhasil menembus panggung kompetisi nasional secara konsisten, membawa nama baik institusi."
-    }
+      description:
+        "UKM mulai membentuk 5 divisi kompetisi utama dan berhasil menembus panggung kompetisi nasional secara konsisten, membawa nama baik institusi.",
+    },
   ];
 
   return (
     <section className="bg-canvas-dark py-[80px] border-b border-hairline-dark relative">
       <div className="max-w-[1320px] mx-auto px-6">
-
         <div className="text-center mb-16">
           <span className="font-mono text-[12px] font-medium uppercase tracking-[1.5px] text-cyber-blue">
             Milestones
@@ -54,8 +56,12 @@ export function TimelineSection() {
                   }`}
                 >
                   {/* Content Box */}
-                  <div className={`md:w-1/2 pl-12 md:pl-0 ${isEven ? "md:text-left" : "md:text-right"}`}>
-                    <div className={`bg-surface-card-dark border border-hairline-dark p-6 rounded-none relative`}>
+                  <div
+                    className={`md:w-1/2 pl-12 md:pl-0 ${isEven ? "md:text-left" : "md:text-right"}`}
+                  >
+                    <div
+                      className={`bg-surface-card-dark border border-hairline-dark p-6 rounded-none relative`}
+                    >
                       <span className="font-mono text-[14px] font-medium text-cyber-blue mb-2 block">
                         {milestone.year}
                       </span>
@@ -75,7 +81,6 @@ export function TimelineSection() {
             })}
           </div>
         </div>
-
       </div>
     </section>
   );

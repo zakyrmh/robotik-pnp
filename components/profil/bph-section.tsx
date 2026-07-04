@@ -11,39 +11,43 @@ export function BphSection() {
     {
       role: "Pembina UKM Robotik",
       name: "Dr. Eng. Nama Pembina, M.T.",
-      image: "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=400&h=400",
-      link: "#"
+      image:
+        "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=400&h=400",
+      link: "#",
     },
     {
       role: "Ketua Umum",
       name: "Ahmad Fauzi",
-      image: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=400&h=400",
-      link: "#"
+      image:
+        "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=400&h=400",
+      link: "#",
     },
     {
       role: "Wakil Ketua Umum",
       name: "Budi Santoso",
-      image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=400&h=400",
-      link: "#"
+      image:
+        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=400&h=400",
+      link: "#",
     },
     {
       role: "Sekretaris",
       name: "Citra Lestari",
-      image: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400&h=400",
-      link: "#"
+      image:
+        "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400&h=400",
+      link: "#",
     },
     {
       role: "Bendahara",
       name: "Dewi Anggraini",
-      image: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=400&h=400",
-      link: "#"
-    }
+      image:
+        "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=400&h=400",
+      link: "#",
+    },
   ];
 
   return (
     <section className="bg-canvas-dark py-[80px] border-b border-hairline-dark">
       <div className="max-w-[1320px] mx-auto px-6">
-
         <div className="text-center mb-16">
           <span className="font-mono text-[12px] font-medium uppercase tracking-[1.5px] text-cyber-blue">
             Struktur Formal
@@ -95,7 +99,7 @@ export function BphSection() {
         {/* Call to Action */}
         <div className="flex justify-center">
           <Link
-            href="/anggota"
+            href="/keanggotaan"
             className="inline-flex items-center gap-3 font-mono text-[14px] font-medium uppercase tracking-[1.5px] px-8 py-4 bg-transparent text-white border border-white hover:border-cyber-blue hover:bg-cyber-blue/10 transition-all duration-200 group rounded-none"
           >
             Lihat Direktori Seluruh Anggota & Divisi
@@ -106,7 +110,6 @@ export function BphSection() {
             />
           </Link>
         </div>
-
       </div>
     </section>
   );
