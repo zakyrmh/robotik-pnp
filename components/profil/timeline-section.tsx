@@ -10,18 +10,6 @@ export function TimelineSection() {
       description:
         "UKM Robotik PNP resmi berdiri pada tanggal 22 Juli 2005, diresmikan oleh Ir. Suhendrik Anwar, MT (Direktur PNP saat itu). Terbentuknya organisasi ini diawali dari keikutsertaan PNP dalam Kontes Robot Indonesia (KRI) sejak tahun 2003.",
     },
-    {
-      year: "2010",
-      title: "Fasilitas Workshop",
-      description:
-        "Peresmian ruang workshop khusus sebagai laboratorium pusat riset mandiri bagi anggota UKM untuk merancang dan merakit robot secara intensif.",
-    },
-    {
-      year: "2018",
-      title: "Pencapaian Divisi",
-      description:
-        "UKM mulai membentuk 5 divisi kompetisi utama dan berhasil menembus panggung kompetisi nasional secara konsisten, membawa nama baik institusi.",
-    },
   ];
 
   return (

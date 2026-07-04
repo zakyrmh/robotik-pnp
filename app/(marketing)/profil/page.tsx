@@ -1,6 +1,5 @@
 import { Metadata } from "next";
 import { HeroSection } from "@/components/profil/hero-section";
-import { VisiMisiSection } from "@/components/profil/visi-misi-section";
 import { MotoSloganSection } from "@/components/profil/moto-slogan-section";
 import { TimelineSection } from "@/components/profil/timeline-section";
 import { BphSection } from "@/components/profil/bph-section";
@@ -48,7 +47,6 @@ export default function ProfilPage() {
         }}
       />
       <HeroSection />
-      <VisiMisiSection />
       <MotoSloganSection />
       <TimelineSection />
       <BphSection />
