@@ -11,6 +11,7 @@ export interface BphMember {
   name: string;
   image: string;
   link: string;
+  prodi?: string | null;
 }
 
 interface BphSectionProps {
@@ -19,8 +20,8 @@ interface BphSectionProps {
 
 export function BphSection({ members }: BphSectionProps) {
   return (
-    <section className="bg-canvas-dark py-[80px] border-b border-hairline-dark">
-      <div className="max-w-[1320px] mx-auto px-6">
+    <section className="bg-canvas-dark py-20 border-b border-hairline-dark">
+      <div className="max-w-330 mx-auto px-6">
         <div className="text-center mb-16">
           <span className="font-mono text-[12px] font-medium uppercase tracking-[1.5px] text-cyber-blue">
             Struktur Formal
@@ -54,16 +55,14 @@ export function BphSection({ members }: BphSectionProps) {
                 <span className="font-mono text-[10px] uppercase tracking-[1.5px] text-cyber-blue mb-2 bg-canvas-dark px-2 py-1 border border-hairline-dark inline-block">
                   {member.role}
                 </span>
-                <h3 className="font-sans font-bold text-[16px] text-white mb-4">
+                <h3 className="font-sans font-bold text-[16px] text-white mb-1">
                   {member.name}
                 </h3>
-                <a
-                  href={member.link}
-                  className="text-white/50 hover:text-cyber-blue transition-colors"
-                  aria-label={`LinkedIn ${member.name}`}
-                >
-                  <HugeiconsIcon icon={Linkedin01Icon} size={20} />
-                </a>
+                {member.prodi && (
+                  <span className="font-mono text-[11px] text-white/40 mb-3 block">
+                    {member.prodi}
+                  </span>
+                )}
               </div>
             </motion.div>
           ))}
