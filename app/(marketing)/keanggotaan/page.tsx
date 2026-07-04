@@ -35,6 +35,7 @@ type RawDept = {
 
 type RawLegacyMember = {
   full_name: string;
+  slug: string | null;
   avatar_url: string | null;
 };
 
@@ -99,7 +100,7 @@ export default async function KeanggotaanPage() {
           sort_order,
           sub_section,
           departments:org_histories_department_fkey ( id, name, category, sort_order ),
-          legacy_members:org_histories_member_fkey ( full_name, avatar_url )
+          legacy_members:org_histories_member_fkey ( full_name, avatar_url, slug )
         `,
         )
         .eq("period_id", periodId)
@@ -134,6 +135,7 @@ export default async function KeanggotaanPage() {
 
     const member: OrgMember = {
       id: row.id,
+      slug: lm.slug,
       name: lm.full_name,
       avatarUrl: lm.avatar_url ?? null,
       role: row.role_name,

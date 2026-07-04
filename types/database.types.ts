@@ -481,6 +481,7 @@ export type Database = {
           gender: string | null;
           nim: string;
           profile_id: string | null;
+          slug: string | null;
           study_program_id: string | null;
         };
         Insert: {
@@ -490,6 +491,7 @@ export type Database = {
           gender?: string | null;
           nim: string;
           profile_id?: string | null;
+          slug?: string | null;
           study_program_id?: string | null;
         };
         Update: {
@@ -499,6 +501,7 @@ export type Database = {
           gender?: string | null;
           nim?: string;
           profile_id?: string | null;
+          slug?: string | null;
           study_program_id?: string | null;
         };
         Relationships: [
@@ -1070,10 +1073,15 @@ export type Database = {
         Args: never;
         Returns: Database["public"]["Enums"]["user_role"];
       };
+      get_next_unique_slug: {
+        Args: { v_current_nim: string; v_name: string };
+        Returns: string;
+      };
       promote_legacy_member_to_anggota: {
         Args: { input_nim: string; user_id: string };
         Returns: boolean;
       };
+      slugify: { Args: { v_text: string }; Returns: string };
     };
     Enums: {
       activity_target: "caang" | "anggota";

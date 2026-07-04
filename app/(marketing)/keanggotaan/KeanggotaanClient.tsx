@@ -3,10 +3,12 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search, ChevronDown, ChevronUp } from "lucide-react";
+import Link from "next/link";
 
 // --- Shared types (exported for use in page.tsx) ---
 export type OrgMember = {
   id: string;
+  slug: string | null;
   name: string;
   avatarUrl: string | null;
   role: string;
@@ -33,9 +35,35 @@ function MemberCard({ member }: { member: OrgMember }) {
   const isLeader = member.level === "Ketua" || member.level === "Koordinator";
   const isVice = member.level === "Wakil";
 
+  const cardContent = (
+    <div className="flex items-center gap-4">
+      {member.avatarUrl ? (
+        <img
+          src={member.avatarUrl}
+          alt={member.name}
+          className="w-12 h-12 rounded-none object-cover shrink-0 border border-hairline-dark"
+        />
+      ) : (
+        <div className="w-12 h-12 rounded-none bg-canvas-dark border border-hairline-dark flex items-center justify-center shrink-0">
+          <span className="font-jetbrains text-muted-foreground text-sm uppercase">
+            {member.name.charAt(0)}
+          </span>
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        <h4 className="text-body-md font-bold text-foreground truncate">
+          {member.name}
+        </h4>
+        <p className="text-xs font-jetbrains text-muted-foreground truncate">
+          {member.role}
+        </p>
+      </div>
+    </div>
+  );
+
   return (
     <motion.div
-      whileHover={{ y: -4, scale: 1.02 }}
+      whileHover={member.slug ? { y: -4, scale: 1.02 } : undefined}
       className={`p-4 rounded-sm border bg-surface-card-dark transition-all duration-300 ${
         isLeader
           ? "border-cyber-blue shadow-[0_0_12px_rgba(0,102,177,0.15)]"
@@ -44,29 +72,11 @@ function MemberCard({ member }: { member: OrgMember }) {
             : "border-hairline-dark hover:border-hairline-light"
       }`}
     >
-      <div className="flex items-center gap-4">
-        {member.avatarUrl ? (
-          <img
-            src={member.avatarUrl}
-            alt={member.name}
-            className="w-12 h-12 rounded-none object-cover shrink-0 border border-hairline-dark"
-          />
-        ) : (
-          <div className="w-12 h-12 rounded-none bg-canvas-dark border border-hairline-dark flex items-center justify-center shrink-0">
-            <span className="font-jetbrains text-muted-foreground text-sm uppercase">
-              {member.name.charAt(0)}
-            </span>
-          </div>
-        )}
-        <div className="flex-1 min-w-0">
-          <h4 className="text-body-md font-bold text-foreground truncate">
-            {member.name}
-          </h4>
-          <p className="text-xs font-jetbrains text-muted-foreground truncate">
-            {member.role}
-          </p>
-        </div>
-      </div>
+      {member.slug ? (
+        <Link href={`member/${member.slug}`}>{cardContent}</Link>
+      ) : (
+        cardContent
+      )}
     </motion.div>
   );
 }
