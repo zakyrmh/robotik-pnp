@@ -169,6 +169,120 @@ function AdHocSection({
 
 // --- Departemen Section ---
 
+function getHierarchicalRows(deptName: string, members: OrgMember[]) {
+  const name = deptName.toLowerCase();
+
+  if (name.includes("kesekretariatan")) {
+    const row1 = members.filter((m) => {
+      const r = m.role.toLowerCase();
+      return (
+        r.includes("ketua") || r.includes("wakil") || r.includes("koordinator")
+      );
+    });
+    const row2 = members.filter((m) => {
+      const r = m.role.toLowerCase();
+      return r.includes("anggota");
+    });
+    return [
+      { title: "Koordinator & Wakil", members: row1 },
+      { title: "Anggota", members: row2 },
+    ].filter((r) => r.members.length > 0);
+  }
+
+  // Other 3 departments: 'Informasi dan Komunikasi', 'Penelitian dan Pengembangan', 'Mekanik Elektronika Lapangan'
+  let bidang1Keywords: string[] = [];
+  let bidang2Keywords: string[] = [];
+  let bidang1Label = "Bidang 1";
+  let bidang2Label = "Bidang 2";
+
+  if (name.includes("informasi dan komunikasi") || name.includes("infokom")) {
+    bidang1Keywords = ["hubungan masyarakat", "humas", "bidang 1", "bidang i"];
+    bidang2Keywords = [
+      "publikasi",
+      "dokumentasi",
+      "pubdok",
+      "bidang 2",
+      "bidang ii",
+    ];
+    bidang1Label = "Hubungan Masyarakat";
+    bidang2Label = "Publikasi & Dokumentasi";
+  } else if (
+    name.includes("penelitian dan pengembangan") ||
+    name.includes("litbang")
+  ) {
+    bidang1Keywords = ["pemberdayaan sdm", "sdm", "bidang 1", "bidang i"];
+    bidang2Keywords = [
+      "riset dan teknologi",
+      "riset",
+      "teknologi",
+      "bidang 2",
+      "bidang ii",
+    ];
+    bidang1Label = "Komisi Pemberdayaan SDM";
+    bidang2Label = "Riset & Teknologi";
+  } else if (name.includes("mekanik elektronika lapangan")) {
+    bidang1Keywords = ["maintenance", "pemeliharaan", "bidang 1", "bidang i"];
+    bidang2Keywords = ["produksi", "bidang 2", "bidang ii"];
+    bidang1Label = "Maintenance";
+    bidang2Label = "Produksi";
+  }
+
+  const checkBidang = (role: string, keywords: string[]) => {
+    const r = role.toLowerCase();
+    return keywords.some((k) => r.includes(k));
+  };
+
+  const row1: OrgMember[] = [];
+  const row2: OrgMember[] = [];
+  const row3: OrgMember[] = [];
+  const row4: OrgMember[] = [];
+  const row5: OrgMember[] = [];
+
+  for (const m of members) {
+    const r = m.role.toLowerCase();
+    const isKoordinatorOrWakil =
+      r.includes("koordinator") ||
+      (r.includes("wakil") && !r.includes("bidang"));
+
+    if (isKoordinatorOrWakil) {
+      row1.push(m);
+      continue;
+    }
+
+    const isLeader =
+      r.includes("ketua") ||
+      r.includes("kabid") ||
+      r.includes("kepala") ||
+      r.includes("wakil ketua bidang");
+
+    if (isLeader) {
+      if (checkBidang(m.role, bidang1Keywords)) {
+        row2.push(m);
+      } else if (checkBidang(m.role, bidang2Keywords)) {
+        row4.push(m);
+      } else {
+        row2.push(m);
+      }
+    } else {
+      if (checkBidang(m.role, bidang1Keywords)) {
+        row3.push(m);
+      } else if (checkBidang(m.role, bidang2Keywords)) {
+        row5.push(m);
+      } else {
+        row3.push(m);
+      }
+    }
+  }
+
+  return [
+    { title: "Koordinator & Wakil", members: row1 },
+    { title: `Kabid ${bidang1Label}`, members: row2 },
+    { title: `Anggota ${bidang1Label}`, members: row3 },
+    { title: `Kabid ${bidang2Label}`, members: row4 },
+    { title: `Anggota ${bidang2Label}`, members: row5 },
+  ].filter((r) => r.members.length > 0);
+}
+
 function DepartemenSection({
   sections,
   matchesSearch,
@@ -228,13 +342,37 @@ function DepartemenSection({
                   exit={{ height: 0, opacity: 0 }}
                   className="overflow-hidden border-t border-hairline-dark"
                 >
-                  <div className="p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {dept.members.filter(matchesSearch).map((m) => (
-                        <MemberCard key={m.id} member={m} />
-                      ))}
-                    </div>
-                  </div>
+                  <motion.div
+                    className="p-6 space-y-8"
+                    initial="hidden"
+                    animate="visible"
+                    variants={{
+                      visible: {
+                        transition: {
+                          staggerChildren: 0.05,
+                        },
+                      },
+                    }}
+                  >
+                    {getHierarchicalRows(
+                      dept.deptName,
+                      dept.members.filter(matchesSearch),
+                    ).map((row, rowIdx) => (
+                      <div key={rowIdx} className="space-y-4">
+                        <div className="flex items-center gap-3">
+                          <span className="text-[10px] font-jetbrains uppercase tracking-wider text-cyber-blue font-semibold bg-cyber-blue/10 px-2 py-0.5 rounded-sm">
+                            {row.title}
+                          </span>
+                          <div className="h-[1px] flex-1 bg-hairline-dark/40" />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {row.members.map((m) => (
+                            <MemberCard key={m.id} member={m} />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </motion.div>
                 </motion.div>
               )}
             </AnimatePresence>
