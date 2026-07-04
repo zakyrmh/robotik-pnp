@@ -6,45 +6,18 @@ import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowRight01Icon, Linkedin01Icon } from "@hugeicons/core-free-icons";
 
-export function BphSection() {
-  const bphMembers = [
-    {
-      role: "Pembina UKM Robotik",
-      name: "Dr. Eng. Nama Pembina, M.T.",
-      image:
-        "https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=400&h=400",
-      link: "#",
-    },
-    {
-      role: "Ketua Umum",
-      name: "Ahmad Fauzi",
-      image:
-        "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=400&h=400",
-      link: "#",
-    },
-    {
-      role: "Wakil Ketua Umum",
-      name: "Budi Santoso",
-      image:
-        "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&q=80&w=400&h=400",
-      link: "#",
-    },
-    {
-      role: "Sekretaris",
-      name: "Citra Lestari",
-      image:
-        "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=400&h=400",
-      link: "#",
-    },
-    {
-      role: "Bendahara",
-      name: "Dewi Anggraini",
-      image:
-        "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=400&h=400",
-      link: "#",
-    },
-  ];
+export interface BphMember {
+  role: string;
+  name: string;
+  image: string;
+  link: string;
+}
 
+interface BphSectionProps {
+  members: BphMember[];
+}
+
+export function BphSection({ members }: BphSectionProps) {
   return (
     <section className="bg-canvas-dark py-[80px] border-b border-hairline-dark">
       <div className="max-w-[1320px] mx-auto px-6">
@@ -58,8 +31,8 @@ export function BphSection() {
         </div>
 
         {/* BPH Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-16">
-          {bphMembers.map((member, index) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-16 justify-center">
+          {members.map((member, index) => (
             <motion.div
               key={index}
               initial={{ opacity: 0, y: 20 }}
