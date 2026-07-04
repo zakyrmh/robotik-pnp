@@ -1,40 +1,20 @@
 "use server";
 
-import { countAchievements } from "@/lib/repositories/achievements";
-import { createClient } from "@/lib/supabase/server";
+import {
+  countAchievements,
+  getAchievements,
+} from "@/lib/repositories/achievements";
 import { AchievementWithDivision } from "@/app/(marketing)/prestasi/PrestasiClient";
 
 export async function getAchievementCountAction(): Promise<number> {
   return countAchievements();
 }
 
-export async function getAchievementsAction() {
+export async function getAchievementsAction(): Promise<
+  AchievementWithDivision[]
+> {
   try {
-    const supabase = await createClient();
-
-    const { data, error } = await supabase
-      .from("achievements")
-      .select(`
-        id,
-        title,
-        description,
-        year,
-        level,
-        division_id,
-        divisions (
-          id,
-          name,
-          slug,
-          badge_color
-        )
-      `)
-      .order("year", { ascending: false });
-
-    if (error) {
-      console.error("Failed to get achievements:", error.message);
-      return [];
-    }
-
+    const data = await getAchievements();
     return data as unknown as AchievementWithDivision[];
   } catch (error) {
     console.error("Failed to get achievements action:", error);
