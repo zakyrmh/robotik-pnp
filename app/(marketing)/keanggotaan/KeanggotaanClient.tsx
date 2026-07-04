@@ -373,7 +373,7 @@ function DepartemenSection({
                           <span className="text-[10px] font-jetbrains uppercase tracking-wider text-cyber-blue font-semibold bg-cyber-blue/10 px-2 py-0.5 rounded-sm">
                             {row.title}
                           </span>
-                          <div className="h-[1px] flex-1 bg-hairline-dark/40" />
+                          <div className="h-px flex-1 bg-hairline-dark/40" />
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                           {row.members.map((m) => (
