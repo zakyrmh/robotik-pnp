@@ -71,12 +71,12 @@ export function ImageCropperModal({
         onInteractOutside={(e) => e.preventDefault()}
       >
         {/* Header (Deep Navy style) */}
-        <div className="bg-[#0a0f24] p-4 border-b border-[#1c69d4]">
+        <div className="bg-canvas-dark p-4 border-b border-tech-navy">
           <DialogTitle className="text-sm font-semibold text-white uppercase tracking-wider flex items-center gap-2 font-mono">
             <HugeiconsIcon
               icon={Image01Icon}
               size={16}
-              className="text-[#0066b1]"
+              className="text-cyber-blue"
             />
             [Sesuaikan Pas Foto]
           </DialogTitle>
@@ -115,7 +115,7 @@ export function ImageCropperModal({
             step={0.1}
             aria-label="Zoom"
             onChange={(e) => setZoom(Number(e.target.value))}
-            className="w-full h-1 bg-zinc-200 dark:bg-zinc-800 appearance-none cursor-pointer accent-[#1c69d4] rounded-none"
+            className="w-full h-1 bg-zinc-200 dark:bg-zinc-800 appearance-none cursor-pointer accent-tech-navy rounded-none"
           />
           <span className="text-xs font-mono text-zinc-500 font-bold">
             [ZOOM +]
@@ -136,7 +136,7 @@ export function ImageCropperModal({
           <Button
             onClick={handleSave}
             disabled={isProcessing}
-            className="h-9 px-6 rounded-none bg-[#1c69d4] hover:bg-[#0066b1] text-white font-mono text-xs uppercase tracking-wider shadow-none"
+            className="h-9 px-6 rounded-none bg-tech-navy hover:bg-cyber-blue text-white font-mono text-xs uppercase tracking-wider shadow-none"
           >
             {isProcessing ? "Memproses..." : "Simpan Foto"}
           </Button>

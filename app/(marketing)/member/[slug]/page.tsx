@@ -347,10 +347,6 @@ export default async function MemberProfilePage({
               <h1 className="text-display-lg md:text-display-xl font-bold uppercase tracking-tight text-foreground leading-tight">
                 {member.full_name}
               </h1>
-              <p className="font-jetbrains text-sm text-muted-foreground flex items-center gap-2">
-                <span className="text-cyber-blue">{"//"}</span> NIM.{" "}
-                {member.nim}
-              </p>
             </div>
 
             {/* Academic Info Grid */}
@@ -360,7 +356,7 @@ export default async function MemberProfilePage({
                   <GraduationCap className="w-5 h-5 text-cyber-blue shrink-0 mt-0.5" />
                   <div>
                     <h4 className="text-[10px] font-jetbrains text-muted-foreground uppercase tracking-wider">
-                      {"// Program Studi"}
+                      {"Program Studi"}
                     </h4>
                     <p className="text-body-md font-bold text-foreground/90">
                       {prodi}
@@ -373,29 +369,15 @@ export default async function MemberProfilePage({
                   </div>
                 </div>
               )}
-
-              {profile?.email && (
-                <div className="flex gap-3">
-                  <Mail className="w-5 h-5 text-cyber-blue shrink-0 mt-0.5" />
-                  <div>
-                    <h4 className="text-[10px] font-jetbrains text-muted-foreground uppercase tracking-wider">
-                      {"// Kontak"}
-                    </h4>
-                    <p className="text-body-md font-bold text-foreground/90 truncate max-w-xs">
-                      {profile.email}
-                    </p>
-                    <p className="text-xs text-muted-foreground font-light">
-                      E-mail Resmi Anggota
-                    </p>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </section>
 
         {/* Tech Tricolor Stripe Divider */}
-        <div className="h-1 bg-gradient-to-r from-cyber-blue via-tech-navy to-crimson-red my-12 w-full" />
+        <div
+          className="h-1 bg-linear-to-r from-cyber-blue via-tech-navy to-crimson-red my-12 w-full
+        "
+        />
 
         {/* Details Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
@@ -416,7 +398,7 @@ export default async function MemberProfilePage({
                       <div key={idx} className="relative group">
                         {/* Timeline Bullet */}
                         <div
-                          className={`absolute -left-[31px] top-1.5 w-3.5 h-3.5 border-2 rounded-none transition-all duration-300 ${
+                          className={`absolute left-[-31px] top-1.5 w-3.5 h-3.5 border-2 rounded-none transition-all duration-300 ${
                             isCurrent
                               ? "bg-cyber-blue border-cyber-blue shadow-[0_0_8px_rgba(0,102,177,0.5)]"
                               : "bg-canvas-dark border-hairline-dark group-hover:border-cyber-blue"

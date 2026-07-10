@@ -539,7 +539,7 @@ export function StructureClient({
                 </Button>
               </PopoverTrigger>
               <PopoverContent
-                className="w-[var(--radix-popover-trigger-width)] p-0 rounded-none"
+                className="w-(--radix-popover-trigger-width) p-0 rounded-none"
                 align="start"
               >
                 <Command>
@@ -849,18 +849,18 @@ export function StructureClient({
   return (
     <div className="flex flex-col gap-6">
       {/* HEADER SECTION */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#0a0f24] p-6 text-white rounded-none border-b-[4px] border-b-[#0066b1]">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-canvas-dark p-6 text-white rounded-none border-b-4 border-b-cyber-blue">
         <div>
           <h1 className="font-heading text-3xl font-bold uppercase tracking-tight">
             Manajemen Struktur
           </h1>
-          <p className="font-mono text-xs uppercase tracking-widest text-[#0066b1] mt-1">
+          <p className="font-mono text-xs uppercase tracking-widest text-cyber-blue mt-1">
             Data Pengurus & Anggota
           </p>
         </div>
         <Button
           onClick={() => handleOpenDialog("create")}
-          className="rounded-none bg-[#1c69d4] hover:bg-[#0066b1] font-mono text-xs uppercase tracking-widest"
+          className="rounded-none bg-tech-navy hover:bg-cyber-blue font-mono text-xs uppercase tracking-widest"
         >
           <HugeiconsIcon icon={PlusSignIcon} size={16} />
           Tambah Data
@@ -876,31 +876,31 @@ export function StructureClient({
         <TabsList className="bg-transparent border-b border-zinc-200 dark:border-zinc-800 rounded-none h-auto p-0 w-full justify-start overflow-x-auto flex-nowrap">
           <TabsTrigger
             value="org_histories"
-            className="rounded-none border-b-2 border-transparent data-active:border-[#1c69d4] data-active:bg-zinc-50 dark:data-active:bg-zinc-900 px-6 py-3 font-mono text-xs uppercase tracking-widest"
+            className="rounded-none border-b-2 border-transparent data-active:border-tech-navy data-active:bg-zinc-50 dark:data-active:bg-zinc-900 px-6 py-3 font-mono text-xs uppercase tracking-widest"
           >
             Struktur Organisasi
           </TabsTrigger>
           <TabsTrigger
             value="members"
-            className="rounded-none border-b-2 border-transparent data-active:border-[#1c69d4] data-active:bg-zinc-50 dark:data-active:bg-zinc-900 px-6 py-3 font-mono text-xs uppercase tracking-widest"
+            className="rounded-none border-b-2 border-transparent data-active:border-tech-navy data-active:bg-zinc-50 dark:data-active:bg-zinc-900 px-6 py-3 font-mono text-xs uppercase tracking-widest"
           >
             Data Anggota
           </TabsTrigger>
           <TabsTrigger
             value="periods"
-            className="rounded-none border-b-2 border-transparent data-active:border-[#1c69d4] data-active:bg-zinc-50 dark:data-active:bg-zinc-900 px-6 py-3 font-mono text-xs uppercase tracking-widest"
+            className="rounded-none border-b-2 border-transparent data-active:border-tech-navy data-active:bg-zinc-50 dark:data-active:bg-zinc-900 px-6 py-3 font-mono text-xs uppercase tracking-widest"
           >
             Periode
           </TabsTrigger>
           <TabsTrigger
             value="departments"
-            className="rounded-none border-b-2 border-transparent data-active:border-[#1c69d4] data-active:bg-zinc-50 dark:data-active:bg-zinc-900 px-6 py-3 font-mono text-xs uppercase tracking-widest"
+            className="rounded-none border-b-2 border-transparent data-active:border-tech-navy data-active:bg-zinc-50 dark:data-active:bg-zinc-900 px-6 py-3 font-mono text-xs uppercase tracking-widest"
           >
             Departemen
           </TabsTrigger>
           <TabsTrigger
             value="divisions"
-            className="rounded-none border-b-2 border-transparent data-active:border-[#1c69d4] data-active:bg-zinc-50 dark:data-active:bg-zinc-900 px-6 py-3 font-mono text-xs uppercase tracking-widest"
+            className="rounded-none border-b-2 border-transparent data-active:border-tech-navy data-active:bg-zinc-50 dark:data-active:bg-zinc-900 px-6 py-3 font-mono text-xs uppercase tracking-widest"
           >
             Divisi
           </TabsTrigger>
@@ -974,7 +974,7 @@ export function StructureClient({
                           </Badge>
                         </td>
                         <td className="p-4">
-                          <div className="font-medium text-[#1c69d4] dark:text-[#0066b1]">
+                          <div className="font-medium text-tech-navy dark:text-cyber-blue">
                             {item.department?.name}
                           </div>
                           {item.division && (
@@ -1000,7 +1000,7 @@ export function StructureClient({
                             <Button
                               variant="ghost"
                               size="icon-sm"
-                              className="text-[#e22718] hover:bg-[#e22718]/10"
+                              className="text-crimson-red hover:bg-crimson-red/10"
                               onClick={() =>
                                 handleOpenDelete(
                                   item as unknown as Record<string, unknown>,
@@ -1103,7 +1103,7 @@ export function StructureClient({
                             <Button
                               variant="ghost"
                               size="icon-sm"
-                              className="text-[#e22718] hover:bg-[#e22718]/10"
+                              className="text-crimson-red hover:bg-crimson-red/10"
                               onClick={() =>
                                 handleOpenDelete(
                                   item as unknown as Record<string, unknown>,
@@ -1144,7 +1144,7 @@ export function StructureClient({
                       <td className="p-4 font-bold">{item.period_name}</td>
                       <td className="p-4">
                         {item.is_active ? (
-                          <Badge className="bg-[#1c69d4] hover:bg-[#1c69d4]/80 text-white rounded-sm font-mono uppercase text-[9px]">
+                          <Badge className="bg-tech-navy hover:bg-tech-navy/80 text-white rounded-sm font-mono uppercase text-[9px]">
                             Aktif
                           </Badge>
                         ) : (
@@ -1173,7 +1173,7 @@ export function StructureClient({
                           <Button
                             variant="ghost"
                             size="icon-sm"
-                            className="text-[#e22718] hover:bg-[#e22718]/10"
+                            className="text-crimson-red hover:bg-crimson-red/10"
                             onClick={() =>
                               handleOpenDelete(
                                 item as unknown as Record<string, unknown>,
@@ -1215,7 +1215,7 @@ export function StructureClient({
                       <td className="p-4 font-mono text-zinc-500">
                         {item.sort_order}
                       </td>
-                      <td className="p-4 font-bold text-[#1c69d4] dark:text-[#0066b1] uppercase">
+                      <td className="p-4 font-bold text-tech-navy dark:text-cyber-blue uppercase">
                         {item.name}
                       </td>
                       <td className="p-4 uppercase">{item.category}</td>
@@ -1236,7 +1236,7 @@ export function StructureClient({
                           <Button
                             variant="ghost"
                             size="icon-sm"
-                            className="text-[#e22718] hover:bg-[#e22718]/10"
+                            className="text-crimson-red hover:bg-crimson-red/10"
                             onClick={() =>
                               handleOpenDelete(
                                 item as unknown as Record<string, unknown>,
@@ -1279,13 +1279,13 @@ export function StructureClient({
                       <td className="p-4 font-mono text-zinc-500">
                         {item.sort_order}
                       </td>
-                      <td className="p-4 font-bold text-[#1c69d4] dark:text-[#0066b1] uppercase">
+                      <td className="p-4 font-bold text-tech-navy dark:text-cyber-blue uppercase">
                         {item.name}
                       </td>
                       <td className="p-4 font-mono text-[10px]">{item.slug}</td>
                       <td className="p-4">
                         {item.is_active ? (
-                          <Badge className="bg-[#1c69d4] hover:bg-[#1c69d4]/80 text-white rounded-sm font-mono uppercase text-[9px]">
+                          <Badge className="bg-tech-navy hover:bg-tech-navy/80 text-white rounded-sm font-mono uppercase text-[9px]">
                             Aktif
                           </Badge>
                         ) : (
@@ -1314,7 +1314,7 @@ export function StructureClient({
                           <Button
                             variant="ghost"
                             size="icon-sm"
-                            className="text-[#e22718] hover:bg-[#e22718]/10"
+                            className="text-crimson-red hover:bg-crimson-red/10"
                             onClick={() =>
                               handleOpenDelete(
                                 item as unknown as Record<string, unknown>,
@@ -1342,7 +1342,7 @@ export function StructureClient({
           onInteractOutside={(e) => e.preventDefault()}
         >
           <form onSubmit={handleSubmit}>
-            <div className="bg-[#0a0f24] p-4 border-b border-[#1c69d4]">
+            <div className="bg-canvas-dark p-4 border-b border-tech-navy">
               <DialogTitle className="text-white font-heading uppercase">
                 {dialogType === "create" ? "Tambah Data" : "Edit Data"}
               </DialogTitle>
@@ -1371,7 +1371,7 @@ export function StructureClient({
               </Button>
               <Button
                 type="submit"
-                className="rounded-none font-mono text-xs uppercase bg-[#1c69d4] hover:bg-[#0066b1] text-white"
+                className="rounded-none font-mono text-xs uppercase bg-tech-navy hover:bg-cyber-blue text-white"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? "Menyimpan..." : "Simpan"}
@@ -1383,8 +1383,8 @@ export function StructureClient({
 
       {/* DIALOG: DELETE CONFIRMATION */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent className="sm:max-w-sm rounded-none border border-[#e22718] p-0 overflow-hidden">
-          <div className="bg-[#e22718] p-4">
+        <DialogContent className="sm:max-w-sm rounded-none border border-crimson-red p-0 overflow-hidden">
+          <div className="bg-crimson-red p-4">
             <DialogTitle className="text-white font-heading uppercase flex items-center gap-2">
               <HugeiconsIcon icon={Delete01Icon} size={20} />
               Konfirmasi Hapus
@@ -1408,7 +1408,7 @@ export function StructureClient({
             <Button
               variant="destructive"
               onClick={handleDelete}
-              className="rounded-none font-mono text-xs uppercase bg-[#e22718] hover:bg-[#e22718]/80 text-white"
+              className="rounded-none font-mono text-xs uppercase bg-crimson-red hover:bg-crimson-red/80 text-white"
               disabled={isSubmitting}
             >
               {isSubmitting ? "Menghapus..." : "Hapus"}
