@@ -99,7 +99,7 @@ export default async function ProfilPage() {
       role: row.role_name,
       name: lm?.full_name || "Nama Pengurus",
       image: lm?.avatar_url || "/images/logo-ukm-robotik-pnp.webp",
-      link: lm?.slug ? `/keanggotaan/member/${lm.slug}` : "#",
+      link: lm?.slug ? `/member/${lm.slug}` : "#",
       prodi:
         lm?.study_programs?.name && lm?.study_programs?.degree
           ? `${lm.study_programs.degree} ${lm.study_programs.name}`

@@ -73,7 +73,7 @@ function MemberCard({ member }: { member: OrgMember }) {
       }`}
     >
       {member.slug ? (
-        <Link href={`member/${member.slug}`}>{cardContent}</Link>
+        <Link href={`/member/${member.slug}`}>{cardContent}</Link>
       ) : (
         cardContent
       )}
