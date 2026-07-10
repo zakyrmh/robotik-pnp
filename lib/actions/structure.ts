@@ -221,19 +221,62 @@ const legacyMemberSchema = z.object({
   avatar_url: z.string().nullable().optional(),
 });
 
-export async function createLegacyMember(
-  data: z.infer<typeof legacyMemberSchema>,
-) {
+export async function createLegacyMember(formData: FormData) {
   const auth = await verifyAdminAccess();
   if (!auth.authorized) return { success: false, error: auth.error };
 
-  const parsed = legacyMemberSchema.safeParse(data);
+  const nim = formData.get("nim") as string;
+  const full_name = formData.get("full_name") as string;
+  const gender = (formData.get("gender") as string) || null;
+  const study_program_id = (formData.get("study_program_id") as string) || null;
+  const avatarFile = formData.get("avatar") as File | null;
+
+  const parsed = legacyMemberSchema.safeParse({
+    nim,
+    full_name,
+    gender,
+    study_program_id,
+  });
   if (!parsed.success)
     return { success: false, error: parsed.error.issues[0].message };
 
   const supabase = await createClient();
   try {
-    const { error } = await supabase.from("legacy_members").insert(parsed.data);
+    let avatarUrl: string | null = null;
+    if (avatarFile && avatarFile.size > 0) {
+      const ext = avatarFile.name.split(".").pop() || "webp";
+      const fileName = `legacy-members/${nim}_${Date.now()}.${ext}`;
+      const arrayBuffer = await avatarFile.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      const { error: uploadError } = await supabase.storage
+        .from("profiles")
+        .upload(fileName, buffer, {
+          contentType: avatarFile.type,
+          upsert: true,
+        });
+
+      if (uploadError) {
+        return {
+          success: false,
+          error: "Gagal mengunggah foto profil: " + uploadError.message,
+        };
+      }
+
+      const { data: urlData } = supabase.storage
+        .from("profiles")
+        .getPublicUrl(fileName);
+
+      avatarUrl = urlData.publicUrl;
+    }
+
+    const { error } = await supabase.from("legacy_members").insert({
+      nim: parsed.data.nim,
+      full_name: parsed.data.full_name,
+      gender: parsed.data.gender || null,
+      study_program_id: parsed.data.study_program_id || null,
+      avatar_url: avatarUrl,
+    });
     if (error) return { success: false, error: error.message };
 
     revalidatePath("/manajemen-struktur");
@@ -246,22 +289,78 @@ export async function createLegacyMember(
   }
 }
 
-export async function updateLegacyMember(
-  nim: string,
-  data: z.infer<typeof legacyMemberSchema>,
-) {
+export async function updateLegacyMember(nim: string, formData: FormData) {
   const auth = await verifyAdminAccess();
   if (!auth.authorized) return { success: false, error: auth.error };
 
-  const parsed = legacyMemberSchema.safeParse(data);
+  const full_name = formData.get("full_name") as string;
+  const gender = (formData.get("gender") as string) || null;
+  const study_program_id = (formData.get("study_program_id") as string) || null;
+  const avatarFile = formData.get("avatar") as File | null;
+  const removeAvatar = formData.get("remove_avatar") as string | null;
+
+  const parsed = legacyMemberSchema.safeParse({
+    nim,
+    full_name,
+    gender,
+    study_program_id,
+  });
   if (!parsed.success)
     return { success: false, error: parsed.error.issues[0].message };
 
   const supabase = await createClient();
   try {
+    let avatarUrl: string | null | undefined = undefined;
+
+    if (removeAvatar === "true") {
+      avatarUrl = null;
+    } else if (avatarFile && avatarFile.size > 0) {
+      const ext = avatarFile.name.split(".").pop() || "webp";
+      const fileName = `legacy-members/${nim}_${Date.now()}.${ext}`;
+      const arrayBuffer = await avatarFile.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+
+      const { error: uploadError } = await supabase.storage
+        .from("profiles")
+        .upload(fileName, buffer, {
+          contentType: avatarFile.type,
+          upsert: true,
+        });
+
+      if (uploadError) {
+        return {
+          success: false,
+          error: "Gagal mengunggah foto profil: " + uploadError.message,
+        };
+      }
+
+      const { data: urlData } = supabase.storage
+        .from("profiles")
+        .getPublicUrl(fileName);
+
+      avatarUrl = urlData.publicUrl;
+    }
+
+    interface MemberUpdatePayload {
+      full_name: string;
+      gender: string | null;
+      study_program_id: string | null;
+      avatar_url?: string | null;
+    }
+
+    const updatePayload: MemberUpdatePayload = {
+      full_name: parsed.data.full_name,
+      gender: parsed.data.gender || null,
+      study_program_id: parsed.data.study_program_id || null,
+    };
+
+    if (avatarUrl !== undefined) {
+      updatePayload.avatar_url = avatarUrl;
+    }
+
     const { error } = await supabase
       .from("legacy_members")
-      .update(parsed.data)
+      .update(updatePayload)
       .eq("nim", nim);
 
     if (error) return { success: false, error: error.message };

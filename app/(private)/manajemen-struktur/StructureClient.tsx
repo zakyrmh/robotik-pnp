@@ -229,45 +229,33 @@ export function StructureClient({
             ? await createDepartment(payload)
             : await updateDepartment(activeItem?.id as string, payload);
       } else if (activeTab === "members") {
-        let finalAvatarUrl = formData.avatar_url as string | null;
+        const formDataPayload = new FormData();
+        formDataPayload.append("nim", (formData.nim as string) || "");
+        formDataPayload.append(
+          "full_name",
+          (formData.full_name as string) || "",
+        );
+        formDataPayload.append("gender", (formData.gender as string) || "");
+        formDataPayload.append(
+          "study_program_id",
+          (formData.study_program_id as string) || "",
+        );
 
         if (avatarFile) {
-          const supabaseClient = createClient();
-          const timestamp = Date.now();
-          const fileName = `legacy-members/${formData.nim}_${timestamp}.webp`;
-
-          const { error: uploadError } = await supabaseClient.storage
-            .from("profiles")
-            .upload(fileName, avatarFile, {
-              contentType: "image/webp",
-              upsert: true,
-            });
-
-          if (uploadError) {
-            throw new Error(
-              `Gagal mengunggah foto profil: ${uploadError.message}`,
-            );
-          }
-
-          const { data: urlData } = supabaseClient.storage
-            .from("profiles")
-            .getPublicUrl(fileName);
-
-          finalAvatarUrl = urlData.publicUrl;
+          formDataPayload.append("avatar", avatarFile);
+        }
+        if (formData.avatar_url === null) {
+          formDataPayload.append("remove_avatar", "true");
         }
 
-        const payload = {
-          nim: (formData.nim as string) || "",
-          full_name: (formData.full_name as string) || "",
-          gender: (formData.gender as string) || null,
-          study_program_id: (formData.study_program_id as string) || null,
-          avatar_url: finalAvatarUrl,
-        };
         if (dialogType === "update" && !activeItem?.nim) return;
         result =
           dialogType === "create"
-            ? await createLegacyMember(payload)
-            : await updateLegacyMember(activeItem?.nim as string, payload);
+            ? await createLegacyMember(formDataPayload)
+            : await updateLegacyMember(
+                activeItem?.nim as string,
+                formDataPayload,
+              );
       } else if (activeTab === "divisions") {
         const payload = {
           name: (formData.name as string) || "",
