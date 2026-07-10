@@ -87,6 +87,7 @@ interface LegacyMember {
   full_name: string;
   gender: string | null;
   study_program_id: string | null;
+  avatar_url: string | null;
   study_program: { name: string } | null;
 }
 
@@ -242,8 +243,7 @@ export function StructureClient({
 
         if (avatarFile) {
           formDataPayload.append("avatar", avatarFile);
-        }
-        if (formData.avatar_url === null) {
+        } else if (formData.avatar_url === null && dialogType === "update") {
           formDataPayload.append("remove_avatar", "true");
         }
 

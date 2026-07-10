@@ -314,9 +314,8 @@ export async function updateLegacyMember(nim: string, formData: FormData) {
   try {
     let avatarUrl: string | null | undefined = undefined;
 
-    if (removeAvatar === "true") {
-      avatarUrl = null;
-    } else if (avatarFile && avatarFile.size > 0) {
+    // New file upload takes priority over remove flag
+    if (avatarFile && avatarFile.size > 0) {
       const ext = avatarFile.name.split(".").pop() || "webp";
       const fileName = `legacy-members/${nim}_${Date.now()}.${ext}`;
       const arrayBuffer = await avatarFile.arrayBuffer();
@@ -341,7 +340,14 @@ export async function updateLegacyMember(nim: string, formData: FormData) {
         .getPublicUrl(fileName);
 
       avatarUrl = urlData.publicUrl;
+    } else if (removeAvatar === "true") {
+      avatarUrl = null;
     }
+
+    console.log(
+      "[updateLegacyMember] DEBUG - avatarUrl resolved to:",
+      avatarUrl,
+    );
 
     interface MemberUpdatePayload {
       full_name: string;
@@ -359,6 +365,11 @@ export async function updateLegacyMember(nim: string, formData: FormData) {
     if (avatarUrl !== undefined) {
       updatePayload.avatar_url = avatarUrl;
     }
+
+    console.log(
+      "[updateLegacyMember] DEBUG - updatePayload:",
+      JSON.stringify(updatePayload),
+    );
 
     const { error } = await supabase
       .from("legacy_members")
