@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { Database } from "@/types/database.types";
@@ -241,6 +241,7 @@ export async function createLegacyMember(formData: FormData) {
     return { success: false, error: parsed.error.issues[0].message };
 
   const supabase = await createClient();
+  const adminClient = createAdminClient();
   try {
     let avatarUrl: string | null = null;
     if (avatarFile && avatarFile.size > 0) {
@@ -249,7 +250,7 @@ export async function createLegacyMember(formData: FormData) {
       const arrayBuffer = await avatarFile.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError } = await adminClient.storage
         .from("profiles")
         .upload(fileName, buffer, {
           contentType: avatarFile.type,
@@ -263,7 +264,7 @@ export async function createLegacyMember(formData: FormData) {
         };
       }
 
-      const { data: urlData } = supabase.storage
+      const { data: urlData } = adminClient.storage
         .from("profiles")
         .getPublicUrl(fileName);
 
@@ -309,6 +310,7 @@ export async function updateLegacyMember(nim: string, formData: FormData) {
     return { success: false, error: parsed.error.issues[0].message };
 
   const supabase = await createClient();
+  const adminClient = createAdminClient();
   try {
     let avatarUrl: string | null | undefined = undefined;
 
@@ -320,7 +322,7 @@ export async function updateLegacyMember(nim: string, formData: FormData) {
       const arrayBuffer = await avatarFile.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError } = await adminClient.storage
         .from("profiles")
         .upload(fileName, buffer, {
           contentType: avatarFile.type,
@@ -334,7 +336,7 @@ export async function updateLegacyMember(nim: string, formData: FormData) {
         };
       }
 
-      const { data: urlData } = supabase.storage
+      const { data: urlData } = adminClient.storage
         .from("profiles")
         .getPublicUrl(fileName);
 
