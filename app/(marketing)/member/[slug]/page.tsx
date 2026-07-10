@@ -41,21 +41,12 @@ interface StudyProgramInfo {
   majors: MajorInfo | MajorInfo[] | null;
 }
 
-interface ProfileInfo {
-  id: string;
-  email: string;
-  role: "super-admin" | "admin-or" | "admin-komdis" | "anggota" | "caang";
-}
-
 interface MemberProfileResult {
   nim: string;
   full_name: string;
   avatar_url: string | null;
   slug: string | null;
-  gender: string | null;
-  profile_id: string | null;
   study_programs: StudyProgramInfo | StudyProgramInfo[] | null;
-  profiles: ProfileInfo | ProfileInfo[] | null;
 }
 
 interface RawHistory {
@@ -84,13 +75,6 @@ interface RawHistory {
         badge_color: string | null;
       }[]
     | null;
-}
-
-interface ArticleItem {
-  title: string;
-  slug: string;
-  category: string;
-  published_at: string | null;
 }
 
 // -------------------------------------------------------------------------
@@ -164,17 +148,10 @@ export default async function MemberProfilePage({
       full_name,
       avatar_url,
       slug,
-      gender,
-      profile_id,
       study_programs:legacy_members_study_program_id_fkey (
         name,
         degree,
         majors ( name )
-      ),
-      profiles:legacy_members_profile_id_fkey (
-        id,
-        email,
-        role
       )
     `,
     )
@@ -255,40 +232,6 @@ export default async function MemberProfilePage({
   });
 
   const activeHistory = sortedHistories[0];
-
-  // 3. Fetch registration information (for motivation quote and achievements) if profile is connected
-  let registration: {
-    motivation: string | null;
-    org_experience: string | null;
-    achievements: string | null;
-  } | null = null;
-  const profile = toSingle(member.profiles);
-  if (profile?.id) {
-    const { data: rawReg, error: regError } = await supabase
-      .from("registrations")
-      .select("motivation, org_experience, achievements")
-      .eq("profile_id", profile.id)
-      .maybeSingle();
-
-    if (!regError && rawReg) {
-      registration = rawReg;
-    }
-  }
-
-  // 4. Fetch articles written by this member
-  let articles: ArticleItem[] = [];
-  if (profile?.id) {
-    const { data: rawArticles, error: articlesError } = await supabase
-      .from("articles")
-      .select("title, slug, category, published_at")
-      .eq("author_id", profile.id)
-      .eq("is_published", true)
-      .order("published_at", { ascending: false });
-
-    if (!articlesError && rawArticles) {
-      articles = rawArticles as unknown as ArticleItem[];
-    }
-  }
 
   const sp = toSingle(member.study_programs);
   const prodi = sp ? `${sp.degree} ${sp.name}` : null;
@@ -380,9 +323,9 @@ export default async function MemberProfilePage({
         />
 
         {/* Details Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
-          {/* Left & Middle Column (Timeline & Motivation) */}
-          <div className="lg:col-span-2 space-y-12">
+        <div className="grid grid-cols-1 gap-12 items-start">
+          {/* Left Column (Timeline) */}
+          <div className="space-y-12">
             {/* Timeline Section */}
             <div className="space-y-6">
               <h2 className="text-display-md font-bold uppercase tracking-tight text-foreground border-b border-hairline-dark/60 pb-3 flex items-center gap-2">
@@ -464,98 +407,6 @@ export default async function MemberProfilePage({
               )}
             </div>
 
-            {/* Achievements / Pengalaman (dari registrasi Oprec) */}
-            {registration &&
-              (registration.achievements || registration.org_experience) && (
-                <div className="space-y-6">
-                  <h2 className="text-display-md font-bold uppercase tracking-tight text-foreground border-b border-hairline-dark/60 pb-3 flex items-center gap-2">
-                    <Award className="w-5 h-5 text-cyber-blue" /> Pencapaian &
-                    Pengalaman
-                  </h2>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {registration.achievements && (
-                      <div className="bg-surface-card-dark/20 border border-hairline-dark p-5 rounded-none space-y-2">
-                        <h3 className="font-jetbrains text-xs text-cyber-blue uppercase tracking-wider flex items-center gap-1.5">
-                          <Award className="w-3.5 h-3.5" />{" "}
-                          {"// Prestasi Personal"}
-                        </h3>
-                        <p className="text-sm font-light text-foreground/80 whitespace-pre-line leading-relaxed">
-                          {registration.achievements}
-                        </p>
-                      </div>
-                    )}
-
-                    {registration.org_experience && (
-                      <div className="bg-surface-card-dark/20 border border-hairline-dark p-5 rounded-none space-y-2">
-                        <h3 className="font-jetbrains text-xs text-cyber-blue uppercase tracking-wider flex items-center gap-1.5">
-                          <Shield className="w-3.5 h-3.5" />{" "}
-                          {"// Pengalaman Organisasi"}
-                        </h3>
-                        <p className="text-sm font-light text-foreground/80 whitespace-pre-line leading-relaxed">
-                          {registration.org_experience}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-          </div>
-
-          {/* Right Column (Motivation & Written Articles) */}
-          <div className="space-y-8 lg:col-span-1">
-            {/* Motivation Box */}
-            {registration?.motivation && (
-              <div className="bg-surface-card-dark/30 border border-hairline-dark p-6 rounded-none relative space-y-3">
-                <h3 className="font-jetbrains text-[10px] text-cyber-blue uppercase tracking-wider font-bold">
-                  {"// Motivasi Bergabung"}
-                </h3>
-                <blockquote className="text-body-md font-light italic text-foreground/80 border-l-2 border-cyber-blue pl-4">
-                  &ldquo;{registration.motivation}&rdquo;
-                </blockquote>
-              </div>
-            )}
-
-            {/* Written Articles Section */}
-            <div className="space-y-4">
-              <h3 className="font-jetbrains text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2 border-b border-hairline-dark/60 pb-3">
-                <BookOpen className="w-4 h-4 text-cyber-blue" /> [KARYA &
-                TUTORIAL]
-              </h3>
-
-              {articles.length > 0 ? (
-                <div className="space-y-3">
-                  {articles.map((art) => (
-                    <Link
-                      key={art.slug}
-                      href={`/artikel/${art.slug}`}
-                      className="block p-4 bg-surface-card-dark border border-hairline-dark hover:border-cyber-blue transition-all duration-300 hover:shadow-[0_0_12px_rgba(0,102,177,0.15)] group rounded-none"
-                    >
-                      <span className="font-jetbrains text-[9px] text-cyber-blue uppercase tracking-wider block mb-1">
-                        {art.category}
-                      </span>
-                      <h4 className="font-sans font-bold text-foreground group-hover:text-cyber-blue transition-colors text-sm uppercase leading-snug">
-                        {art.title}
-                      </h4>
-                      <span className="font-jetbrains text-[9px] text-muted-foreground block mt-2">
-                        {new Date(art.published_at || "").toLocaleDateString(
-                          "id-ID",
-                          {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                          },
-                        )}
-                      </span>
-                    </Link>
-                  ))}
-                </div>
-              ) : (
-                <div className="p-6 bg-surface-card-dark/10 border border-hairline-dark border-dashed text-center text-muted-foreground font-jetbrains text-xs">
-                  [Belum ada karya tulis dipublikasikan]
-                </div>
-              )}
-            </div>
           </div>
         </div>
       </div>
