@@ -13,7 +13,6 @@ import {
 } from "@hugeicons/core-free-icons";
 import NextImage from "next/image";
 import { ImageCropperModal } from "@/components/onboarding/image-cropper-modal";
-import { createClient } from "@/lib/supabase/client";
 import imageCompression from "browser-image-compression";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -1337,7 +1336,11 @@ export function StructureClient({
 
       {/* DIALOG: CREATE / UPDATE */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-[425px] rounded-none border border-zinc-200 dark:border-zinc-800 p-0 overflow-hidden">
+        <DialogContent
+          className="sm:max-w-[425px] rounded-none border border-zinc-200 dark:border-zinc-800 p-0 overflow-hidden"
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onInteractOutside={(e) => e.preventDefault()}
+        >
           <form onSubmit={handleSubmit}>
             <div className="bg-[#0a0f24] p-4 border-b border-[#1c69d4]">
               <DialogTitle className="text-white font-heading uppercase">
@@ -1432,7 +1435,7 @@ export function StructureClient({
             toast.success("Foto profil berhasil diproses!", {
               id: "avatar-process",
             });
-          } catch (err) {
+          } catch {
             toast.error("Gagal memproses foto profil", {
               id: "avatar-process",
             });

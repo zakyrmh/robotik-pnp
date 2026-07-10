@@ -25,21 +25,23 @@ export function ImageCropperModal({
 }: ImageCropperModalProps) {
   const [mounted, setMounted] = useState(false);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setMounted(true);
-    return () => setMounted(false);
-  }, []);
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setMounted(true), 0);
+    return () => {
+      clearTimeout(timer);
+      setMounted(false);
+    };
+  }, []);
 
   const onCropCompleteCallback = useCallback(
     (croppedArea: Area, croppedAreaPixels: Area) => {
       setCroppedAreaPixels(croppedAreaPixels);
     },
-    []
+    [],
   );
 
   const handleSave = async () => {
@@ -66,39 +68,45 @@ export function ImageCropperModal({
   return createPortal(
     <AnimatePresence>
       {isOpen && imageSrc && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-55 flex items-center justify-center p-4">
+          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-neutral-900/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-[#0a0f24]/75 backdrop-blur-xs"
             onClick={onClose}
           />
 
+          {/* Dialog Container */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            initial={{ opacity: 0, scale: 0.98, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 10 }}
-            className="relative flex flex-col w-full max-w-lg bg-white dark:bg-neutral-900 rounded-3xl overflow-hidden shadow-2xl border border-neutral-200 dark:border-neutral-800"
+            exit={{ opacity: 0, scale: 0.98, y: 8 }}
+            className="relative flex flex-col w-full max-w-lg bg-white dark:bg-zinc-950 rounded-none overflow-hidden shadow-2xl border border-zinc-200 dark:border-zinc-800"
           >
-            {/* Header */}
-            <div className="px-6 py-5 border-b border-neutral-100 dark:border-neutral-800">
-              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50 flex items-center gap-2">
-                <HugeiconsIcon icon={Image01Icon} size={20} className="text-blue-500" />
-                Sesuaikan Pas Foto
+            {/* Header (Deep Navy style) */}
+            <div className="bg-[#0a0f24] p-4 border-b border-[#1c69d4]">
+              <h3 className="text-sm font-semibold text-white uppercase tracking-wider flex items-center gap-2 font-mono">
+                <HugeiconsIcon
+                  icon={Image01Icon}
+                  size={16}
+                  className="text-[#0066b1]"
+                />
+                [Sesuaikan Pas Foto]
               </h3>
-              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-                Geser dan perbesar gambar untuk menyesuaikan posisi. Pastikan wajah terlihat jelas (Rasio 1:1).
+              <p className="mt-1 text-[10px] text-zinc-400 font-mono uppercase">
+                Geser & perbesar gambar. Rasio dikunci di 1:1.
               </p>
             </div>
 
-            {/* Cropper Container */}
-            <div className="relative w-full h-[60vh] min-h-[300px] max-h-[500px] bg-neutral-100 dark:bg-neutral-950">
+            {/* Cropper Area */}
+            <div className="relative w-full h-[50vh] min-h-[300px] max-h-[400px] bg-zinc-950">
               <Cropper
                 image={imageSrc}
                 crop={crop}
                 zoom={zoom}
-                aspect={1} // 1:1 Ratio
+                aspect={1}
                 cropShape="rect"
                 showGrid={true}
                 onCropChange={setCrop}
@@ -108,8 +116,10 @@ export function ImageCropperModal({
             </div>
 
             {/* Zoom Slider */}
-            <div className="px-6 py-4 flex items-center gap-4 bg-neutral-50 dark:bg-neutral-900/50">
-              <span className="text-sm font-medium text-neutral-500">-</span>
+            <div className="px-6 py-4 flex items-center gap-4 bg-zinc-50 dark:bg-zinc-900/50 border-t border-zinc-100 dark:border-zinc-900">
+              <span className="text-xs font-mono text-zinc-500 font-bold">
+                [ZOOM -]
+              </span>
               <input
                 type="range"
                 value={zoom}
@@ -118,33 +128,36 @@ export function ImageCropperModal({
                 step={0.1}
                 aria-label="Zoom"
                 onChange={(e) => setZoom(Number(e.target.value))}
-                className="w-full h-1.5 bg-neutral-200 dark:bg-neutral-700 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                className="w-full h-1 bg-zinc-200 dark:bg-zinc-800 appearance-none cursor-pointer accent-[#1c69d4] rounded-none"
               />
-              <span className="text-sm font-medium text-neutral-500">+</span>
+              <span className="text-xs font-mono text-zinc-500 font-bold">
+                [ZOOM +]
+              </span>
             </div>
 
-            <div className="p-6 pt-4 flex items-center justify-between gap-3 border-t border-neutral-100 dark:border-neutral-800">
+            {/* Footer Actions */}
+            <div className="p-4 flex items-center justify-end gap-3 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
               <Button
                 variant="outline"
                 onClick={onClose}
                 disabled={isProcessing}
-                className="h-11 px-5 rounded-xl font-medium"
+                className="h-9 px-5 rounded-none font-mono text-xs uppercase tracking-wider"
               >
                 Batal
               </Button>
-              
+
               <Button
                 onClick={handleSave}
                 disabled={isProcessing}
-                className="h-11 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold gap-2 shadow-lg shadow-blue-500/25 disabled:opacity-70 flex-1 sm:flex-none"
+                className="h-9 px-6 rounded-none bg-[#1c69d4] hover:bg-[#0066b1] text-white font-mono text-xs uppercase tracking-wider shadow-none"
               >
-                {isProcessing ? "Menyimpan..." : "Simpan"}
+                {isProcessing ? "Memproses..." : "Simpan Foto"}
               </Button>
             </div>
           </motion.div>
         </div>
       )}
     </AnimatePresence>,
-    document.body
+    document.body,
   );
 }
