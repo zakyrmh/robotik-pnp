@@ -218,6 +218,7 @@ const legacyMemberSchema = z.object({
   full_name: z.string().min(1, "Nama lengkap harus diisi"),
   gender: z.string().nullable().optional(),
   study_program_id: z.string().nullable().optional(),
+  avatar_url: z.string().nullable().optional(),
 });
 
 export async function createLegacyMember(

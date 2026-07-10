@@ -9,7 +9,12 @@ import {
   Delete01Icon,
   PlusSignIcon,
   Search01Icon,
+  Camera01Icon,
 } from "@hugeicons/core-free-icons";
+import NextImage from "next/image";
+import { ImageCropperModal } from "@/components/onboarding/image-cropper-modal";
+import { createClient } from "@/lib/supabase/client";
+import imageCompression from "browser-image-compression";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -155,6 +160,14 @@ export function StructureClient({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [studyProgramOpen, setStudyProgramOpen] = useState(false);
 
+  // Avatar states
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [cropperModalOpen, setCropperModalOpen] = useState(false);
+  const [selectedImageForCrop, setSelectedImageForCrop] = useState<
+    string | null
+  >(null);
+
   // Helper to open dialog
   const handleOpenDialog = (
     type: "create" | "update",
@@ -162,10 +175,13 @@ export function StructureClient({
   ) => {
     setDialogType(type);
     setActiveItem(item);
+    setAvatarFile(null);
     if (type === "create") {
       setFormData({});
+      setAvatarPreview(null);
     } else {
       setFormData(item || {});
+      setAvatarPreview((item?.avatar_url as string) || null);
     }
     setDialogOpen(true);
   };
@@ -213,11 +229,39 @@ export function StructureClient({
             ? await createDepartment(payload)
             : await updateDepartment(activeItem?.id as string, payload);
       } else if (activeTab === "members") {
+        let finalAvatarUrl = formData.avatar_url as string | null;
+
+        if (avatarFile) {
+          const supabaseClient = createClient();
+          const timestamp = Date.now();
+          const fileName = `legacy-members/${formData.nim}_${timestamp}.webp`;
+
+          const { error: uploadError } = await supabaseClient.storage
+            .from("profiles")
+            .upload(fileName, avatarFile, {
+              contentType: "image/webp",
+              upsert: true,
+            });
+
+          if (uploadError) {
+            throw new Error(
+              `Gagal mengunggah foto profil: ${uploadError.message}`,
+            );
+          }
+
+          const { data: urlData } = supabaseClient.storage
+            .from("profiles")
+            .getPublicUrl(fileName);
+
+          finalAvatarUrl = urlData.publicUrl;
+        }
+
         const payload = {
           nim: (formData.nim as string) || "",
           full_name: (formData.full_name as string) || "",
           gender: (formData.gender as string) || null,
           study_program_id: (formData.study_program_id as string) || null,
+          avatar_url: finalAvatarUrl,
         };
         if (dialogType === "update" && !activeItem?.nim) return;
         result =
@@ -307,6 +351,57 @@ export function StructureClient({
       toast.error((err as Error).message || "Terjadi kesalahan sistem.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const processAvatarImage = async (file: File): Promise<File> => {
+    const options = {
+      maxSizeMB: 0.2,
+      maxWidthOrHeight: 512,
+      useWebWorker: true,
+    };
+    try {
+      const compressed = await imageCompression(file, options);
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.src = URL.createObjectURL(compressed);
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) {
+            resolve(
+              new File([compressed], "avatar.webp", { type: "image/webp" }),
+            );
+            return;
+          }
+          ctx.drawImage(img, 0, 0);
+          canvas.toBlob(
+            (blob) => {
+              if (blob) {
+                resolve(
+                  new File([blob], "avatar.webp", { type: "image/webp" }),
+                );
+              } else {
+                resolve(
+                  new File([compressed], "avatar.webp", { type: "image/webp" }),
+                );
+              }
+            },
+            "image/webp",
+            0.85,
+          );
+        };
+        img.onerror = () => {
+          resolve(
+            new File([compressed], "avatar.webp", { type: "image/webp" }),
+          );
+        };
+      });
+    } catch (error) {
+      console.error("Error processing avatar image:", error);
+      return file;
     }
   };
 
@@ -496,6 +591,72 @@ export function StructureClient({
                 </Command>
               </PopoverContent>
             </Popover>
+          </div>
+          <div className="grid gap-2">
+            <Label>Foto Profil</Label>
+            <div className="flex items-center gap-4 border border-zinc-200 dark:border-zinc-800 p-3 bg-zinc-50 dark:bg-zinc-900/50">
+              {avatarPreview ? (
+                <div className="relative w-16 h-16 border border-zinc-300 dark:border-zinc-700 overflow-hidden bg-zinc-100 dark:bg-zinc-800">
+                  <NextImage
+                    src={avatarPreview}
+                    alt="Preview Avatar"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="w-16 h-16 border border-zinc-300 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center text-zinc-400">
+                  <HugeiconsIcon icon={Camera01Icon} size={24} />
+                </div>
+              )}
+              <div className="flex flex-col gap-1.5">
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-8 text-xs font-mono uppercase tracking-wider rounded-none"
+                    onClick={() => {
+                      const fileInput = document.getElementById(
+                        "avatar-upload-input",
+                      );
+                      if (fileInput) fileInput.click();
+                    }}
+                  >
+                    Pilih Foto
+                  </Button>
+                  {avatarPreview && (
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      className="h-8 text-xs font-mono uppercase tracking-wider rounded-none"
+                      onClick={() => {
+                        setAvatarFile(null);
+                        setAvatarPreview(null);
+                        setFormData({ ...formData, avatar_url: null });
+                      }}
+                    >
+                      Hapus
+                    </Button>
+                  )}
+                </div>
+                <span className="text-[10px] text-zinc-500 font-mono">
+                  PNG/JPG/WEBP · Max 2MB · Crop 1:1 & Convert to WebP otomatis
+                </span>
+              </div>
+            </div>
+            <input
+              id="avatar-upload-input"
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  setSelectedImageForCrop(URL.createObjectURL(file));
+                  setCropperModalOpen(true);
+                }
+              }}
+            />
           </div>
         </>
       );
@@ -1264,6 +1425,32 @@ export function StructureClient({
           </div>
         </DialogContent>
       </Dialog>
+
+      <ImageCropperModal
+        isOpen={cropperModalOpen}
+        imageSrc={selectedImageForCrop}
+        onClose={() => {
+          setCropperModalOpen(false);
+          setSelectedImageForCrop(null);
+        }}
+        onCropComplete={async (croppedFile) => {
+          setCropperModalOpen(false);
+          setSelectedImageForCrop(null);
+          toast.loading("Memproses foto...", { id: "avatar-process" });
+          try {
+            const processedFile = await processAvatarImage(croppedFile);
+            setAvatarFile(processedFile);
+            setAvatarPreview(URL.createObjectURL(processedFile));
+            toast.success("Foto profil berhasil diproses!", {
+              id: "avatar-process",
+            });
+          } catch (err) {
+            toast.error("Gagal memproses foto profil", {
+              id: "avatar-process",
+            });
+          }
+        }}
+      />
     </div>
   );
 }
