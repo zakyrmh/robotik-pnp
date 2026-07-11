@@ -34,44 +34,58 @@ export default function LoginPage() {
 
   return (
     <div className="space-y-6">
-      <Card className="border-border/50 bg-card/50 backdrop-blur-sm shadow-xl">
-        <CardHeader className="space-y-1 text-center sm:text-left">
+      <Card className="border-hairline-dark bg-surface-card-dark rounded-none shadow-none">
+        <CardHeader className="space-y-2 text-center sm:text-left">
           <Badge
             variant="outline"
-            className="w-fit border-emerald-500/30 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 transition-colors uppercase tracking-widest text-[10px]"
+            className="w-fit border-cyber-blue/30 bg-cyber-blue/10 text-cyber-blue uppercase font-mono tracking-[1.5px] text-[10px] rounded-sm pointer-events-none"
           >
-            Selamat Datang Kembali
+            SECURE CHANNEL // SYSTEM ACCESS
           </Badge>
-          <CardTitle className="text-2xl font-bold tracking-tight">
-            Masuk ke Akun
+          <CardTitle className="text-2xl font-bold uppercase tracking-tight text-white font-sans">
+            PORTAL LOGIN
           </CardTitle>
-          <CardDescription>
-            Gunakan kredensial Anda untuk mengakses sistem
+          <CardDescription className="text-xs text-gray-400 font-sans font-light">
+            Masukkan alamat email dan kata sandi Anda untuk otentikasi sistem.
           </CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-4">
           {state?.error && (
-            <Alert variant="destructive" className="bg-destructive/10">
-              <HugeiconsIcon icon={AlertCircleIcon} size={18} />
-              <AlertDescription>{state.error}</AlertDescription>
+            <Alert
+              variant="destructive"
+              className="bg-crimson-red/10 border-crimson-red/30 text-crimson-red rounded-none flex items-center gap-2"
+            >
+              <HugeiconsIcon
+                icon={AlertCircleIcon}
+                size={18}
+                className="text-crimson-red shrink-0"
+              />
+              <AlertDescription className="font-mono text-xs uppercase tracking-wider">
+                {state.error}
+              </AlertDescription>
             </Alert>
           )}
 
           <form action={action} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Alamat Email</Label>
+              <Label
+                htmlFor="email"
+                className="font-mono text-xs uppercase tracking-[1.5px] text-gray-300"
+              >
+                ALAMAT EMAIL
+              </Label>
               <div className="relative">
                 <HugeiconsIcon
                   icon={Mail01Icon}
-                  className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                  className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500"
                 />
                 <Input
                   id="email"
                   name="email"
                   type="email"
-                  placeholder="nama@email.com"
-                  className="pl-10 h-11 bg-muted/20"
+                  placeholder="NAMA@EMAIL.COM"
+                  className="pl-10 h-12 bg-canvas-dark border-hairline-dark rounded-none text-white placeholder-gray-600 focus:border-cyber-blue focus:ring-1 focus:ring-cyber-blue focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-cyber-blue font-sans text-sm"
                   required
                   disabled={isPending}
                 />
@@ -80,32 +94,37 @@ export default function LoginPage() {
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
+                <Label
+                  htmlFor="password"
+                  className="font-mono text-xs uppercase tracking-[1.5px] text-gray-300"
+                >
+                  PASSWORD
+                </Label>
                 <Link
                   href="/forgot-password"
-                  className="text-xs text-indigo-500 hover:underline"
+                  className="font-mono text-[10px] uppercase tracking-wider text-cyber-blue hover:text-tech-navy hover:underline transition-colors"
                 >
-                  Lupa password?
+                  LUPA PASSWORD?
                 </Link>
               </div>
               <div className="relative">
                 <HugeiconsIcon
                   icon={LockPasswordIcon}
-                  className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                  className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500"
                 />
                 <Input
                   id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className="pl-10 pr-10 h-11 bg-muted/20"
+                  className="pl-10 pr-10 h-12 bg-canvas-dark border-hairline-dark rounded-none text-white placeholder-gray-600 focus:border-cyber-blue focus:ring-1 focus:ring-cyber-blue focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-cyber-blue font-sans text-sm"
                   required
                   disabled={isPending}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors cursor-pointer"
                 >
                   <HugeiconsIcon
                     icon={showPassword ? ViewOffIcon : EyeIcon}
@@ -117,35 +136,38 @@ export default function LoginPage() {
 
             <Button
               type="submit"
-              className="w-full h-11 bg-linear-to-r from-indigo-600 to-purple-600 font-semibold shadow-lg shadow-indigo-500/20 hover:opacity-90 transition-all active:scale-[0.98]"
+              className="w-full h-12 bg-white text-black font-mono font-medium uppercase tracking-[1.5px] rounded-none border border-white hover:bg-transparent hover:text-white transition-none cursor-pointer"
               disabled={isPending}
             >
               {isPending ? (
                 <>
                   <HugeiconsIcon
                     icon={Loading03Icon}
-                    className="mr-2 h-4 w-4 animate-spin"
+                    className="mr-2 h-4 w-4 animate-spin text-current"
                   />{" "}
-                  Menyambungkan...
+                  MENGHUBUNGKAN...
                 </>
               ) : (
                 <>
-                  <HugeiconsIcon icon={Login01Icon} className="mr-2 h-4 w-4" />{" "}
-                  Masuk Sekarang
+                  <HugeiconsIcon
+                    icon={Login01Icon}
+                    className="mr-2 h-4 w-4 text-current"
+                  />{" "}
+                  MASUK PORTAL
                 </>
               )}
             </Button>
           </form>
         </CardContent>
 
-        <CardFooter className="flex flex-col border-t border-border/50 pt-6 text-center text-sm text-muted-foreground">
+        <CardFooter className="flex flex-col border-t border-hairline-dark pt-6 text-center text-xs text-gray-400 font-sans font-light">
           <p>
-            Belum memiliki akun?{" "}
+            Belum terdaftar?{" "}
             <Link
               href="/register"
-              className="font-medium text-indigo-500 hover:underline"
+              className="font-mono text-xs uppercase tracking-wider text-cyber-blue hover:text-tech-navy hover:underline transition-colors"
             >
-              Daftar di sini
+              Daftar Akun Baru
             </Link>
           </p>
         </CardFooter>
