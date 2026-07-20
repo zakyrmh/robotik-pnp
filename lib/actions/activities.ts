@@ -29,12 +29,13 @@ export interface AttendanceSummaryItem {
   photoUrl: string | null;
   studyProgramName: string;
   majorName: string;
-  attendances: Record<string, "hadir" | "izin" | "sakit" | "alfa" | null>;
+  attendances: Record<string, "hadir" | "izin" | "sakit" | "alfa" | "telat" | null>;
   totals: {
     hadir: number;
     izin: number;
     sakit: number;
     alfa: number;
+    telat: number;
   };
 }
 
@@ -530,8 +531,8 @@ export async function getAttendanceSummary(): Promise<
 
       const profileId = profile?.id ?? "";
 
-      const userAttendances: Record<string, "hadir" | "izin" | "sakit" | "alfa" | null> = {};
-      const totals = { hadir: 0, izin: 0, sakit: 0, alfa: 0 };
+      const userAttendances: Record<string, "hadir" | "izin" | "sakit" | "alfa" | "telat" | null> = {};
+      const totals = { hadir: 0, izin: 0, sakit: 0, alfa: 0, telat: 0 };
 
       for (const activity of activitiesData ?? []) {
         const status = (attendanceMap[profileId]?.[activity.id] ?? null) as
@@ -539,6 +540,7 @@ export async function getAttendanceSummary(): Promise<
           | "izin"
           | "sakit"
           | "alfa"
+          | "telat"
           | null;
         userAttendances[activity.id] = status;
         if (status && status in totals) {
@@ -580,14 +582,14 @@ export async function getAttendanceSummary(): Promise<
 export async function upsertAttendanceStatus(
   activityId: string,
   profileId: string,
-  status: "hadir" | "izin" | "sakit" | "alfa"
+  status: "hadir" | "izin" | "sakit" | "alfa" | "telat"
 ): Promise<ServerActionResponse> {
   const auth = await verifyAdminOrAccess();
   if (!auth.authorized) {
     return { success: false, message: auth.error! };
   }
 
-  const validStatuses = ["hadir", "izin", "sakit", "alfa"];
+  const validStatuses = ["hadir", "izin", "sakit", "alfa", "telat"];
   if (!validStatuses.includes(status)) {
     return { success: false, message: "Status absensi tidak valid." };
   }
@@ -612,6 +614,138 @@ export async function upsertAttendanceStatus(
 
     revalidatePath("/kegiatan-absensi-caang");
     return { success: true, message: `Status absensi berhasil diperbarui menjadi "${status}".` };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { success: false, message: "Terjadi kesalahan tidak terduga.", error: { code: "SERVER_ERROR", details: msg } };
+  }
+}
+
+// ─── GET: Detail Absensi Spesifik Satu Kegiatan ──────────────────────────────
+
+export async function getActivityAttendances(
+  activityId: string
+): Promise<ServerActionResponse<{ activity: ActivityItem; summary: AttendanceSummaryItem[] }>> {
+  const auth = await verifyAdminOrAccess();
+  if (!auth.authorized) {
+    return { success: false, message: auth.error! };
+  }
+
+  const supabaseAdmin = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  try {
+    // 1. Ambil kegiatan spesifik
+    const { data: activity, error: activityError } = await auth.supabase
+      .from("activities")
+      .select("*")
+      .eq("id", activityId)
+      .single();
+
+    if (activityError || !activity) {
+      return { success: false, message: "Kegiatan tidak ditemukan.", error: { code: "NOT_FOUND", details: activityError?.message ?? "" } };
+    }
+
+    // 2. Ambil data Caang yang onboarded
+    const { data: registrationsData, error: registrationsError } = await supabaseAdmin
+      .from("registrations")
+      .select(`
+        full_name,
+        photo_url,
+        deleted_at,
+        study_programs (
+          name,
+          degree,
+          majors ( name )
+        ),
+        profiles!inner (
+          id,
+          nim,
+          role,
+          is_onboarded
+        )
+      `)
+      .eq("profiles.role", "caang")
+      .eq("profiles.is_onboarded", true)
+      .is("deleted_at", null)
+      .order("full_name", { ascending: true });
+
+    if (registrationsError) {
+      return { success: false, message: "Gagal memuat data Caang.", error: { code: "DB_ERROR", details: registrationsError.message } };
+    }
+
+    // 3. Ambil absensi untuk activityId
+    const { data: attendancesData, error: attError } = await supabaseAdmin
+      .from("attendances")
+      .select("profile_id, status")
+      .eq("activity_id", activityId);
+
+    if (attError) {
+      return { success: false, message: "Gagal memuat data absensi.", error: { code: "DB_ERROR", details: attError.message } };
+    }
+
+    const attendanceMap: Record<string, string> = {};
+    for (const att of attendancesData || []) {
+      attendanceMap[att.profile_id] = att.status;
+    }
+
+    // 4. Susun summary
+    type RawRegistration = {
+      full_name: string | null;
+      photo_url: string | null;
+      deleted_at: string | null;
+      study_programs: {
+        name: string;
+        degree: string;
+        majors: { name: string } | { name: string }[] | null;
+      } | null;
+      profiles:
+        | { id: string; nim: string | null; role: string; is_onboarded: boolean }
+        | { id: string; nim: string | null; role: string; is_onboarded: boolean }[]
+        | null;
+    };
+
+    const summary: AttendanceSummaryItem[] = (
+      (registrationsData as unknown as RawRegistration[]) ?? []
+    ).map((reg) => {
+      const profile = Array.isArray(reg.profiles) ? reg.profiles[0] : reg.profiles;
+      const sp = Array.isArray(reg.study_programs) ? reg.study_programs[0] : reg.study_programs;
+      const major = sp?.majors ? (Array.isArray(sp.majors) ? sp.majors[0] : sp.majors) : null;
+      const profileId = profile?.id ?? "";
+
+      const userAttendances: Record<string, "hadir" | "izin" | "sakit" | "alfa" | "telat" | null> = {};
+      const totals = { hadir: 0, izin: 0, sakit: 0, alfa: 0, telat: 0 };
+
+      const status = (attendanceMap[profileId] ?? null) as "hadir" | "izin" | "sakit" | "alfa" | "telat" | null;
+      userAttendances[activityId] = status;
+
+      if (status && status in totals) {
+        totals[status as keyof typeof totals]++;
+      } else if (!status) {
+        totals.alfa++; // Default ke alfa jika tidak ada status
+      }
+
+      return {
+        profileId,
+        fullName: reg.full_name || "—",
+        nim: profile?.nim || "—",
+        photoUrl: reg.photo_url || "",
+        studyProgramName: sp ? `${sp.degree} ${sp.name}` : "—",
+        majorName: major?.name || "—",
+        attendances: userAttendances,
+        totals,
+      };
+    });
+
+    return {
+      success: true,
+      message: "Berhasil memuat detail absensi kegiatan.",
+      data: {
+        activity: activity as ActivityItem,
+        summary,
+      },
+    };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     return { success: false, message: "Terjadi kesalahan tidak terduga.", error: { code: "SERVER_ERROR", details: msg } };
