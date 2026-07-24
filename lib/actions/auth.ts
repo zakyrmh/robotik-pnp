@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import type { RegisterState } from "@/lib/types/auth";
 
@@ -184,4 +184,75 @@ export async function signOut() {
   await supabase.auth.signOut();
   revalidatePath("/", "layout");
   redirect("/register");
+}
+
+
+// ============================================================
+// Forgot Password Action
+// ============================================================
+export async function forgotPassword(prevState: any, formData: FormData) {
+  const email = formData.get("email") as string;
+  const nim = formData.get("nim") as string;
+
+  if (!email || !nim) {
+    return { error: "NIM dan Email wajib diisi." };
+  }
+
+  const supabaseAdmin = createAdminClient();
+
+  const { data: profile, error: profileError } = await supabaseAdmin
+    .from("profiles")
+    .select("id, email, nim")
+    .eq("nim", nim)
+    .single();
+
+  if (profileError || !profile) {
+    return { error: "NIM tidak ditemukan." };
+  }
+
+  if (profile.email !== email) {
+    return { error: "Email tidak terdaftar atau tidak cocok dengan NIM." };
+  }
+
+  const { error } = await supabaseAdmin.auth.resetPasswordForEmail(email, {
+    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://127.0.0.1:3000"}/callback?next=/update-password`,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  redirect("/forgot-password/waiting");
+}
+
+// ============================================================
+// Update Password Action
+// ============================================================
+export async function updatePassword(prevState: any, formData: FormData) {
+  const password = formData.get("password") as string;
+  const confirmPassword = formData.get("confirmPassword") as string;
+
+  if (!password || !confirmPassword) {
+    return { error: "Semua field harus diisi." };
+  }
+
+  if (password !== confirmPassword) {
+    return { error: "Password tidak cocok." };
+  }
+
+  if (password.length < 8) {
+    return { error: "Password minimal 8 karakter." };
+  }
+
+  const supabase = await createClient();
+
+  const { error } = await supabase.auth.updateUser({
+    password: password,
+  });
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  redirect("/login?message=Password+berhasil+diperbarui.+Silakan+login.");
 }
