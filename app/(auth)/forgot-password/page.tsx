@@ -1,15 +1,12 @@
 "use client";
 
-import { useActionState, useState, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useActionState } from "react";
 import Link from "next/link";
-import { login } from "@/lib/actions/auth";
+import { forgotPassword } from "@/lib/actions/auth";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Mail01Icon,
-  LockPasswordIcon,
-  EyeIcon,
-  ViewOffIcon,
+  UserEdit01Icon,
   Login01Icon,
   AlertCircleIcon,
   Loading03Icon,
@@ -29,27 +26,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
-
-function LoginMessage() {
-  const searchParams = useSearchParams();
-  const message = searchParams.get("message");
-
-  if (!message) return null;
-
-  return (
-    <Alert
-      className="bg-cyber-blue/10 border-cyber-blue/30 text-cyber-blue rounded-none flex items-center gap-2 mb-4"
-    >
-      <AlertDescription className="font-mono text-xs uppercase tracking-wider">
-        {message}
-      </AlertDescription>
-    </Alert>
-  );
-}
-
-export default function LoginPage() {
-  const [state, action, isPending] = useActionState(login, null);
-  const [showPassword, setShowPassword] = useState(false);
+export default function ForgotPasswordPage() {
+  const [state, action, isPending] = useActionState(forgotPassword, null);
 
   return (
     <div className="space-y-6">
@@ -59,13 +37,13 @@ export default function LoginPage() {
             variant="outline"
             className="w-fit border-cyber-blue/30 bg-cyber-blue/10 text-cyber-blue uppercase font-mono tracking-[1.5px] text-[10px] rounded-sm pointer-events-none"
           >
-            SECURE CHANNEL // SYSTEM ACCESS
+            ACCOUNT RECOVERY
           </Badge>
           <CardTitle className="text-2xl font-bold uppercase tracking-tight text-white font-sans">
-            PORTAL LOGIN
+            LUPA PASSWORD
           </CardTitle>
           <CardDescription className="text-xs text-gray-400 font-sans font-light">
-            Masukkan alamat email dan kata sandi Anda untuk otentikasi sistem.
+            Masukkan NIM dan alamat email yang terdaftar untuk mengatur ulang password.
           </CardDescription>
         </CardHeader>
 
@@ -86,8 +64,31 @@ export default function LoginPage() {
             </Alert>
           )}
 
-          <Suspense fallback={null}><LoginMessage /></Suspense>
           <form action={action} className="space-y-4">
+            <div className="space-y-2">
+              <Label
+                htmlFor="nim"
+                className="font-mono text-xs uppercase tracking-[1.5px] text-gray-300"
+              >
+                NOMOR INDUK MAHASISWA (NIM)
+              </Label>
+              <div className="relative">
+                <HugeiconsIcon
+                  icon={UserEdit01Icon}
+                  className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500"
+                />
+                <Input
+                  id="nim"
+                  name="nim"
+                  type="text"
+                  placeholder="230109..."
+                  className="pl-10 h-12 bg-canvas-dark border-hairline-dark rounded-none text-white placeholder-gray-600 focus:border-cyber-blue focus:ring-1 focus:ring-cyber-blue focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-cyber-blue font-sans text-sm uppercase"
+                  required
+                  disabled={isPending}
+                />
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label
                 htmlFor="email"
@@ -112,48 +113,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label
-                  htmlFor="password"
-                  className="font-mono text-xs uppercase tracking-[1.5px] text-gray-300"
-                >
-                  PASSWORD
-                </Label>
-                <Link
-                  href="/forgot-password"
-                  className="font-mono text-[10px] uppercase tracking-wider text-cyber-blue hover:text-tech-navy hover:underline transition-colors"
-                >
-                  LUPA PASSWORD?
-                </Link>
-              </div>
-              <div className="relative">
-                <HugeiconsIcon
-                  icon={LockPasswordIcon}
-                  className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500"
-                />
-                <Input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  className="pl-10 pr-10 h-12 bg-canvas-dark border-hairline-dark rounded-none text-white placeholder-gray-600 focus:border-cyber-blue focus:ring-1 focus:ring-cyber-blue focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-cyber-blue font-sans text-sm"
-                  required
-                  disabled={isPending}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors cursor-pointer"
-                >
-                  <HugeiconsIcon
-                    icon={showPassword ? ViewOffIcon : EyeIcon}
-                    size={18}
-                  />
-                </button>
-              </div>
-            </div>
-
             <Button
               type="submit"
               className="w-full h-12 bg-white text-black font-mono font-medium uppercase tracking-[1.5px] rounded-none border border-white hover:bg-transparent hover:text-white transition-none cursor-pointer"
@@ -165,7 +124,7 @@ export default function LoginPage() {
                     icon={Loading03Icon}
                     className="mr-2 h-4 w-4 animate-spin text-current"
                   />{" "}
-                  MENGHUBUNGKAN...
+                  MEMPROSES...
                 </>
               ) : (
                 <>
@@ -173,7 +132,7 @@ export default function LoginPage() {
                     icon={Login01Icon}
                     className="mr-2 h-4 w-4 text-current"
                   />{" "}
-                  MASUK PORTAL
+                  KIRIM LINK RESET
                 </>
               )}
             </Button>
@@ -182,12 +141,12 @@ export default function LoginPage() {
 
         <CardFooter className="flex flex-col border-t border-hairline-dark pt-6 text-center text-xs text-gray-400 font-sans font-light">
           <p>
-            Belum terdaftar?{" "}
+            Ingat password Anda?{" "}
             <Link
-              href="/register"
+              href="/login"
               className="font-mono text-xs uppercase tracking-wider text-cyber-blue hover:text-tech-navy hover:underline transition-colors"
             >
-              Daftar Akun Baru
+              Kembali ke Login
             </Link>
           </p>
         </CardFooter>
