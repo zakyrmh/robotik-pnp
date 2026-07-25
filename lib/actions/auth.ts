@@ -34,11 +34,17 @@ export async function register(prevState: RegisterState, formData: FormData) {
 
   const supabase = await createClient();
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  if (!siteUrl) {
+    console.error("NEXT_PUBLIC_SITE_URL is not configured");
+    return { error: "Konfigurasi server tidak valid. Hubungi administrator." };
+  }
+
   const { error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://127.0.0.1:3000"}/callback`,
+      emailRedirectTo: `${siteUrl}/callback`,
     },
   });
 
@@ -143,7 +149,7 @@ export async function getCurrentUser() {
   if (!name && profile.nim) {
     const supabaseAdmin = createSupabaseClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
     );
     const { data: legacy } = await supabaseAdmin
       .from("legacy_members")
@@ -186,16 +192,26 @@ export async function signOut() {
   redirect("/register");
 }
 
-
 // ============================================================
 // Forgot Password Action
 // ============================================================
-export async function forgotPassword(prevState: any, formData: FormData) {
-  const email = formData.get("email") as string;
-  const nim = formData.get("nim") as string;
+export async function forgotPassword(
+  prevState: RegisterState,
+  formData: FormData,
+) {
+  const rawEmail = formData.get("email") as string;
+  const rawNim = formData.get("nim") as string;
+
+  const email = rawEmail?.trim();
+  const nim = rawNim?.trim();
 
   if (!email || !nim) {
     return { error: "NIM dan Email wajib diisi." };
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    return { error: "Format email tidak valid." };
   }
 
   const supabaseAdmin = createAdminClient();
@@ -204,18 +220,24 @@ export async function forgotPassword(prevState: any, formData: FormData) {
     .from("profiles")
     .select("id, email, nim")
     .eq("nim", nim)
-    .single();
+    .maybeSingle();
 
   if (profileError || !profile) {
     return { error: "NIM tidak ditemukan." };
   }
 
-  if (profile.email !== email) {
+  if (profile.email?.toLowerCase() !== email.toLowerCase()) {
     return { error: "Email tidak terdaftar atau tidak cocok dengan NIM." };
   }
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  if (!siteUrl) {
+    console.error("NEXT_PUBLIC_SITE_URL is not configured");
+    return { error: "Konfigurasi server tidak valid. Hubungi administrator." };
+  }
+
   const { error } = await supabaseAdmin.auth.resetPasswordForEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? "http://127.0.0.1:3000"}/callback?next=/update-password`,
+    redirectTo: `${siteUrl}/callback?next=/update-password`,
   });
 
   if (error) {
@@ -228,7 +250,10 @@ export async function forgotPassword(prevState: any, formData: FormData) {
 // ============================================================
 // Update Password Action
 // ============================================================
-export async function updatePassword(prevState: any, formData: FormData) {
+export async function updatePassword(
+  prevState: RegisterState,
+  formData: FormData,
+) {
   const password = formData.get("password") as string;
   const confirmPassword = formData.get("confirmPassword") as string;
 
@@ -246,6 +271,17 @@ export async function updatePassword(prevState: any, formData: FormData) {
 
   const supabase = await createClient();
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return {
+      error:
+        "Sesi reset password tidak valid atau telah kadaluwarsa. Silakan minta link reset password baru.",
+    };
+  }
+
   const { error } = await supabase.auth.updateUser({
     password: password,
   });
@@ -253,6 +289,9 @@ export async function updatePassword(prevState: any, formData: FormData) {
   if (error) {
     return { error: error.message };
   }
+
+  // Logout dari sesi recovery agar pengguna login secara normal
+  await supabase.auth.signOut();
 
   redirect("/login?message=Password+berhasil+diperbarui.+Silakan+login.");
 }

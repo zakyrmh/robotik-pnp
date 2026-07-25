@@ -58,20 +58,10 @@ export default function VerifyEmailPage() {
           </div>
 
           <div className="rounded-none border border-cyber-blue/20 bg-cyber-blue/5 p-4 text-xs font-sans font-light text-gray-400 text-left">
-            <p className="mb-2">
+            <p>
               Tidak menemukan email? Silakan periksa folder{" "}
               <strong>Spam</strong> atau coba kirim ulang beberapa saat lagi.
             </p>
-            <div className="border-t border-hairline-dark pt-2.5 mt-2 flex items-center justify-between font-mono text-[10px] uppercase tracking-wider">
-              <span>DEVELOPMENT ENV // MAILPIT</span>
-              <a
-                href="http://127.0.0.1:54324"
-                target="_blank"
-                className="font-bold text-cyber-blue hover:text-tech-navy hover:underline transition-colors"
-              >
-                [ BUKA MAILPIT ]
-              </a>
-            </div>
           </div>
         </CardContent>
       </Card>

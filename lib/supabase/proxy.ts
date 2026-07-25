@@ -121,7 +121,12 @@ export async function updateSession(request: NextRequest) {
   }
 
   // Definisi Rute
-  const authRoutes = ["/register", "/login", "/verify-email"];
+  const authRoutes = [
+    "/register",
+    "/login",
+    "/verify-email",
+    "/forgot-password",
+  ];
   const internalProtectedRoutes = [
     "/dashboard",
     "/kegiatan",
@@ -148,13 +153,22 @@ export async function updateSession(request: NextRequest) {
     return path === route || path.startsWith(route + "/");
   };
 
+  // Penanganan khusus rute update-password (sesi recovery reset password)
+  if (matchRoute(pathname, "/update-password")) {
+    if (!user) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/forgot-password";
+      return NextResponse.redirect(url);
+    }
+    return supabaseResponse;
+  }
+
   const isProtectedRoute = protectedRoutes.some((r) => matchRoute(pathname, r));
   const isAuthRoute = authRoutes.some((r) => matchRoute(pathname, r));
 
   // Kasus: User Belum Login
   if (!user && isProtectedRoute) {
     const url = request.nextUrl.clone();
-    // url.hostname = "localhost";
     url.pathname = "/login";
     return NextResponse.redirect(url);
   }
@@ -252,7 +266,6 @@ export async function updateSession(request: NextRequest) {
 
     if (targetRoute && pathname !== targetRoute) {
       const url = request.nextUrl.clone();
-      // url.hostname = "localhost";
       url.pathname = targetRoute;
       return NextResponse.redirect(url);
     }
