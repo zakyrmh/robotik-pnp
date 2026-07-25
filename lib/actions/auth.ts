@@ -236,7 +236,9 @@ export async function forgotPassword(
     return { error: "Konfigurasi server tidak valid. Hubungi administrator." };
   }
 
-  const { error } = await supabaseAdmin.auth.resetPasswordForEmail(email, {
+  const supabase = await createClient();
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: `${siteUrl}/callback?next=/update-password`,
   });
 

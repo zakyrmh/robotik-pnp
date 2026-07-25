@@ -67,6 +67,7 @@ vi.mock("@/lib/supabase/server", () => ({
       signOut: vi.fn(async () => {}),
       getUser: vi.fn(async () => mockGetUserResult),
       updateUser: vi.fn(async () => mockUpdateUserResult),
+      resetPasswordForEmail: vi.fn(async () => mockResetPasswordResult),
     },
     from: vi.fn(() => ({
       select: vi.fn(() => ({

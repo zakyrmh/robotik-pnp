@@ -1,5 +1,5 @@
+import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
@@ -7,15 +7,37 @@ export async function GET(request: NextRequest) {
   const next = searchParams.get("next") ?? "/verified";
 
   if (code) {
-    const supabase = await createClient();
+    const forwardUrl = next.startsWith("/") ? `${origin}${next}` : next;
+    const response = NextResponse.redirect(forwardUrl);
+
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value }) =>
+              request.cookies.set(name, value),
+            );
+            cookiesToSet.forEach(({ name, value, options }) =>
+              response.cookies.set(name, value, options),
+            );
+          },
+        },
+      },
+    );
+
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      // Sign out immediately so user is redirected as guest and must log in manually
-      await supabase.auth.signOut();
-
-      const forwardUrl = next.startsWith("/") ? `${origin}${next}` : next;
-      return NextResponse.redirect(forwardUrl);
+      // Sign out untuk verifikasi email pendaftaran, tapi JANGAN sign out jika ini adalah sesi recovery reset password
+      if (next !== "/update-password" && !next.startsWith("/update-password")) {
+        await supabase.auth.signOut();
+      }
+      return response;
     }
 
     // Log error ke terminal jika pertukaran kode gagal

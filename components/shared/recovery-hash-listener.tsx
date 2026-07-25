@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 /**
@@ -25,6 +26,8 @@ import { createClient } from "@/lib/supabase/client";
  *    ke /update-password setelah session ter-set.
  */
 export function RecoveryHashListener() {
+  const router = useRouter();
+
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -46,21 +49,21 @@ export function RecoveryHashListener() {
         session
       ) {
         subscription.unsubscribe();
-        window.location.href = "/update-password";
+        router.push("/update-password");
+        router.refresh();
       }
     });
 
-    // Fallback: jika event sudah terfire sebelum listener terdaftar,
-    // cek session secara manual setelah jeda singkat.
     const timeout = setTimeout(async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
       if (session) {
         subscription.unsubscribe();
-        window.location.href = "/update-password";
+        router.push("/update-password");
+        router.refresh();
       }
-    }, 3000);
+    }, 1500);
 
     return () => {
       subscription.unsubscribe();
