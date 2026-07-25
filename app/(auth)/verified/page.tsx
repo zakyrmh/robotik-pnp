@@ -15,9 +15,9 @@ export default function VerifiedPage() {
       setCountdown((prev) => prev - 1);
     }, 1000);
 
-    // Redirect setelah 3 detik
+    // Redirect setelah 3 detik ke halaman login
     const timeout = setTimeout(() => {
-      router.push("/onboarding");
+      router.push("/login?message=Email+berhasil+diverifikasi.+Silakan+login.");
     }, 3000);
 
     return () => {
@@ -40,7 +40,7 @@ export default function VerifiedPage() {
         <CardContent className="space-y-6 pb-8">
           <p className="text-gray-400 font-sans font-light text-sm leading-relaxed">
             Selamat, akun UKM Robotik PNP Anda telah aktif. Sistem sedang
-            mengalihkan sesi Anda ke halaman onboarding.
+            mengalihkan sesi Anda ke halaman login.
           </p>
 
           <div className="flex items-center justify-center gap-3 font-mono text-xs uppercase tracking-wider text-cyber-blue bg-cyber-blue/10 py-3.5 px-4 rounded-none border border-cyber-blue/20">
@@ -55,10 +55,14 @@ export default function VerifiedPage() {
       </Card>
 
       <button
-        onClick={() => router.push("/onboarding")}
+        onClick={() =>
+          router.push(
+            "/login?message=Email+berhasil+diverifikasi.+Silakan+login.",
+          )
+        }
         className="w-full text-[10px] font-mono uppercase tracking-widest text-gray-500 hover:text-white transition-colors cursor-pointer"
       >
-        [ LEWATI REDIRECT DAN LANJUTKAN ]
+        [ LEWATI REDIRECT DAN LOGIN ]
       </button>
     </div>
   );

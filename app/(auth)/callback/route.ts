@@ -11,6 +11,9 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
+      // Sign out immediately so user is redirected as guest and must log in manually
+      await supabase.auth.signOut();
+
       const forwardUrl = next.startsWith("/") ? `${origin}${next}` : next;
       return NextResponse.redirect(forwardUrl);
     }
