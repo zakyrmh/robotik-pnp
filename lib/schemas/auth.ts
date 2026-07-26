@@ -27,3 +27,26 @@ export const loginSchema = z.object({
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;
+
+export const forgotPasswordSchema = z.object({
+  nim: z.string().min(1, "NIM dan Email wajib diisi."),
+  email: z
+    .string()
+    .min(1, "NIM dan Email wajib diisi.")
+    .email("Format email tidak valid."),
+  captchaToken: z.string().optional(),
+});
+
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+
+export const updatePasswordSchema = z
+  .object({
+    password: z.string().min(8, "Password minimal 8 karakter."),
+    confirmPassword: z.string().min(1, "Semua field harus diisi."),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Password tidak cocok.",
+    path: ["confirmPassword"],
+  });
+
+export type UpdatePasswordInput = z.infer<typeof updatePasswordSchema>;

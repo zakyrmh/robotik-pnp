@@ -6,7 +6,12 @@ import { redirect } from "next/navigation";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import type { RegisterState } from "@/lib/types/auth";
-import { registerSchema, loginSchema } from "@/lib/schemas/auth";
+import {
+  registerSchema,
+  loginSchema,
+  forgotPasswordSchema,
+  updatePasswordSchema,
+} from "@/lib/schemas/auth";
 
 // ============================================================
 // Register Action
@@ -222,17 +227,20 @@ export async function forgotPassword(
 ) {
   const rawEmail = formData.get("email") as string;
   const rawNim = formData.get("nim") as string;
+  const captchaToken = (formData.get("captchaToken") as string) || undefined;
 
   const email = rawEmail?.trim();
   const nim = rawNim?.trim();
 
-  if (!email || !nim) {
-    return { error: "NIM dan Email wajib diisi." };
-  }
+  // Validasi Zod
+  const validation = forgotPasswordSchema.safeParse({
+    nim,
+    email,
+    captchaToken,
+  });
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return { error: "Format email tidak valid." };
+  if (!validation.success) {
+    return { error: validation.error.issues[0].message };
   }
 
   const supabaseAdmin = createAdminClient();
@@ -240,14 +248,14 @@ export async function forgotPassword(
   const { data: profile, error: profileError } = await supabaseAdmin
     .from("profiles")
     .select("id, email, nim")
-    .eq("nim", nim)
+    .eq("nim", validation.data.nim)
     .maybeSingle();
 
   if (profileError || !profile) {
     return { error: "NIM tidak ditemukan." };
   }
 
-  if (profile.email?.toLowerCase() !== email.toLowerCase()) {
+  if (profile.email?.toLowerCase() !== validation.data.email.toLowerCase()) {
     return { error: "Email tidak terdaftar atau tidak cocok dengan NIM." };
   }
 
@@ -259,9 +267,15 @@ export async function forgotPassword(
 
   const supabase = await createClient();
 
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${siteUrl}/callback?next=/update-password`,
-  });
+  const { error } = await supabase.auth.resetPasswordForEmail(
+    validation.data.email,
+    {
+      redirectTo: `${siteUrl}/callback?next=/update-password`,
+      ...(validation.data.captchaToken
+        ? { captchaToken: validation.data.captchaToken }
+        : {}),
+    },
+  );
 
   if (error) {
     return { error: error.message };
@@ -284,12 +298,13 @@ export async function updatePassword(
     return { error: "Semua field harus diisi." };
   }
 
-  if (password !== confirmPassword) {
-    return { error: "Password tidak cocok." };
-  }
+  const validation = updatePasswordSchema.safeParse({
+    password,
+    confirmPassword,
+  });
 
-  if (password.length < 8) {
-    return { error: "Password minimal 8 karakter." };
+  if (!validation.success) {
+    return { error: validation.error.issues[0].message };
   }
 
   const supabase = await createClient();
@@ -306,7 +321,7 @@ export async function updatePassword(
   }
 
   const { error } = await supabase.auth.updateUser({
-    password: password,
+    password: validation.data.password,
   });
 
   if (error) {
