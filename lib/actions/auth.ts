@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import type { RegisterState } from "@/lib/types/auth";
-import { registerSchema } from "@/lib/schemas/auth";
+import { registerSchema, loginSchema } from "@/lib/schemas/auth";
 
 // ============================================================
 // Register Action
@@ -70,16 +70,32 @@ export async function register(prevState: RegisterState, formData: FormData) {
 export async function login(prevState: RegisterState, formData: FormData) {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
+  const captchaToken = (formData.get("captchaToken") as string) || undefined;
 
   if (!email || !password) {
     return { error: "Email dan password wajib diisi." };
   }
 
+  const validation = loginSchema.safeParse({
+    email,
+    password,
+    captchaToken,
+  });
+
+  if (!validation.success) {
+    return { error: validation.error.issues[0].message };
+  }
+
   const supabase = await createClient();
 
   const { error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
+    email: validation.data.email,
+    password: validation.data.password,
+    options: {
+      ...(validation.data.captchaToken
+        ? { captchaToken: validation.data.captchaToken }
+        : {}),
+    },
   });
 
   if (error) {
