@@ -21,6 +21,7 @@ export default function AuthLayout({
             src="/images/robotics_hero.webp"
             alt="Robotics Hero Background"
             fill
+            sizes="(max-width: 1024px) 100vw, 45vw"
             className="object-cover grayscale object-center contrast-125"
             priority
           />
