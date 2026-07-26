@@ -1,10 +1,12 @@
 "use server";
 
+import "server-only";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import type { RegisterState } from "@/lib/types/auth";
+import { registerSchema } from "@/lib/schemas/auth";
 
 // ============================================================
 // Register Action
@@ -13,26 +15,24 @@ export async function register(prevState: RegisterState, formData: FormData) {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
   const confirmPassword = formData.get("confirmPassword") as string;
+  const captchaToken = (formData.get("captchaToken") as string) || undefined;
 
-  // Validasi
+  // Check required fields empty first for explicit error message compatibility
   if (!email || !password || !confirmPassword) {
     return { error: "Semua field harus diisi." };
   }
 
-  if (password !== confirmPassword) {
-    return { error: "Password tidak cocok." };
-  }
+  // Validasi Zod
+  const validation = registerSchema.safeParse({
+    email,
+    password,
+    confirmPassword,
+    captchaToken,
+  });
 
-  if (password.length < 8) {
-    return { error: "Password minimal 8 karakter." };
+  if (!validation.success) {
+    return { error: validation.error.issues[0].message };
   }
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return { error: "Format email tidak valid." };
-  }
-
-  const supabase = await createClient();
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
   if (!siteUrl) {
@@ -40,11 +40,16 @@ export async function register(prevState: RegisterState, formData: FormData) {
     return { error: "Konfigurasi server tidak valid. Hubungi administrator." };
   }
 
+  const supabase = await createClient();
+
   const { error } = await supabase.auth.signUp({
-    email,
-    password,
+    email: validation.data.email,
+    password: validation.data.password,
     options: {
       emailRedirectTo: `${siteUrl}/callback`,
+      ...(validation.data.captchaToken
+        ? { captchaToken: validation.data.captchaToken }
+        : {}),
     },
   });
 

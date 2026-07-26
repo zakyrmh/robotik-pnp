@@ -787,8 +787,10 @@ export type Database = {
       };
       profiles: {
         Row: {
+          avatar_url: string | null;
           created_at: string;
           email: string;
+          full_name: string | null;
           id: string;
           is_onboarded: boolean;
           nim: string | null;
@@ -796,8 +798,10 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          avatar_url?: string | null;
           created_at?: string;
           email: string;
+          full_name?: string | null;
           id: string;
           is_onboarded?: boolean;
           nim?: string | null;
@@ -805,8 +809,10 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          avatar_url?: string | null;
           created_at?: string;
           email?: string;
+          full_name?: string | null;
           id?: string;
           is_onboarded?: boolean;
           nim?: string | null;
@@ -1102,7 +1108,10 @@ export type Database = {
         | "admin-or"
         | "admin-komdis"
         | "anggota"
-        | "caang";
+        | "caang"
+        | "admin-kestari"
+        | "admin-divisi"
+        | "alumni";
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -1256,6 +1265,9 @@ export const Constants = {
         "admin-komdis",
         "anggota",
         "caang",
+        "admin-kestari",
+        "admin-divisi",
+        "alumni",
       ],
     },
   },

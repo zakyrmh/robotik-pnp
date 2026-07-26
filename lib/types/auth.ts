@@ -1,13 +1,7 @@
-export type UserRole = "super-admin" | "admin-or" | "admin-komdis" | "anggota" | "caang";
+import type { Database } from "@/types/database.types";
 
-export interface Profile {
-  id: string;
-  email: string;
-  role: UserRole;
-  is_onboarded: boolean;
-  created_at: string;
-  updated_at: string;
-}
+export type UserRole = Database["public"]["Enums"]["user_role"];
+export type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 
 export interface AuthState {
   user: {
