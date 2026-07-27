@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { DashboardClient, DashboardData } from "./DashboardClient";
+import { DisciplineWidget } from "@/components/features/komdis/discipline-widget";
 
 interface RawGroupMember {
   caang_groups: {
@@ -23,7 +24,10 @@ interface RawPiketMember {
 export default async function DashboardPage() {
   const supabase = await createClient();
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
   if (authError || !user) {
     redirect("/login");
   }
@@ -46,6 +50,26 @@ export default async function DashboardPage() {
 
   const fullName = registration?.full_name || "Pengguna";
 
+  // Fetch user discipline summary & active sanctions
+  const { data: disciplineSummary } = await supabase
+    .from("v_user_discipline_summary")
+    .select("net_points")
+    .eq("profile_id", user.id)
+    .maybeSingle();
+
+  const { data: activeSanctions } = await supabase
+    .from("sanctions")
+    .select("sp_level")
+    .eq("profile_id", user.id)
+    .eq("status", "active")
+    .order("sp_level", { ascending: false });
+
+  const netPoints = disciplineSummary?.net_points || 0;
+  const activeSpLevel =
+    activeSanctions && activeSanctions.length > 0
+      ? activeSanctions[0].sp_level
+      : null;
+
   const dataPayload: DashboardData = {
     profile: {
       id: profile.id,
@@ -62,7 +86,8 @@ export default async function DashboardPage() {
       .select("caang_groups(name)")
       .eq("profile_id", user.id)
       .maybeSingle();
-    const groupName = (groupMember as unknown as RawGroupMember)?.caang_groups?.name || null;
+    const groupName =
+      (groupMember as unknown as RawGroupMember)?.caang_groups?.name || null;
 
     // 2. Division info
     const { data: internship } = await supabase
@@ -70,7 +95,8 @@ export default async function DashboardPage() {
       .select("divisions(name)")
       .eq("profile_id", user.id)
       .maybeSingle();
-    const divisionName = (internship as unknown as RawInternship)?.divisions?.name || null;
+    const divisionName =
+      (internship as unknown as RawInternship)?.divisions?.name || null;
 
     // 3. Tasks stats
     const { data: tasks } = await supabase.from("tasks").select("id");
@@ -84,7 +110,8 @@ export default async function DashboardPage() {
     const gradedTasks = submissions?.filter((s) => s.grade !== null) || [];
     const averageGrade =
       gradedTasks.length > 0
-        ? gradedTasks.reduce((sum, s) => sum + (s.grade || 0), 0) / gradedTasks.length
+        ? gradedTasks.reduce((sum, s) => sum + (s.grade || 0), 0) /
+          gradedTasks.length
         : 0;
 
     // 4. Attendance stats
@@ -94,7 +121,8 @@ export default async function DashboardPage() {
       .eq("profile_id", user.id);
     const totalAttendances = attendances?.length || 0;
     const presentCount =
-      attendances?.filter((a) => a.status === "hadir" || a.status === "telat").length || 0;
+      attendances?.filter((a) => a.status === "hadir" || a.status === "telat")
+        .length || 0;
 
     dataPayload.caangStats = {
       groupName,
@@ -111,7 +139,7 @@ export default async function DashboardPage() {
       .from("piket_members")
       .select("piket_schedules(day)")
       .eq("profile_id", user.id);
-    const piketDays = (piketMembers as unknown as RawPiketMember[] || [])
+    const piketDays = ((piketMembers as unknown as RawPiketMember[]) || [])
       .map((pm) => pm.piket_schedules?.day)
       .filter(Boolean) as string[];
 
@@ -127,7 +155,8 @@ export default async function DashboardPage() {
       .select("status")
       .eq("profile_id", user.id);
     const presentCount =
-      attendances?.filter((a) => a.status === "hadir" || a.status === "telat").length || 0;
+      attendances?.filter((a) => a.status === "hadir" || a.status === "telat")
+        .length || 0;
 
     dataPayload.anggotaStats = {
       piketDays,
@@ -209,9 +238,7 @@ export default async function DashboardPage() {
     };
   } else if (profile.role === "super-admin") {
     // 1. Users list by role
-    const { data: roleCounts } = await supabase
-      .from("profiles")
-      .select("role");
+    const { data: roleCounts } = await supabase.from("profiles").select("role");
 
     const superAdminStats = {
       superAdmin: 0,
@@ -248,6 +275,9 @@ export default async function DashboardPage() {
   }
 
   return (
-    <DashboardClient data={dataPayload} />
+    <div className="space-y-6">
+      <DisciplineWidget netPoints={netPoints} activeSpLevel={activeSpLevel} />
+      <DashboardClient data={dataPayload} />
+    </div>
   );
 }

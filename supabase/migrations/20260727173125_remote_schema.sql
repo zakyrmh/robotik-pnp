@@ -116,11 +116,42 @@ CREATE TYPE "public"."user_role" AS ENUM (
     'admin-or',
     'admin-komdis',
     'anggota',
-    'caang'
+    'caang',
+    'admin-kestari',
+    'admin-divisi',
+    'alumni'
 );
 
 
 ALTER TYPE "public"."user_role" OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."check_contact_message_rate_limit"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+DECLARE
+    message_count INTEGER;
+    limit_count CONSTANT INTEGER := 3; -- Maksimal 3 pesan per email
+    time_window CONSTANT INTERVAL := INTERVAL '1 hour'; -- Rentang waktu 1 jam
+BEGIN
+    -- Menghitung jumlah pesan dari email yang sama dalam rentang waktu yang ditentukan
+    SELECT COUNT(*) INTO message_count
+    FROM public.contact_messages
+    WHERE email = NEW.email
+      AND created_at > now() - time_window;
+
+    -- Jika melebihi batas, gagalkan operasi insert dengan Exception
+    IF message_count >= limit_count THEN
+        RAISE EXCEPTION 'Rate limit database terlampaui. Maksimal pengiriman pesan adalah % kali per % untuk email %.', 
+            limit_count, time_window, NEW.email;
+    END IF;
+
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."check_contact_message_rate_limit"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."check_legacy_member"("input_nim" "text") RETURNS TABLE("is_legacy" boolean, "member_data" "jsonb")
@@ -172,14 +203,58 @@ ALTER FUNCTION "public"."check_registration_completeness"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."get_my_role"() RETURNS "public"."user_role"
-    LANGUAGE "sql" SECURITY DEFINER
+    LANGUAGE "sql" STABLE SECURITY DEFINER
     SET "search_path" TO 'public'
     AS $$
-  SELECT role FROM public.profiles WHERE id = auth.uid();
+    SELECT role FROM public.profiles WHERE id = auth.uid();
 $$;
 
 
 ALTER FUNCTION "public"."get_my_role"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."get_next_unique_slug"("v_name" "text", "v_current_nim" "text") RETURNS "text"
+    LANGUAGE "plpgsql"
+    AS $$
+DECLARE
+  v_base_slug text;
+  v_final_slug text;
+  v_counter integer := 1;
+BEGIN
+  v_base_slug := public.slugify(v_name);
+  v_final_slug := v_base_slug;
+  
+  -- Lakukan pengecekan berulang (loop) selama slug sudah terpakai oleh NIM lain
+  WHILE EXISTS (
+    SELECT 1 FROM public.legacy_members 
+    WHERE slug = v_final_slug AND nim <> v_current_nim
+  ) LOOP
+    v_counter := v_counter + 1;
+    v_final_slug := v_base_slug || '-' || v_counter; -- Pasang angka terurut (cth: nama-2)
+  END LOOP;
+  
+  RETURN v_final_slug;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."get_next_unique_slug"("v_name" "text", "v_current_nim" "text") OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."handle_legacy_members_slug"() RETURNS "trigger"
+    LANGUAGE "plpgsql"
+    AS $$
+BEGIN
+  -- Jalankan jika data baru masuk atau ada perubahan pada kolom full_name
+  IF (TG_OP = 'INSERT') OR (NEW.full_name IS DISTINCT FROM OLD.full_name) THEN
+    NEW.slug := public.get_next_unique_slug(NEW.full_name, NEW.nim);
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."handle_legacy_members_slug"() OWNER TO "postgres";
 
 
 CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
@@ -187,10 +262,18 @@ CREATE OR REPLACE FUNCTION "public"."handle_new_user"() RETURNS "trigger"
     SET "search_path" TO 'public'
     AS $$
 BEGIN
-  INSERT INTO public.profiles (id, email, role, nim)
-  VALUES (NEW.id, NEW.email, 'caang', (NEW.raw_user_meta_data->>'nim')::TEXT);
-  RETURN NEW;
-END; $$;
+    INSERT INTO public.profiles (id, email, full_name, role, is_onboarded)
+    VALUES (
+        NEW.id,
+        NEW.email,
+        COALESCE(NEW.raw_user_meta_data->>'full_name', NULL),
+        'caang'::public.user_role,
+        FALSE
+    )
+    ON CONFLICT (id) DO NOTHING;
+    RETURN NEW;
+END;
+$$;
 
 
 ALTER FUNCTION "public"."handle_new_user"() OWNER TO "postgres";
@@ -216,11 +299,12 @@ ALTER FUNCTION "public"."handle_registration_approval"() OWNER TO "postgres";
 
 CREATE OR REPLACE FUNCTION "public"."handle_updated_at"() RETURNS "trigger"
     LANGUAGE "plpgsql"
-    SET "search_path" TO 'public'
     AS $$
 BEGIN
-  NEW.updated_at = NOW(); RETURN NEW;
-END; $$;
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$;
 
 
 ALTER FUNCTION "public"."handle_updated_at"() OWNER TO "postgres";
@@ -262,6 +346,23 @@ $$;
 ALTER FUNCTION "public"."promote_legacy_member_to_anggota"("user_id" "uuid", "input_nim" "text") OWNER TO "postgres";
 
 
+CREATE OR REPLACE FUNCTION "public"."protect_profile_role_update"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+BEGIN
+    IF OLD.role IS DISTINCT FROM NEW.role THEN
+        IF public.get_my_role() IS DISTINCT FROM 'super-admin'::public.user_role THEN
+            RAISE EXCEPTION 'Akses ditolak: Hanya Super Admin yang dapat mengubah role pengguna.';
+        END IF;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."protect_profile_role_update"() OWNER TO "postgres";
+
+
 CREATE OR REPLACE FUNCTION "public"."rls_auto_enable"() RETURNS "event_trigger"
     LANGUAGE "plpgsql" SECURITY DEFINER
     SET "search_path" TO 'pg_catalog'
@@ -293,6 +394,47 @@ $$;
 
 ALTER FUNCTION "public"."rls_auto_enable"() OWNER TO "postgres";
 
+
+CREATE OR REPLACE FUNCTION "public"."set_activity_target_audience"() RETURNS "trigger"
+    LANGUAGE "plpgsql" SECURITY DEFINER
+    AS $$
+DECLARE
+  v_role text;
+BEGIN
+  -- Mengambil role user yang sedang membuat kegiatan
+  v_role := public.get_my_role()::text;
+  
+  IF v_role = 'admin-komdis' THEN
+    NEW.target_audience := 'anggota'::public.activity_target;
+  ELSIF v_role = 'admin-or' THEN
+    NEW.target_audience := 'caang'::public.activity_target;
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+
+ALTER FUNCTION "public"."set_activity_target_audience"() OWNER TO "postgres";
+
+
+CREATE OR REPLACE FUNCTION "public"."slugify"("v_text" "text") RETURNS "text"
+    LANGUAGE "plpgsql" IMMUTABLE STRICT
+    AS $$
+BEGIN
+  RETURN regexp_replace(
+    regexp_replace(
+      lower(v_text),
+      '[^a-z0-9\s_-]', '', 'g' -- Hapus karakter spesial selain huruf, angka, spasi, dan strip
+    ),
+    '[\s_-]+', '-', 'g'       -- Ubah spasi ganda atau separator menjadi satu strip (-)
+  );
+END;
+$$;
+
+
+ALTER FUNCTION "public"."slugify"("v_text" "text") OWNER TO "postgres";
+
 SET default_tablespace = '';
 
 SET default_table_access_method = "heap";
@@ -305,7 +447,8 @@ CREATE TABLE IF NOT EXISTS "public"."achievements" (
     "level" "text" NOT NULL,
     "division_id" "uuid",
     "description" "text",
-    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "achievements_level_check" CHECK (("level" = ANY (ARRAY['Lokal'::"text", 'Regional'::"text", 'Nasional'::"text", 'Internasional'::"text"])))
 );
 
 
@@ -325,6 +468,9 @@ CREATE TABLE IF NOT EXISTS "public"."activities" (
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
     "deleted_at" timestamp with time zone,
+    "checkin_open_at" timestamp with time zone,
+    "checkin_close_at" timestamp with time zone,
+    "late_tolerance_minutes" integer DEFAULT 15 NOT NULL,
     CONSTRAINT "chk_activity_dates" CHECK (("end_date" >= "start_date"))
 );
 
@@ -361,7 +507,12 @@ CREATE TABLE IF NOT EXISTS "public"."attendances" (
     "notes" "text",
     "proof_url" "text",
     "verified_by" "uuid",
-    "created_at" timestamp with time zone DEFAULT "now"()
+    "created_at" timestamp with time zone DEFAULT "now"(),
+    "approval_status" "text" DEFAULT 'approved'::"text",
+    "verified_at" timestamp with time zone,
+    "rejection_reason" "text",
+    "points_awarded" integer DEFAULT 0 NOT NULL,
+    CONSTRAINT "attendances_approval_status_check" CHECK (("approval_status" = ANY (ARRAY['pending'::"text", 'approved'::"text", 'rejected'::"text"])))
 );
 
 
@@ -378,6 +529,50 @@ CREATE TABLE IF NOT EXISTS "public"."caang_groups" (
 
 
 ALTER TABLE "public"."caang_groups" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."contact_messages" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "full_name" "text" NOT NULL,
+    "organization" "text",
+    "email" "text" NOT NULL,
+    "category" "text" NOT NULL,
+    "message" "text" NOT NULL,
+    "status" "text" DEFAULT 'unread'::"text" NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    CONSTRAINT "contact_messages_status_check" CHECK (("status" = ANY (ARRAY['unread'::"text", 'read'::"text", 'replied'::"text", 'archived'::"text"])))
+);
+
+
+ALTER TABLE "public"."contact_messages" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."departments" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "name" "text" NOT NULL,
+    "sort_order" integer DEFAULT 0,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "category" "text" DEFAULT 'departemen'::"text" NOT NULL,
+    CONSTRAINT "departments_category_check" CHECK (("category" = ANY (ARRAY['presidium'::"text", 'adhoc'::"text", 'departemen'::"text"])))
+);
+
+
+ALTER TABLE "public"."departments" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."discipline_point_logs" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "profile_id" "uuid" NOT NULL,
+    "points" integer NOT NULL,
+    "category" "text" NOT NULL,
+    "description" "text" NOT NULL,
+    "created_by" "uuid",
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."discipline_point_logs" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."divisions" (
@@ -426,11 +621,12 @@ ALTER TABLE "public"."internships" OWNER TO "postgres";
 CREATE TABLE IF NOT EXISTS "public"."legacy_members" (
     "profile_id" "uuid",
     "study_program_id" "uuid",
-    "division" "text",
     "nim" "text" NOT NULL,
     "full_name" "text" NOT NULL,
     "gender" "text",
     "created_at" timestamp with time zone DEFAULT "now"(),
+    "avatar_url" "text",
+    "slug" "text",
     CONSTRAINT "legacy_members_gender_check" CHECK (("gender" = ANY (ARRAY['L'::"text", 'P'::"text"])))
 );
 
@@ -446,6 +642,18 @@ CREATE TABLE IF NOT EXISTS "public"."majors" (
 
 
 ALTER TABLE "public"."majors" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."membership_periods" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "period_name" "text" NOT NULL,
+    "is_active" boolean DEFAULT false NOT NULL,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+);
+
+
+ALTER TABLE "public"."membership_periods" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."or_settings" (
@@ -466,6 +674,23 @@ CREATE TABLE IF NOT EXISTS "public"."or_settings" (
 
 
 ALTER TABLE "public"."or_settings" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."organizational_histories" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "period_id" "uuid" NOT NULL,
+    "nim_member" "text" NOT NULL,
+    "department_id" "uuid" NOT NULL,
+    "sub_section" "text",
+    "sort_order" integer DEFAULT 0,
+    "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "division_id" "uuid",
+    "role_name" "text" DEFAULT 'Anggota'::"text" NOT NULL
+);
+
+
+ALTER TABLE "public"."organizational_histories" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."piket_logs" (
@@ -511,7 +736,9 @@ CREATE TABLE IF NOT EXISTS "public"."profiles" (
     "role" "public"."user_role" DEFAULT 'caang'::"public"."user_role" NOT NULL,
     "is_onboarded" boolean DEFAULT false NOT NULL,
     "created_at" timestamp with time zone DEFAULT "now"() NOT NULL,
-    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL
+    "updated_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "full_name" "text",
+    "avatar_url" "text"
 );
 
 
@@ -552,6 +779,23 @@ CREATE TABLE IF NOT EXISTS "public"."registrations" (
 
 
 ALTER TABLE "public"."registrations" OWNER TO "postgres";
+
+
+CREATE TABLE IF NOT EXISTS "public"."sanctions" (
+    "id" "uuid" DEFAULT "gen_random_uuid"() NOT NULL,
+    "profile_id" "uuid" NOT NULL,
+    "sp_level" integer NOT NULL,
+    "points_at_issuance" integer NOT NULL,
+    "status" "text" DEFAULT 'active'::"text" NOT NULL,
+    "issued_by" "uuid",
+    "issued_at" timestamp with time zone DEFAULT "now"() NOT NULL,
+    "notes" "text",
+    CONSTRAINT "sanctions_sp_level_check" CHECK (("sp_level" = ANY (ARRAY[1, 2, 3]))),
+    CONSTRAINT "sanctions_status_check" CHECK (("status" = ANY (ARRAY['active'::"text", 'cleared'::"text", 'resolved'::"text"])))
+);
+
+
+ALTER TABLE "public"."sanctions" OWNER TO "postgres";
 
 
 CREATE TABLE IF NOT EXISTS "public"."study_programs" (
@@ -598,6 +842,28 @@ CREATE TABLE IF NOT EXISTS "public"."tasks" (
 ALTER TABLE "public"."tasks" OWNER TO "postgres";
 
 
+CREATE OR REPLACE VIEW "public"."v_user_discipline_summary"
+WITH (security_invoker = true) AS
+ SELECT "p"."id" AS "profile_id",
+    "p"."full_name",
+    "p"."nim",
+    COALESCE("att"."total_attendance_points", (0)::bigint) AS "total_attendance_points",
+    COALESCE("log"."total_log_points", (0)::bigint) AS "total_log_points",
+    (COALESCE("att"."total_attendance_points", (0)::bigint) + COALESCE("log"."total_log_points", (0)::bigint)) AS "net_points"
+   FROM (("public"."profiles" "p"
+     LEFT JOIN ( SELECT "attendances"."profile_id",
+            "sum"("attendances"."points_awarded") AS "total_attendance_points"
+           FROM "public"."attendances"
+          GROUP BY "attendances"."profile_id") "att" ON (("p"."id" = "att"."profile_id")))
+     LEFT JOIN ( SELECT "discipline_point_logs"."profile_id",
+            "sum"("discipline_point_logs"."points") AS "total_log_points"
+           FROM "public"."discipline_point_logs"
+          GROUP BY "discipline_point_logs"."profile_id") "log" ON (("p"."id" = "log"."profile_id")));
+
+
+ALTER VIEW "public"."v_user_discipline_summary" OWNER TO "postgres";
+
+
 ALTER TABLE ONLY "public"."achievements"
     ADD CONSTRAINT "achievements_pkey" PRIMARY KEY ("id");
 
@@ -625,6 +891,26 @@ ALTER TABLE ONLY "public"."attendances"
 
 ALTER TABLE ONLY "public"."caang_groups"
     ADD CONSTRAINT "caang_groups_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."contact_messages"
+    ADD CONSTRAINT "contact_messages_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."departments"
+    ADD CONSTRAINT "departments_name_key" UNIQUE ("name");
+
+
+
+ALTER TABLE ONLY "public"."departments"
+    ADD CONSTRAINT "departments_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."discipline_point_logs"
+    ADD CONSTRAINT "discipline_point_logs_pkey" PRIMARY KEY ("id");
 
 
 
@@ -673,6 +959,11 @@ ALTER TABLE ONLY "public"."legacy_members"
 
 
 
+ALTER TABLE ONLY "public"."legacy_members"
+    ADD CONSTRAINT "legacy_members_slug_key" UNIQUE ("slug");
+
+
+
 ALTER TABLE ONLY "public"."majors"
     ADD CONSTRAINT "majors_name_key" UNIQUE ("name");
 
@@ -683,8 +974,23 @@ ALTER TABLE ONLY "public"."majors"
 
 
 
+ALTER TABLE ONLY "public"."membership_periods"
+    ADD CONSTRAINT "membership_periods_period_name_key" UNIQUE ("period_name");
+
+
+
+ALTER TABLE ONLY "public"."membership_periods"
+    ADD CONSTRAINT "membership_periods_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."or_settings"
     ADD CONSTRAINT "or_settings_pkey" PRIMARY KEY ("id");
+
+
+
+ALTER TABLE ONLY "public"."organizational_histories"
+    ADD CONSTRAINT "organizational_histories_pkey" PRIMARY KEY ("id");
 
 
 
@@ -723,6 +1029,11 @@ ALTER TABLE ONLY "public"."registrations"
 
 
 
+ALTER TABLE ONLY "public"."sanctions"
+    ADD CONSTRAINT "sanctions_pkey" PRIMARY KEY ("id");
+
+
+
 ALTER TABLE ONLY "public"."study_programs"
     ADD CONSTRAINT "study_programs_pkey" PRIMARY KEY ("id");
 
@@ -748,6 +1059,11 @@ ALTER TABLE ONLY "public"."piket_schedules"
 
 
 
+ALTER TABLE ONLY "public"."organizational_histories"
+    ADD CONSTRAINT "unique_member_assignment_per_period" UNIQUE ("period_id", "nim_member", "department_id", "division_id");
+
+
+
 ALTER TABLE ONLY "public"."piket_members"
     ADD CONSTRAINT "unique_member_schedule" UNIQUE ("schedule_id", "profile_id");
 
@@ -763,6 +1079,10 @@ CREATE INDEX "idx_achievements_division_id" ON "public"."achievements" USING "bt
 
 
 CREATE INDEX "idx_achievements_year" ON "public"."achievements" USING "btree" ("year" DESC);
+
+
+
+CREATE INDEX "idx_activities_created_by" ON "public"."activities" USING "btree" ("created_by");
 
 
 
@@ -786,11 +1106,19 @@ CREATE INDEX "idx_attendances_activity_id" ON "public"."attendances" USING "btre
 
 
 
+CREATE INDEX "idx_attendances_approval_status" ON "public"."attendances" USING "btree" ("approval_status");
+
+
+
 CREATE INDEX "idx_attendances_profile_id" ON "public"."attendances" USING "btree" ("profile_id");
 
 
 
 CREATE INDEX "idx_caang_groups_parent_id" ON "public"."caang_groups" USING "btree" ("parent_id");
+
+
+
+CREATE INDEX "idx_discipline_point_logs_profile" ON "public"."discipline_point_logs" USING "btree" ("profile_id");
 
 
 
@@ -830,6 +1158,14 @@ CREATE INDEX "idx_registrations_deleted_at" ON "public"."registrations" USING "b
 
 
 
+CREATE INDEX "idx_sanctions_profile" ON "public"."sanctions" USING "btree" ("profile_id");
+
+
+
+CREATE INDEX "idx_sanctions_status" ON "public"."sanctions" USING "btree" ("status");
+
+
+
 CREATE INDEX "idx_study_programs_major_id" ON "public"."study_programs" USING "btree" ("major_id");
 
 
@@ -843,6 +1179,14 @@ CREATE INDEX "idx_task_submissions_task_id" ON "public"."task_submissions" USING
 
 
 CREATE OR REPLACE TRIGGER "activities_updated_at" BEFORE UPDATE ON "public"."activities" FOR EACH ROW EXECUTE FUNCTION "public"."handle_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "articles_updated_at" BEFORE UPDATE ON "public"."articles" FOR EACH ROW EXECUTE FUNCTION "public"."handle_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "enforce_profile_role_protection" BEFORE UPDATE ON "public"."profiles" FOR EACH ROW EXECUTE FUNCTION "public"."protect_profile_role_update"();
 
 
 
@@ -867,6 +1211,22 @@ CREATE OR REPLACE TRIGGER "registrations_updated_at" BEFORE UPDATE ON "public"."
 
 
 CREATE OR REPLACE TRIGGER "task_submissions_updated_at" BEFORE UPDATE ON "public"."task_submissions" FOR EACH ROW EXECUTE FUNCTION "public"."handle_updated_at"();
+
+
+
+CREATE OR REPLACE TRIGGER "trg_contact_messages_rate_limit" BEFORE INSERT ON "public"."contact_messages" FOR EACH ROW EXECUTE FUNCTION "public"."check_contact_message_rate_limit"();
+
+
+
+CREATE OR REPLACE TRIGGER "trg_generate_legacy_members_slug" BEFORE INSERT OR UPDATE ON "public"."legacy_members" FOR EACH ROW EXECUTE FUNCTION "public"."handle_legacy_members_slug"();
+
+
+
+CREATE OR REPLACE TRIGGER "trg_set_activity_target" BEFORE INSERT ON "public"."activities" FOR EACH ROW EXECUTE FUNCTION "public"."set_activity_target_audience"();
+
+
+
+CREATE OR REPLACE TRIGGER "update_contact_messages_updated_at" BEFORE UPDATE ON "public"."contact_messages" FOR EACH ROW EXECUTE FUNCTION "public"."handle_updated_at"();
 
 
 
@@ -910,6 +1270,16 @@ ALTER TABLE ONLY "public"."caang_groups"
 
 
 
+ALTER TABLE ONLY "public"."discipline_point_logs"
+    ADD CONSTRAINT "discipline_point_logs_created_by_fkey" FOREIGN KEY ("created_by") REFERENCES "public"."profiles"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."discipline_point_logs"
+    ADD CONSTRAINT "discipline_point_logs_profile_id_fkey" FOREIGN KEY ("profile_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
+
+
+
 ALTER TABLE ONLY "public"."group_members"
     ADD CONSTRAINT "group_members_group_id_fkey" FOREIGN KEY ("group_id") REFERENCES "public"."caang_groups"("id") ON DELETE CASCADE;
 
@@ -942,6 +1312,26 @@ ALTER TABLE ONLY "public"."legacy_members"
 
 ALTER TABLE ONLY "public"."legacy_members"
     ADD CONSTRAINT "legacy_members_study_program_id_fkey" FOREIGN KEY ("study_program_id") REFERENCES "public"."study_programs"("id");
+
+
+
+ALTER TABLE ONLY "public"."organizational_histories"
+    ADD CONSTRAINT "org_histories_department_fkey" FOREIGN KEY ("department_id") REFERENCES "public"."departments"("id") ON DELETE RESTRICT;
+
+
+
+ALTER TABLE ONLY "public"."organizational_histories"
+    ADD CONSTRAINT "org_histories_division_id_fkey" FOREIGN KEY ("division_id") REFERENCES "public"."divisions"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."organizational_histories"
+    ADD CONSTRAINT "org_histories_member_fkey" FOREIGN KEY ("nim_member") REFERENCES "public"."legacy_members"("nim") ON UPDATE CASCADE ON DELETE CASCADE;
+
+
+
+ALTER TABLE ONLY "public"."organizational_histories"
+    ADD CONSTRAINT "org_histories_period_fkey" FOREIGN KEY ("period_id") REFERENCES "public"."membership_periods"("id") ON DELETE CASCADE;
 
 
 
@@ -985,6 +1375,16 @@ ALTER TABLE ONLY "public"."registrations"
 
 
 
+ALTER TABLE ONLY "public"."sanctions"
+    ADD CONSTRAINT "sanctions_issued_by_fkey" FOREIGN KEY ("issued_by") REFERENCES "public"."profiles"("id") ON DELETE SET NULL;
+
+
+
+ALTER TABLE ONLY "public"."sanctions"
+    ADD CONSTRAINT "sanctions_profile_id_fkey" FOREIGN KEY ("profile_id") REFERENCES "public"."profiles"("id") ON DELETE CASCADE;
+
+
+
 ALTER TABLE ONLY "public"."study_programs"
     ADD CONSTRAINT "study_programs_major_id_fkey" FOREIGN KEY ("major_id") REFERENCES "public"."majors"("id") ON DELETE CASCADE;
 
@@ -1010,7 +1410,43 @@ ALTER TABLE ONLY "public"."tasks"
 
 
 
+CREATE POLICY "Admin Kestari read anggota and caang" ON "public"."profiles" FOR SELECT USING ((("public"."get_my_role"() = 'admin-kestari'::"public"."user_role") AND ("role" = ANY (ARRAY['anggota'::"public"."user_role", 'caang'::"public"."user_role", 'alumni'::"public"."user_role"]))));
+
+
+
+CREATE POLICY "Admin Komdis read anggota and caang" ON "public"."profiles" FOR SELECT USING ((("public"."get_my_role"() = 'admin-komdis'::"public"."user_role") AND ("role" = ANY (ARRAY['anggota'::"public"."user_role", 'caang'::"public"."user_role"]))));
+
+
+
+CREATE POLICY "Admin OR read caang" ON "public"."profiles" FOR SELECT USING ((("public"."get_my_role"() = 'admin-or'::"public"."user_role") AND ("role" = 'caang'::"public"."user_role")));
+
+
+
 CREATE POLICY "Admins can view legacy members" ON "public"."legacy_members" FOR SELECT TO "authenticated" USING (("public"."get_my_role"() = ANY (ARRAY['super-admin'::"public"."user_role", 'admin-or'::"public"."user_role"])));
+
+
+
+CREATE POLICY "Allow admins to delete contact messages" ON "public"."contact_messages" FOR DELETE TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "public"."profiles"
+  WHERE (("profiles"."id" = "auth"."uid"()) AND ("profiles"."role" = ANY (ARRAY['super-admin'::"public"."user_role", 'admin-or'::"public"."user_role"]))))));
+
+
+
+CREATE POLICY "Allow admins to select contact messages" ON "public"."contact_messages" FOR SELECT TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "public"."profiles"
+  WHERE (("profiles"."id" = "auth"."uid"()) AND ("profiles"."role" = ANY (ARRAY['super-admin'::"public"."user_role", 'admin-or'::"public"."user_role"]))))));
+
+
+
+CREATE POLICY "Allow admins to update contact messages" ON "public"."contact_messages" FOR UPDATE TO "authenticated" USING ((EXISTS ( SELECT 1
+   FROM "public"."profiles"
+  WHERE (("profiles"."id" = "auth"."uid"()) AND ("profiles"."role" = ANY (ARRAY['super-admin'::"public"."user_role", 'admin-or'::"public"."user_role"])))))) WITH CHECK ((EXISTS ( SELECT 1
+   FROM "public"."profiles"
+  WHERE (("profiles"."id" = "auth"."uid"()) AND ("profiles"."role" = ANY (ARRAY['super-admin'::"public"."user_role", 'admin-or'::"public"."user_role"]))))));
+
+
+
+CREATE POLICY "Allow public insert contact messages" ON "public"."contact_messages" FOR INSERT WITH CHECK (true);
 
 
 
@@ -1022,10 +1458,46 @@ CREATE POLICY "Allow public read-only access to study programs" ON "public"."stu
 
 
 
+CREATE POLICY "Super Admin delete profiles" ON "public"."profiles" FOR DELETE USING (("public"."get_my_role"() = 'super-admin'::"public"."user_role"));
+
+
+
+CREATE POLICY "Super Admin select all profiles" ON "public"."profiles" FOR SELECT USING (("public"."get_my_role"() = 'super-admin'::"public"."user_role"));
+
+
+
+CREATE POLICY "Super Admin update all profiles" ON "public"."profiles" FOR UPDATE USING (("public"."get_my_role"() = 'super-admin'::"public"."user_role"));
+
+
+
+CREATE POLICY "User read own profile" ON "public"."profiles" FOR SELECT USING (("auth"."uid"() = "id"));
+
+
+
+CREATE POLICY "User update own profile" ON "public"."profiles" FOR UPDATE USING (("auth"."uid"() = "id")) WITH CHECK (("auth"."uid"() = "id"));
+
+
+
 ALTER TABLE "public"."achievements" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."activities" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "activities_delete_policy" ON "public"."activities" FOR DELETE USING (((("public"."get_my_role"())::"text" = ANY (ARRAY['admin-komdis'::"text", 'admin-or'::"text"])) AND ("created_by" = "auth"."uid"())));
+
+
+
+CREATE POLICY "activities_insert_policy" ON "public"."activities" FOR INSERT WITH CHECK ((("public"."get_my_role"())::"text" = ANY (ARRAY['admin-komdis'::"text", 'admin-or'::"text"])));
+
+
+
+CREATE POLICY "activities_select_policy" ON "public"."activities" FOR SELECT USING ((("deleted_at" IS NULL) AND ((("public"."get_my_role"())::"text" = ANY (ARRAY['super-admin'::"text", 'admin-or'::"text"])) OR ((("public"."get_my_role"())::"text" = ANY (ARRAY['admin-komdis'::"text", 'admin-kestari'::"text", 'admin-divisi'::"text", 'anggota'::"text"])) AND (("target_audience")::"text" = 'anggota'::"text")) OR ((("public"."get_my_role"())::"text" = 'caang'::"text") AND (("target_audience")::"text" = 'caang'::"text")))));
+
+
+
+CREATE POLICY "activities_update_policy" ON "public"."activities" FOR UPDATE USING (((("public"."get_my_role"())::"text" = ANY (ARRAY['admin-komdis'::"text", 'admin-or'::"text"])) AND ("created_by" = "auth"."uid"()))) WITH CHECK (((("public"."get_my_role"())::"text" = ANY (ARRAY['admin-komdis'::"text", 'admin-or'::"text"])) AND ("created_by" = "auth"."uid"())));
+
 
 
 CREATE POLICY "admin_view_all" ON "public"."profiles" FOR SELECT USING (("public"."get_my_role"() = ANY (ARRAY['super-admin'::"public"."user_role", 'admin-or'::"public"."user_role"])));
@@ -1036,11 +1508,39 @@ CREATE POLICY "admins_view_all_reg" ON "public"."registrations" FOR SELECT USING
 
 
 
-CREATE POLICY "allow_admin_write_activities" ON "public"."activities" USING (("public"."get_my_role"() = ANY (ARRAY['super-admin'::"public"."user_role", 'admin-or'::"public"."user_role", 'admin-komdis'::"public"."user_role"]))) WITH CHECK (("public"."get_my_role"() = ANY (ARRAY['super-admin'::"public"."user_role", 'admin-or'::"public"."user_role", 'admin-komdis'::"public"."user_role"])));
+CREATE POLICY "allow_admin_delete_articles" ON "public"."articles" FOR DELETE TO "authenticated" USING (("public"."get_my_role"() = ANY (ARRAY['super-admin'::"public"."user_role", 'admin-or'::"public"."user_role"])));
+
+
+
+CREATE POLICY "allow_admin_insert_articles" ON "public"."articles" FOR INSERT TO "authenticated" WITH CHECK (("public"."get_my_role"() = ANY (ARRAY['super-admin'::"public"."user_role", 'admin-or'::"public"."user_role"])));
+
+
+
+CREATE POLICY "allow_admin_select_all_articles" ON "public"."articles" FOR SELECT TO "authenticated" USING (("public"."get_my_role"() = ANY (ARRAY['super-admin'::"public"."user_role", 'admin-or'::"public"."user_role"])));
+
+
+
+CREATE POLICY "allow_admin_update_articles" ON "public"."articles" FOR UPDATE TO "authenticated" USING (("public"."get_my_role"() = ANY (ARRAY['super-admin'::"public"."user_role", 'admin-or'::"public"."user_role"]))) WITH CHECK (("public"."get_my_role"() = ANY (ARRAY['super-admin'::"public"."user_role", 'admin-or'::"public"."user_role"])));
+
+
+
+CREATE POLICY "allow_admin_write_departments" ON "public"."departments" TO "authenticated" USING (("public"."get_my_role"() = ANY (ARRAY['super-admin'::"public"."user_role", 'admin-or'::"public"."user_role"]))) WITH CHECK (("public"."get_my_role"() = ANY (ARRAY['super-admin'::"public"."user_role", 'admin-or'::"public"."user_role"])));
 
 
 
 CREATE POLICY "allow_admin_write_divisions" ON "public"."divisions" TO "authenticated" USING (("public"."get_my_role"() = ANY (ARRAY['super-admin'::"public"."user_role", 'admin-or'::"public"."user_role"]))) WITH CHECK (("public"."get_my_role"() = ANY (ARRAY['super-admin'::"public"."user_role", 'admin-or'::"public"."user_role"])));
+
+
+
+CREATE POLICY "allow_admin_write_legacy_members" ON "public"."legacy_members" TO "authenticated" USING (("public"."get_my_role"() = ANY (ARRAY['super-admin'::"public"."user_role", 'admin-or'::"public"."user_role"]))) WITH CHECK (("public"."get_my_role"() = ANY (ARRAY['super-admin'::"public"."user_role", 'admin-or'::"public"."user_role"])));
+
+
+
+CREATE POLICY "allow_admin_write_org_histories" ON "public"."organizational_histories" TO "authenticated" USING (("public"."get_my_role"() = ANY (ARRAY['super-admin'::"public"."user_role", 'admin-or'::"public"."user_role"]))) WITH CHECK (("public"."get_my_role"() = ANY (ARRAY['super-admin'::"public"."user_role", 'admin-or'::"public"."user_role"])));
+
+
+
+CREATE POLICY "allow_admin_write_periods" ON "public"."membership_periods" TO "authenticated" USING (("public"."get_my_role"() = ANY (ARRAY['super-admin'::"public"."user_role", 'admin-or'::"public"."user_role"]))) WITH CHECK (("public"."get_my_role"() = ANY (ARRAY['super-admin'::"public"."user_role", 'admin-or'::"public"."user_role"])));
 
 
 
@@ -1049,6 +1549,22 @@ CREATE POLICY "allow_admin_write_piket_members" ON "public"."piket_members" TO "
 
 
 CREATE POLICY "allow_admin_write_piket_schedules" ON "public"."piket_schedules" TO "authenticated" USING (("public"."get_my_role"() = ANY (ARRAY['super-admin'::"public"."user_role", 'admin-komdis'::"public"."user_role", 'admin-or'::"public"."user_role"]))) WITH CHECK (("public"."get_my_role"() = ANY (ARRAY['super-admin'::"public"."user_role", 'admin-komdis'::"public"."user_role", 'admin-or'::"public"."user_role"])));
+
+
+
+CREATE POLICY "allow_anon_select_departments" ON "public"."departments" FOR SELECT TO "authenticated", "anon" USING (true);
+
+
+
+CREATE POLICY "allow_anon_select_legacy_members_public_fields" ON "public"."legacy_members" FOR SELECT TO "authenticated", "anon" USING (true);
+
+
+
+CREATE POLICY "allow_anon_select_membership_periods" ON "public"."membership_periods" FOR SELECT TO "authenticated", "anon" USING (true);
+
+
+
+CREATE POLICY "allow_anon_select_org_histories" ON "public"."organizational_histories" FOR SELECT TO "authenticated", "anon" USING (true);
 
 
 
@@ -1121,7 +1637,7 @@ CREATE POLICY "allow_insert_tasks" ON "public"."tasks" FOR INSERT TO "authentica
 
 
 
-CREATE POLICY "allow_select_activities" ON "public"."activities" FOR SELECT USING (((("public"."get_my_role"() = 'caang'::"public"."user_role") AND ("target_audience" = 'caang'::"public"."activity_target")) OR (("public"."get_my_role"() = ANY (ARRAY['anggota'::"public"."user_role", 'admin-or'::"public"."user_role", 'super-admin'::"public"."user_role", 'admin-komdis'::"public"."user_role"])) AND ("target_audience" = 'anggota'::"public"."activity_target")) OR ("public"."get_my_role"() = ANY (ARRAY['super-admin'::"public"."user_role", 'admin-or'::"public"."user_role", 'admin-komdis'::"public"."user_role"]))));
+CREATE POLICY "allow_public_select_published_articles" ON "public"."articles" FOR SELECT USING ((("is_published" = true) AND ("deleted_at" IS NULL)));
 
 
 
@@ -1137,7 +1653,11 @@ CREATE POLICY "allow_select_caang_groups" ON "public"."caang_groups" FOR SELECT 
 
 
 
-CREATE POLICY "allow_select_divisions" ON "public"."divisions" FOR SELECT TO "authenticated" USING (true);
+CREATE POLICY "allow_select_departments" ON "public"."departments" FOR SELECT TO "authenticated" USING (true);
+
+
+
+CREATE POLICY "allow_select_divisions" ON "public"."divisions" FOR SELECT TO "authenticated", "anon" USING (true);
 
 
 
@@ -1146,6 +1666,18 @@ CREATE POLICY "allow_select_group_members" ON "public"."group_members" FOR SELEC
 
 
 CREATE POLICY "allow_select_internships" ON "public"."internships" FOR SELECT TO "authenticated" USING ((("auth"."uid"() = "profile_id") OR ("public"."get_my_role"() = ANY (ARRAY['super-admin'::"public"."user_role", 'admin-or'::"public"."user_role", 'admin-komdis'::"public"."user_role"]))));
+
+
+
+CREATE POLICY "allow_select_org_histories" ON "public"."organizational_histories" FOR SELECT TO "authenticated" USING (true);
+
+
+
+CREATE POLICY "allow_select_own_articles" ON "public"."articles" FOR SELECT TO "authenticated" USING (("auth"."uid"() = "author_id"));
+
+
+
+CREATE POLICY "allow_select_periods" ON "public"."membership_periods" FOR SELECT TO "authenticated" USING (true);
 
 
 
@@ -1207,7 +1739,52 @@ ALTER TABLE "public"."articles" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."attendances" ENABLE ROW LEVEL SECURITY;
 
 
+CREATE POLICY "attendances_insert_policy" ON "public"."attendances" FOR INSERT WITH CHECK (("public"."get_my_role"() = ANY (ARRAY['admin-komdis'::"public"."user_role", 'admin-or'::"public"."user_role"])));
+
+
+
+CREATE POLICY "attendances_select_policy" ON "public"."attendances" FOR SELECT USING ((("public"."get_my_role"() = 'super-admin'::"public"."user_role") OR ("profile_id" = "auth"."uid"()) OR (("public"."get_my_role"() = 'admin-komdis'::"public"."user_role") AND (EXISTS ( SELECT 1
+   FROM "public"."activities" "a"
+  WHERE (("a"."id" = "attendances"."activity_id") AND ("a"."target_audience" = 'anggota'::"public"."activity_target"))))) OR (("public"."get_my_role"() = 'admin-or'::"public"."user_role") AND (EXISTS ( SELECT 1
+   FROM "public"."activities" "a"
+  WHERE (("a"."id" = "attendances"."activity_id") AND ("a"."target_audience" = 'caang'::"public"."activity_target")))))));
+
+
+
+CREATE POLICY "attendances_update_policy" ON "public"."attendances" FOR UPDATE USING (((("public"."get_my_role"() = 'admin-komdis'::"public"."user_role") AND (EXISTS ( SELECT 1
+   FROM "public"."activities" "a"
+  WHERE (("a"."id" = "attendances"."activity_id") AND ("a"."target_audience" = 'anggota'::"public"."activity_target"))))) OR (("public"."get_my_role"() = 'admin-or'::"public"."user_role") AND (EXISTS ( SELECT 1
+   FROM "public"."activities" "a"
+  WHERE (("a"."id" = "attendances"."activity_id") AND ("a"."target_audience" = 'caang'::"public"."activity_target")))))));
+
+
+
 ALTER TABLE "public"."caang_groups" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."contact_messages" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."departments" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "discipline_logs_delete" ON "public"."discipline_point_logs" FOR DELETE USING ((("public"."get_my_role"())::"text" = ANY (ARRAY['super-admin'::"text", 'admin-komdis'::"text"])));
+
+
+
+CREATE POLICY "discipline_logs_insert" ON "public"."discipline_point_logs" FOR INSERT WITH CHECK ((("public"."get_my_role"())::"text" = ANY (ARRAY['super-admin'::"text", 'admin-komdis'::"text"])));
+
+
+
+CREATE POLICY "discipline_logs_select" ON "public"."discipline_point_logs" FOR SELECT USING (((("public"."get_my_role"())::"text" = ANY (ARRAY['super-admin'::"text", 'admin-komdis'::"text"])) OR ("profile_id" = "auth"."uid"())));
+
+
+
+CREATE POLICY "discipline_logs_update" ON "public"."discipline_point_logs" FOR UPDATE USING ((("public"."get_my_role"())::"text" = ANY (ARRAY['super-admin'::"text", 'admin-komdis'::"text"])));
+
+
+
+ALTER TABLE "public"."discipline_point_logs" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."divisions" ENABLE ROW LEVEL SECURITY;
@@ -1229,7 +1806,13 @@ CREATE POLICY "manage_own_registration" ON "public"."registrations" USING (("aut
 
 
 
+ALTER TABLE "public"."membership_periods" ENABLE ROW LEVEL SECURITY;
+
+
 ALTER TABLE "public"."or_settings" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."organizational_histories" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."piket_logs" ENABLE ROW LEVEL SECURITY;
@@ -1245,6 +1828,25 @@ ALTER TABLE "public"."profiles" ENABLE ROW LEVEL SECURITY;
 
 
 ALTER TABLE "public"."registrations" ENABLE ROW LEVEL SECURITY;
+
+
+ALTER TABLE "public"."sanctions" ENABLE ROW LEVEL SECURITY;
+
+
+CREATE POLICY "sanctions_delete" ON "public"."sanctions" FOR DELETE USING ((("public"."get_my_role"())::"text" = ANY (ARRAY['super-admin'::"text", 'admin-komdis'::"text"])));
+
+
+
+CREATE POLICY "sanctions_insert" ON "public"."sanctions" FOR INSERT WITH CHECK ((("public"."get_my_role"())::"text" = ANY (ARRAY['super-admin'::"text", 'admin-komdis'::"text"])));
+
+
+
+CREATE POLICY "sanctions_select" ON "public"."sanctions" FOR SELECT USING (((("public"."get_my_role"())::"text" = ANY (ARRAY['super-admin'::"text", 'admin-komdis'::"text"])) OR ("profile_id" = "auth"."uid"())));
+
+
+
+CREATE POLICY "sanctions_update" ON "public"."sanctions" FOR UPDATE USING ((("public"."get_my_role"())::"text" = ANY (ARRAY['super-admin'::"text", 'admin-komdis'::"text"])));
+
 
 
 ALTER TABLE "public"."study_programs" ENABLE ROW LEVEL SECURITY;
@@ -1427,6 +2029,12 @@ GRANT USAGE ON SCHEMA "public" TO "service_role";
 
 
 
+GRANT ALL ON FUNCTION "public"."check_contact_message_rate_limit"() TO "anon";
+GRANT ALL ON FUNCTION "public"."check_contact_message_rate_limit"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."check_contact_message_rate_limit"() TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."check_legacy_member"("input_nim" "text") TO "anon";
 GRANT ALL ON FUNCTION "public"."check_legacy_member"("input_nim" "text") TO "authenticated";
 GRANT ALL ON FUNCTION "public"."check_legacy_member"("input_nim" "text") TO "service_role";
@@ -1442,6 +2050,18 @@ GRANT ALL ON FUNCTION "public"."check_registration_completeness"() TO "service_r
 GRANT ALL ON FUNCTION "public"."get_my_role"() TO "anon";
 GRANT ALL ON FUNCTION "public"."get_my_role"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."get_my_role"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."get_next_unique_slug"("v_name" "text", "v_current_nim" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."get_next_unique_slug"("v_name" "text", "v_current_nim" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."get_next_unique_slug"("v_name" "text", "v_current_nim" "text") TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."handle_legacy_members_slug"() TO "anon";
+GRANT ALL ON FUNCTION "public"."handle_legacy_members_slug"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."handle_legacy_members_slug"() TO "service_role";
 
 
 
@@ -1469,9 +2089,27 @@ GRANT ALL ON FUNCTION "public"."promote_legacy_member_to_anggota"("user_id" "uui
 
 
 
+GRANT ALL ON FUNCTION "public"."protect_profile_role_update"() TO "anon";
+GRANT ALL ON FUNCTION "public"."protect_profile_role_update"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."protect_profile_role_update"() TO "service_role";
+
+
+
 GRANT ALL ON FUNCTION "public"."rls_auto_enable"() TO "anon";
 GRANT ALL ON FUNCTION "public"."rls_auto_enable"() TO "authenticated";
 GRANT ALL ON FUNCTION "public"."rls_auto_enable"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."set_activity_target_audience"() TO "anon";
+GRANT ALL ON FUNCTION "public"."set_activity_target_audience"() TO "authenticated";
+GRANT ALL ON FUNCTION "public"."set_activity_target_audience"() TO "service_role";
+
+
+
+GRANT ALL ON FUNCTION "public"."slugify"("v_text" "text") TO "anon";
+GRANT ALL ON FUNCTION "public"."slugify"("v_text" "text") TO "authenticated";
+GRANT ALL ON FUNCTION "public"."slugify"("v_text" "text") TO "service_role";
 
 
 
@@ -1520,6 +2158,24 @@ GRANT ALL ON TABLE "public"."caang_groups" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."contact_messages" TO "anon";
+GRANT ALL ON TABLE "public"."contact_messages" TO "authenticated";
+GRANT ALL ON TABLE "public"."contact_messages" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."departments" TO "anon";
+GRANT ALL ON TABLE "public"."departments" TO "authenticated";
+GRANT ALL ON TABLE "public"."departments" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."discipline_point_logs" TO "anon";
+GRANT ALL ON TABLE "public"."discipline_point_logs" TO "authenticated";
+GRANT ALL ON TABLE "public"."discipline_point_logs" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."divisions" TO "anon";
 GRANT ALL ON TABLE "public"."divisions" TO "authenticated";
 GRANT ALL ON TABLE "public"."divisions" TO "service_role";
@@ -1550,9 +2206,21 @@ GRANT ALL ON TABLE "public"."majors" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."membership_periods" TO "anon";
+GRANT ALL ON TABLE "public"."membership_periods" TO "authenticated";
+GRANT ALL ON TABLE "public"."membership_periods" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."or_settings" TO "anon";
 GRANT ALL ON TABLE "public"."or_settings" TO "authenticated";
 GRANT ALL ON TABLE "public"."or_settings" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."organizational_histories" TO "anon";
+GRANT ALL ON TABLE "public"."organizational_histories" TO "authenticated";
+GRANT ALL ON TABLE "public"."organizational_histories" TO "service_role";
 
 
 
@@ -1586,6 +2254,12 @@ GRANT ALL ON TABLE "public"."registrations" TO "service_role";
 
 
 
+GRANT ALL ON TABLE "public"."sanctions" TO "anon";
+GRANT ALL ON TABLE "public"."sanctions" TO "authenticated";
+GRANT ALL ON TABLE "public"."sanctions" TO "service_role";
+
+
+
 GRANT ALL ON TABLE "public"."study_programs" TO "anon";
 GRANT ALL ON TABLE "public"."study_programs" TO "authenticated";
 GRANT ALL ON TABLE "public"."study_programs" TO "service_role";
@@ -1601,6 +2275,12 @@ GRANT ALL ON TABLE "public"."task_submissions" TO "service_role";
 GRANT ALL ON TABLE "public"."tasks" TO "anon";
 GRANT ALL ON TABLE "public"."tasks" TO "authenticated";
 GRANT ALL ON TABLE "public"."tasks" TO "service_role";
+
+
+
+GRANT ALL ON TABLE "public"."v_user_discipline_summary" TO "anon";
+GRANT ALL ON TABLE "public"."v_user_discipline_summary" TO "authenticated";
+GRANT ALL ON TABLE "public"."v_user_discipline_summary" TO "service_role";
 
 
 
@@ -1671,7 +2351,91 @@ ALTER DEFAULT PRIVILEGES FOR ROLE "postgres" IN SCHEMA "public" GRANT ALL ON TAB
 
 drop extension if exists "pg_net";
 
+drop policy "allow_anon_select_departments" on "public"."departments";
+
+drop policy "allow_select_divisions" on "public"."divisions";
+
+drop policy "allow_anon_select_legacy_members_public_fields" on "public"."legacy_members";
+
+drop policy "allow_anon_select_membership_periods" on "public"."membership_periods";
+
+drop policy "allow_anon_select_org_histories" on "public"."organizational_histories";
+
+
+  create policy "allow_anon_select_departments"
+  on "public"."departments"
+  as permissive
+  for select
+  to anon, authenticated
+using (true);
+
+
+
+  create policy "allow_select_divisions"
+  on "public"."divisions"
+  as permissive
+  for select
+  to anon, authenticated
+using (true);
+
+
+
+  create policy "allow_anon_select_legacy_members_public_fields"
+  on "public"."legacy_members"
+  as permissive
+  for select
+  to anon, authenticated
+using (true);
+
+
+
+  create policy "allow_anon_select_membership_periods"
+  on "public"."membership_periods"
+  as permissive
+  for select
+  to anon, authenticated
+using (true);
+
+
+
+  create policy "allow_anon_select_org_histories"
+  on "public"."organizational_histories"
+  as permissive
+  for select
+  to anon, authenticated
+using (true);
+
+
 CREATE TRIGGER on_auth_user_created AFTER INSERT ON auth.users FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- CREATE TRIGGER tr_check_filters BEFORE INSERT OR UPDATE ON realtime.subscription FOR EACH ROW EXECUTE FUNCTION realtime.subscription_check_filters();
+
+
+  create policy "Admins can delete any profile photo"
+  on "storage"."objects"
+  as permissive
+  for delete
+  to authenticated
+using (((bucket_id = 'profiles'::text) AND (public.get_my_role() = ANY (ARRAY['super-admin'::public.user_role, 'admin-or'::public.user_role, 'admin-komdis'::public.user_role]))));
+
+
+
+  create policy "Admins can update any profile photo"
+  on "storage"."objects"
+  as permissive
+  for update
+  to authenticated
+using (((bucket_id = 'profiles'::text) AND (public.get_my_role() = ANY (ARRAY['super-admin'::public.user_role, 'admin-or'::public.user_role, 'admin-komdis'::public.user_role]))));
+
+
+
+  create policy "Admins can upload any profile photo"
+  on "storage"."objects"
+  as permissive
+  for insert
+  to authenticated
+with check (((bucket_id = 'profiles'::text) AND (public.get_my_role() = ANY (ARRAY['super-admin'::public.user_role, 'admin-or'::public.user_role, 'admin-komdis'::public.user_role]))));
+
 
 
   create policy "Admins can view all registration files"
