@@ -80,12 +80,15 @@ export type Database = {
       activities: {
         Row: {
           banner_url: string | null;
+          checkin_close_at: string | null;
+          checkin_open_at: string | null;
           created_at: string;
           created_by: string | null;
           deleted_at: string | null;
           description: string | null;
           end_date: string;
           id: string;
+          late_tolerance_minutes: number;
           location: string | null;
           start_date: string;
           target_audience: Database["public"]["Enums"]["activity_target"];
@@ -94,12 +97,15 @@ export type Database = {
         };
         Insert: {
           banner_url?: string | null;
+          checkin_close_at?: string | null;
+          checkin_open_at?: string | null;
           created_at?: string;
           created_by?: string | null;
           deleted_at?: string | null;
           description?: string | null;
           end_date: string;
           id?: string;
+          late_tolerance_minutes?: number;
           location?: string | null;
           start_date: string;
           target_audience?: Database["public"]["Enums"]["activity_target"];
@@ -108,12 +114,15 @@ export type Database = {
         };
         Update: {
           banner_url?: string | null;
+          checkin_close_at?: string | null;
+          checkin_open_at?: string | null;
           created_at?: string;
           created_by?: string | null;
           deleted_at?: string | null;
           description?: string | null;
           end_date?: string;
           id?: string;
+          late_tolerance_minutes?: number;
           location?: string | null;
           start_date?: string;
           target_audience?: Database["public"]["Enums"]["activity_target"];
@@ -127,6 +136,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "activities_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "v_user_discipline_summary";
+            referencedColumns: ["profile_id"];
           },
         ];
       };
@@ -184,40 +200,59 @@ export type Database = {
             referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "articles_author_id_fkey";
+            columns: ["author_id"];
+            isOneToOne: false;
+            referencedRelation: "v_user_discipline_summary";
+            referencedColumns: ["profile_id"];
+          },
         ];
       };
       attendances: {
         Row: {
           activity_id: string | null;
+          approval_status: string | null;
           check_in_at: string | null;
           created_at: string | null;
           id: string;
           notes: string | null;
+          points_awarded: number;
           profile_id: string | null;
           proof_url: string | null;
+          rejection_reason: string | null;
           status: Database["public"]["Enums"]["attendance_status"];
+          verified_at: string | null;
           verified_by: string | null;
         };
         Insert: {
           activity_id?: string | null;
+          approval_status?: string | null;
           check_in_at?: string | null;
           created_at?: string | null;
           id?: string;
           notes?: string | null;
+          points_awarded?: number;
           profile_id?: string | null;
           proof_url?: string | null;
+          rejection_reason?: string | null;
           status?: Database["public"]["Enums"]["attendance_status"];
+          verified_at?: string | null;
           verified_by?: string | null;
         };
         Update: {
           activity_id?: string | null;
+          approval_status?: string | null;
           check_in_at?: string | null;
           created_at?: string | null;
           id?: string;
           notes?: string | null;
+          points_awarded?: number;
           profile_id?: string | null;
           proof_url?: string | null;
+          rejection_reason?: string | null;
           status?: Database["public"]["Enums"]["attendance_status"];
+          verified_at?: string | null;
           verified_by?: string | null;
         };
         Relationships: [
@@ -236,11 +271,25 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
+            foreignKeyName: "attendances_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "v_user_discipline_summary";
+            referencedColumns: ["profile_id"];
+          },
+          {
             foreignKeyName: "attendances_verified_by_fkey";
             columns: ["verified_by"];
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "attendances_verified_by_fkey";
+            columns: ["verified_by"];
+            isOneToOne: false;
+            referencedRelation: "v_user_discipline_summary";
+            referencedColumns: ["profile_id"];
           },
         ];
       };
@@ -273,6 +322,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "caang_groups_mentor_id_fkey";
+            columns: ["mentor_id"];
+            isOneToOne: false;
+            referencedRelation: "v_user_discipline_summary";
+            referencedColumns: ["profile_id"];
           },
           {
             foreignKeyName: "caang_groups_parent_id_fkey";
@@ -342,6 +398,65 @@ export type Database = {
           sort_order?: number | null;
         };
         Relationships: [];
+      };
+      discipline_point_logs: {
+        Row: {
+          category: string;
+          created_at: string;
+          created_by: string | null;
+          description: string;
+          id: string;
+          points: number;
+          profile_id: string;
+        };
+        Insert: {
+          category: string;
+          created_at?: string;
+          created_by?: string | null;
+          description: string;
+          id?: string;
+          points: number;
+          profile_id: string;
+        };
+        Update: {
+          category?: string;
+          created_at?: string;
+          created_by?: string | null;
+          description?: string;
+          id?: string;
+          points?: number;
+          profile_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "discipline_point_logs_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "discipline_point_logs_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "v_user_discipline_summary";
+            referencedColumns: ["profile_id"];
+          },
+          {
+            foreignKeyName: "discipline_point_logs_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "discipline_point_logs_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "v_user_discipline_summary";
+            referencedColumns: ["profile_id"];
+          },
+        ];
       };
       divisions: {
         Row: {
@@ -422,6 +537,13 @@ export type Database = {
             referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "group_members_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: true;
+            referencedRelation: "v_user_discipline_summary";
+            referencedColumns: ["profile_id"];
+          },
         ];
       };
       internships: {
@@ -465,11 +587,25 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
+            foreignKeyName: "internships_mentor_id_fkey";
+            columns: ["mentor_id"];
+            isOneToOne: false;
+            referencedRelation: "v_user_discipline_summary";
+            referencedColumns: ["profile_id"];
+          },
+          {
             foreignKeyName: "internships_profile_id_fkey";
             columns: ["profile_id"];
             isOneToOne: true;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "internships_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: true;
+            referencedRelation: "v_user_discipline_summary";
+            referencedColumns: ["profile_id"];
           },
         ];
       };
@@ -511,6 +647,13 @@ export type Database = {
             isOneToOne: true;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "legacy_members_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: true;
+            referencedRelation: "v_user_discipline_summary";
+            referencedColumns: ["profile_id"];
           },
           {
             foreignKeyName: "legacy_members_study_program_id_fkey";
@@ -719,6 +862,13 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
+            foreignKeyName: "piket_logs_reported_by_fkey";
+            columns: ["reported_by"];
+            isOneToOne: false;
+            referencedRelation: "v_user_discipline_summary";
+            referencedColumns: ["profile_id"];
+          },
+          {
             foreignKeyName: "piket_logs_schedule_id_fkey";
             columns: ["schedule_id"];
             isOneToOne: false;
@@ -731,6 +881,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "piket_logs_verified_by_fkey";
+            columns: ["verified_by"];
+            isOneToOne: false;
+            referencedRelation: "v_user_discipline_summary";
+            referencedColumns: ["profile_id"];
           },
         ];
       };
@@ -757,6 +914,13 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "piket_members_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "v_user_discipline_summary";
+            referencedColumns: ["profile_id"];
           },
           {
             foreignKeyName: "piket_members_schedule_id_fkey";
@@ -924,11 +1088,80 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
+            foreignKeyName: "registrations_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: true;
+            referencedRelation: "v_user_discipline_summary";
+            referencedColumns: ["profile_id"];
+          },
+          {
             foreignKeyName: "registrations_study_program_id_fkey";
             columns: ["study_program_id"];
             isOneToOne: false;
             referencedRelation: "study_programs";
             referencedColumns: ["id"];
+          },
+        ];
+      };
+      sanctions: {
+        Row: {
+          id: string;
+          issued_at: string;
+          issued_by: string | null;
+          notes: string | null;
+          points_at_issuance: number;
+          profile_id: string;
+          sp_level: number;
+          status: string;
+        };
+        Insert: {
+          id?: string;
+          issued_at?: string;
+          issued_by?: string | null;
+          notes?: string | null;
+          points_at_issuance: number;
+          profile_id: string;
+          sp_level: number;
+          status?: string;
+        };
+        Update: {
+          id?: string;
+          issued_at?: string;
+          issued_by?: string | null;
+          notes?: string | null;
+          points_at_issuance?: number;
+          profile_id?: string;
+          sp_level?: number;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "sanctions_issued_by_fkey";
+            columns: ["issued_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "sanctions_issued_by_fkey";
+            columns: ["issued_by"];
+            isOneToOne: false;
+            referencedRelation: "v_user_discipline_summary";
+            referencedColumns: ["profile_id"];
+          },
+          {
+            foreignKeyName: "sanctions_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "sanctions_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "v_user_discipline_summary";
+            referencedColumns: ["profile_id"];
           },
         ];
       };
@@ -1013,11 +1246,25 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
+            foreignKeyName: "task_submissions_graded_by_fkey";
+            columns: ["graded_by"];
+            isOneToOne: false;
+            referencedRelation: "v_user_discipline_summary";
+            referencedColumns: ["profile_id"];
+          },
+          {
             foreignKeyName: "task_submissions_profile_id_fkey";
             columns: ["profile_id"];
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "task_submissions_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "v_user_discipline_summary";
+            referencedColumns: ["profile_id"];
           },
           {
             foreignKeyName: "task_submissions_task_id_fkey";
@@ -1061,11 +1308,28 @@ export type Database = {
             referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
+          {
+            foreignKeyName: "tasks_created_by_fkey";
+            columns: ["created_by"];
+            isOneToOne: false;
+            referencedRelation: "v_user_discipline_summary";
+            referencedColumns: ["profile_id"];
+          },
         ];
       };
     };
     Views: {
-      [_ in never]: never;
+      v_user_discipline_summary: {
+        Row: {
+          full_name: string | null;
+          net_points: number | null;
+          nim: string | null;
+          profile_id: string | null;
+          total_attendance_points: number | null;
+          total_log_points: number | null;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
       check_legacy_member: {
