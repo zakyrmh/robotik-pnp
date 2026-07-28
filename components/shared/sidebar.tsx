@@ -8,6 +8,8 @@ import {
   DashboardSquare01Icon,
   Calendar03Icon,
   CalendarCheckIn01Icon,
+  File01Icon,
+  Alert01Icon,
   Task01Icon,
   Briefcase01Icon,
   CleanIcon,
@@ -41,6 +43,16 @@ const allMenuItems = {
     title: "Absensi",
     href: "/absensi",
     icon: CalendarCheckIn01Icon,
+  },
+  perizinan: {
+    title: "Perizinan",
+    href: "/perizinan",
+    icon: File01Icon,
+  },
+  kedisiplinan: {
+    title: "Kedisiplinan",
+    href: "/kedisiplinan",
+    icon: Alert01Icon,
   },
   tugas: {
     title: "Tugas",
@@ -97,8 +109,22 @@ const allMenuItems = {
 // Define which roles have access to which menu items
 const roleMenuKeys: Record<string, (keyof typeof allMenuItems)[]> = {
   caang: ["dashboard", "kegiatan", "absensi", "tugas", "magang"],
-  anggota: ["dashboard", "kegiatan", "absensi", "piket"],
-  "admin-komdis": ["dashboard", "kegiatan", "absensi", "piket"],
+  anggota: [
+    "dashboard",
+    "kegiatan",
+    "absensi",
+    "perizinan",
+    "kedisiplinan",
+    "piket",
+  ],
+  "admin-komdis": [
+    "dashboard",
+    "kegiatan",
+    "absensi",
+    "perizinan",
+    "kedisiplinan",
+    "piket",
+  ],
   "admin-or": [
     "dashboard",
     "pengaturanOr",
@@ -108,6 +134,8 @@ const roleMenuKeys: Record<string, (keyof typeof allMenuItems)[]> = {
     "manajemenMagang",
     "kegiatan",
     "absensi",
+    "perizinan",
+    "kedisiplinan",
     "piket",
   ],
   "super-admin": [
@@ -119,6 +147,8 @@ const roleMenuKeys: Record<string, (keyof typeof allMenuItems)[]> = {
     "manajemenMagang",
     "kegiatan",
     "absensi",
+    "perizinan",
+    "kedisiplinan",
     "piket",
     "manajemenAkun",
     "auditLogSistem",
@@ -128,7 +158,7 @@ const roleMenuKeys: Record<string, (keyof typeof allMenuItems)[]> = {
 export function Sidebar() {
   const pathname = usePathname();
   const { user, loading } = useAuth();
-  
+
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -148,9 +178,9 @@ export function Sidebar() {
   const role = user?.role;
   const isOnboarded = user?.is_onboarded;
 
-  let menuKeys = (role && roleMenuKeys[role]
-    ? roleMenuKeys[role]
-    : ["dashboard"]) as (keyof typeof allMenuItems)[];
+  let menuKeys = (
+    role && roleMenuKeys[role] ? roleMenuKeys[role] : ["dashboard"]
+  ) as (keyof typeof allMenuItems)[];
 
   // RBAC Gating: non-onboarded user should only see dashboard
   if (isOnboarded === false) {
@@ -183,7 +213,8 @@ export function Sidebar() {
     },
   ];
 
-  const hasMultipleSections = sections.filter((s) => s.keys.length > 0).length > 1;
+  const hasMultipleSections =
+    sections.filter((s) => s.keys.length > 0).length > 1;
 
   // Prevent flash or SSR mismatch
   if (!mounted) {
@@ -231,7 +262,10 @@ export function Sidebar() {
               if (section.keys.length === 0) return null;
 
               return (
-                <div key={section.title} className={cn("space-y-1.5", sIndex > 0 && "mt-6")}>
+                <div
+                  key={section.title}
+                  className={cn("space-y-1.5", sIndex > 0 && "mt-6")}
+                >
                   {hasMultipleSections && (
                     <div className="px-3 pb-2 text-[9px] font-mono font-bold uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-500">
                       {section.title}
@@ -252,7 +286,7 @@ export function Sidebar() {
                           "group relative flex items-center gap-3 px-3 py-3 text-xs font-mono font-semibold uppercase tracking-widest transition-all rounded-none overflow-hidden",
                           isActive
                             ? "text-zinc-900 dark:text-zinc-50 font-bold"
-                            : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 hover:dark:text-zinc-50 hover:bg-zinc-100/50 dark:hover:bg-zinc-900/50"
+                            : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 hover:dark:text-zinc-50 hover:bg-zinc-100/50 dark:hover:bg-zinc-900/50",
                         )}
                       >
                         {isActive && (
@@ -260,12 +294,20 @@ export function Sidebar() {
                             <motion.div
                               layoutId="active-bg"
                               className="absolute inset-0 bg-zinc-100/80 dark:bg-zinc-900/80 z-0"
-                              transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                              transition={{
+                                type: "spring",
+                                stiffness: 380,
+                                damping: 30,
+                              }}
                             />
                             <motion.div
                               layoutId="active-tricolor"
                               className="absolute left-0 top-0 bottom-0 w-[3px] bg-linear-to-b from-[#0066b1] via-[#1c69d4] to-[#e22718] z-10"
-                              transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                              transition={{
+                                type: "spring",
+                                stiffness: 380,
+                                damping: 30,
+                              }}
                             />
                           </>
                         )}
@@ -277,10 +319,12 @@ export function Sidebar() {
                               "transition-colors shrink-0",
                               isActive
                                 ? "text-[#1c69d4] dark:text-[#0066b1]"
-                                : "text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 group-hover:dark:text-zinc-50"
+                                : "text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 group-hover:dark:text-zinc-50",
                             )}
                           />
-                          <span className="whitespace-nowrap">{item.title}</span>
+                          <span className="whitespace-nowrap">
+                            {item.title}
+                          </span>
                         </div>
                       </Link>
                     );
@@ -296,7 +340,7 @@ export function Sidebar() {
           <Link
             href="/settings"
             className={cn(
-              "group relative flex items-center gap-3 px-3 py-3 text-xs font-mono font-semibold uppercase tracking-widest transition-all rounded-none overflow-hidden text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 hover:dark:text-zinc-50 hover:bg-zinc-100/50 dark:hover:bg-zinc-900/50"
+              "group relative flex items-center gap-3 px-3 py-3 text-xs font-mono font-semibold uppercase tracking-widest transition-all rounded-none overflow-hidden text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 hover:dark:text-zinc-50 hover:bg-zinc-100/50 dark:hover:bg-zinc-900/50",
             )}
           >
             <div className="relative z-10 flex items-center gap-3">
@@ -365,7 +409,10 @@ export function Sidebar() {
                 {loading ? (
                   <div className="space-y-2">
                     {Array.from({ length: 5 }).map((_, index) => (
-                      <div key={index} className="flex items-center gap-3 px-3 py-3">
+                      <div
+                        key={index}
+                        className="flex items-center gap-3 px-3 py-3"
+                      >
                         <div className="h-5 w-5 animate-pulse rounded-none bg-zinc-200 dark:bg-zinc-800 shrink-0" />
                         <div className="h-3 w-28 animate-pulse rounded-none bg-zinc-200 dark:bg-zinc-800" />
                       </div>
@@ -376,14 +423,18 @@ export function Sidebar() {
                     if (section.keys.length === 0) return null;
 
                     return (
-                      <div key={section.title} className={cn("space-y-1.5", sIndex > 0 && "mt-6")}>
+                      <div
+                        key={section.title}
+                        className={cn("space-y-1.5", sIndex > 0 && "mt-6")}
+                      >
                         {hasMultipleSections && (
                           <div className="px-3 pb-2 text-[9px] font-mono font-bold uppercase tracking-[0.2em] text-zinc-400 dark:text-zinc-500">
                             {section.title}
                           </div>
                         )}
                         {section.keys.map((key) => {
-                          const item = allMenuItems[key as keyof typeof allMenuItems];
+                          const item =
+                            allMenuItems[key as keyof typeof allMenuItems];
                           const isActive =
                             item.href === "/dashboard"
                               ? pathname === "/dashboard"
@@ -398,7 +449,7 @@ export function Sidebar() {
                                 "group relative flex items-center gap-3 px-3 py-3 text-xs font-mono font-semibold uppercase tracking-widest transition-all rounded-none overflow-hidden",
                                 isActive
                                   ? "text-zinc-900 dark:text-zinc-50 font-bold"
-                                  : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 hover:dark:text-zinc-50 hover:bg-zinc-100/50 dark:hover:bg-zinc-900/50"
+                                  : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 hover:dark:text-zinc-50 hover:bg-zinc-100/50 dark:hover:bg-zinc-900/50",
                               )}
                             >
                               {isActive && (
@@ -406,12 +457,20 @@ export function Sidebar() {
                                   <motion.div
                                     layoutId="active-bg-mobile"
                                     className="absolute inset-0 bg-zinc-100/80 dark:bg-zinc-900/80 z-0"
-                                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                                    transition={{
+                                      type: "spring",
+                                      stiffness: 380,
+                                      damping: 30,
+                                    }}
                                   />
                                   <motion.div
                                     layoutId="active-tricolor-mobile"
                                     className="absolute left-0 top-0 bottom-0 w-[3px] bg-linear-to-b from-[#0066b1] via-[#1c69d4] to-[#e22718] z-10"
-                                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                                    transition={{
+                                      type: "spring",
+                                      stiffness: 380,
+                                      damping: 30,
+                                    }}
                                   />
                                 </>
                               )}
@@ -423,10 +482,12 @@ export function Sidebar() {
                                     "transition-colors shrink-0",
                                     isActive
                                       ? "text-[#1c69d4] dark:text-[#0066b1]"
-                                      : "text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 group-hover:dark:text-zinc-50"
+                                      : "text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 group-hover:dark:text-zinc-50",
                                   )}
                                 />
-                                <span className="whitespace-nowrap">{item.title}</span>
+                                <span className="whitespace-nowrap">
+                                  {item.title}
+                                </span>
                               </div>
                             </Link>
                           );
