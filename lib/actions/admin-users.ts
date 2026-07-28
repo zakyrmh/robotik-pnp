@@ -455,11 +455,58 @@ export async function getUsersAction(
   }
 
   // Paginasi & Urutan (Terbaru)
-  const {
-    data: rawData,
-    count,
-    error,
-  } = await query.order("created_at", { ascending: false }).range(from, to);
+  const primaryResult = await query
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let rawData: any[] | null = primaryResult.data;
+  let count = primaryResult.count;
+  let error = primaryResult.error;
+
+  // Fallback jika migrasi deleted_at di DB cloud belum/sedang dieksekusi
+  if (error && error.message.includes("deleted_at")) {
+    let fallbackQuery = supabase.from("profiles").select(
+      `
+      id,
+      email,
+      full_name,
+      nim,
+      role,
+      is_onboarded,
+      avatar_url,
+      created_at,
+      registrations (
+        phone_number,
+        study_program_id,
+        status,
+        study_programs (
+          name
+        )
+      )
+    `,
+      { count: "exact" },
+    );
+
+    if (validated.role && validated.role !== "all") {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      fallbackQuery = fallbackQuery.eq("role", validated.role as any);
+    }
+    if (validated.search && validated.search.trim()) {
+      const search = validated.search.trim();
+      fallbackQuery = fallbackQuery.or(
+        `full_name.ilike.%${search}%,nim.ilike.%${search}%,email.ilike.%${search}%`,
+      );
+    }
+
+    const fallbackResult = await fallbackQuery
+      .order("created_at", { ascending: false })
+      .range(from, to);
+
+    rawData = fallbackResult.data;
+    count = fallbackResult.count;
+    error = fallbackResult.error;
+  }
 
   if (error) {
     throw new Error(`Gagal mengambil data pengguna: ${error.message}`);
