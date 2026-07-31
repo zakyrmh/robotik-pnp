@@ -953,6 +953,8 @@ export type Database = {
         Row: {
           avatar_url: string | null;
           created_at: string;
+          delete_reason: string | null;
+          deleted_at: string | null;
           email: string;
           full_name: string | null;
           id: string;
@@ -964,6 +966,8 @@ export type Database = {
         Insert: {
           avatar_url?: string | null;
           created_at?: string;
+          delete_reason?: string | null;
+          deleted_at?: string | null;
           email: string;
           full_name?: string | null;
           id: string;
@@ -975,6 +979,8 @@ export type Database = {
         Update: {
           avatar_url?: string | null;
           created_at?: string;
+          delete_reason?: string | null;
+          deleted_at?: string | null;
           email?: string;
           full_name?: string | null;
           id?: string;
@@ -1194,6 +1200,71 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "majors";
             referencedColumns: ["id"];
+          },
+        ];
+      };
+      system_audit_logs: {
+        Row: {
+          action_type: string;
+          actor_id: string | null;
+          created_at: string;
+          details: string | null;
+          id: string;
+          ip_address: string | null;
+          new_value: Json | null;
+          old_value: Json | null;
+          target_user_id: string | null;
+        };
+        Insert: {
+          action_type: string;
+          actor_id?: string | null;
+          created_at?: string;
+          details?: string | null;
+          id?: string;
+          ip_address?: string | null;
+          new_value?: Json | null;
+          old_value?: Json | null;
+          target_user_id?: string | null;
+        };
+        Update: {
+          action_type?: string;
+          actor_id?: string | null;
+          created_at?: string;
+          details?: string | null;
+          id?: string;
+          ip_address?: string | null;
+          new_value?: Json | null;
+          old_value?: Json | null;
+          target_user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "system_audit_logs_actor_id_fkey";
+            columns: ["actor_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "system_audit_logs_actor_id_fkey";
+            columns: ["actor_id"];
+            isOneToOne: false;
+            referencedRelation: "v_user_discipline_summary";
+            referencedColumns: ["profile_id"];
+          },
+          {
+            foreignKeyName: "system_audit_logs_target_user_id_fkey";
+            columns: ["target_user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "system_audit_logs_target_user_id_fkey";
+            columns: ["target_user_id"];
+            isOneToOne: false;
+            referencedRelation: "v_user_discipline_summary";
+            referencedColumns: ["profile_id"];
           },
         ];
       };
