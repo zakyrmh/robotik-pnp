@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Inter } from "next/font/google";
+import { Inter, Space_Grotesk, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { InitialLoader } from "@/components/shared/initial-loader";
@@ -10,13 +10,13 @@ import { RecoveryHashListener } from "@/components/shared/recovery-hash-listener
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-display",
   subsets: ["latin"],
 });
 
 const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+  variable: "--font-mono",
   subsets: ["latin"],
 });
 
@@ -25,6 +25,7 @@ export const metadata: Metadata = {
   description:
     "Sistem Manajemen Unit Kegiatan Mahasiswa Robotik Politeknik Negeri Padang",
 };
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -32,15 +33,15 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
+      lang="id"
       suppressHydrationWarning
       className={cn(
         "h-full",
         "antialiased",
-        geistSans.variable,
+        spaceGrotesk.variable,
         geistMono.variable,
-        "font-sans",
         inter.variable,
+        "font-sans",
       )}
     >
       <head>
@@ -71,7 +72,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col bg-background text-foreground transition-colors duration-200">
         <RecoveryHashListener />
         <InitialLoader>{children}</InitialLoader>
         <Toaster position="top-center" closeButton richColors />

@@ -12,107 +12,129 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen bg-canvas-dark text-white font-sans overflow-hidden">
-      {/* Kiri: Hero Panel (Hidden on Mobile) */}
-      <aside className="relative hidden w-[45%] flex-col justify-between overflow-hidden bg-canvas-dark p-12 lg:flex border-r border-hairline-dark">
-        {/* Full-bleed Robotics Background */}
-        <div className="absolute inset-0 z-0 opacity-20">
-          <Image
-            src="/images/robotics_hero.webp"
-            alt="Robotics Hero Background"
-            fill
-            sizes="(max-width: 1024px) 100vw, 45vw"
-            className="object-cover grayscale object-center contrast-125"
-            priority
-          />
-        </div>
+    <div className="flex min-h-screen w-full bg-background text-foreground font-sans transition-colors duration-200">
+      {/* ── Left Panel: Hero & Technical Blueprint (Desktop Only) ─────── */}
+      <aside className="relative hidden w-[45%] flex-col justify-between overflow-hidden bg-[#0a192f] dark:bg-[#060d19] p-8 xl:p-12 lg:flex border-r border-[#e2e8f0]/20 dark:border-white/10 text-white">
+        {/* Subtle Engineering Grid Background */}
+        <div className="absolute inset-0 z-0 blueprint-grid-bg opacity-30 pointer-events-none" />
 
-        {/* Tech Overlay */}
-        <div className="absolute inset-0 z-0 bg-linear-to-b from-canvas-dark/95 via-canvas-dark/80 to-canvas-dark/95" />
+        {/* Ambient Orange & Blue Glow Orbs */}
+        <div className="absolute top-10 right-10 w-72 h-72 rounded-full bg-[#1e3a8a]/40 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-10 left-10 w-64 h-64 rounded-full bg-[#f97316]/15 blur-3xl pointer-events-none" />
 
-        {/* Tricolor Tech Stripe on the right edge */}
-        <div className="absolute right-0 top-0 bottom-0 w-1 bg-linear-to-b from-cyber-blue via-tech-navy to-crimson-red z-10" />
+        {/* Tricolor Tech Stripe on Right Edge */}
+        <div className="absolute right-0 top-0 bottom-0 w-1 bg-gradient-to-b from-[#1e3a8a] via-[#f97316] to-[#0a192f] z-10" />
 
         {/* Brand Header */}
         <div className="relative z-10 flex items-center gap-4">
-          <div className="flex items-center gap-2 bg-canvas-dark/80 p-2 border border-hairline-dark backdrop-blur-xs">
+          <div className="flex items-center gap-3 bg-[#0a192f]/80 dark:bg-[#060d19]/90 p-2.5 border border-white/15 rounded-lg backdrop-blur-xs">
             <Image
               src="/images/logo-politeknik-negeri-padang.webp"
               alt="Logo PNP"
-              width={36}
-              height={36}
+              width={34}
+              height={34}
               className="object-contain"
             />
-            <div className="h-6 w-px bg-hairline-dark" />
+            <div className="h-6 w-px bg-white/20" />
             <Image
               src="/images/logo-ukm-robotik-pnp.webp"
-              alt="Logo UKM Robotik"
-              width={36}
-              height={36}
+              alt="Logo UKM Robotik PNP"
+              width={34}
+              height={34}
               className="object-contain"
             />
           </div>
           <div>
-            <div className="font-mono text-[9px] uppercase tracking-[2px] text-cyber-blue font-bold">
+            <div className="font-mono text-[10px] uppercase tracking-[2px] text-[#f97316] font-bold">
               DEPARTMENT OF ROBOTICS
             </div>
-            <div className="font-sans font-bold text-xs tracking-wide text-white">
+            <div className="font-display font-semibold text-xs tracking-wide text-white">
               POLITEKNIK NEGERI PADANG
             </div>
           </div>
         </div>
 
-        {/* Center Content */}
-        <div className="relative z-10 my-auto max-w-md">
-          <span className="font-mono text-[10px] uppercase tracking-[2px] text-cyber-blue font-semibold bg-cyber-blue/10 border border-cyber-blue/30 px-2 py-0.5 rounded-sm">
-            SYSTEM AUTHENTICATION
-          </span>
-          <h1 className="mt-4 text-4xl xl:text-5xl font-bold tracking-tight uppercase text-white leading-none">
-            UKM ROBOTIK
-            <span className="block text-tech-navy">PNP PORTAL</span>
-          </h1>
+        {/* Hero Content */}
+        <div className="relative z-10 my-auto max-w-md space-y-6">
+          <div className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[2px] text-[#f97316] font-semibold bg-[#f97316]/10 border border-[#f97316]/30 px-3 py-1 rounded-full">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#f97316] animate-pulse" />
+            SYSTEM AUTHENTICATION // PORTAL
+          </div>
 
-          {/* Tricolor divider under the heading */}
-          <div className="h-0.75 w-24 bg-linear-to-r from-cyber-blue via-tech-navy to-crimson-red my-6" />
+          <div>
+            <h1 className="text-3xl xl:text-4xl font-display font-bold tracking-tight uppercase leading-tight text-white">
+              UKM ROBOTIK
+              <span className="block text-[#f97316]">PNP PORTAL</span>
+            </h1>
+            {/* PNP Orange Accent Divider */}
+            <div className="h-1 w-20 bg-[#f97316] rounded-full mt-4" />
+          </div>
 
-          <p className="mb-8 text-sm xl:text-base text-gray-400 font-light leading-relaxed">
-            Sistem manajemen terkomputerisasi terpadu untuk administrasi,
-            inventarisasi, telemetri robotika, dan rekrutmen terbuka UKM Robotik
-            Politeknik Negeri Padang.
+          <p className="text-xs xl:text-sm text-slate-300 font-light leading-relaxed">
+            Sistem informasi manajemen terpadu untuk administrasi,
+            inventarisasi, telemetri robotika, dan rekrutmen terbuka calon
+            anggota UKM Robotik Politeknik Negeri Padang.
           </p>
 
-          <ul className="space-y-4 font-mono text-xs uppercase tracking-[1.5px] text-gray-300">
+          <ul className="space-y-3 font-mono text-xs text-slate-200">
             {[
-              { icon: "🤖", text: "Registrasi & Telemetri Robot" },
-              { icon: "📊", text: "Database & Log Kegiatan" },
-              { icon: "⚡", text: "Komputasi & Kontrol Akses" },
+              { icon: "🤖", text: "Registrasi & Telemetri Robotik" },
+              { icon: "📊", text: "Database & Log Activities" },
+              { icon: "⚡", text: "Kontrol Akses & Presensi Realtime" },
             ].map((item, i) => (
-              <li key={i} className="flex items-center gap-3">
-                <span className="text-lg bg-canvas-dark p-1 border border-hairline-dark">
-                  {item.icon}
+              <li
+                key={i}
+                className="flex items-center gap-3 bg-white/5 border border-white/10 px-3.5 py-2.5 rounded-lg"
+              >
+                <span className="text-base">{item.icon}</span>
+                <span className="font-mono text-[11px] tracking-wider uppercase">
+                  {item.text}
                 </span>
-                <span>{item.text}</span>
               </li>
             ))}
           </ul>
         </div>
 
         {/* Footer info */}
-        <div className="relative z-10 flex justify-between items-center border-t border-hairline-dark pt-6 font-mono text-[9px] uppercase tracking-[1.5px] text-gray-500">
+        <div className="relative z-10 flex justify-between items-center border-t border-white/10 pt-5 font-mono text-[10px] uppercase tracking-[1.5px] text-slate-400">
           <span>SECURE PROTOCOL // TLS 1.3</span>
           <span>EST. 2026 // SYSTEM STABLE</span>
         </div>
       </aside>
 
-      {/* Kanan: Form Area */}
-      <main className="flex flex-1 items-center justify-center p-6 lg:p-12 bg-canvas-dark relative overflow-y-auto">
-        {/* Subtle Tech Grid Pattern */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#222b5415_1px,transparent_1px),linear-gradient(to_bottom,#222b5415_1px,transparent_1px)] bg-size-[40px_40px] pointer-events-none z-0" />
+      {/* ── Right Panel: Form Canvas (Mobile First) ───────────────────── */}
+      <main className="flex-1 flex flex-col justify-center items-center p-4 sm:p-6 lg:p-12 min-h-screen relative overflow-y-auto bg-background transition-colors duration-200">
+        {/* Mobile Header Branding (Visible on Mobile only) */}
+        <div className="w-full max-w-md flex items-center justify-between pb-6 mb-2 border-b border-border lg:hidden">
+          <div className="flex items-center gap-2.5">
+            <Image
+              src="/images/logo-politeknik-negeri-padang.webp"
+              alt="Logo PNP"
+              width={28}
+              height={28}
+              className="object-contain"
+            />
+            <div className="h-5 w-px bg-border" />
+            <Image
+              src="/images/logo-ukm-robotik-pnp.webp"
+              alt="Logo UKM Robotik PNP"
+              width={28}
+              height={28}
+              className="object-contain"
+            />
+            <span className="font-display font-bold text-xs uppercase tracking-tight text-foreground ml-1">
+              UKM ROBOTIK PNP
+            </span>
+          </div>
+          <span className="font-mono text-[9px] uppercase tracking-wider bg-orange-wash dark:bg-pnp-orange/15 text-orange-deep dark:text-pnp-orange border border-pnp-orange/20 px-2 py-0.5 rounded-full font-semibold">
+            PORTAL
+          </span>
+        </div>
 
-        {/* Ambient Glow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-87.5 w-87.5 rounded-full bg-cyber-blue/5 blur-[120px] pointer-events-none z-0" />
-
-        <div className="w-full max-w-110 relative z-10">{children}</div>
+        {/* Main Content Wrap */}
+        <div className="w-full max-w-md relative z-10 py-2 sm:py-4">
+          {children}
+        </div>
       </main>
     </div>
   );
