@@ -21,6 +21,7 @@ import {
   UserSettings01Icon,
   Audit01Icon,
   Cancel01Icon,
+  WorkflowSquare01Icon,
 } from "@hugeicons/core-free-icons";
 import Image from "next/image";
 import { useAuth } from "@/hooks/useAuth";
@@ -104,6 +105,11 @@ const allMenuItems = {
     href: "/audit-log",
     icon: Audit01Icon,
   },
+  manajemenStruktur: {
+    title: "Manajemen Struktur",
+    href: "/manajemen-struktur",
+    icon: WorkflowSquare01Icon,
+  },
 } as const;
 
 // Define which roles have access to which menu items
@@ -150,6 +156,7 @@ const roleMenuKeys: Record<string, (keyof typeof allMenuItems)[]> = {
     "perizinan",
     "kedisiplinan",
     "piket",
+    "manajemenStruktur",
     "manajemenAkun",
     "auditLogSistem",
   ],
@@ -197,6 +204,7 @@ export function Sidebar() {
         "tugas",
         "magang",
         "piket",
+        "manajemenStruktur",
         "manajemenAkun",
         "auditLogSistem",
       ].filter((key) => menuKeys.includes(key as keyof typeof allMenuItems)),
