@@ -31,66 +31,69 @@ export function UpdatePasswordForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   return (
-    <div className="space-y-6">
-      <Card className="border-hairline-dark bg-surface-card-dark rounded-none shadow-none">
-        <CardHeader className="space-y-2 text-center sm:text-left">
+    <div className="space-y-4 sm:space-y-6">
+      <Card className="border border-border dark:border-white/10 bg-card text-card-foreground rounded-xl shadow-sm dark:shadow-none transition-colors duration-200">
+        <CardHeader className="space-y-2.5 p-5 sm:p-6 pb-2 sm:pb-3 text-left">
           <Badge
             variant="outline"
-            className="w-fit border-cyber-blue/30 bg-cyber-blue/10 text-cyber-blue uppercase font-mono tracking-[1.5px] text-[10px] rounded-sm pointer-events-none"
+            className="w-fit border-pnp-orange/30 bg-orange-wash dark:bg-pnp-orange/15 text-orange-deep dark:text-pnp-orange font-mono uppercase tracking-widest text-[10px] font-semibold rounded-full px-3 py-1 pointer-events-none"
           >
             SYSTEM RECOVERY // NEW CREDENTIALS
           </Badge>
-          <CardTitle className="text-2xl font-bold uppercase tracking-tight text-white font-sans">
+          <CardTitle className="text-xl sm:text-2xl font-bold uppercase tracking-tight text-foreground font-display">
             PERBARUI PASSWORD
           </CardTitle>
-          <CardDescription className="text-xs text-gray-400 font-sans font-light">
+          <CardDescription className="text-xs sm:text-sm text-muted-foreground font-sans font-normal leading-relaxed">
             Masukkan password baru Anda (minimal 8 karakter).
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 p-5 sm:p-6 pt-2 sm:pt-3">
           {state?.error && (
             <Alert
               variant="destructive"
-              className="bg-crimson-red/10 border-crimson-red/30 text-crimson-red rounded-none flex items-center gap-2"
+              className="bg-destructive/10 border-destructive/30 text-destructive rounded-lg flex items-center gap-2.5 p-3 sm:p-4"
             >
               <HugeiconsIcon
                 icon={AlertCircleIcon}
                 size={18}
-                className="text-crimson-red shrink-0"
+                className="text-destructive shrink-0"
               />
-              <AlertDescription className="font-mono text-xs uppercase tracking-wider">
+              <AlertDescription className="font-mono text-xs font-medium uppercase tracking-wider">
                 {state.error}
               </AlertDescription>
             </Alert>
           )}
 
           <form action={action} className="space-y-4">
-            <div className="space-y-2">
+            {/* Password Baru Field */}
+            <div className="space-y-1.5">
               <Label
                 htmlFor="password"
-                className="font-mono text-xs uppercase tracking-[1.5px] text-gray-300"
+                className="font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
               >
-                PASSWORD BARU
+                Password Baru
               </Label>
-              <div className="relative">
+              <div className="relative group">
                 <HugeiconsIcon
                   icon={LockPasswordIcon}
-                  className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500"
+                  className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-pnp-orange pointer-events-none"
                 />
                 <Input
                   id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className="pl-10 pr-10 h-12 bg-canvas-dark border-hairline-dark rounded-none text-white placeholder-gray-600 focus:border-cyber-blue focus:ring-1 focus:ring-cyber-blue focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-cyber-blue font-sans text-sm"
+                  className="pl-10 pr-10 h-11 sm:h-12 bg-background border-input rounded-lg text-foreground placeholder:text-muted-foreground/50 focus:border-pnp-orange focus:ring-2 focus:ring-pnp-orange/20 font-sans text-sm transition-all"
                   required
                   disabled={isPending}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors cursor-pointer"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  tabIndex={-1}
+                  aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
                 >
                   <HugeiconsIcon
                     icon={showPassword ? ViewOffIcon : EyeIcon}
@@ -100,31 +103,34 @@ export function UpdatePasswordForm() {
               </div>
             </div>
 
-            <div className="space-y-2">
+            {/* Konfirmasi Password Field */}
+            <div className="space-y-1.5">
               <Label
                 htmlFor="confirmPassword"
-                className="font-mono text-xs uppercase tracking-[1.5px] text-gray-300"
+                className="font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
               >
-                KONFIRMASI PASSWORD
+                Konfirmasi Password
               </Label>
-              <div className="relative">
+              <div className="relative group">
                 <HugeiconsIcon
                   icon={LockPasswordIcon}
-                  className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500"
+                  className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-pnp-orange pointer-events-none"
                 />
                 <Input
                   id="confirmPassword"
                   name="confirmPassword"
                   type={showConfirmPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className="pl-10 pr-10 h-12 bg-canvas-dark border-hairline-dark rounded-none text-white placeholder-gray-600 focus:border-cyber-blue focus:ring-1 focus:ring-cyber-blue focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-cyber-blue font-sans text-sm"
+                  className="pl-10 pr-10 h-11 sm:h-12 bg-background border-input rounded-lg text-foreground placeholder:text-muted-foreground/50 focus:border-pnp-orange focus:ring-2 focus:ring-pnp-orange/20 font-sans text-sm transition-all"
                   required
                   disabled={isPending}
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors cursor-pointer"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  tabIndex={-1}
+                  aria-label={showConfirmPassword ? "Sembunyikan password" : "Tampilkan password"}
                 >
                   <HugeiconsIcon
                     icon={showConfirmPassword ? ViewOffIcon : EyeIcon}
@@ -134,9 +140,10 @@ export function UpdatePasswordForm() {
               </div>
             </div>
 
+            {/* Submit Button */}
             <Button
               type="submit"
-              className="w-full h-12 bg-cyber-blue text-white font-mono font-medium uppercase tracking-[1.5px] rounded-none hover:bg-tech-navy transition-colors cursor-pointer mt-2"
+              className="w-full h-11 sm:h-12 bg-[#1e3a8a] hover:bg-[#1e40af] dark:bg-pnp-orange dark:hover:bg-orange-deep text-white font-sans font-semibold uppercase tracking-wider rounded-lg transition-all shadow-sm cursor-pointer disabled:opacity-60 mt-2"
               disabled={isPending}
             >
               {isPending ? (

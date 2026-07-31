@@ -37,8 +37,8 @@ function LoginMessage() {
   if (!message) return null;
 
   return (
-    <Alert className="bg-cyber-blue/10 border-cyber-blue/30 text-cyber-blue rounded-none flex items-center gap-2 mb-4">
-      <AlertDescription className="font-mono text-xs uppercase tracking-wider">
+    <Alert className="bg-orange-wash/60 dark:bg-pnp-orange/15 border-pnp-orange/30 text-orange-deep dark:text-pnp-orange rounded-lg flex items-center gap-2 mb-4 p-3 font-sans">
+      <AlertDescription className="font-mono text-xs font-medium uppercase tracking-wider">
         {message}
       </AlertDescription>
     </Alert>
@@ -51,35 +51,35 @@ export function LoginForm() {
   const [captchaToken, setCaptchaToken] = useState("");
 
   return (
-    <div className="space-y-6">
-      <Card className="border-hairline-dark bg-surface-card-dark rounded-none shadow-none">
-        <CardHeader className="space-y-2 text-center sm:text-left">
+    <div className="space-y-4 sm:space-y-6">
+      <Card className="border border-border dark:border-white/10 bg-card text-card-foreground rounded-xl shadow-sm dark:shadow-none transition-colors duration-200">
+        <CardHeader className="space-y-2.5 p-5 sm:p-6 pb-2 sm:pb-3 text-left">
           <Badge
             variant="outline"
-            className="w-fit border-cyber-blue/30 bg-cyber-blue/10 text-cyber-blue uppercase font-mono tracking-[1.5px] text-[10px] rounded-sm pointer-events-none"
+            className="w-fit border-pnp-orange/30 bg-orange-wash dark:bg-pnp-orange/15 text-orange-deep dark:text-pnp-orange font-mono uppercase tracking-widest text-[10px] font-semibold rounded-full px-3 py-1 pointer-events-none"
           >
             SECURE CHANNEL // SYSTEM ACCESS
           </Badge>
-          <CardTitle className="text-2xl font-bold uppercase tracking-tight text-white font-sans">
+          <CardTitle className="text-xl sm:text-2xl font-bold uppercase tracking-tight text-foreground font-display">
             PORTAL LOGIN
           </CardTitle>
-          <CardDescription className="text-xs text-gray-400 font-sans font-light">
-            Masukkan alamat email dan kata sandi Anda untuk otentikasi sistem.
+          <CardDescription className="text-xs sm:text-sm text-muted-foreground font-sans font-normal leading-relaxed">
+            Masukkan alamat email dan kata sandi Anda untuk mengakses sistem manajemen UKM Robotik PNP.
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 p-5 sm:p-6 pt-2 sm:pt-3">
           {state?.error && (
             <Alert
               variant="destructive"
-              className="bg-crimson-red/10 border-crimson-red/30 text-crimson-red rounded-none flex items-center gap-2"
+              className="bg-destructive/10 border-destructive/30 text-destructive rounded-lg flex items-center gap-2.5 p-3 sm:p-4"
             >
               <HugeiconsIcon
                 icon={AlertCircleIcon}
                 size={18}
-                className="text-crimson-red shrink-0"
+                className="text-destructive shrink-0"
               />
-              <AlertDescription className="font-mono text-xs uppercase tracking-wider">
+              <AlertDescription className="font-mono text-xs font-medium uppercase tracking-wider">
                 {state.error}
               </AlertDescription>
             </Alert>
@@ -92,63 +92,67 @@ export function LoginForm() {
           <form action={action} className="space-y-4">
             <input type="hidden" name="captchaToken" value={captchaToken} />
 
-            <div className="space-y-2">
+            {/* Email Field */}
+            <div className="space-y-1.5">
               <Label
                 htmlFor="email"
-                className="font-mono text-xs uppercase tracking-[1.5px] text-gray-300"
+                className="font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
               >
-                ALAMAT EMAIL
+                Alamat Email
               </Label>
-              <div className="relative">
+              <div className="relative group">
                 <HugeiconsIcon
                   icon={Mail01Icon}
-                  className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500"
+                  className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-pnp-orange pointer-events-none"
                 />
                 <Input
                   id="email"
                   name="email"
                   type="email"
-                  placeholder="NAMA@EMAIL.COM"
-                  className="pl-10 h-12 bg-canvas-dark border-hairline-dark rounded-none text-white placeholder-gray-600 focus:border-cyber-blue focus:ring-1 focus:ring-cyber-blue focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-cyber-blue font-sans text-sm"
+                  placeholder="nama@email.com"
+                  className="pl-10 h-11 sm:h-12 bg-background border-input rounded-lg text-foreground placeholder:text-muted-foreground/50 focus:border-pnp-orange focus:ring-2 focus:ring-pnp-orange/20 font-sans text-sm transition-all"
                   required
                   disabled={isPending}
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
+            {/* Password Field */}
+            <div className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label
                   htmlFor="password"
-                  className="font-mono text-xs uppercase tracking-[1.5px] text-gray-300"
+                  className="font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
                 >
-                  PASSWORD
+                  Password
                 </Label>
                 <Link
                   href="/forgot-password"
-                  className="font-mono text-[10px] uppercase tracking-wider text-cyber-blue hover:text-tech-navy hover:underline transition-colors"
+                  className="font-mono text-[11px] font-medium uppercase tracking-wider text-pnp-orange hover:text-orange-deep dark:hover:text-orange-300 hover:underline transition-colors"
                 >
-                  LUPA PASSWORD?
+                  Lupa Password?
                 </Link>
               </div>
-              <div className="relative">
+              <div className="relative group">
                 <HugeiconsIcon
                   icon={LockPasswordIcon}
-                  className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500"
+                  className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors group-focus-within:text-pnp-orange pointer-events-none"
                 />
                 <Input
                   id="password"
                   name="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
-                  className="pl-10 pr-10 h-12 bg-canvas-dark border-hairline-dark rounded-none text-white placeholder-gray-600 focus:border-cyber-blue focus:ring-1 focus:ring-cyber-blue focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-cyber-blue font-sans text-sm"
+                  className="pl-10 pr-10 h-11 sm:h-12 bg-background border-input rounded-lg text-foreground placeholder:text-muted-foreground/50 focus:border-pnp-orange focus:ring-2 focus:ring-pnp-orange/20 font-sans text-sm transition-all"
                   required
                   disabled={isPending}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-white transition-colors cursor-pointer"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  tabIndex={-1}
+                  aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
                 >
                   <HugeiconsIcon
                     icon={showPassword ? ViewOffIcon : EyeIcon}
@@ -159,7 +163,7 @@ export function LoginForm() {
             </div>
 
             {/* Cloudflare Turnstile Bot Protection Widget */}
-            <div className="flex justify-center my-4">
+            <div className="flex justify-center my-3 overflow-x-auto">
               <Turnstile
                 siteKey={
                   process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ||
@@ -170,9 +174,10 @@ export function LoginForm() {
               />
             </div>
 
+            {/* Submit Button */}
             <Button
               type="submit"
-              className="w-full h-12 bg-white text-black font-mono font-medium uppercase tracking-[1.5px] rounded-none border border-white hover:bg-transparent hover:text-white transition-none cursor-pointer"
+              className="w-full h-11 sm:h-12 bg-[#1e3a8a] hover:bg-[#1e40af] dark:bg-pnp-orange dark:hover:bg-orange-deep text-white font-sans font-semibold uppercase tracking-wider rounded-lg transition-all shadow-sm cursor-pointer disabled:opacity-60"
               disabled={isPending}
             >
               {isPending ? (
@@ -196,12 +201,12 @@ export function LoginForm() {
           </form>
         </CardContent>
 
-        <CardFooter className="flex flex-col border-t border-hairline-dark pt-6 text-center text-xs text-gray-400 font-sans font-light">
+        <CardFooter className="flex flex-col border-t border-border pt-4 pb-5 text-center text-xs text-muted-foreground font-sans">
           <p>
             Belum terdaftar?{" "}
             <Link
               href="/register"
-              className="font-mono text-xs uppercase tracking-wider text-cyber-blue hover:text-tech-navy hover:underline transition-colors"
+              className="font-semibold text-pnp-orange hover:text-orange-deep dark:hover:text-orange-300 underline-offset-4 hover:underline transition-colors ml-1"
             >
               Daftar Akun Baru
             </Link>

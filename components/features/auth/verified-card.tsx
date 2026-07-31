@@ -27,29 +27,28 @@ export function VerifiedCard() {
   }, [router]);
 
   return (
-    <div className="space-y-6">
-      <Card className="border-hairline-dark bg-surface-card-dark text-center rounded-none shadow-none">
-        <CardHeader className="pt-8">
-          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-none bg-cyber-blue/10 text-cyber-blue border border-cyber-blue/30 shadow-[0_0_12px_rgba(0,102,177,0.2)]">
+    <div className="space-y-4 sm:space-y-6">
+      <Card className="border border-border dark:border-white/10 bg-card text-card-foreground text-center rounded-xl shadow-sm dark:shadow-none transition-colors duration-200">
+        <CardHeader className="pt-8 pb-4">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-orange-wash dark:bg-pnp-orange/15 text-orange-deep dark:text-pnp-orange border border-pnp-orange/30 shadow-sm">
             <HugeiconsIcon icon={CheckmarkCircle01Icon} size={32} />
           </div>
-          <CardTitle className="text-2xl font-bold uppercase tracking-tight text-white font-sans">
+          <CardTitle className="text-xl sm:text-2xl font-bold uppercase tracking-tight text-foreground font-display">
             EMAIL TERVERIFIKASI
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6 pb-8">
-          <p className="text-gray-400 font-sans font-light text-sm leading-relaxed">
-            Selamat, akun UKM Robotik PNP Anda telah aktif. Sistem sedang
-            mengalihkan sesi Anda ke halaman login.
+        <CardContent className="space-y-6 pb-8 px-6">
+          <p className="text-xs sm:text-sm text-muted-foreground font-sans font-normal leading-relaxed">
+            Selamat, akun UKM Robotik PNP Anda telah aktif. Sistem sedang mengalihkan sesi Anda ke halaman login.
           </p>
 
-          <div className="flex items-center justify-center gap-3 font-mono text-xs uppercase tracking-wider text-cyber-blue bg-cyber-blue/10 py-3.5 px-4 rounded-none border border-cyber-blue/20">
+          <div className="flex items-center justify-center gap-2.5 font-mono text-xs uppercase tracking-wider text-orange-deep dark:text-pnp-orange bg-orange-wash/60 dark:bg-pnp-orange/15 py-3 px-4 rounded-lg border border-pnp-orange/20">
             <HugeiconsIcon
               icon={RocketIcon}
               size={16}
-              className="animate-pulse"
+              className="animate-pulse shrink-0"
             />
-            OTOMATIS REDIRECT DALAM {countdown} DETIK...
+            Otomatis redirect dalam {countdown} detik...
           </div>
         </CardContent>
       </Card>
@@ -60,9 +59,9 @@ export function VerifiedCard() {
             "/login?message=Email+berhasil+diverifikasi.+Silakan+login.",
           )
         }
-        className="w-full text-[10px] font-mono uppercase tracking-widest text-gray-500 hover:text-white transition-colors cursor-pointer"
+        className="w-full text-[11px] font-mono uppercase tracking-widest text-muted-foreground hover:text-pnp-orange transition-colors cursor-pointer"
       >
-        [ LEWATI REDIRECT DAN LOGIN ]
+        [ Lewati Redirect dan Login ]
       </button>
     </div>
   );
