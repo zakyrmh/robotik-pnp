@@ -18,8 +18,19 @@ import { motion, AnimatePresence } from "framer-motion";
 
 // Custom SVG Icon for Logout
 const LogoutIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth={1.5}
+    stroke="currentColor"
+    className="w-4 h-4"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75"
+    />
   </svg>
 );
 
@@ -73,7 +84,9 @@ export function Header() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => window.dispatchEvent(new CustomEvent("toggle-sidebar"))}
+          onClick={() =>
+            window.dispatchEvent(new CustomEvent("toggle-sidebar"))
+          }
           className="rounded-none border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 hover:dark:text-zinc-50 transition-colors"
         >
           <HugeiconsIcon icon={Menu01Icon} size={20} />
@@ -110,7 +123,10 @@ export function Header() {
                 animate={{ rotate: 0, opacity: 1, scale: 1 }}
                 transition={{ duration: 0.15 }}
               >
-                <HugeiconsIcon icon={theme === "light" ? Moon01Icon : Sun01Icon} size={20} />
+                <HugeiconsIcon
+                  icon={theme === "light" ? Moon01Icon : Sun01Icon}
+                  size={20}
+                />
               </motion.div>
             ) : (
               <div className="h-5 w-5" />
@@ -135,7 +151,10 @@ export function Header() {
         <div className="h-8 w-px bg-zinc-200 dark:bg-zinc-800 mx-1 hidden lg:block" />
 
         {/* User Profile Info */}
-        <div id="avatar-dropdown-container" className="relative flex items-center gap-3 pl-2">
+        <div
+          id="avatar-dropdown-container"
+          className="relative flex items-center gap-3 pl-2"
+        >
           <div className="hidden flex-col items-end lg:flex select-none">
             <span className="text-sm font-bold tracking-tight text-zinc-900 dark:text-zinc-50 uppercase">
               {user?.name || "GUEST USER"}
@@ -144,24 +163,26 @@ export function Header() {
               {user?.role || "USER"}
             </span>
           </div>
-          
-          <motion.div 
+
+          <motion.div
             whileHover={{ scale: 1.05 }}
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             className="h-9 w-9 rounded-none border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-[1.5px] cursor-pointer hover:border-zinc-400 dark:hover:border-zinc-600 transition-colors relative"
           >
             <div className="flex h-full w-full items-center justify-center rounded-none bg-zinc-50 dark:bg-zinc-950 overflow-hidden text-xs font-mono font-bold text-zinc-900 dark:text-zinc-50">
-              {user?.photo_url ? (
+              {user?.avatar_url ? (
                 <Image
-                  src={user.photo_url}
+                  src={user.avatar_url}
                   alt={user.name || "User Avatar"}
                   width={36}
                   height={36}
                   className="h-full w-full object-cover"
                   unoptimized
                 />
+              ) : user?.name ? (
+                user.name.charAt(0).toUpperCase()
               ) : (
-                user?.name ? user.name.charAt(0).toUpperCase() : "G"
+                "G"
               )}
             </div>
           </motion.div>
@@ -184,7 +205,7 @@ export function Header() {
                     {user?.role || "USER"}
                   </p>
                 </div>
-                
+
                 <button
                   onClick={async () => {
                     setIsDropdownOpen(false);
@@ -202,7 +223,7 @@ export function Header() {
       </div>
 
       {/* Tricolor Tech Stripe bottom border */}
-      <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-linear-to-r from-[#0066b1] via-[#1c69d4] to-[#e22718]" />
+      <div className="absolute bottom-0 left-0 right-0 h-0.75 bg-linear-to-r from-[#0066b1] via-[#1c69d4] to-[#e22718]" />
     </header>
   );
 }

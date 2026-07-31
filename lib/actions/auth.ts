@@ -4,7 +4,6 @@ import "server-only";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import type { RegisterState } from "@/lib/types/auth";
 import {
   registerSchema,
@@ -156,35 +155,20 @@ export async function getCurrentUser() {
 
   if (!profile) return null;
 
-  let name = "";
-  let photoUrl = "";
+  let name = profile.full_name || "";
+  // Prioritaskan avatar_url dari profiles (sudah disinkron dari legacy_members saat klaim akun)
+  const avatarUrl = profile.avatar_url || "";
 
-  // 1. Cek registrations untuk caang/pendaftar
-  const { data: reg } = await supabase
-    .from("registrations")
-    .select("full_name, photo_url")
-    .eq("profile_id", user.id)
-    .maybeSingle();
-
-  if (reg) {
-    name = reg.full_name || "";
-    photoUrl = reg.photo_url || "";
-  }
-
-  // 2. Cek legacy_members untuk anggota
-  if (!name && profile.nim) {
-    const supabaseAdmin = createSupabaseClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    );
-    const { data: legacy } = await supabaseAdmin
-      .from("legacy_members")
-      .select("full_name")
+  // Cek registrations sebagai fallback nama & foto untuk caang/pendaftar
+  if (!name) {
+    const { data: reg } = await supabase
+      .from("registrations")
+      .select("full_name, photo_url")
       .eq("profile_id", user.id)
       .maybeSingle();
 
-    if (legacy) {
-      name = legacy.full_name || "";
+    if (reg) {
+      name = reg.full_name || "";
     }
   }
 
@@ -202,7 +186,7 @@ export async function getCurrentUser() {
     email: user.email,
     name,
     role: profile.role,
-    photo_url: photoUrl,
+    avatar_url: avatarUrl,
     nim: profile.nim,
     is_onboarded: profile.is_onboarded,
   };
