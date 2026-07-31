@@ -598,6 +598,14 @@ export function KegiatanAbsensiClient({
                         <td className="p-4">
                           <div className="flex items-center justify-end gap-2">
                             <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => router.push(`/kegiatan-absensi-caang/${activity.id}`)}
+                              className="h-8 rounded-none border border-zinc-200 dark:border-zinc-800 font-mono text-[10px] uppercase tracking-wider hover:bg-[#1c69d4]/10 hover:text-[#1c69d4] transition-colors"
+                            >
+                              Detail
+                            </Button>
+                            <Button
                               size="icon"
                               variant="ghost"
                               onClick={() => openEditForm(activity)}
@@ -690,6 +698,14 @@ export function KegiatanAbsensiClient({
                         )}
                       </div>
                       <div className="flex gap-2 pt-2 border-t border-zinc-100 dark:border-zinc-900">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => router.push(`/kegiatan-absensi-caang/${activity.id}`)}
+                          className="flex-1 rounded-none border-zinc-200 dark:border-zinc-800 font-mono text-[10px] uppercase h-8 bg-zinc-50 dark:bg-zinc-900"
+                        >
+                          Detail
+                        </Button>
                         <Button
                           size="sm"
                           variant="outline"
