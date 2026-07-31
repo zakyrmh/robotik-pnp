@@ -1,6 +1,14 @@
-import { createClient } from "@/lib/supabase/server";
+import type { Metadata } from "next";
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
-import { AbsensiClient } from "./AbsensiClient";
+import { createClient } from "@/lib/supabase/server";
+import { AbsensiHistoryClient } from "@/components/features/absensi/absensi-history-client";
+import { Skeleton } from "@/components/ui/skeleton";
+
+export const metadata: Metadata = {
+  title: "Histori Absensi | UKM Robotik PNP",
+  description: "Riwayat dan histori presensi kegiatan UKM Robotik PNP",
+};
 
 interface RawHistoryItem {
   id: string;
@@ -19,14 +27,18 @@ interface RawHistoryItem {
 export default async function AbsensiPage() {
   const supabase = await createClient();
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
   if (authError || !user) {
     redirect("/login");
   }
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("*")
+    .select("id, role, full_name, nim")
     .eq("id", user.id)
     .single();
 
@@ -34,31 +46,11 @@ export default async function AbsensiPage() {
     redirect("/login");
   }
 
-  // Get active activities for today
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
-
-  const endOfToday = new Date();
-  endOfToday.setHours(23, 59, 59, 999);
-
-  // Activities overlapping with today
-  const { data: activities } = await supabase
-    .from("activities")
-    .select("*")
-    .lte("start_date", endOfToday.toISOString())
-    .gte("end_date", startOfToday.toISOString())
-    .order("start_date", { ascending: true });
-
-  // Get user's attendances
-  const { data: attendances } = await supabase
-    .from("attendances")
-    .select("*")
-    .eq("profile_id", user.id);
-
-  // Get user's attendance history (joins with activities)
+  // Fetch user's attendance history (joins with activities)
   const { data: history } = await supabase
     .from("attendances")
-    .select(`
+    .select(
+      `
       id,
       check_in_at,
       status,
@@ -70,34 +62,49 @@ export default async function AbsensiPage() {
         start_date,
         location
       )
-    `)
+    `,
+    )
     .eq("profile_id", user.id)
     .order("check_in_at", { ascending: false });
 
   // Convert join result types safely without any
-  const formattedHistory = ((history as unknown as RawHistoryItem[]) || []).map((item) => ({
-    id: item.id,
-    check_in_at: item.check_in_at || "",
-    status: item.status,
-    notes: item.notes,
-    proof_url: item.proof_url,
-    activity_id: item.activity_id,
-    activity_title: item.activities?.title || "Kegiatan Tidak Diketahui",
-    activity_start_date: item.activities?.start_date || "",
-    activity_location: item.activities?.location || "Tidak Ada Lokasi",
-  }));
+  const formattedHistory = ((history as unknown as RawHistoryItem[]) || []).map(
+    (item) => ({
+      id: item.id,
+      check_in_at: item.check_in_at || "",
+      status: item.status,
+      notes: item.notes,
+      proof_url: item.proof_url,
+      activity_id: item.activity_id,
+      activity_title: item.activities?.title || "Kegiatan Tidak Diketahui",
+      activity_start_date: item.activities?.start_date || "",
+      activity_location: item.activities?.location || "Tidak Ada Lokasi",
+    }),
+  );
 
   return (
-    <AbsensiClient
-      profile={{
-        id: profile.id,
-        email: profile.email,
-        role: profile.role,
-        is_onboarded: profile.is_onboarded,
-      }}
-      initialActivities={activities || []}
-      initialAttendances={attendances || []}
-      initialHistory={formattedHistory}
-    />
+    <Suspense fallback={<AbsensiHistorySkeleton />}>
+      <AbsensiHistoryClient
+        profileName={profile.full_name || "Pengguna"}
+        nim={profile.nim || "-"}
+        role={profile.role}
+        initialHistory={formattedHistory}
+      />
+    </Suspense>
+  );
+}
+
+function AbsensiHistorySkeleton() {
+  return (
+    <div className="w-full max-w-4xl mx-auto space-y-6 px-2 sm:px-4 lg:px-6">
+      <Skeleton className="h-24 w-full rounded-xl bg-slate-200 dark:bg-slate-800" />
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <Skeleton className="h-20 w-full rounded-xl bg-slate-200 dark:bg-slate-800" />
+        <Skeleton className="h-20 w-full rounded-xl bg-slate-200 dark:bg-slate-800" />
+        <Skeleton className="h-20 w-full rounded-xl bg-slate-200 dark:bg-slate-800" />
+        <Skeleton className="h-20 w-full rounded-xl bg-slate-200 dark:bg-slate-800" />
+      </div>
+      <Skeleton className="h-96 w-full rounded-xl bg-slate-200 dark:bg-slate-800" />
+    </div>
   );
 }
