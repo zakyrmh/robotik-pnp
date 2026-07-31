@@ -125,7 +125,7 @@ export function DashboardClient({ data }: DashboardClientProps) {
       );
     }
     return (
-      <Badge className="bg-blue-50 dark:bg-blue-950/60 text-[#1e3a8a] dark:text-blue-300 border border-blue-200 dark:border-blue-900/60 font-mono text-xs uppercase px-3 py-1 rounded-full">
+      <Badge className="bg-blue-50 dark:bg-blue-950/60 text-dongker-surface dark:text-blue-300 border border-blue-200 dark:border-blue-900/60 font-mono text-xs uppercase px-3 py-1 rounded-full">
         CALON ANGGOTA
       </Badge>
     );
@@ -141,18 +141,18 @@ export function DashboardClient({ data }: DashboardClientProps) {
       >
         <div className="relative border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-xl shadow-xs overflow-hidden">
           {/* Top Tricolor Accent Line */}
-          <div className="absolute top-0 left-0 right-0 h-[3px] bg-linear-to-r from-[#1e3a8a] via-[#3b82f6] to-[#f97316]" />
+          <div className="absolute top-0 left-0 right-0 h-0.75 bg-linear-to-r from-dongker-surface via-[#3b82f6] to-pnp-orange" />
 
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <span className="text-[10px] font-mono uppercase tracking-widest text-slate-400 dark:text-slate-500 block">
                 SELAMAT DATANG KEMBALI,
               </span>
-              <h1 className="text-xl sm:text-2xl font-medium tracking-tight text-[#0a192f] dark:text-slate-100 font-display mt-0.5">
+              <h1 className="text-xl sm:text-2xl font-medium tracking-tight text-dongker-ink dark:text-slate-100 font-display mt-0.5">
                 {profile.fullName}
               </h1>
               {profile.nim && (
-                <p className="text-xs font-mono text-[#1e3a8a] dark:text-blue-400 mt-1">
+                <p className="text-xs font-mono text-dongker-surface dark:text-blue-400 mt-1">
                   NIM: {profile.nim}
                 </p>
               )}
@@ -171,13 +171,13 @@ export function DashboardClient({ data }: DashboardClientProps) {
           {/* Quick Access Shortcuts Bar */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Link href="/kegiatan" className="group">
-              <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 rounded-xl shadow-xs hover:border-[#1e3a8a] dark:hover:border-blue-500 transition-all flex items-center justify-between">
+              <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 rounded-xl shadow-xs hover:border-dongker-surface dark:hover:border-blue-500 transition-all flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-[#1e3a8a] dark:text-blue-400">
+                  <div className="p-2.5 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-dongker-surface dark:text-blue-400">
                     <HugeiconsIcon icon={Calendar03Icon} size={20} />
                   </div>
                   <div>
-                    <span className="font-display font-medium text-sm text-[#0a192f] dark:text-slate-100 block group-hover:text-[#1e3a8a] dark:group-hover:text-blue-400 transition-colors">
+                    <span className="font-display font-medium text-sm text-dongker-ink dark:text-slate-100 block group-hover:text-dongker-surface dark:group-hover:text-blue-400 transition-colors">
                       Agenda Kegiatan
                     </span>
                     <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 uppercase">
@@ -200,7 +200,7 @@ export function DashboardClient({ data }: DashboardClientProps) {
                     <HugeiconsIcon icon={CheckmarkCircle01Icon} size={20} />
                   </div>
                   <div>
-                    <span className="font-display font-medium text-sm text-[#0a192f] dark:text-slate-100 block group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                    <span className="font-display font-medium text-sm text-dongker-ink dark:text-slate-100 block group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                       Histori Absensi
                     </span>
                     <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 uppercase">
@@ -217,13 +217,13 @@ export function DashboardClient({ data }: DashboardClientProps) {
             </Link>
 
             <Link href="/piket" className="group">
-              <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 rounded-xl shadow-xs hover:border-[#f97316] transition-all flex items-center justify-between">
+              <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 rounded-xl shadow-xs hover:border-pnp-orange transition-all flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-lg bg-[#ffedd5] dark:bg-orange-950/60 text-[#c2410c] dark:text-orange-300">
+                  <div className="p-2.5 rounded-lg bg-orange-wash dark:bg-orange-950/60 text-orange-deep dark:text-orange-300">
                     <HugeiconsIcon icon={CleanIcon} size={20} />
                   </div>
                   <div>
-                    <span className="font-display font-medium text-sm text-[#0a192f] dark:text-slate-100 block group-hover:text-[#f97316] transition-colors">
+                    <span className="font-display font-medium text-sm text-dongker-ink dark:text-slate-100 block group-hover:text-pnp-orange transition-colors">
                       Piket Laboratorium
                     </span>
                     <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 uppercase">
@@ -248,11 +248,11 @@ export function DashboardClient({ data }: DashboardClientProps) {
               <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs">
                 <CardHeader className="border-b border-slate-100 dark:border-slate-800 pb-3 flex flex-row items-center justify-between">
                   <div>
-                    <CardTitle className="text-base font-display font-medium text-[#0a192f] dark:text-slate-100 flex items-center gap-2">
+                    <CardTitle className="text-base font-display font-medium text-dongker-ink dark:text-slate-100 flex items-center gap-2">
                       <HugeiconsIcon
                         icon={Calendar03Icon}
                         size={18}
-                        className="text-[#1e3a8a] dark:text-blue-400"
+                        className="text-dongker-surface dark:text-blue-400"
                       />
                       Agenda Kegiatan Mendatang
                     </CardTitle>
@@ -264,7 +264,7 @@ export function DashboardClient({ data }: DashboardClientProps) {
                     variant="ghost"
                     size="sm"
                     asChild
-                    className="text-xs font-mono text-[#1e3a8a] dark:text-blue-400"
+                    className="text-xs font-mono text-dongker-surface dark:text-blue-400"
                   >
                     <Link href="/kegiatan">Semua &rarr;</Link>
                   </Button>
@@ -281,7 +281,7 @@ export function DashboardClient({ data }: DashboardClientProps) {
                         className="border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 p-3.5 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"
                       >
                         <div className="space-y-1">
-                          <span className="font-display font-medium text-sm text-[#0a192f] dark:text-slate-100 block">
+                          <span className="font-display font-medium text-sm text-dongker-ink dark:text-slate-100 block">
                             {act.title}
                           </span>
                           <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400 font-mono">
@@ -308,7 +308,7 @@ export function DashboardClient({ data }: DashboardClientProps) {
                         <Button
                           size="sm"
                           asChild
-                          className="bg-[#1e3a8a] hover:bg-[#1e40af] dark:bg-blue-600 text-white font-mono text-xs h-8 px-3 rounded-lg shrink-0"
+                          className="bg-dongker-surface hover:bg-dongker-hover dark:bg-blue-600 text-white font-mono text-xs h-8 px-3 rounded-lg shrink-0"
                         >
                           <Link href={`/kegiatan/${act.id}/absensi`}>
                             Absen Sekarang
@@ -323,7 +323,7 @@ export function DashboardClient({ data }: DashboardClientProps) {
               {/* Card 2: Attendance Telemetry Summary */}
               <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-display font-medium text-[#0a192f] dark:text-slate-100 flex items-center gap-2">
+                  <CardTitle className="text-sm font-display font-medium text-dongker-ink dark:text-slate-100 flex items-center gap-2">
                     <HugeiconsIcon
                       icon={CheckmarkCircle01Icon}
                       size={18}
@@ -356,7 +356,7 @@ export function DashboardClient({ data }: DashboardClientProps) {
                       <span className="font-mono text-[10px] uppercase text-slate-400 dark:text-slate-500 block">
                         IZIN / SAKIT
                       </span>
-                      <span className="font-display text-xl font-bold text-[#1e3a8a] dark:text-blue-400">
+                      <span className="font-display text-xl font-bold text-dongker-surface dark:text-blue-400">
                         {data.anggotaStats.izinCount}
                       </span>
                     </div>
@@ -376,13 +376,13 @@ export function DashboardClient({ data }: DashboardClientProps) {
 
             {/* Right 1 Col: Piket Duty Status Card */}
             <div className="space-y-6">
-              <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl border-l-4 border-l-[#f97316] shadow-xs">
+              <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl border-l-4 border-l-pnp-orange shadow-xs">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-display font-medium text-[#0a192f] dark:text-slate-100 flex items-center gap-2">
+                  <CardTitle className="text-sm font-display font-medium text-dongker-ink dark:text-slate-100 flex items-center gap-2">
                     <HugeiconsIcon
                       icon={CleanIcon}
                       size={18}
-                      className="text-[#f97316]"
+                      className="text-pnp-orange"
                     />
                     Status Piket Lab Anda
                   </CardTitle>
@@ -398,7 +398,7 @@ export function DashboardClient({ data }: DashboardClientProps) {
                           {data.anggotaStats.piketDays.map((day) => (
                             <Badge
                               key={day}
-                              className="bg-orange-50 dark:bg-orange-950/60 text-[#c2410c] dark:text-orange-300 border border-orange-200 dark:border-orange-900/60 text-[10px] rounded-full px-2"
+                              className="bg-orange-50 dark:bg-orange-950/60 text-orange-deep dark:text-orange-300 border border-orange-200 dark:border-orange-900/60 text-[10px] rounded-full px-2"
                             >
                               {day}
                             </Badge>
@@ -418,7 +418,7 @@ export function DashboardClient({ data }: DashboardClientProps) {
                       <span className="text-slate-500 dark:text-slate-400">
                         LAPORAN MASUK:
                       </span>
-                      <span className="font-bold text-[#0a192f] dark:text-slate-100 text-sm">
+                      <span className="font-bold text-dongker-ink dark:text-slate-100 text-sm">
                         {data.anggotaStats.piketLogsCount} Laporan
                       </span>
                     </div>
@@ -432,7 +432,7 @@ export function DashboardClient({ data }: DashboardClientProps) {
                       </div>
                       <Button
                         asChild
-                        className="w-full bg-[#f97316] hover:bg-[#c2410c] text-white font-mono text-xs rounded-lg py-2.5 shadow-xs uppercase"
+                        className="w-full bg-pnp-orange hover:bg-orange-deep text-white font-mono text-xs rounded-lg py-2.5 shadow-xs uppercase"
                       >
                         <Link href="/piket">Kirim Laporan Piket</Link>
                       </Button>
@@ -470,11 +470,11 @@ export function DashboardClient({ data }: DashboardClientProps) {
             {/* Card: Group & Division info */}
             <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs">
               <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-display font-medium text-[#0a192f] dark:text-slate-100 flex items-center gap-2">
+                <CardTitle className="text-sm font-display font-medium text-dongker-ink dark:text-slate-100 flex items-center gap-2">
                   <HugeiconsIcon
                     icon={UserGroupIcon}
                     size={18}
-                    className="text-[#1e3a8a] dark:text-blue-400"
+                    className="text-dongker-surface dark:text-blue-400"
                   />
                   Informasi Pendaftaran
                 </CardTitle>
@@ -484,7 +484,7 @@ export function DashboardClient({ data }: DashboardClientProps) {
                   <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase">
                     Kelompok Anda
                   </p>
-                  <p className="text-sm font-bold font-display text-[#0a192f] dark:text-slate-100 mt-0.5">
+                  <p className="text-sm font-bold font-display text-dongker-ink dark:text-slate-100 mt-0.5">
                     {data.caangStats.groupName || "Belum Ditetapkan"}
                   </p>
                 </div>
@@ -492,7 +492,7 @@ export function DashboardClient({ data }: DashboardClientProps) {
                   <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase">
                     Divisi Magang
                   </p>
-                  <p className="text-sm font-bold font-display text-[#0a192f] dark:text-slate-100 mt-0.5">
+                  <p className="text-sm font-bold font-display text-dongker-ink dark:text-slate-100 mt-0.5">
                     {data.caangStats.divisionName || "Belum Memilih"}
                   </p>
                 </div>
@@ -502,11 +502,11 @@ export function DashboardClient({ data }: DashboardClientProps) {
             {/* Card: Tasks Statistics */}
             <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-display font-medium text-[#0a192f] dark:text-slate-100 flex items-center gap-2">
+                <CardTitle className="text-sm font-display font-medium text-dongker-ink dark:text-slate-100 flex items-center gap-2">
                   <HugeiconsIcon
                     icon={Task01Icon}
                     size={18}
-                    className="text-[#f97316]"
+                    className="text-pnp-orange"
                   />
                   Penyelesaian Tugas
                 </CardTitle>
@@ -526,7 +526,7 @@ export function DashboardClient({ data }: DashboardClientProps) {
                       cx="48"
                       cy="48"
                       r="38"
-                      className="stroke-[#1e3a8a] dark:stroke-blue-500"
+                      className="stroke-dongker-surface dark:stroke-blue-500"
                       strokeWidth="7"
                       fill="transparent"
                       strokeDasharray={2 * Math.PI * 38}
@@ -544,7 +544,7 @@ export function DashboardClient({ data }: DashboardClientProps) {
                     />
                   </svg>
                   <div className="absolute flex flex-col items-center">
-                    <span className="text-lg font-bold font-mono text-[#0a192f] dark:text-slate-100">
+                    <span className="text-lg font-bold font-mono text-dongker-ink dark:text-slate-100">
                       {data.caangStats.submittedTasks}/
                       {data.caangStats.totalTasks}
                     </span>
@@ -557,7 +557,7 @@ export function DashboardClient({ data }: DashboardClientProps) {
                   <p className="text-slate-500 dark:text-slate-400">
                     Rata-rata Nilai:
                   </p>
-                  <p className="text-base font-bold text-[#1e3a8a] dark:text-blue-400">
+                  <p className="text-base font-bold text-dongker-surface dark:text-blue-400">
                     {data.caangStats.averageGrade} / 100
                   </p>
                 </div>
@@ -567,7 +567,7 @@ export function DashboardClient({ data }: DashboardClientProps) {
             {/* Card: Attendance stats */}
             <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-display font-medium text-[#0a192f] dark:text-slate-100 flex items-center gap-2">
+                <CardTitle className="text-sm font-display font-medium text-dongker-ink dark:text-slate-100 flex items-center gap-2">
                   <HugeiconsIcon
                     icon={Calendar03Icon}
                     size={18}
@@ -609,7 +609,7 @@ export function DashboardClient({ data }: DashboardClientProps) {
                     />
                   </svg>
                   <div className="absolute flex flex-col items-center">
-                    <span className="text-lg font-bold font-mono text-[#0a192f] dark:text-slate-100">
+                    <span className="text-lg font-bold font-mono text-dongker-ink dark:text-slate-100">
                       {data.caangStats.totalAttendances > 0
                         ? Math.round(
                             (data.caangStats.presentCount /
@@ -627,11 +627,11 @@ export function DashboardClient({ data }: DashboardClientProps) {
                 <div className="text-center font-mono text-xs text-slate-500 dark:text-slate-400">
                   <p>
                     Hadir{" "}
-                    <span className="font-bold text-[#0a192f] dark:text-slate-100">
+                    <span className="font-bold text-dongker-ink dark:text-slate-100">
                       {data.caangStats.presentCount}
                     </span>{" "}
                     dari{" "}
-                    <span className="font-bold text-[#0a192f] dark:text-slate-100">
+                    <span className="font-bold text-dongker-ink dark:text-slate-100">
                       {data.caangStats.totalAttendances}
                     </span>{" "}
                     agenda.
@@ -661,11 +661,11 @@ export function DashboardClient({ data }: DashboardClientProps) {
               <span className="text-[10px] font-mono uppercase text-slate-400 dark:text-slate-500 block">
                 TOTAL CALON ANGGOTA
               </span>
-              <span className="font-display text-3xl font-bold text-[#0a192f] dark:text-slate-100 mt-1 block">
+              <span className="font-display text-3xl font-bold text-dongker-ink dark:text-slate-100 mt-1 block">
                 {data.adminOrStats.totalCaangs}
               </span>
             </div>
-            <div className="p-3 bg-blue-50 dark:bg-blue-950/60 text-[#1e3a8a] dark:text-blue-400 rounded-lg">
+            <div className="p-3 bg-blue-50 dark:bg-blue-950/60 text-dongker-surface dark:text-blue-400 rounded-lg">
               <HugeiconsIcon icon={UserGroupIcon} size={24} />
             </div>
           </Card>
@@ -675,7 +675,7 @@ export function DashboardClient({ data }: DashboardClientProps) {
               <span className="text-[10px] font-mono uppercase text-slate-400 dark:text-slate-500 block">
                 TOTAL ANGGOTA AKTIFF
               </span>
-              <span className="font-display text-3xl font-bold text-[#0a192f] dark:text-slate-100 mt-1 block">
+              <span className="font-display text-3xl font-bold text-dongker-ink dark:text-slate-100 mt-1 block">
                 {data.adminOrStats.totalAnggota}
               </span>
             </div>
@@ -689,11 +689,11 @@ export function DashboardClient({ data }: DashboardClientProps) {
               <span className="text-[10px] font-mono uppercase text-slate-400 dark:text-slate-500 block">
                 SUBMISSION PERLU DIPERIKSA
               </span>
-              <span className="font-display text-3xl font-bold text-[#f97316] mt-1 block">
+              <span className="font-display text-3xl font-bold text-pnp-orange mt-1 block">
                 {data.adminOrStats.pendingSubmissions}
               </span>
             </div>
-            <div className="p-3 bg-orange-50 dark:bg-orange-950/60 text-[#c2410c] dark:text-orange-300 rounded-lg">
+            <div className="p-3 bg-orange-50 dark:bg-orange-950/60 text-orange-deep dark:text-orange-300 rounded-lg">
               <HugeiconsIcon icon={Task01Icon} size={24} />
             </div>
           </Card>
@@ -724,7 +724,7 @@ export function DashboardClient({ data }: DashboardClientProps) {
               <span className="text-[10px] font-mono uppercase text-slate-400 dark:text-slate-500 block">
                 AGENDA HARI INI
               </span>
-              <span className="font-display text-3xl font-bold text-[#0a192f] dark:text-slate-100 mt-1 block">
+              <span className="font-display text-3xl font-bold text-dongker-ink dark:text-slate-100 mt-1 block">
                 {data.adminKomdisStats.todayActivitiesCount}
               </span>
             </div>

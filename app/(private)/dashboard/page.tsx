@@ -45,7 +45,7 @@ export default async function DashboardPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, role, nim")
+    .select("id, role, nim, full_name")
     .eq("id", user.id)
     .single();
 
@@ -53,13 +53,17 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  const { data: registration } = await supabase
-    .from("registrations")
-    .select("full_name")
-    .eq("profile_id", user.id)
-    .maybeSingle();
-
-  const fullName = registration?.full_name || "Pengguna";
+  // Ambil nama dari profiles.full_name (sumber utama, sudah disinkron dari legacy_members).
+  // Fallback ke registrations.full_name untuk caang yang belum memiliki nama di profiles.
+  let fullName = profile.full_name || "";
+  if (!fullName) {
+    const { data: registration } = await supabase
+      .from("registrations")
+      .select("full_name")
+      .eq("profile_id", user.id)
+      .maybeSingle();
+    fullName = registration?.full_name || "Pengguna";
+  }
 
   // Fetch user discipline summary & active sanctions
   const { data: disciplineSummary } = await supabase
