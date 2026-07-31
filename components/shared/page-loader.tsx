@@ -67,7 +67,7 @@ export function PageLoader({ message = "Memuat data..." }: PageLoaderProps) {
         <div className="w-48 sm:w-56 space-y-3.5 mt-1">
           <div className="h-1.5 w-full bg-muted border border-border/50 rounded-full overflow-hidden">
             <motion.div
-              className="h-full bg-gradient-to-r from-dongker-surface via-pnp-orange to-dongker-surface rounded-full"
+              className="h-full bg-linear-to-r from-dongker-surface via-pnp-orange to-dongker-surface rounded-full"
               style={{ backgroundSize: "200% 100%" }}
               animate={{ backgroundPosition: ["0% 0%", "100% 0%", "0% 0%"] }}
               transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
