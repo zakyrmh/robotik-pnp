@@ -1,7 +1,18 @@
-import { createClient } from "@/lib/supabase/server";
+import type { Metadata } from "next";
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
-import { DashboardClient, DashboardData } from "./DashboardClient";
-import { DisciplineWidget } from "@/components/features/komdis/discipline-widget";
+import { createClient } from "@/lib/supabase/server";
+import {
+  DashboardClient,
+  DashboardData,
+} from "@/components/features/dashboard/dashboard-client";
+import { Skeleton } from "@/components/ui/skeleton";
+
+export const metadata: Metadata = {
+  title: "Dashboard | UKM Robotik PNP",
+  description:
+    "Dasbor utama Sistem Manajemen UKM Robotik Politeknik Negeri Padang",
+};
 
 interface RawGroupMember {
   caang_groups: {
@@ -77,6 +88,10 @@ export default async function DashboardPage() {
       nim: profile.nim,
       fullName,
     },
+    discipline: {
+      netPoints,
+      activeSpLevel,
+    },
   };
 
   if (profile.role === "caang") {
@@ -143,25 +158,61 @@ export default async function DashboardPage() {
       .map((pm) => pm.piket_schedules?.day)
       .filter(Boolean) as string[];
 
+    const daysMap = [
+      "Minggu",
+      "Senin",
+      "Selasa",
+      "Rabu",
+      "Kamis",
+      "Jumat",
+      "Sabtu",
+    ] as const;
+    const todayDayName = daysMap[new Date().getDay()];
+    const isScheduledToday = piketDays.includes(todayDayName);
+
     // 2. Piket reports submitted
     const { count: piketLogsCount } = await supabase
       .from("piket_logs")
       .select("*", { count: "exact", head: true })
       .eq("reported_by", user.id);
 
-    // 3. Attendances count
+    // 3. Attendances count breakdown
     const { data: attendances } = await supabase
       .from("attendances")
       .select("status")
       .eq("profile_id", user.id);
-    const presentCount =
-      attendances?.filter((a) => a.status === "hadir" || a.status === "telat")
-        .length || 0;
+
+    let hadirCount = 0;
+    let telatCount = 0;
+    let izinCount = 0;
+    let alfaCount = 0;
+
+    attendances?.forEach((a) => {
+      if (a.status === "hadir") hadirCount++;
+      else if (a.status === "telat") telatCount++;
+      else if (a.status === "izin" || a.status === "sakit") izinCount++;
+      else if (a.status === "alfa") alfaCount++;
+    });
+
+    // 4. Upcoming Activities (limit 3)
+    const nowIso = new Date().toISOString();
+    const { data: upcomingActs } = await supabase
+      .from("activities")
+      .select("id, title, start_date, location")
+      .gte("end_date", nowIso)
+      .order("start_date", { ascending: true })
+      .limit(3);
 
     dataPayload.anggotaStats = {
       piketDays,
       piketLogsCount: piketLogsCount || 0,
-      presentCount,
+      isScheduledToday,
+      hadirCount,
+      telatCount,
+      izinCount,
+      alfaCount,
+      totalAttendances: attendances?.length || 0,
+      upcomingActivities: upcomingActs || [],
     };
   } else if (profile.role === "admin-or") {
     // 1. Caang count
@@ -275,9 +326,20 @@ export default async function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <DisciplineWidget netPoints={netPoints} activeSpLevel={activeSpLevel} />
+    <Suspense fallback={<DashboardSkeleton />}>
       <DashboardClient data={dataPayload} />
+    </Suspense>
+  );
+}
+
+function DashboardSkeleton() {
+  return (
+    <div className="w-full max-w-5xl mx-auto space-y-6 px-2 sm:px-4 lg:px-6">
+      <Skeleton className="h-24 w-full rounded-xl bg-slate-200 dark:bg-slate-800" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Skeleton className="h-48 w-full rounded-xl bg-slate-200 dark:bg-slate-800 md:col-span-2" />
+        <Skeleton className="h-48 w-full rounded-xl bg-slate-200 dark:bg-slate-800" />
+      </div>
     </div>
   );
 }
