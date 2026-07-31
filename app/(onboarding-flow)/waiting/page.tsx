@@ -1,5 +1,12 @@
+import type { Metadata } from "next";
 import { guardWaitingPage, getRegistrationStatus } from "@/lib/actions/waiting";
 import { WaitingClient } from "@/components/waiting/waiting-client";
+
+export const metadata: Metadata = {
+  title: "Status Pendaftaran | UKM Robotik PNP",
+  description:
+    "Status verifikasi pendaftaran calon anggota UKM Robotik Politeknik Negeri Padang",
+};
 
 // Server Component — guard jalan di sini sebelum render apapun
 export default async function WaitingPage() {

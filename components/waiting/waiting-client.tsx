@@ -23,33 +23,33 @@ interface WaitingClientProps {
 const STATUS_CONFIG = {
   pending: {
     icon: Clock01Icon,
-    iconClass: "text-amber-500",
+    iconClass: "text-orange-deep dark:text-pnp-orange",
     ringClass:
-      "border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/40",
+      "border-pnp-orange/30 bg-orange-wash/60 dark:bg-pnp-orange/15 shadow-sm",
     badgeClass:
-      "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 border border-amber-200 dark:border-amber-800",
+      "bg-orange-wash dark:bg-pnp-orange/15 text-orange-deep dark:text-pnp-orange border border-pnp-orange/30 font-mono text-[11px] font-semibold uppercase tracking-wider",
     label: "Menunggu Verifikasi",
     description:
       "Data pendaftaran kamu sedang ditinjau oleh pengurus UKM Robotik PNP. Proses ini biasanya memakan waktu 1–3 hari kerja.",
   },
   verified: {
     icon: CheckmarkBadge01Icon,
-    iconClass: "text-emerald-500",
+    iconClass: "text-emerald-600 dark:text-emerald-400",
     ringClass:
-      "border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/40",
+      "border-emerald-500/30 bg-emerald-500/10 dark:bg-emerald-500/15 shadow-sm",
     badgeClass:
-      "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800",
+      "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 font-mono text-[11px] font-semibold uppercase tracking-wider",
     label: "Pendaftaran Disetujui",
     description:
       "Selamat! Kamu resmi menjadi anggota UKM Robotik PNP. Kamu akan diarahkan ke dashboard.",
   },
   rejected: {
     icon: Cancel01Icon,
-    iconClass: "text-red-500",
+    iconClass: "text-destructive",
     ringClass:
-      "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/40",
+      "border-destructive/30 bg-destructive/10 shadow-sm",
     badgeClass:
-      "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 border border-red-200 dark:border-red-800",
+      "bg-destructive/10 text-destructive border border-destructive/30 font-mono text-[11px] font-semibold uppercase tracking-wider",
     label: "Pendaftaran Ditolak",
     description:
       "Maaf, pendaftaran kamu tidak dapat disetujui saat ini. Silakan hubungi pengurus UKM Robotik PNP untuk informasi lebih lanjut.",
@@ -63,7 +63,7 @@ function PulseDots() {
       {[0, 1, 2].map((i) => (
         <motion.span
           key={i}
-          className="w-1.5 h-1.5 rounded-full bg-amber-400"
+          className="w-1.5 h-1.5 rounded-full bg-pnp-orange"
           animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1.2, 0.8] }}
           transition={{ duration: 1.4, repeat: Infinity, delay: i * 0.2 }}
         />
@@ -128,43 +128,22 @@ export function WaitingClient({
   }, [status, router]);
 
   return (
-    <div className="relative min-h-screen bg-white dark:bg-neutral-950 flex items-center justify-center p-4 sm:p-8">
-      {/* Background subtle grid — sama seperti pola onboarding */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.03] dark:opacity-[0.06]"
-        style={{
-          backgroundImage: `linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)`,
-          backgroundSize: "40px 40px",
-        }}
-      />
-
+    <div className="relative flex items-center justify-center p-4 sm:p-6 transition-colors duration-200">
       <div className="relative z-10 w-full max-w-lg">
-        {/* Header — logo UKM */}
-        <div className="mb-8 flex flex-col items-center gap-3 text-center">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center">
-              <span className="text-white text-xs font-black">R</span>
-            </div>
-            <span className="font-semibold text-sm text-neutral-700 dark:text-neutral-300">
-              UKM Robotik PNP
-            </span>
-          </div>
-        </div>
-
         {/* Card utama */}
-        <div className="rounded-3xl border border-neutral-100 dark:border-neutral-800 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl shadow-xl overflow-hidden">
+        <div className="rounded-xl border border-border dark:border-white/10 bg-card text-card-foreground shadow-sm dark:shadow-none overflow-hidden transition-colors duration-200">
           {/* Top accent bar */}
           <div
             className={`h-1 w-full ${
               status === "pending"
-                ? "bg-linear-to-r from-amber-400 to-amber-500"
+                ? "bg-gradient-to-r from-dongker-surface via-pnp-orange to-dongker-surface"
                 : status === "verified"
-                  ? "bg-linear-to-r from-emerald-400 to-emerald-500"
-                  : "bg-linear-to-r from-red-400 to-red-500"
+                  ? "bg-gradient-to-r from-emerald-500 to-emerald-400"
+                  : "bg-gradient-to-r from-destructive to-red-600"
             }`}
           />
 
-          <div className="px-8 py-10">
+          <div className="px-6 py-8 sm:px-8 sm:py-10">
             {/* Icon + Badge status */}
             <div className="flex flex-col items-center gap-4 text-center mb-8">
               <AnimatePresence mode="wait">
@@ -174,11 +153,11 @@ export function WaitingClient({
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0.5, opacity: 0 }}
                   transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                  className={`w-20 h-20 rounded-2xl border-2 flex items-center justify-center ${config.ringClass}`}
+                  className={`w-20 h-20 rounded-full border flex items-center justify-center ${config.ringClass}`}
                 >
                   <HugeiconsIcon
                     icon={StatusIcon}
-                    size={40}
+                    size={38}
                     className={config.iconClass}
                   />
                 </motion.div>
@@ -186,19 +165,19 @@ export function WaitingClient({
 
               <div className="space-y-2">
                 <span
-                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${config.badgeClass}`}
+                  className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${config.badgeClass}`}
                 >
                   {status === "pending" && <PulseDots />}
                   {config.label}
                 </span>
 
-                <h1 className="text-xl font-bold text-neutral-900 dark:text-neutral-50">
+                <h1 className="text-xl sm:text-2xl font-bold font-display uppercase tracking-tight text-foreground">
                   {status === "pending" && <>Hei, {firstName}! 👋</>}
                   {status === "verified" && <>Selamat, {firstName}! 🎉</>}
                   {status === "rejected" && <>Hai, {firstName}</>}
                 </h1>
 
-                <p className="text-sm text-neutral-500 dark:text-neutral-400 max-w-sm leading-relaxed">
+                <p className="text-xs sm:text-sm text-muted-foreground max-w-sm leading-relaxed font-sans">
                   {config.description}
                 </p>
               </div>
@@ -208,7 +187,7 @@ export function WaitingClient({
             <div className="mb-8">
               <div className="flex items-start justify-between relative">
                 {/* Connector line */}
-                <div className="absolute top-4 left-4 right-4 h-px bg-neutral-100 dark:bg-neutral-800" />
+                <div className="absolute top-4 left-4 right-4 h-px bg-border" />
 
                 {TIMELINE_STEPS.map((step, i) => {
                   const isDone = i < activeStep;
@@ -223,29 +202,29 @@ export function WaitingClient({
                         animate={{
                           backgroundColor: isDone
                             ? status === "rejected" && i === 2
-                              ? "rgb(239 68 68)"
-                              : "rgb(16 185 129)"
+                              ? "#ef4444"
+                              : "#10b981"
                             : isActive && status === "rejected"
-                              ? "rgb(239 68 68)"
+                              ? "#ef4444"
                               : isActive
-                                ? "rgb(59 130 246)"
-                                : "rgb(229 231 235)",
+                                ? "#f97316"
+                                : "var(--color-border)",
                         }}
-                        className="relative z-10 w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm dark:shadow-none"
+                        className="relative z-10 w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold font-mono shadow-xs"
                       >
                         {isDone ? "✓" : i + 1}
                       </motion.div>
                       <div className="text-center">
                         <p
-                          className={`text-xs font-semibold ${
+                          className={`text-xs font-semibold uppercase tracking-wider font-mono ${
                             isDone || isActive
-                              ? "text-neutral-800 dark:text-neutral-200"
-                              : "text-neutral-400"
+                              ? "text-foreground"
+                              : "text-muted-foreground"
                           }`}
                         >
                           {step.label}
                         </p>
-                        <p className="text-[10px] text-neutral-400 dark:text-neutral-500 mt-0.5">
+                        <p className="text-[10px] text-muted-foreground mt-0.5 font-sans">
                           {step.sublabel}
                         </p>
                       </div>
@@ -257,14 +236,14 @@ export function WaitingClient({
 
             {/* Info box: waktu submit */}
             {submittedAt && (
-              <div className="mb-6 flex gap-3 rounded-2xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-100 dark:border-neutral-700/60 px-4 py-3">
+              <div className="mb-4 flex gap-3 rounded-lg bg-muted/40 border border-border px-4 py-3">
                 <HugeiconsIcon
                   icon={Mail01Icon}
                   size={16}
-                  className="mt-0.5 shrink-0 text-neutral-400"
+                  className="mt-0.5 shrink-0 text-muted-foreground"
                 />
-                <div className="text-xs text-neutral-500 dark:text-neutral-400">
-                  <span className="font-medium text-neutral-700 dark:text-neutral-300">
+                <div className="text-xs text-muted-foreground font-sans">
+                  <span className="font-medium text-foreground">
                     Form dikirim pada{" "}
                   </span>
                   {submittedAt}
@@ -274,16 +253,15 @@ export function WaitingClient({
 
             {/* Info box: tips */}
             {status === "pending" && (
-              <div className="mb-6 flex gap-3 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-100 dark:border-blue-900/60 px-4 py-3 text-sm text-blue-700 dark:text-blue-300">
+              <div className="mb-6 flex gap-3 rounded-lg bg-orange-wash/40 dark:bg-pnp-orange/10 border border-pnp-orange/20 px-4 py-3 text-xs text-muted-foreground font-sans">
                 <HugeiconsIcon
                   icon={InformationCircleIcon}
                   size={18}
-                  className="mt-0.5 shrink-0"
+                  className="mt-0.5 shrink-0 text-pnp-orange"
                 />
-                <p className="text-xs leading-relaxed">
+                <p className="leading-relaxed">
                   Halaman ini akan otomatis memperbarui status setiap 60 detik.
-                  Kamu tidak perlu melakukan apa pun — cukup tunggu notifikasi
-                  dari pengurus.
+                  Kamu tidak perlu melakukan apa pun — cukup tunggu notifikasi dari pengurus.
                 </p>
               </div>
             )}
@@ -293,12 +271,12 @@ export function WaitingClient({
               <button
                 onClick={checkStatus}
                 disabled={isPolling}
-                className="w-full h-11 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full h-11 sm:h-12 rounded-lg border border-border bg-background text-xs sm:text-sm font-semibold text-foreground uppercase tracking-wider hover:bg-muted/50 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <HugeiconsIcon
                   icon={ReloadIcon}
-                  size={15}
-                  className={isPolling ? "animate-spin" : ""}
+                  size={16}
+                  className={isPolling ? "animate-spin text-pnp-orange" : "text-pnp-orange"}
                 />
                 {isPolling ? "Memeriksa..." : "Periksa Status Sekarang"}
               </button>
@@ -310,16 +288,16 @@ export function WaitingClient({
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 onClick={() => router.push("/dashboard")}
-                className="w-full h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold transition-colors flex items-center justify-center gap-2 shadow-md shadow-emerald-500/25"
+                className="w-full h-11 sm:h-12 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer"
               >
-                <HugeiconsIcon icon={CheckmarkBadge01Icon} size={16} />
+                <HugeiconsIcon icon={CheckmarkBadge01Icon} size={18} />
                 Masuk ke Dashboard
               </motion.button>
             )}
 
             {/* Last checked info */}
             {status === "pending" && (
-              <p className="mt-3 text-center text-[11px] text-neutral-400 dark:text-neutral-600">
+              <p className="mt-3 text-center text-micro font-mono uppercase tracking-wider text-muted-foreground">
                 Terakhir diperiksa:{" "}
                 {lastChecked.toLocaleTimeString("id-ID", {
                   hour: "2-digit",
@@ -332,13 +310,13 @@ export function WaitingClient({
         </div>
 
         {/* Footer */}
-        <p className="mt-6 text-center text-xs text-neutral-400 dark:text-neutral-600">
+        <p className="mt-6 text-center text-xs text-muted-foreground font-sans">
           Ada pertanyaan?{" "}
           <a
             href="https://instagram.com/ukmrobotikpnp"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-500 hover:text-blue-600 font-medium transition-colors"
+            className="text-pnp-orange hover:underline font-mono text-micro font-semibold uppercase tracking-wider"
           >
             Hubungi kami di Instagram
           </a>
