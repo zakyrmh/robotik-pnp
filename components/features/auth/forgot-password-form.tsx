@@ -45,7 +45,8 @@ export function ForgotPasswordForm() {
             LUPA PASSWORD
           </CardTitle>
           <CardDescription className="text-xs sm:text-sm text-muted-foreground font-sans font-normal leading-relaxed">
-            Masukkan NIM dan alamat email yang terdaftar untuk mengatur ulang password akun Anda.
+            Masukkan NIM dan alamat email yang terdaftar untuk mengatur ulang
+            password akun Anda.
           </CardDescription>
         </CardHeader>
 
@@ -73,7 +74,7 @@ export function ForgotPasswordForm() {
             <div className="space-y-1.5">
               <Label
                 htmlFor="nim"
-                className="font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
+                className="font-mono text-micro font-semibold uppercase tracking-wider text-muted-foreground"
               >
                 Nomor Induk Mahasiswa (NIM)
               </Label>
@@ -98,7 +99,7 @@ export function ForgotPasswordForm() {
             <div className="space-y-1.5">
               <Label
                 htmlFor="email"
-                className="font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
+                className="font-mono text-micro font-semibold uppercase tracking-wider text-muted-foreground"
               >
                 Alamat Email
               </Label>
@@ -134,7 +135,7 @@ export function ForgotPasswordForm() {
             {/* Submit Button */}
             <Button
               type="submit"
-              className="w-full h-11 sm:h-12 bg-[#1e3a8a] hover:bg-[#1e40af] dark:bg-pnp-orange dark:hover:bg-orange-deep text-white font-sans font-semibold uppercase tracking-wider rounded-lg transition-all shadow-sm cursor-pointer disabled:opacity-60"
+              className="w-full h-11 sm:h-12 bg-dongker-surface hover:bg-dongker-hover dark:bg-pnp-orange dark:hover:bg-orange-deep text-white font-sans font-semibold uppercase tracking-wider rounded-lg transition-all shadow-sm cursor-pointer disabled:opacity-60"
               disabled={isPending}
             >
               {isPending ? (

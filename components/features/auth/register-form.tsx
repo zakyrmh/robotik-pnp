@@ -80,7 +80,7 @@ export function RegisterForm() {
             <div className="space-y-1.5">
               <Label
                 htmlFor="email"
-                className="font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
+                className="font-mono text-micro font-semibold uppercase tracking-wider text-muted-foreground"
               >
                 Alamat Email
               </Label>
@@ -105,7 +105,7 @@ export function RegisterForm() {
             <div className="space-y-1.5">
               <Label
                 htmlFor="password"
-                className="font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
+                className="font-mono text-micro font-semibold uppercase tracking-wider text-muted-foreground"
               >
                 Password
               </Label>
@@ -156,7 +156,7 @@ export function RegisterForm() {
                       />
                     ))}
                   </div>
-                  <div className="flex items-center justify-between text-[11px] font-mono">
+                  <div className="flex items-center justify-between text-micro font-mono">
                     <span className="text-muted-foreground uppercase tracking-wider">
                       Kekuatan Kunci:
                     </span>
@@ -174,7 +174,7 @@ export function RegisterForm() {
             <div className="space-y-1.5">
               <Label
                 htmlFor="confirmPassword"
-                className="font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
+                className="font-mono text-micro font-semibold uppercase tracking-wider text-muted-foreground"
               >
                 Konfirmasi Password
               </Label>
@@ -210,7 +210,7 @@ export function RegisterForm() {
             {/* Submit Button */}
             <Button
               type="submit"
-              className="w-full h-11 sm:h-12 bg-[#1e3a8a] hover:bg-[#1e40af] dark:bg-pnp-orange dark:hover:bg-orange-deep text-white font-sans font-semibold uppercase tracking-wider rounded-lg transition-all shadow-sm cursor-pointer disabled:opacity-60"
+              className="w-full h-11 sm:h-12 bg-dongker-surface hover:bg-dongker-hover dark:bg-pnp-orange dark:hover:bg-orange-deep text-white font-sans font-semibold uppercase tracking-wider rounded-lg transition-all shadow-sm cursor-pointer disabled:opacity-60"
               disabled={isPending}
             >
               {isPending ? (
@@ -247,7 +247,7 @@ export function RegisterForm() {
         </CardFooter>
       </Card>
 
-      <p className="text-center text-[11px] text-muted-foreground font-sans leading-relaxed px-2">
+      <p className="text-center text-micro text-muted-foreground font-sans leading-relaxed px-2">
         Dengan mendaftar, Anda menyetujui{" "}
         <Link
           href="/terms"

@@ -64,7 +64,8 @@ export function LoginForm() {
             PORTAL LOGIN
           </CardTitle>
           <CardDescription className="text-xs sm:text-sm text-muted-foreground font-sans font-normal leading-relaxed">
-            Masukkan alamat email dan kata sandi Anda untuk mengakses sistem manajemen UKM Robotik PNP.
+            Masukkan alamat email dan kata sandi Anda untuk mengakses sistem
+            manajemen UKM Robotik PNP.
           </CardDescription>
         </CardHeader>
 
@@ -96,7 +97,7 @@ export function LoginForm() {
             <div className="space-y-1.5">
               <Label
                 htmlFor="email"
-                className="font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
+                className="font-mono text-micro font-semibold uppercase tracking-wider text-muted-foreground"
               >
                 Alamat Email
               </Label>
@@ -122,13 +123,13 @@ export function LoginForm() {
               <div className="flex items-center justify-between">
                 <Label
                   htmlFor="password"
-                  className="font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
+                  className="font-mono text-micro font-semibold uppercase tracking-wider text-muted-foreground"
                 >
                   Password
                 </Label>
                 <Link
                   href="/forgot-password"
-                  className="font-mono text-[11px] font-medium uppercase tracking-wider text-pnp-orange hover:text-orange-deep dark:hover:text-orange-300 hover:underline transition-colors"
+                  className="font-mono text-micro font-medium uppercase tracking-wider text-pnp-orange hover:text-orange-deep dark:hover:text-orange-300 hover:underline transition-colors"
                 >
                   Lupa Password?
                 </Link>
@@ -152,7 +153,9 @@ export function LoginForm() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                   tabIndex={-1}
-                  aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                  aria-label={
+                    showPassword ? "Sembunyikan password" : "Tampilkan password"
+                  }
                 >
                   <HugeiconsIcon
                     icon={showPassword ? ViewOffIcon : EyeIcon}
@@ -177,7 +180,7 @@ export function LoginForm() {
             {/* Submit Button */}
             <Button
               type="submit"
-              className="w-full h-11 sm:h-12 bg-[#1e3a8a] hover:bg-[#1e40af] dark:bg-pnp-orange dark:hover:bg-orange-deep text-white font-sans font-semibold uppercase tracking-wider rounded-lg transition-all shadow-sm cursor-pointer disabled:opacity-60"
+              className="w-full h-11 sm:h-12 bg-dongker-surface hover:bg-dongker-hover dark:bg-pnp-orange dark:hover:bg-orange-deep text-white font-sans font-semibold uppercase tracking-wider rounded-lg transition-all shadow-sm cursor-pointer disabled:opacity-60"
               disabled={isPending}
             >
               {isPending ? (

@@ -70,7 +70,7 @@ export function UpdatePasswordForm() {
             <div className="space-y-1.5">
               <Label
                 htmlFor="password"
-                className="font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
+                className="font-mono text-micro font-semibold uppercase tracking-wider text-muted-foreground"
               >
                 Password Baru
               </Label>
@@ -93,7 +93,9 @@ export function UpdatePasswordForm() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                   tabIndex={-1}
-                  aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
+                  aria-label={
+                    showPassword ? "Sembunyikan password" : "Tampilkan password"
+                  }
                 >
                   <HugeiconsIcon
                     icon={showPassword ? ViewOffIcon : EyeIcon}
@@ -107,7 +109,7 @@ export function UpdatePasswordForm() {
             <div className="space-y-1.5">
               <Label
                 htmlFor="confirmPassword"
-                className="font-mono text-[11px] font-semibold uppercase tracking-wider text-muted-foreground"
+                className="font-mono text-micro font-semibold uppercase tracking-wider text-muted-foreground"
               >
                 Konfirmasi Password
               </Label>
@@ -130,7 +132,11 @@ export function UpdatePasswordForm() {
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
                   tabIndex={-1}
-                  aria-label={showConfirmPassword ? "Sembunyikan password" : "Tampilkan password"}
+                  aria-label={
+                    showConfirmPassword
+                      ? "Sembunyikan password"
+                      : "Tampilkan password"
+                  }
                 >
                   <HugeiconsIcon
                     icon={showConfirmPassword ? ViewOffIcon : EyeIcon}
@@ -143,7 +149,7 @@ export function UpdatePasswordForm() {
             {/* Submit Button */}
             <Button
               type="submit"
-              className="w-full h-11 sm:h-12 bg-[#1e3a8a] hover:bg-[#1e40af] dark:bg-pnp-orange dark:hover:bg-orange-deep text-white font-sans font-semibold uppercase tracking-wider rounded-lg transition-all shadow-sm cursor-pointer disabled:opacity-60 mt-2"
+              className="w-full h-11 sm:h-12 bg-dongker-surface hover:bg-dongker-hover dark:bg-pnp-orange dark:hover:bg-orange-deep text-white font-sans font-semibold uppercase tracking-wider rounded-lg transition-all shadow-sm cursor-pointer disabled:opacity-60 mt-2"
               disabled={isPending}
             >
               {isPending ? (

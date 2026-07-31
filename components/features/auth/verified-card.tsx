@@ -39,7 +39,8 @@ export function VerifiedCard() {
         </CardHeader>
         <CardContent className="space-y-6 pb-8 px-6">
           <p className="text-xs sm:text-sm text-muted-foreground font-sans font-normal leading-relaxed">
-            Selamat, akun UKM Robotik PNP Anda telah aktif. Sistem sedang mengalihkan sesi Anda ke halaman login.
+            Selamat, akun UKM Robotik PNP Anda telah aktif. Sistem sedang
+            mengalihkan sesi Anda ke halaman login.
           </p>
 
           <div className="flex items-center justify-center gap-2.5 font-mono text-xs uppercase tracking-wider text-orange-deep dark:text-pnp-orange bg-orange-wash/60 dark:bg-pnp-orange/15 py-3 px-4 rounded-lg border border-pnp-orange/20">
@@ -59,7 +60,7 @@ export function VerifiedCard() {
             "/login?message=Email+berhasil+diverifikasi.+Silakan+login.",
           )
         }
-        className="w-full text-[11px] font-mono uppercase tracking-widest text-muted-foreground hover:text-pnp-orange transition-colors cursor-pointer"
+        className="w-full text-micro font-mono uppercase tracking-widest text-muted-foreground hover:text-pnp-orange transition-colors cursor-pointer"
       >
         [ Lewati Redirect dan Login ]
       </button>
