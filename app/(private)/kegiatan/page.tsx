@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Calendar03Icon,
   Search01Icon,
   EyeIcon,
+  CalendarAdd01Icon,
 } from "@hugeicons/core-free-icons";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,6 +22,7 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { CreateKomdisActivityDialog } from "@/components/features/komdis/create-komdis-activity-dialog";
 
 interface Activity {
   id: string;
@@ -41,32 +43,43 @@ export default function KegiatanPage() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // Helper to check if attendance window is active (2 hours before start until 2 hours after end)
   const isAttendanceWindowActive = (activity: Activity | null) => {
     if (!activity) return false;
     const now = new Date();
-    const startWindow = new Date(new Date(activity.start_date).getTime() - 2 * 60 * 60 * 1000);
-    const endWindow = new Date(new Date(activity.end_date).getTime() + 2 * 60 * 60 * 1000);
+    const startWindow = new Date(
+      new Date(activity.start_date).getTime() - 2 * 60 * 60 * 1000,
+    );
+    const endWindow = new Date(
+      new Date(activity.end_date).getTime() + 2 * 60 * 60 * 1000,
+    );
     return now >= startWindow && now <= endWindow;
   };
 
   // Search & Filter state
   const [search, setSearch] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState<"all" | "upcoming" | "ongoing" | "completed">("all");
-  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState<
+    "all" | "upcoming" | "ongoing" | "completed"
+  >("all");
+  const [selectedActivity, setSelectedActivity] = useState<Activity | null>(
+    null,
+  );
+
+  const [refreshKey, setRefreshKey] = useState(0);
+  const fetchActivities = useCallback(() => {
+    setRefreshKey((k) => k + 1);
+  }, []);
 
   useEffect(() => {
     if (authLoading || !user) return;
+    let isMounted = true;
 
-    const fetchActivities = async () => {
-      setLoadingData(true);
+    async function loadData() {
       setError(null);
       try {
-        // Tentukan target_audience berdasarkan role user
-        // Caang hanya melihat kegiatan caang, lainnya melihat kegiatan anggota
-        const audience = user.role === "caang" ? "caang" : "anggota";
-
+        const audience = user?.role === "caang" ? "caang" : "anggota";
         const { data, error: queryError } = await supabase
           .from("activities")
           .select("*")
@@ -74,17 +87,27 @@ export default function KegiatanPage() {
           .order("start_date", { ascending: true });
 
         if (queryError) throw queryError;
-        setActivities(data || []);
+        if (isMounted) {
+          setActivities(data || []);
+          setLoadingData(false);
+        }
       } catch (err) {
         console.error("Gagal mengambil data kegiatan:", err);
-        setError("Gagal memuat daftar kegiatan. Silakan coba beberapa saat lagi.");
-      } finally {
-        setLoadingData(false);
+        if (isMounted) {
+          setError(
+            "Gagal memuat daftar kegiatan. Silakan coba beberapa saat lagi.",
+          );
+          setLoadingData(false);
+        }
       }
-    };
+    }
 
-    fetchActivities();
-  }, [user, authLoading, supabase]);
+    loadData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user, authLoading, supabase, refreshKey]);
 
   // Dynamic telemetry calculations
   const stats = useMemo<{
@@ -140,7 +163,8 @@ export default function KegiatanPage() {
       const searchLower = search.toLowerCase();
       const matchSearch =
         item.title.toLowerCase().includes(searchLower) ||
-        (item.description && item.description.toLowerCase().includes(searchLower)) ||
+        (item.description &&
+          item.description.toLowerCase().includes(searchLower)) ||
         (item.location && item.location.toLowerCase().includes(searchLower));
 
       // 2. Status Filter
@@ -172,23 +196,31 @@ export default function KegiatanPage() {
   };
 
   const formatIndoTime = (dateStr: string) => {
-    return new Date(dateStr).toLocaleTimeString("id-ID", {
-      hour: "2-digit",
-      minute: "2-digit",
-    }) + " WIB";
+    return (
+      new Date(dateStr).toLocaleTimeString("id-ID", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }) + " WIB"
+    );
   };
 
   const formatTimeRange = (startStr: string, endStr: string) => {
     const start = new Date(startStr);
     const end = new Date(endStr);
-    
-    const startTime = start.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
-    const endTime = end.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
-    
+
+    const startTime = start.toLocaleTimeString("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    const endTime = end.toLocaleTimeString("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
     if (start.toDateString() === end.toDateString()) {
       return `${startTime} - ${endTime} WIB`;
     }
-    
+
     return `${startTime} (Mulai) s/d ${endTime} (Selesai) WIB`;
   };
 
@@ -227,19 +259,37 @@ export default function KegiatanPage() {
       <div className="relative border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-6 rounded-none shadow-sm overflow-hidden">
         {/* Tricolor Tech Stripe at Top */}
         <div className="absolute top-0 left-0 right-0 h-[3px] bg-linear-to-r from-[#0066b1] via-[#1c69d4] to-[#e22718]" />
-        
+
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-xl font-bold uppercase tracking-widest text-zinc-900 dark:text-zinc-50 font-sans flex items-center gap-2">
-              <HugeiconsIcon icon={Calendar03Icon} size={22} className="text-[#1c69d4] dark:text-[#0066b1]" />
+              <HugeiconsIcon
+                icon={Calendar03Icon}
+                size={22}
+                className="text-[#1c69d4] dark:text-[#0066b1]"
+              />
               Kegiatan UKM Robotik
             </h1>
             <p className="text-xs font-mono uppercase tracking-wider text-zinc-500 mt-1">
               Agenda Pelatihan, Rapat, dan Workshop Teknologi Robotik PNP
             </p>
           </div>
-          
+
           <div className="flex items-center gap-2">
+            {(user?.role === "admin-komdis" ||
+              user?.role === "super-admin") && (
+              <Button
+                onClick={() => setIsCreateModalOpen(true)}
+                className="bg-[#0066b1] hover:bg-[#1c69d4] text-white font-mono text-xs uppercase tracking-wider rounded-none cursor-pointer border border-[#0066b1]/50 shadow-xs"
+              >
+                <HugeiconsIcon
+                  icon={CalendarAdd01Icon}
+                  size={16}
+                  className="mr-1.5"
+                />
+                Buat Kegiatan Komdis
+              </Button>
+            )}
             <Badge className="bg-zinc-100 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800 px-3 py-1.5 rounded-none font-mono text-[10px] uppercase tracking-wider">
               TOTAL KEGIATAN: {activities.length}
             </Badge>
@@ -256,24 +306,32 @@ export default function KegiatanPage() {
           <div>
             <h3 className="font-mono text-[10px] font-medium uppercase tracking-widest text-zinc-500 flex items-center justify-between">
               <span>ACTIVITY TELEMETRY</span>
-              <span className="text-[9px] bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 px-1.5 py-0.5 rounded-none font-bold">TOTAL: {stats.total}</span>
+              <span className="text-[9px] bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 px-1.5 py-0.5 rounded-none font-bold">
+                TOTAL: {stats.total}
+              </span>
             </h3>
-            
+
             <div className="grid grid-cols-3 gap-2 mt-4 text-center">
               <div className="space-y-1">
-                <span className="font-mono text-[8px] uppercase tracking-wider text-zinc-400 block">ONGOING</span>
+                <span className="font-mono text-[8px] uppercase tracking-wider text-zinc-400 block">
+                  ONGOING
+                </span>
                 <span className="font-sans text-xl font-extrabold text-zinc-900 dark:text-zinc-100 tracking-tight">
                   {stats.ongoing}
                 </span>
               </div>
               <div className="space-y-1 border-x border-zinc-100 dark:border-zinc-900">
-                <span className="font-mono text-[8px] uppercase tracking-wider text-zinc-400 block">UPCOMING</span>
+                <span className="font-mono text-[8px] uppercase tracking-wider text-zinc-400 block">
+                  UPCOMING
+                </span>
                 <span className="font-sans text-xl font-extrabold text-zinc-900 dark:text-zinc-100 tracking-tight">
                   {stats.upcoming}
                 </span>
               </div>
               <div className="space-y-1">
-                <span className="font-mono text-[8px] uppercase tracking-wider text-zinc-400 block">COMPLETED</span>
+                <span className="font-mono text-[8px] uppercase tracking-wider text-zinc-400 block">
+                  COMPLETED
+                </span>
                 <span className="font-sans text-xl font-extrabold text-zinc-900 dark:text-zinc-100 tracking-tight">
                   {stats.completed}
                 </span>
@@ -284,28 +342,41 @@ export default function KegiatanPage() {
           <div className="space-y-2 mt-4">
             <div className="h-2 w-full bg-zinc-100 dark:bg-zinc-900 rounded-none overflow-hidden flex">
               {stats.ongoing > 0 && (
-                <div 
-                  className="h-full bg-[#0066b1]" 
-                  style={{ width: `${stats.total > 0 ? (stats.ongoing / stats.total) * 100 : 0}%` }}
+                <div
+                  className="h-full bg-[#0066b1]"
+                  style={{
+                    width: `${stats.total > 0 ? (stats.ongoing / stats.total) * 100 : 0}%`,
+                  }}
                 />
               )}
               {stats.upcoming > 0 && (
-                <div 
-                  className="h-full bg-[#1c69d4]" 
-                  style={{ width: `${stats.total > 0 ? (stats.upcoming / stats.total) * 100 : 0}%` }}
+                <div
+                  className="h-full bg-[#1c69d4]"
+                  style={{
+                    width: `${stats.total > 0 ? (stats.upcoming / stats.total) * 100 : 0}%`,
+                  }}
                 />
               )}
               {stats.completed > 0 && (
-                <div 
-                  className="h-full bg-zinc-400 dark:bg-zinc-650" 
-                  style={{ width: `${stats.total > 0 ? (stats.completed / stats.total) * 100 : 0}%` }}
+                <div
+                  className="h-full bg-zinc-400 dark:bg-zinc-650"
+                  style={{
+                    width: `${stats.total > 0 ? (stats.completed / stats.total) * 100 : 0}%`,
+                  }}
                 />
               )}
             </div>
             <div className="flex justify-between text-[8px] font-mono text-zinc-400 uppercase">
-              <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-[#0066b1]" /> ONGOING</span>
-              <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-[#1c69d4]" /> UPCOMING</span>
-              <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-zinc-400 dark:bg-zinc-650" /> DONE</span>
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-[#0066b1]" /> ONGOING
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-[#1c69d4]" /> UPCOMING
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-zinc-400 dark:bg-zinc-650" />{" "}
+                DONE
+              </span>
             </div>
           </div>
         </div>
@@ -318,7 +389,7 @@ export default function KegiatanPage() {
             <h3 className="font-mono text-[10px] font-medium uppercase tracking-widest text-zinc-500 mb-3">
               NEXT UPCOMING ACTIVITY
             </h3>
-            
+
             {stats.next ? (
               <div className="space-y-1.5">
                 <span className="font-sans text-sm font-bold text-zinc-900 dark:text-zinc-100 block line-clamp-1 uppercase">
@@ -350,19 +421,25 @@ export default function KegiatanPage() {
             <h3 className="font-mono text-[10px] font-medium uppercase tracking-widest text-zinc-500 mb-3">
               SYSTEM & ACCESS TELEMETRY
             </h3>
-            
+
             <div className="space-y-2 text-[10px] font-mono">
               <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-900 pb-1">
                 <span className="text-zinc-500">ROLE LEVEL:</span>
-                <span className="font-bold text-zinc-900 dark:text-zinc-100 uppercase">{user?.role || "GUEST"}</span>
+                <span className="font-bold text-zinc-900 dark:text-zinc-100 uppercase">
+                  {user?.role || "GUEST"}
+                </span>
               </div>
               <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-900 pb-1">
                 <span className="text-zinc-500">TARGET AUDIENCE:</span>
-                <span className="font-bold text-[#1c69d4] dark:text-[#0066b1] uppercase">{user?.role === "caang" ? "KHUSUS CAANG" : "ANGGOTA"}</span>
+                <span className="font-bold text-[#1c69d4] dark:text-[#0066b1] uppercase">
+                  {user?.role === "caang" ? "KHUSUS CAANG" : "ANGGOTA"}
+                </span>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-zinc-500">UNIQUE LOCATIONS:</span>
-                <span className="font-bold text-zinc-900 dark:text-zinc-100">{stats.uniqueLocations}</span>
+                <span className="font-bold text-zinc-900 dark:text-zinc-100">
+                  {stats.uniqueLocations}
+                </span>
               </div>
             </div>
           </div>
@@ -393,7 +470,11 @@ export default function KegiatanPage() {
         <div className="w-full sm:w-48">
           <select
             value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value as "all" | "upcoming" | "ongoing" | "completed")}
+            onChange={(e) =>
+              setSelectedStatus(
+                e.target.value as "all" | "upcoming" | "ongoing" | "completed",
+              )
+            }
             className="h-9 w-full bg-zinc-50/50 dark:bg-zinc-900/30 px-3 rounded-none border border-zinc-200 dark:border-zinc-800 font-mono text-xs uppercase tracking-wider text-zinc-900 dark:text-zinc-50 focus:outline-hidden focus:border-zinc-400 dark:focus:border-zinc-600"
           >
             <option value="all">Semua Status</option>
@@ -422,12 +503,18 @@ export default function KegiatanPage() {
           <div className="w-10 h-10 rounded-none bg-[#e22718]/10 flex items-center justify-center text-[#e22718] mb-4 border border-[#e22718]/20 font-bold font-mono">
             !
           </div>
-          <p className="text-xs font-mono uppercase tracking-wider text-zinc-800 dark:text-zinc-200">{error}</p>
+          <p className="text-xs font-mono uppercase tracking-wider text-zinc-800 dark:text-zinc-200">
+            {error}
+          </p>
         </div>
       ) : filteredActivities.length === 0 ? (
         // Empty State
         <div className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-12 text-center rounded-none">
-          <HugeiconsIcon icon={Calendar03Icon} size={40} className="mx-auto text-zinc-400 dark:text-zinc-600 mb-3" />
+          <HugeiconsIcon
+            icon={Calendar03Icon}
+            size={40}
+            className="mx-auto text-zinc-400 dark:text-zinc-600 mb-3"
+          />
           <p className="font-mono text-xs uppercase tracking-widest text-zinc-600 dark:text-zinc-400">
             Tidak ada agenda kegiatan ditemukan.
           </p>
@@ -495,7 +582,10 @@ export default function KegiatanPage() {
 
                     {/* Name Cell */}
                     <td className="p-4 align-middle">
-                      <div className="font-semibold text-zinc-900 dark:text-zinc-100 truncate max-w-[280px]" title={activity.title}>
+                      <div
+                        className="font-semibold text-zinc-900 dark:text-zinc-100 truncate max-w-[280px]"
+                        title={activity.title}
+                      >
                         {activity.title}
                       </div>
                       <div className="font-mono text-[9px] text-zinc-500 mt-0.5 tracking-widest uppercase">
@@ -509,13 +599,19 @@ export default function KegiatanPage() {
                         {formatIndoDate(activity.start_date)}
                       </div>
                       <div className="font-mono text-[10px] text-zinc-500 mt-0.5">
-                        {formatTimeRange(activity.start_date, activity.end_date)}
+                        {formatTimeRange(
+                          activity.start_date,
+                          activity.end_date,
+                        )}
                       </div>
                     </td>
 
                     {/* Location Cell */}
                     <td className="p-4 align-middle">
-                      <div className="text-zinc-800 dark:text-zinc-300 text-xs truncate max-w-[220px]" title={activity.location || "TBA"}>
+                      <div
+                        className="text-zinc-800 dark:text-zinc-300 text-xs truncate max-w-[220px]"
+                        title={activity.location || "TBA"}
+                      >
                         {activity.location || "TBA"}
                       </div>
                     </td>
@@ -534,14 +630,20 @@ export default function KegiatanPage() {
                           onClick={() => setSelectedActivity(activity)}
                           className="rounded-none border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 hover:dark:text-zinc-50 hover:bg-zinc-100 dark:hover:bg-zinc-900 h-8 px-3 font-mono text-[10px] uppercase tracking-wider"
                         >
-                          <HugeiconsIcon icon={EyeIcon} size={14} className="mr-1.5" />
+                          <HugeiconsIcon
+                            icon={EyeIcon}
+                            size={14}
+                            className="mr-1.5"
+                          />
                           Detail
                         </Button>
                         {isAttendanceWindowActive(activity) && (
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => router.push(`/kegiatan/${activity.id}/absensi`)}
+                            onClick={() =>
+                              router.push(`/kegiatan/${activity.id}/absensi`)
+                            }
                             className="rounded-none border border-[#1c69d4]/30 dark:border-[#0066b1]/30 text-[#1c69d4] dark:text-[#0066b1] hover:bg-zinc-100 dark:hover:bg-zinc-900 h-8 px-3 font-mono text-[10px] uppercase tracking-wider"
                           >
                             Ambil Absen
@@ -576,12 +678,20 @@ export default function KegiatanPage() {
                           className="object-cover h-full w-full"
                         />
                       ) : (
-                        <HugeiconsIcon icon={Calendar03Icon} size={16} className="text-zinc-400" />
+                        <HugeiconsIcon
+                          icon={Calendar03Icon}
+                          size={16}
+                          className="text-zinc-400"
+                        />
                       )}
                     </div>
                     <div className="min-w-0">
-                      <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest block">NAMA KEGIATAN</span>
-                      <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate block max-w-[170px]">{activity.title}</span>
+                      <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest block">
+                        NAMA KEGIATAN
+                      </span>
+                      <span className="text-xs font-bold text-zinc-900 dark:text-zinc-100 truncate block max-w-[170px]">
+                        {activity.title}
+                      </span>
                     </div>
                   </div>
                   {getStatusBadge(activity)}
@@ -591,17 +701,29 @@ export default function KegiatanPage() {
                 <div className="space-y-2 pt-1 font-sans border-t border-zinc-100 dark:border-zinc-900">
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest block">TANGGAL</span>
-                      <span className="text-xs text-zinc-700 dark:text-zinc-300 font-semibold">{formatIndoDate(activity.start_date)}</span>
+                      <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest block">
+                        TANGGAL
+                      </span>
+                      <span className="text-xs text-zinc-700 dark:text-zinc-300 font-semibold">
+                        {formatIndoDate(activity.start_date)}
+                      </span>
                     </div>
                     <div>
-                      <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest block">WAKTU</span>
-                      <span className="text-xs text-zinc-700 dark:text-zinc-300 font-mono">{formatIndoTime(activity.start_date)}</span>
+                      <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest block">
+                        WAKTU
+                      </span>
+                      <span className="text-xs text-zinc-700 dark:text-zinc-300 font-mono">
+                        {formatIndoTime(activity.start_date)}
+                      </span>
                     </div>
                   </div>
                   <div className="border-t border-zinc-100 dark:border-zinc-900 pt-2">
-                    <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest block">LOKASI</span>
-                    <span className="text-xs text-zinc-700 dark:text-zinc-300">{activity.location || "TBA"}</span>
+                    <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest block">
+                      LOKASI
+                    </span>
+                    <span className="text-xs text-zinc-700 dark:text-zinc-300">
+                      {activity.location || "TBA"}
+                    </span>
                   </div>
                 </div>
 
@@ -613,14 +735,20 @@ export default function KegiatanPage() {
                     onClick={() => setSelectedActivity(activity)}
                     className={`rounded-none border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 font-mono text-[10px] uppercase tracking-wider px-3 h-8 hover:bg-zinc-100 dark:hover:bg-zinc-900 ${isAttendanceWindowActive(activity) ? "w-1/2" : "w-full"}`}
                   >
-                    <HugeiconsIcon icon={EyeIcon} size={14} className="mr-1.5" />
+                    <HugeiconsIcon
+                      icon={EyeIcon}
+                      size={14}
+                      className="mr-1.5"
+                    />
                     Detail
                   </Button>
                   {isAttendanceWindowActive(activity) && (
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => router.push(`/kegiatan/${activity.id}/absensi`)}
+                      onClick={() =>
+                        router.push(`/kegiatan/${activity.id}/absensi`)
+                      }
                       className="rounded-none border border-[#1c69d4]/30 dark:border-[#0066b1]/30 text-[#1c69d4] dark:text-[#0066b1] font-mono text-[10px] uppercase tracking-wider px-3 h-8 hover:bg-zinc-100 dark:hover:bg-zinc-900 w-1/2"
                     >
                       Ambil Absen
@@ -636,7 +764,10 @@ export default function KegiatanPage() {
       {/* =======================================================
           MODAL: VIEW ACTIVITY DETAIL (SHADCN DIALOG)
           ======================================================= */}
-      <Dialog open={!!selectedActivity} onOpenChange={(open) => !open && setSelectedActivity(null)}>
+      <Dialog
+        open={!!selectedActivity}
+        onOpenChange={(open) => !open && setSelectedActivity(null)}
+      >
         <DialogContent className="rounded-none max-w-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 overflow-y-auto max-h-[90vh] p-0 font-sans">
           {selectedActivity && (
             <>
@@ -644,7 +775,7 @@ export default function KegiatanPage() {
               <div className="relative h-64 w-full bg-zinc-50 dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-center overflow-hidden shrink-0">
                 {/* Tricolor Tech Stripe at Top of Modal */}
                 <div className="absolute top-0 left-0 right-0 h-[3px] bg-linear-to-r from-[#0066b1] via-[#1c69d4] to-[#e22718] z-20" />
-                
+
                 {selectedActivity.banner_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -654,15 +785,22 @@ export default function KegiatanPage() {
                   />
                 ) : (
                   <div className="w-full h-full bg-linear-to-br from-[#0066b1]/10 via-[#1c69d4]/5 to-transparent flex items-center justify-center">
-                    <HugeiconsIcon icon={Calendar03Icon} size={64} className="text-zinc-400 dark:text-zinc-500" />
+                    <HugeiconsIcon
+                      icon={Calendar03Icon}
+                      size={64}
+                      className="text-zinc-400 dark:text-zinc-500"
+                    />
                   </div>
                 )}
-                
+
                 {/* Floating Badges */}
                 <div className="absolute bottom-4 left-4 z-10 flex gap-2">
                   {getStatusBadge(selectedActivity)}
                   <Badge className="bg-zinc-900/60 dark:bg-zinc-950/60 text-white border border-zinc-700 font-mono text-[9px] rounded-none px-2 uppercase py-0.5 backdrop-blur-xs">
-                    AUDIENCE: {selectedActivity.target_audience === "caang" ? "CAANG" : "ANGGOTA"}
+                    AUDIENCE:{" "}
+                    {selectedActivity.target_audience === "caang"
+                      ? "CAANG"
+                      : "ANGGOTA"}
                   </Badge>
                 </div>
               </div>
@@ -685,16 +823,31 @@ export default function KegiatanPage() {
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-zinc-50 dark:bg-zinc-900/30 p-3 border border-zinc-150 dark:border-zinc-900">
                     <div>
-                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">Hari & Tanggal</span>
-                      <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">{formatIndoDate(selectedActivity.start_date)}</span>
+                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
+                        Hari & Tanggal
+                      </span>
+                      <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+                        {formatIndoDate(selectedActivity.start_date)}
+                      </span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">Durasi Waktu</span>
-                      <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 font-mono">{formatTimeRange(selectedActivity.start_date, selectedActivity.end_date)}</span>
+                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
+                        Durasi Waktu
+                      </span>
+                      <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200 font-mono">
+                        {formatTimeRange(
+                          selectedActivity.start_date,
+                          selectedActivity.end_date,
+                        )}
+                      </span>
                     </div>
                     <div className="sm:col-span-2 border-t border-zinc-200/50 dark:border-zinc-800/50 pt-2 mt-1">
-                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">Lokasi</span>
-                      <span className="text-xs font-semibold text-[#1c69d4] dark:text-[#0066b1]">{selectedActivity.location || "TBA (To Be Announced)"}</span>
+                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
+                        Lokasi
+                      </span>
+                      <span className="text-xs font-semibold text-[#1c69d4] dark:text-[#0066b1]">
+                        {selectedActivity.location || "TBA (To Be Announced)"}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -706,7 +859,8 @@ export default function KegiatanPage() {
                   </h4>
                   <div className="bg-zinc-50 dark:bg-zinc-900/30 p-3.5 border border-zinc-150 dark:border-zinc-900">
                     <p className="text-xs text-zinc-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed">
-                      {selectedActivity.description || "Tidak ada deskripsi detail untuk kegiatan ini."}
+                      {selectedActivity.description ||
+                        "Tidak ada deskripsi detail untuk kegiatan ini."}
                     </p>
                   </div>
                 </div>
@@ -736,6 +890,13 @@ export default function KegiatanPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Modal Buat Kegiatan Baru untuk Komdis & Super Admin */}
+      <CreateKomdisActivityDialog
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={fetchActivities}
+      />
     </div>
   );
 }
