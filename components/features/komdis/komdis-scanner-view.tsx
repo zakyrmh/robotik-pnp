@@ -58,7 +58,7 @@ export function KomdisScannerView({
           if (res.success) {
             setScanResult({
               type: "success",
-              message: res.message || "Presensi Berhasil Recorded",
+              message: res.message || "Presensi Berhasil Dicatat",
             });
           } else {
             setScanResult({
@@ -132,15 +132,15 @@ export function KomdisScannerView({
   };
 
   return (
-    <div className="space-y-6 max-w-xl mx-auto">
-      {/* Header Info */}
-      <Card className="bg-surface-card-dark border-hairline-dark rounded-none text-center p-6 shadow-none">
+    <div className="space-y-4 sm:space-y-6 max-w-xl mx-auto w-full">
+      {/* Header Info - Light/Dark Mode & Precision Blueprint */}
+      <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-center p-4 sm:p-6 shadow-xs">
         <CardHeader className="p-0 space-y-1">
-          <div className="flex items-center justify-center gap-2 font-mono text-xs text-cyber-blue uppercase tracking-widest">
+          <div className="flex items-center justify-center gap-2 font-mono text-xs text-[#1e3a8a] dark:text-blue-400 uppercase tracking-widest font-semibold">
             <HugeiconsIcon icon={QrCodeIcon} size={18} />
-            <span>MODUL PEMINDAL PRESIENSI KOMDIS</span>
+            <span>MODUL PEMINDAI PRESENSI KOMDIS</span>
           </div>
-          <CardTitle className="text-xl font-bold uppercase text-white font-sans">
+          <CardTitle className="text-lg sm:text-xl font-display font-medium text-[#0a192f] dark:text-slate-100">
             {activityTitle}
           </CardTitle>
         </CardHeader>
@@ -149,13 +149,13 @@ export function KomdisScannerView({
       {/* Live Feedback Toast */}
       {scanResult && (
         <div
-          className={`p-4 border font-mono text-xs uppercase tracking-wider flex items-center justify-between ${
+          className={`p-3.5 sm:p-4 border rounded-xl font-mono text-xs uppercase tracking-wider flex items-center justify-between shadow-xs ${
             scanResult.type === "success"
-              ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
-              : "bg-crimson-red/10 text-crimson-red border-crimson-red/30"
+              ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/60"
+              : "bg-red-50 dark:bg-red-950/40 text-red-800 dark:text-red-300 border-red-200 dark:border-red-900/60"
           }`}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <HugeiconsIcon
               icon={
                 scanResult.type === "success"
@@ -168,7 +168,7 @@ export function KomdisScannerView({
           </div>
           <button
             onClick={() => setScanResult(null)}
-            className="text-gray-400 hover:text-white cursor-pointer"
+            className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 cursor-pointer font-bold"
           >
             [ X ]
           </button>
@@ -176,49 +176,49 @@ export function KomdisScannerView({
       )}
 
       {/* Camera Scanner Box */}
-      <Card className="bg-surface-card-dark border-hairline-dark rounded-none p-4 shadow-none">
-        <div className="text-center mb-3 font-mono text-[10px] text-gray-400 uppercase tracking-widest">
+      <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 sm:p-4 shadow-xs">
+        <div className="text-center mb-3 font-mono text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-widest font-semibold">
           ARAHKAN KAMERA HP KE DYNAMIC QR CODE PESERTA
         </div>
         <div
           id="reader"
-          className="w-full bg-canvas-dark border border-hairline-dark overflow-hidden rounded-none text-white font-mono"
+          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 overflow-hidden rounded-lg font-mono text-slate-900 dark:text-slate-100"
         />
       </Card>
 
-      {/* Action Controls */}
+      {/* Action Controls - Mobile First */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Button
           type="button"
           onClick={() => setIsManualOpen(true)}
-          className="bg-cyber-blue hover:bg-cyber-blue/90 text-white font-mono text-xs uppercase tracking-wider rounded-none cursor-pointer py-3"
+          className="bg-[#1e3a8a] hover:bg-[#1e40af] dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-medium text-xs rounded-lg cursor-pointer py-3 shadow-xs"
         >
-          <HugeiconsIcon icon={UserCheck01Icon} size={16} className="mr-2" />[
-          OVERRIDE MANUAL ]
+          <HugeiconsIcon icon={UserCheck01Icon} size={16} className="mr-2" />
+          OVERRIDE MANUAL
         </Button>
 
         <Button
           type="button"
           disabled={isPending}
           onClick={handleBatchAlfa}
-          className="bg-crimson-red hover:bg-crimson-red/90 text-white font-mono text-xs uppercase tracking-wider rounded-none cursor-pointer py-3"
+          className="bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-500 text-white font-medium text-xs rounded-lg cursor-pointer py-3 shadow-xs"
         >
-          <HugeiconsIcon icon={UserGroupIcon} size={16} className="mr-2" />[
-          BATCH MARK ALFA ]
+          <HugeiconsIcon icon={UserGroupIcon} size={16} className="mr-2" />
+          BATCH MARK ALFA
         </Button>
       </div>
 
       {/* Modal Manual Override */}
       {isManualOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4">
-          <div className="bg-surface-card-dark border border-hairline-dark p-6 max-w-md w-full space-y-4">
-            <div className="border-b border-hairline-dark pb-3 flex justify-between items-center">
-              <span className="font-mono text-xs text-cyber-blue uppercase tracking-widest">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 dark:bg-black/80 backdrop-blur-xs p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 sm:p-6 max-w-md w-full space-y-4 shadow-xl">
+            <div className="border-b border-slate-200 dark:border-slate-800 pb-3 flex justify-between items-center">
+              <span className="font-mono text-xs text-[#1e3a8a] dark:text-blue-400 font-semibold uppercase tracking-widest">
                 PRESENSI MANUAL OVERRIDE
               </span>
               <button
                 onClick={() => setIsManualOpen(false)}
-                className="text-gray-400 hover:text-white font-mono text-xs cursor-pointer"
+                className="text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 font-mono text-xs cursor-pointer"
               >
                 [ TUTUP X ]
               </button>
@@ -229,7 +229,7 @@ export function KomdisScannerView({
               className="space-y-4 font-mono text-xs"
             >
               <div>
-                <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-1">
+                <label className="block text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 font-semibold">
                   PROFILE ID / UUID ANGGOTA:
                 </label>
                 <input
@@ -238,12 +238,12 @@ export function KomdisScannerView({
                   value={manualProfileId}
                   onChange={(e) => setManualProfileId(e.target.value)}
                   placeholder="00000000-0000-0000-0000-000000000000"
-                  className="w-full bg-canvas-dark border border-hairline-dark p-2.5 text-xs text-white focus:outline-hidden focus:border-cyber-blue rounded-none"
+                  className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 p-2.5 text-xs text-[#0a192f] dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:border-[#f97316] rounded-lg"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-1">
+                <label className="block text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 font-semibold">
                   STATUS PRESENSI:
                 </label>
                 <select
@@ -258,7 +258,7 @@ export function KomdisScannerView({
                         | "alfa",
                     )
                   }
-                  className="w-full bg-canvas-dark border border-hairline-dark p-2.5 text-xs text-white focus:outline-hidden focus:border-cyber-blue rounded-none"
+                  className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 p-2.5 text-xs text-[#0a192f] dark:text-slate-100 focus:outline-hidden focus:border-[#f97316] rounded-lg"
                 >
                   <option value="hadir">HADIR (0 POIN)</option>
                   <option value="telat">TELAT (SANKSI SESUAI JAM)</option>
@@ -269,7 +269,7 @@ export function KomdisScannerView({
               </div>
 
               <div>
-                <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-1">
+                <label className="block text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 font-semibold">
                   POIN SANKSI YANG DITETAPKAN:
                 </label>
                 <input
@@ -277,36 +277,36 @@ export function KomdisScannerView({
                   min={0}
                   value={manualPoints}
                   onChange={(e) => setManualPoints(Number(e.target.value))}
-                  className="w-full bg-canvas-dark border border-hairline-dark p-2.5 text-xs text-amber-400 font-bold focus:outline-hidden focus:border-cyber-blue rounded-none"
+                  className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 p-2.5 text-xs text-[#f97316] dark:text-orange-400 font-bold focus:outline-hidden focus:border-[#f97316] rounded-lg"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] text-gray-400 uppercase tracking-widest mb-1">
+                <label className="block text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 font-semibold">
                   CATATAN / ALASAN OVERRIDE:
                 </label>
                 <input
                   type="text"
                   value={manualNotes}
                   onChange={(e) => setManualNotes(e.target.value)}
-                  placeholder="Contoh: HP anggota rusak / terlambat > 1 jam dengan kabar"
-                  className="w-full bg-canvas-dark border border-hairline-dark p-2.5 text-xs text-white focus:outline-hidden focus:border-cyber-blue rounded-none"
+                  placeholder="Contoh: HP anggota rusak / terlambat > 1 jam..."
+                  className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 p-2.5 text-xs text-[#0a192f] dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:border-[#f97316] rounded-lg"
                 />
               </div>
 
-              <div className="flex gap-2 pt-2 border-t border-hairline-dark">
+              <div className="flex gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
                 <Button
                   type="button"
                   variant="outline"
                   onClick={() => setIsManualOpen(false)}
-                  className="flex-1 bg-canvas-dark border-hairline-dark text-gray-400 font-mono text-xs rounded-none cursor-pointer"
+                  className="flex-1 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-mono text-xs rounded-lg cursor-pointer"
                 >
                   BATAL
                 </Button>
                 <Button
                   type="submit"
                   disabled={isPending}
-                  className="flex-1 bg-cyber-blue hover:bg-cyber-blue/90 text-white font-mono text-xs uppercase tracking-wider rounded-none cursor-pointer"
+                  className="flex-1 bg-[#1e3a8a] dark:bg-blue-600 hover:bg-[#1e40af] dark:hover:bg-blue-500 text-white font-mono text-xs uppercase tracking-wider rounded-lg cursor-pointer"
                 >
                   {isPending ? (
                     <HugeiconsIcon
