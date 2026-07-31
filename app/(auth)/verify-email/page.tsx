@@ -17,50 +17,49 @@ export const metadata: Metadata = {
 
 export default function VerifyEmailPage() {
   return (
-    <div className="space-y-6">
-      <Card className="border-hairline-dark bg-surface-card-dark text-center rounded-none shadow-none">
-        <CardHeader className="pt-8">
-          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-none bg-cyber-blue/10 text-cyber-blue border border-cyber-blue/30 shadow-[0_0_12px_rgba(0,102,177,0.2)]">
+    <div className="space-y-4 sm:space-y-6">
+      <Card className="border border-border dark:border-white/10 bg-card text-card-foreground text-center rounded-xl shadow-sm dark:shadow-none transition-colors duration-200">
+        <CardHeader className="pt-8 pb-4">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-orange-wash dark:bg-pnp-orange/15 text-orange-deep dark:text-pnp-orange border border-pnp-orange/30 shadow-sm">
             <HugeiconsIcon
               icon={Mail01Icon}
               size={32}
               className="animate-pulse"
             />
           </div>
-          <CardTitle className="text-2xl font-bold uppercase tracking-tight text-white font-sans">
+          <CardTitle className="text-xl sm:text-2xl font-bold uppercase tracking-tight text-foreground font-display">
             CEK EMAIL ANDA
           </CardTitle>
-          <CardDescription className="text-xs text-gray-400 font-sans font-light mt-1">
-            Kami telah mengirimkan link verifikasi ke email Anda untuk
-            mengaktifkan akun.
+          <CardDescription className="text-xs sm:text-sm text-muted-foreground font-sans font-normal leading-relaxed mt-1">
+            Kami telah mengirimkan link verifikasi ke email Anda untuk mengaktifkan akun.
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="space-y-6 pb-8">
-          <div className="space-y-3">
+        <CardContent className="space-y-5 pb-8 px-5 sm:px-6">
+          <div className="space-y-2.5">
             {[
               "Buka aplikasi email di perangkat Anda",
-              "Cari email dari UKM Robotik PNP",
+              "Cari email konfirmasi dari UKM Robotik PNP",
               "Klik tombol Konfirmasi Email",
             ].map((step, i) => (
               <div
                 key={i}
-                className="flex items-center gap-4 border border-hairline-dark bg-canvas-dark/40 p-4 text-left hover:bg-canvas-dark/80 transition-colors rounded-none"
+                className="flex items-center gap-3.5 border border-border bg-muted/40 p-3.5 sm:p-4 text-left hover:bg-muted/70 transition-colors rounded-lg"
               >
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center bg-cyber-blue text-white font-mono text-xs font-bold rounded-none">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center bg-[#1e3a8a] dark:bg-pnp-orange text-white font-mono text-xs font-bold rounded-full">
                   {i + 1}
                 </span>
-                <p className="text-sm text-gray-300 font-sans font-light leading-snug">
+                <p className="text-xs sm:text-sm text-foreground font-sans font-normal leading-snug">
                   {step}
                 </p>
               </div>
             ))}
           </div>
 
-          <div className="rounded-none border border-cyber-blue/20 bg-cyber-blue/5 p-4 text-xs font-sans font-light text-gray-400 text-left">
+          <div className="rounded-lg border border-pnp-orange/20 bg-orange-wash/40 dark:bg-pnp-orange/10 p-3.5 sm:p-4 text-xs font-sans text-muted-foreground text-left leading-relaxed">
             <p>
               Tidak menemukan email? Silakan periksa folder{" "}
-              <strong>Spam</strong> atau coba kirim ulang beberapa saat lagi.
+              <strong className="text-foreground font-semibold">Spam</strong> atau coba kirim ulang beberapa saat lagi.
             </p>
           </div>
         </CardContent>
@@ -69,9 +68,9 @@ export default function VerifyEmailPage() {
       <p className="text-center">
         <Link
           href="/register"
-          className="font-mono text-[10px] uppercase tracking-widest text-gray-500 hover:text-white transition-colors"
+          className="font-mono text-[11px] uppercase tracking-wider text-pnp-orange hover:text-orange-deep dark:hover:text-orange-300 hover:underline transition-colors font-medium"
         >
-          [ KEMBALI KE HALAMAN DAFTAR ]
+          [ Kembali ke Halaman Daftar ]
         </Link>
       </p>
     </div>
