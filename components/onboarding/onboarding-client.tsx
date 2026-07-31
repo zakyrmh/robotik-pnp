@@ -47,7 +47,7 @@ export function OnboardingClient({ initialProgress }: OnboardingClientProps) {
     setIsCheckingNim(true);
     setClosedError(null);
     try {
-      const result = await checkLegacyMember(nim) as {
+      const result = (await checkLegacyMember(nim)) as {
         success: boolean;
         isLegacy?: boolean;
         isClosed?: boolean;
@@ -82,56 +82,54 @@ export function OnboardingClient({ initialProgress }: OnboardingClientProps) {
   };
 
   return (
-    <div className="relative min-h-screen bg-white dark:bg-neutral-950 flex items-center justify-center p-4 sm:p-8">
-      <div className="relative z-10 w-full">
-        <OnboardingHeader />
-        <OnboardingStepper currentStep={step} steps={STEPS} />
+    <div className="relative z-10 w-full py-2 sm:py-4">
+      <OnboardingHeader />
+      <OnboardingStepper currentStep={step} steps={STEPS} />
 
-        <div className="relative overflow-hidden rounded-3xl border border-neutral-100 dark:border-neutral-800 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl shadow-xl min-h-125">
-          <AnimatePresence mode="wait">
-            {step === 1 && (
-              <StepIdentity
-                nim={nim}
-                setNim={setNim}
-                onNext={handleCheckNim}
-                onLegacyMemberFound={() => router.push("/dashboard")}
-                isChecking={isCheckingNim}
-                setIsChecking={setIsCheckingNim}
-                closedError={closedError}
-              />
-            )}
-            {step === 2 && (
-              <StepPersonal
-                onNext={nextStep}
-                onPrev={prevStep}
-                initialData={initialProgress.personal}
-              />
-            )}
-            {step === 3 && (
-              <StepAcademic
-                onNext={nextStep}
-                onPrev={prevStep}
-                initialData={initialProgress.academic}
-              />
-            )}
-            {step === 4 && (
-              <StepCommitment
-                onNext={nextStep}
-                onPrev={prevStep}
-                initialData={initialProgress.commitment}
-              />
-            )}
-            {step === 5 && (
-              <StepUpload
-                onPrev={prevStep}
-                onSuccess={() => {
-                  window.location.href = "/waiting";
-                }}
-                initialPaymentMethod={initialProgress.paymentMethod}
-              />
-            )}
-          </AnimatePresence>
-        </div>
+      <div className="relative overflow-hidden rounded-xl border border-border dark:border-white/10 bg-card text-card-foreground shadow-sm dark:shadow-none transition-colors duration-200 min-h-125">
+        <AnimatePresence mode="wait">
+          {step === 1 && (
+            <StepIdentity
+              nim={nim}
+              setNim={setNim}
+              onNext={handleCheckNim}
+              onLegacyMemberFound={() => router.push("/dashboard")}
+              isChecking={isCheckingNim}
+              setIsChecking={setIsCheckingNim}
+              closedError={closedError}
+            />
+          )}
+          {step === 2 && (
+            <StepPersonal
+              onNext={nextStep}
+              onPrev={prevStep}
+              initialData={initialProgress.personal}
+            />
+          )}
+          {step === 3 && (
+            <StepAcademic
+              onNext={nextStep}
+              onPrev={prevStep}
+              initialData={initialProgress.academic}
+            />
+          )}
+          {step === 4 && (
+            <StepCommitment
+              onNext={nextStep}
+              onPrev={prevStep}
+              initialData={initialProgress.commitment}
+            />
+          )}
+          {step === 5 && (
+            <StepUpload
+              onPrev={prevStep}
+              onSuccess={() => {
+                window.location.href = "/waiting";
+              }}
+              initialPaymentMethod={initialProgress.paymentMethod}
+            />
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
