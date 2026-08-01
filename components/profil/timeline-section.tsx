@@ -5,22 +5,16 @@ import { motion } from "framer-motion";
 export function TimelineSection() {
   const milestones = [
     {
-      year: "2003",
-      title: "Cikal Bakal Riset",
+      year: "14 - 15 Mei 2005",
+      title: "Keikutsertaan Tim Robot Pertama",
       description:
-        "Keikutsertaan perdana mahasiswa Politeknik Negeri Padang dalam Kontes Robot Indonesia (KRI) di tingkat regional dan nasional.",
+        "Keikutsertaan tim robot pertama POLITEKNIK NEGERI PADANG yaitu tim Robot Bhandy Padang saat Kontes Robot Indonesia 14 s/d 15 Mei 2005 di Balairung Universitas Indonesia.",
     },
     {
-      year: "2005",
-      title: "Pendirian Resmi UKM Robotik",
+      year: "22 Juli 2005",
+      title: "Pendirian Resmi UKM-R",
       description:
-        "UKM Robotik PNP resmi berdiri pada tanggal 22 Juli 2005, diresmikan oleh Ir. Suhendrik Anwar, MT (Direktur PNP saat itu) sebagai wadah resmi riset robotika kampus.",
-    },
-    {
-      year: "2015",
-      title: "Ekspansi Divisi & Prestasi",
-      description:
-        "Pembentukan divisi robotik baru (KRAI, KRSBI, KRSTI, KRSRI) dan raihan trofi kompetisi di tingkat regional Sumatera hingga nasional.",
+        "Unit Kegiatan Mahasiswa Robotik berdiri pada tanggal 22 Juli 2005 di kampus POLITEKNIK NEGERI PADANG. UKM-R ini didirikan atas latar belakang keikutsertaan tim robot Bhandy Padang di KRI 2005 serta melihat perkembangan robotika di Politeknik Negeri Padang yang perlu dikembangkan lebih baik.",
     },
   ];
 
@@ -30,7 +24,7 @@ export function TimelineSection() {
         {/* Header */}
         <div className="text-center mb-12 sm:mb-16 4k:mb-24">
           <span className="font-mono text-micro sm:text-xs 4k:text-base font-semibold uppercase tracking-[2px] text-pnp-orange block mb-2">
-            — MILESTONES & REKAM JEJAK
+            — MILESTONES & REKAM JEJAK SEJARAH
           </span>
           <h2 className="font-display font-bold text-3xl sm:text-4xl 4k:text-6xl uppercase text-foreground">
             SEJARAH SINGKAT{" "}
@@ -69,7 +63,7 @@ export function TimelineSection() {
                       <div className="absolute left-0 top-0 bottom-0 w-1 sm:w-1.5 bg-pnp-orange" />
 
                       <span className="font-mono text-xs sm:text-sm 4k:text-lg font-semibold text-pnp-orange mb-2 block uppercase tracking-wider">
-                        TAHUN {milestone.year}
+                        {milestone.year}
                       </span>
                       <h3 className="font-display font-bold text-xl sm:text-2xl 4k:text-3xl text-foreground uppercase mb-3 group-hover:text-pnp-orange transition-colors">
                         {milestone.title}

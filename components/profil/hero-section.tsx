@@ -34,7 +34,7 @@ export function HeroSection() {
           className="inline-flex items-center gap-2.5 font-mono text-micro sm:text-xs 4k:text-base uppercase tracking-[2px] font-semibold text-orange-deep dark:text-pnp-orange bg-orange-wash dark:bg-pnp-orange/15 border border-pnp-orange/30 px-4 py-1.5 rounded-full shadow-xs mb-6"
         >
           <span className="w-2 h-2 4k:w-3 4k:h-3 rounded-full bg-pnp-orange animate-pulse" />
-          IDENTITAS ORGANISASI // UKM ROBOTIK PNP
+          IDENTITAS ORGANISASI // UKM-R PNP
         </motion.div>
 
         {/* Main Headline */}
@@ -44,7 +44,7 @@ export function HeroSection() {
           transition={{ duration: 0.7, delay: 0.1 }}
           className="font-display font-bold text-3xl sm:text-5xl md:text-6xl lg:text-7xl 2xl:text-8xl 4k:text-9xl leading-[1.08] uppercase tracking-tight text-foreground mb-6 max-w-4xl 2xl:max-w-5xl 4k:max-w-7xl"
         >
-          DAPUR INOVASI & PUSAT RISET TEKNOLOGI ROBOTIKA{" "}
+          UNIT KEGIATAN MAHASISWA ROBOTIK{" "}
           <span className="text-pnp-orange">POLITEKNIK NEGERI PADANG</span>
         </motion.h1>
 
@@ -58,12 +58,11 @@ export function HeroSection() {
           transition={{ duration: 0.6, delay: 0.25 }}
           className="text-muted-foreground text-sm sm:text-base lg:text-lg 2xl:text-xl 4k:text-3xl font-light leading-relaxed max-w-3xl 4k:max-w-5xl"
         >
-          Unit Kegiatan Mahasiswa Robotik Politeknik Negeri Padang (UKM-R PNP)
-          merupakan wadah pengembangan bakat, minat, dan kreativitas mahasiswa
-          di bidang robotika. Terbuka bagi seluruh mahasiswa PNP dari berbagai
-          jurusan, kami berfokus pada mekanikal, elektrikal, pemrograman, dan
-          kerja sama tim untuk menghadapi perkembangan teknologi dunia yang
-          pesat.
+          Unit Kegiatan Mahasiwa Robotik selanjutnya disingkat UKM-R merupakan
+          lembaga yang bergerak dibidang Robotik yang berkoordinasi dengan BEM
+          POLITEKNIK NEGERI PADANG dalam bentuk semi otonom. Segala aktifitasnya
+          adalah membentuk dan mengembangkan minat dan bakat masyarakat kampus
+          untuk mengikuti perkembangan teknologi khususnya dalam dunia Robotika.
         </motion.p>
       </div>
 
