@@ -21,8 +21,17 @@ export const redis = isConfigured
     })
   : null;
 
-// Rate Limiter untuk Pendaftaran Calon Anggota (/register)
-// Maksimal 5 pendaftaran per IP per 15 menit
+// Helper Dummy Limiter untuk Graceful Fallback jika Redis belum dikonfigurasi
+const createDummyLimiter = (maxLimit: number, windowMs: number) => ({
+  limit: async () => ({
+    success: true,
+    limit: maxLimit,
+    remaining: maxLimit,
+    reset: Date.now() + windowMs,
+  }),
+});
+
+// 1. Rate Limiter untuk Pendaftaran Calon Anggota (/register) - 5 req per 15m
 export const registerRateLimiter =
   isConfigured && redis
     ? new Ratelimit({
@@ -31,11 +40,26 @@ export const registerRateLimiter =
         analytics: true,
         prefix: "@upstash/ratelimit/register",
       })
-    : {
-        limit: async () => ({
-          success: true,
-          limit: 5,
-          remaining: 5,
-          reset: Date.now() + 15 * 60 * 1000,
-        }),
-      };
+    : createDummyLimiter(5, 15 * 60 * 1000);
+
+// 2. Rate Limiter untuk Portal Login (/login) - 5 req per 10m
+export const loginRateLimiter =
+  isConfigured && redis
+    ? new Ratelimit({
+        redis,
+        limiter: Ratelimit.slidingWindow(5, "10 m"),
+        analytics: true,
+        prefix: "@upstash/ratelimit/login",
+      })
+    : createDummyLimiter(5, 10 * 60 * 1000);
+
+// 3. Rate Limiter untuk Lupa Password (/forgot-password) - 3 req per 15m
+export const forgotPasswordRateLimiter =
+  isConfigured && redis
+    ? new Ratelimit({
+        redis,
+        limiter: Ratelimit.slidingWindow(3, "15 m"),
+        analytics: true,
+        prefix: "@upstash/ratelimit/forgot-password",
+      })
+    : createDummyLimiter(3, 15 * 60 * 1000);
