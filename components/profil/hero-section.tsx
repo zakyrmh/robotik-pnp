@@ -4,65 +4,59 @@ import { motion } from "framer-motion";
 
 export function HeroSection() {
   return (
-    <section className="relative min-h-[70vh] flex items-center justify-center bg-canvas-dark overflow-hidden border-b border-hairline-dark">
-      {/* Background Image & Overlay */}
-      <div className="absolute inset-0 z-0">
-        <div
-          className="absolute inset-0 bg-cover bg-center opacity-40 mix-blend-luminosity"
-          style={{
-            backgroundImage: 'url("/images/logo-ukm-robotik-pnp.webp")',
-          }}
-        />
-        {/* Dark overlay to ensure text readability according to guidelines */}
-        <div className="absolute inset-0 bg-linear-to-b from-canvas-dark/80 via-canvas-dark/60 to-canvas-dark" />
-      </div>
+    <section className="relative min-h-[65vh] 4k:min-h-[60vh] flex items-center justify-center bg-background text-foreground overflow-hidden border-b border-border py-16 sm:py-24 4k:py-40 blueprint-grid-bg transition-colors duration-200">
+      {/* Top Tricolor Accent Stripe */}
+      <div className="absolute top-0 left-0 right-0 h-0.75 bg-linear-to-r from-dongker-surface via-pnp-orange to-dongker-ink" />
 
-      {/* Background Tech Elements */}
-      <div className="absolute inset-0 z-0 opacity-20 pointer-events-none">
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px)
-            `,
-            backgroundSize: "40px 40px",
-          }}
-        />
-      </div>
+      {/* Ambient Orbs */}
+      <motion.div
+        animate={{ scale: [1, 1.2, 1], opacity: [0.12, 0.25, 0.12] }}
+        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute top-[-10%] right-[-5%] w-112.5 sm:w-150 4k:w-[1000px] h-112.5 sm:h-150 4k:h-[1000px] rounded-full bg-dongker-surface/10 dark:bg-dongker-surface/25 blur-3xl pointer-events-none"
+      />
+      <motion.div
+        animate={{ scale: [1, 1.15, 1], opacity: [0.12, 0.22, 0.12] }}
+        transition={{
+          duration: 10,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 2,
+        }}
+        className="absolute bottom-[-15%] left-[-5%] w-100 sm:w-125 4k:w-[800px] h-100 sm:h-125 4k:h-[800px] rounded-full bg-pnp-orange/10 dark:bg-pnp-orange/20 blur-3xl pointer-events-none"
+      />
 
-      <div className="relative z-10 max-w-[1320px] mx-auto px-6 py-20 text-center flex flex-col items-center">
-        {/* Eyebrow */}
+      <div className="relative z-10 max-w-330 2xl:max-w-384 4k:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 4k:px-20 text-center flex flex-col items-center">
+        {/* Eyebrow Status Badge */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="flex items-center gap-3 mb-6"
+          className="inline-flex items-center gap-2.5 font-mono text-micro sm:text-xs 4k:text-base uppercase tracking-[2px] font-semibold text-orange-deep dark:text-pnp-orange bg-orange-wash dark:bg-pnp-orange/15 border border-pnp-orange/30 px-4 py-1.5 rounded-full shadow-xs mb-6"
         >
-          <div className="h-[2px] w-12 bg-linear-to-r from-cyber-blue to-tech-navy" />
-          <span className="font-mono text-[12px] font-medium uppercase tracking-[1.5px] text-cyber-blue">
-            Identitas Organisasi
-          </span>
-          <div className="h-[2px] w-12 bg-linear-to-r from-tech-navy to-cyber-blue" />
+          <span className="w-2 h-2 4k:w-3 4k:h-3 rounded-full bg-pnp-orange animate-pulse" />
+          IDENTITAS ORGANISASI // UKM ROBOTIK PNP
         </motion.div>
 
-        {/* Main headline */}
+        {/* Main Headline */}
         <motion.h1
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.1 }}
-          className="font-sans font-bold text-[40px] md:text-[64px] leading-[1.1] uppercase text-white mb-8 max-w-4xl"
+          className="font-display font-bold text-3xl sm:text-5xl md:text-6xl lg:text-7xl 2xl:text-8xl 4k:text-9xl leading-[1.08] uppercase tracking-tight text-foreground mb-6 max-w-4xl 2xl:max-w-5xl 4k:max-w-7xl"
         >
-          Dapur Inovasi & Pusat Riset Teknologi Robotika{" "}
-          <span className="text-cyber-blue">Politeknik Negeri Padang</span>
+          DAPUR INOVASI & PUSAT RISET TEKNOLOGI ROBOTIKA{" "}
+          <span className="text-pnp-orange">POLITEKNIK NEGERI PADANG</span>
         </motion.h1>
 
-        {/* Sub headline */}
+        {/* PNP Orange Accent Divider */}
+        <div className="h-1 sm:h-1.5 4k:h-3 w-20 sm:w-28 4k:w-44 bg-pnp-orange rounded-full mb-6" />
+
+        {/* Sub Headline */}
         <motion.p
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.25 }}
-          className="text-white/70 text-[16px] font-light leading-relaxed max-w-3xl"
+          className="text-muted-foreground text-sm sm:text-base lg:text-lg 2xl:text-xl 4k:text-3xl font-light leading-relaxed max-w-3xl 4k:max-w-5xl"
         >
           Unit Kegiatan Mahasiswa Robotik Politeknik Negeri Padang (UKM-R PNP)
           merupakan wadah pengembangan bakat, minat, dan kreativitas mahasiswa
@@ -73,8 +67,8 @@ export function HeroSection() {
         </motion.p>
       </div>
 
-      {/* Bottom tricolor divider */}
-      <div className="absolute bottom-0 left-0 right-0 h-[4px] bg-linear-to-r from-cyber-blue via-tech-navy to-crimson-red" />
+      {/* Bottom Tricolor Accent Stripe */}
+      <div className="absolute bottom-0 left-0 right-0 h-0.75 bg-linear-to-r from-dongker-surface via-pnp-orange to-dongker-ink" />
     </section>
   );
 }

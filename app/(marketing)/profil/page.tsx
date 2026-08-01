@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { HeroSection } from "@/components/profil/hero-section";
 import { MotoSloganSection } from "@/components/profil/moto-slogan-section";
+import { VisiMisiSection } from "@/components/profil/visi-misi-section";
 import { TimelineSection } from "@/components/profil/timeline-section";
 import { BphSection, BphMember } from "@/components/profil/bph-section";
 import { WorkshopGallerySection } from "@/components/profil/workshop-gallery-section";
@@ -119,18 +120,30 @@ export default async function ProfilPage() {
   ];
 
   return (
-    <>
+    <div className="w-full bg-background text-foreground transition-colors duration-200">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(aboutPageJsonLd),
         }}
       />
+      {/* 1. Hero Section */}
       <HeroSection />
+
+      {/* 2. Moto & Slogan Section */}
       <MotoSloganSection />
+
+      {/* 3. Visi & Misi Section */}
+      <VisiMisiSection />
+
+      {/* 4. Milestones / Timeline Sejarah */}
       <TimelineSection />
+
+      {/* 5. Struktur Pengurus Inti & Pembina */}
       <BphSection members={bphMembers} />
+
+      {/* 6. Galeri Workshop & Ekosistem Riset */}
       <WorkshopGallerySection />
-    </>
+    </div>
   );
 }
