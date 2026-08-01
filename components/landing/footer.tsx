@@ -48,9 +48,10 @@ export function LandingFooter() {
               <div className="w-10 h-10 flex items-center justify-center shrink-0">
                 <Image
                   src="/images/logo-ukm-robotik-pnp.webp"
-                  alt="Logo"
-                  width={100}
-                  height={100}
+                  alt="Logo UKM Robotik PNP"
+                  width={40}
+                  height={40}
+                  className="h-auto w-auto object-contain"
                 />
               </div>
               <div className="flex flex-col leading-none">

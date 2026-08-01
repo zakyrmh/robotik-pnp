@@ -245,7 +245,7 @@ export function Sidebar() {
                 width={32}
                 height={32}
                 priority
-                className="object-contain"
+                className="object-contain h-auto w-auto"
               />
             </div>
             <span className="font-mono text-sm font-bold uppercase tracking-widest text-zinc-900 dark:text-zinc-50 whitespace-nowrap">
@@ -399,6 +399,7 @@ export function Sidebar() {
                     width={32}
                     height={32}
                     priority
+                    className="object-contain h-auto w-auto"
                   />
                   <span className="font-mono text-sm font-bold uppercase tracking-widest text-zinc-900 dark:text-zinc-50">
                     ROBOTIK PNP

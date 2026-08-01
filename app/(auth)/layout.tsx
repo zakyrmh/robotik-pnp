@@ -33,7 +33,7 @@ export default function AuthLayout({
               alt="Logo PNP"
               width={34}
               height={34}
-              className="object-contain"
+              className="object-contain h-auto w-auto"
             />
             <div className="h-6 w-px bg-white/20" />
             <Image
@@ -41,7 +41,7 @@ export default function AuthLayout({
               alt="Logo UKM Robotik PNP"
               width={34}
               height={34}
-              className="object-contain"
+              className="object-contain h-auto w-auto"
             />
           </div>
           <div>
@@ -112,7 +112,7 @@ export default function AuthLayout({
               alt="Logo PNP"
               width={28}
               height={28}
-              className="object-contain"
+              className="object-contain h-auto w-auto"
             />
             <div className="h-5 w-px bg-border" />
             <Image
@@ -120,7 +120,7 @@ export default function AuthLayout({
               alt="Logo UKM Robotik PNP"
               width={28}
               height={28}
-              className="object-contain"
+              className="object-contain h-auto w-auto"
             />
             <span className="font-display font-bold text-xs uppercase tracking-tight text-foreground ml-1">
               UKM ROBOTIK PNP

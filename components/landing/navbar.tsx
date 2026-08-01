@@ -51,7 +51,7 @@ export function LandingNavbar() {
                 alt="Logo UKM Robotik PNP"
                 width={32}
                 height={32}
-                className="rounded-full object-cover"
+                className="rounded-full object-cover h-auto w-auto"
               />
             </div>
             <div className="flex flex-col leading-none">
