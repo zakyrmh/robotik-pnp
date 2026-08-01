@@ -2,8 +2,10 @@
 
 import "server-only";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { registerRateLimiter } from "@/lib/redis";
 import type { RegisterState } from "@/lib/types/auth";
 import {
   registerSchema,
@@ -16,6 +18,21 @@ import {
 // Register Action
 // ============================================================
 export async function register(prevState: RegisterState, formData: FormData) {
+  // Rate Limiting Protection via Upstash Redis
+  const headerList = await headers();
+  const clientIp =
+    headerList.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    headerList.get("x-real-ip") ||
+    "127.0.0.1";
+
+  const { success } = await registerRateLimiter.limit(clientIp);
+  if (!success) {
+    return {
+      error:
+        "Terlalu banyak percobaan pendaftaran. Silakan coba lagi dalam 15 menit.",
+    };
+  }
+
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
   const confirmPassword = formData.get("confirmPassword") as string;
