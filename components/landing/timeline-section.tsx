@@ -13,7 +13,7 @@ const steps = [
     description:
       "Buka pendaftaran setiap awal semester ganjil. Calon anggota mengikuti seleksi berkas, tes dasar robotika, dan wawancara divisi.",
     duration: "September",
-    status: "recurring",
+    statusLabel: "Rutin",
     details: [
       "Tes pengetahuan dasar",
       "Wawancara motivasi",
@@ -27,7 +27,7 @@ const steps = [
     description:
       "Pelatihan intensif dari anggota senior: pemrograman robot, elektronika, mekanikal, dan computer vision.",
     duration: "3 Bulan Penuh",
-    status: "training",
+    statusLabel: "Intensif",
     details: ["Workshop elektronika", "Coding robot & AI", "Fabrikasi mekanik"],
   },
   {
@@ -37,7 +37,7 @@ const steps = [
     description:
       "Pengembangan robot baru sesuai dengan regulasi kompetisi tahun berjalan. Riset teknologi terbaru untuk keunggulan kompetitif.",
     duration: "Oktober - Maret",
-    status: "competition",
+    statusLabel: "Riset",
     details: [
       "Desain mekanikal",
       "Perakitan prototipe",
@@ -51,7 +51,7 @@ const steps = [
     description:
       "Tim terbaik dikirim ke kompetisi resmi Kemendikbudristek — bertanding di level regional hingga nasional.",
     duration: "April — Oktober",
-    status: "national",
+    statusLabel: "Nasional",
     details: ["Kompetisi regional", "Babak nasional", "Representasi PNP"],
   },
   {
@@ -61,26 +61,10 @@ const steps = [
     description:
       "Setelah kompetisi, tim melakukan evaluasi mendalam dan mulai mengembangkan generasi robot berikutnya untuk musim depan.",
     duration: "Juli - September",
-    status: "done",
+    statusLabel: "Evaluasi",
     details: ["Laporan teknis", "Desain robot baru", "Transfer ilmu ke junior"],
   },
 ];
-
-const statusColors: Record<string, string> = {
-  recurring: "#0066b1",
-  training: "#1c69d4",
-  competition: "#0066b1",
-  national: "#e22718",
-  done: "#22c55e",
-};
-
-const statusLabels: Record<string, string> = {
-  recurring: "Rutin",
-  training: "Intensif",
-  competition: "Internal",
-  national: "Nasional",
-  done: "Evaluasi",
-};
 
 export function TimelineSection() {
   const ref = useRef<HTMLDivElement>(null);
@@ -88,106 +72,92 @@ export function TimelineSection() {
 
   return (
     <section
-      className="bg-surface-soft-light py-20 border-t border-hairline-light"
+      className="bg-background text-foreground py-16 sm:py-20 4k:py-36 border-t border-border transition-colors duration-200"
       ref={ref}
     >
-      <div className="max-w-[1320px] mx-auto px-6">
+      <div className="max-w-330 2xl:max-w-384 4k:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 4k:px-20">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.5 }}
-          className="mb-14"
+          className="mb-10 4k:mb-16"
         >
-          <span className="font-mono text-[11px] font-medium uppercase tracking-[2px] text-cyber-blue block mb-3">
-            — Alur Kegiatan
+          <span className="font-mono text-micro sm:text-xs 4k:text-lg font-semibold uppercase tracking-[2px] text-pnp-orange block mb-2">
+            — ALUR KEGIATAN
           </span>
-          <h2 className="font-sans font-bold text-[36px] md:text-[42px] uppercase text-canvas-dark leading-none">
-            Siklus Tahunan
-            <br />
-            <span className="text-cyber-blue">UKM Robotika</span>
+          <h2 className="font-display font-bold text-2xl sm:text-3xl md:text-4xl 4k:text-6xl uppercase text-foreground leading-none">
+            SIKLUS TAHUNAN{" "}
+            <span className="text-pnp-orange">UKM ROBOTIK PNP</span>
           </h2>
         </motion.div>
 
-        {/* Tricolor divider */}
-        <div className="h-[3px] bg-linear-to-r from-cyber-blue via-tech-navy to-crimson-red mb-14" />
+        {/* Section Divider */}
+        <div className="dashed-divider mb-12 4k:mb-20" />
 
         {/* Timeline */}
         <div className="relative">
-          {/* Vertical line */}
-          <div className="absolute left-[47px] top-0 bottom-0 w-px bg-hairline-light hidden md:block" />
+          {/* Vertical blueprint line */}
+          <div className="absolute left-10.75 4k:left-[59px] top-4 bottom-4 w-0.5 bg-border dark:bg-white/10 hidden md:block" />
 
-          <div className="flex flex-col gap-8">
+          <div className="flex flex-col gap-6 sm:gap-8 4k:gap-14">
             {steps.map((step, i) => (
               <motion.div
                 key={step.number}
                 initial={{ opacity: 0, x: -30 }}
                 animate={inView ? { opacity: 1, x: 0 } : {}}
                 transition={{ duration: 0.5, delay: i * 0.1 }}
-                className="flex gap-8 group"
+                className="flex gap-6 md:gap-8 4k:gap-12 group"
               >
-                {/* Step number circle */}
+                {/* Step number badge */}
                 <div className="shrink-0 relative">
-                  <div
-                    className="w-[96px] h-[96px] hidden md:flex items-center justify-center border-2 border-hairline-light bg-white group-hover:border-cyber-blue transition-colors duration-300"
-                    style={{ borderRadius: "0" }}
-                  >
-                    <span
-                      className="font-mono font-bold text-[28px]"
-                      style={{ color: statusColors[step.status] }}
-                    >
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 4k:w-32 4k:h-32 hidden md:flex items-center justify-center border border-border dark:border-white/15 bg-card dark:bg-[#112240] rounded-xl shadow-blueprint group-hover:border-pnp-orange/50 transition-colors">
+                    <span className="font-mono font-bold text-2xl sm:text-3xl 4k:text-4xl text-dongker-surface dark:text-pnp-orange">
                       {step.number}
                     </span>
                   </div>
-                  {/* Dot on line */}
-                  <div
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 hidden md:block"
-                    style={{ background: statusColors[step.status] }}
-                  />
                 </div>
 
                 {/* Content card */}
-                <div className="flex-1 border border-hairline-light bg-white p-6 group-hover:border-cyber-blue group-hover:shadow-[0_0_12px_rgba(0,102,177,0.1)] transition-all duration-300">
+                <div className="flex-1 border border-border dark:border-white/12 bg-card dark:bg-[#112240] rounded-xl p-6 sm:p-8 4k:p-12 shadow-blueprint group-hover:border-pnp-orange/40 transition-all duration-300 relative overflow-hidden">
+                  {/* Left edge accent */}
+                  <div className="absolute left-0 top-0 bottom-0 w-1 sm:w-1.5 bg-dongker-surface dark:bg-pnp-orange/60 group-hover:bg-pnp-orange transition-colors" />
+
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
                     <div>
                       <div className="flex items-center gap-3 mb-2">
-                        <span
-                          className="font-mono text-[9px] uppercase tracking-[2px] px-2 py-0.5 border"
-                          style={{
-                            color: statusColors[step.status],
-                            borderColor: statusColors[step.status],
-                            background: `${statusColors[step.status]}12`,
-                          }}
-                        >
-                          {statusLabels[step.status]}
+                        {/* Status Badge per DESIGN.md */}
+                        <span className="font-mono text-micro 4k:text-base font-semibold uppercase tracking-wider px-2.5 py-0.5 4k:px-4 4k:py-1 rounded-full bg-orange-wash dark:bg-pnp-orange/15 text-orange-deep dark:text-pnp-orange border border-pnp-orange/30">
+                          {step.statusLabel}
                         </span>
-                        <span className="font-mono text-[10px] uppercase tracking-[1.5px] text-canvas-dark/40">
-                          {step.phase}
+                        <span className="font-mono text-micro 4k:text-base uppercase tracking-wider text-muted-foreground font-semibold">
+                          PHASE // {step.phase}
                         </span>
                       </div>
-                      <h3 className="font-sans font-bold text-[20px] text-canvas-dark uppercase leading-tight">
+                      <h3 className="font-display font-bold text-xl sm:text-2xl 4k:text-4xl text-foreground uppercase leading-tight">
                         {step.title}
                       </h3>
                     </div>
-                    <span className="font-mono text-[10px] uppercase tracking-[1px] text-cyber-blue whitespace-nowrap shrink-0 border border-cyber-blue/20 px-3 py-1.5">
+
+                    <span className="font-mono text-micro 4k:text-base font-semibold uppercase tracking-wider text-pnp-orange bg-orange-wash/50 dark:bg-pnp-orange/10 px-3 py-1 4k:px-4 4k:py-2 rounded-full border border-pnp-orange/20 shrink-0 self-start sm:self-auto">
                       {step.duration}
                     </span>
                   </div>
 
-                  <p className="text-canvas-dark/60 text-sm font-light leading-relaxed mb-5">
+                  <p className="text-muted-foreground text-sm sm:text-base 4k:text-xl font-light leading-relaxed mb-5">
                     {step.description}
                   </p>
 
                   {/* Details checklist */}
-                  <div className="flex flex-wrap gap-x-6 gap-y-2">
+                  <div className="flex flex-wrap gap-x-6 gap-y-2 pt-3 border-t border-border/50 dark:border-white/10">
                     {step.details.map((detail) => (
                       <div key={detail} className="flex items-center gap-2">
                         <HugeiconsIcon
                           icon={CheckmarkCircle01Icon}
                           size={14}
-                          style={{ color: statusColors[step.status] }}
+                          className="text-pnp-orange 4k:w-6 4k:h-6"
                         />
-                        <span className="font-mono text-[10px] uppercase tracking-[1px] text-canvas-dark/50">
+                        <span className="font-mono text-micro 4k:text-base uppercase tracking-wider text-muted-foreground font-medium">
                           {detail}
                         </span>
                       </div>

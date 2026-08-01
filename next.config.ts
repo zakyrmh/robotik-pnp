@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   images: {
@@ -8,7 +9,7 @@ const nextConfig: NextConfig = {
       {
         protocol: "http",
         hostname: "localhost",
-        port: "54321", // Opsional: Bisa dispesifikasikan langsung ke port Supabase lokal
+        port: "54321",
       },
       {
         protocol: "https",
@@ -42,4 +43,19 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  // Sentry Options
+  org: process.env.SENTRY_ORG || "unit-kegiatan-mahasiswa-roboti",
+  project: process.env.SENTRY_PROJECT || "javascript-nextjs",
+
+  // Hapus file source map setelah upload untuk keamanan kode sumber
+  sourcemaps: {
+    deleteSourcemapsAfterUpload: true,
+  },
+
+  // Nonaktifkan logger Sentry saat build
+  disableLogger: true,
+
+  // Senyapkan log jika bukan lingkungan CI
+  silent: !process.env.CI,
+});

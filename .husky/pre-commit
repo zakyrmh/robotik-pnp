@@ -23,9 +23,9 @@ if [ -n "$STAGED" ] && echo "$STAGED" | xargs -r grep -lE "^<<<<<<< |^>>>>>>> " 
   exit 1
 fi
 
-# 3. Cek file besar (>500KB)
+# 3. Cek file besar (>500KB, mengabaikan file lockfile)
 MAX_SIZE=512000
-LARGE_FILES=$(echo "$STAGED" | while read -r f; do
+LARGE_FILES=$(echo "$STAGED" | grep -vE "^(pnpm-lock\.yaml|package-lock\.json|yarn\.lock)$" | while read -r f; do
   if [ -f "$f" ]; then
     # Bersihkan spasi dari output wc (sering terjadi di Windows/MINGW)
     FILE_SIZE=$(wc -c < "$f" 2>/dev/null | tr -d ' ')
@@ -62,11 +62,11 @@ fi
 # 6. Type check (hanya jika ada file TS berubah)
 if echo "$STAGED" | grep -qE "\.(ts|tsx)$"; then
   log "${BLUE}🔍 TypeScript type check...${NC}"
-  pnpm typecheck
+  npx tsc --noEmit
 fi
 
 # 7. Lint + format file yang di-stage
 log "${BLUE}🧹 Running lint-staged (ESLint + Prettier)...${NC}"
-pnpm lint:staged
+npx lint-staged
 
 log "${GREEN}✅ Pre-commit checks passed!${NC}"

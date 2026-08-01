@@ -42,3 +42,6 @@ next-env.d.ts
 
 # Supabase data dumps (ignore all data SQL files)
 data*.sql
+
+# Sentry wizard error logs
+sentry-wizard-installation-error-*.log

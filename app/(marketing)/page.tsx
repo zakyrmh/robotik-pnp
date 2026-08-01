@@ -86,7 +86,7 @@ export default async function HomePage() {
   };
 
   return (
-    <>
+    <div className="w-full bg-background text-foreground transition-colors duration-200">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -118,6 +118,6 @@ export default async function HomePage() {
 
       {/* 6. CTA Section */}
       <CtaSection />
-    </>
+    </div>
   );
 }

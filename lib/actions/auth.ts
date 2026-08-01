@@ -2,8 +2,14 @@
 
 import "server-only";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import {
+  registerRateLimiter,
+  loginRateLimiter,
+  forgotPasswordRateLimiter,
+} from "@/lib/redis";
 import type { RegisterState } from "@/lib/types/auth";
 import {
   registerSchema,
@@ -16,6 +22,21 @@ import {
 // Register Action
 // ============================================================
 export async function register(prevState: RegisterState, formData: FormData) {
+  // Rate Limiting Protection via Upstash Redis
+  const headerList = await headers();
+  const clientIp =
+    headerList.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    headerList.get("x-real-ip") ||
+    "127.0.0.1";
+
+  const { success } = await registerRateLimiter.limit(clientIp);
+  if (!success) {
+    return {
+      error:
+        "Terlalu banyak percobaan pendaftaran. Silakan coba lagi dalam 15 menit.",
+    };
+  }
+
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
   const confirmPassword = formData.get("confirmPassword") as string;
@@ -72,6 +93,21 @@ export async function register(prevState: RegisterState, formData: FormData) {
 // Login Action
 // ============================================================
 export async function login(prevState: RegisterState, formData: FormData) {
+  // Rate Limiting Protection via Upstash Redis
+  const headerList = await headers();
+  const clientIp =
+    headerList.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    headerList.get("x-real-ip") ||
+    "127.0.0.1";
+
+  const { success } = await loginRateLimiter.limit(clientIp);
+  if (!success) {
+    return {
+      error:
+        "Terlalu banyak percobaan login gagal. Silakan coba lagi dalam 10 menit.",
+    };
+  }
+
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
   const captchaToken = (formData.get("captchaToken") as string) || undefined;
@@ -209,6 +245,21 @@ export async function forgotPassword(
   prevState: RegisterState,
   formData: FormData,
 ) {
+  // Rate Limiting Protection via Upstash Redis
+  const headerList = await headers();
+  const clientIp =
+    headerList.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    headerList.get("x-real-ip") ||
+    "127.0.0.1";
+
+  const { success } = await forgotPasswordRateLimiter.limit(clientIp);
+  if (!success) {
+    return {
+      error:
+        "Terlalu banyak permintaan reset password. Silakan coba lagi dalam 15 menit.",
+    };
+  }
+
   const rawEmail = formData.get("email") as string;
   const rawNim = formData.get("nim") as string;
   const captchaToken = (formData.get("captchaToken") as string) || undefined;

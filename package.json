@@ -20,8 +20,11 @@
     "@hugeicons/core-free-icons": "^4.1.1",
     "@hugeicons/react": "^1.1.6",
     "@marsidev/react-turnstile": "^1.5.3",
+    "@sentry/nextjs": "^10.69.0",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.105.3",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.38.0",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "browser-image-compression": "^2.0.2",
@@ -71,14 +74,19 @@
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [
-      "pnpm exec eslint --fix",
-      "pnpm exec prettier --write"
+      "npx eslint --fix",
+      "npx prettier --write"
     ],
     "*.{json,md,mdx,css,scss}": [
-      "pnpm exec prettier --write"
+      "npx prettier --write"
     ],
     "supabase/migrations/*.sql": [
       "echo skip"
+    ]
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@sentry/cli"
     ]
   }
 }
