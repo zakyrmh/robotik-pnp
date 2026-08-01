@@ -38,9 +38,7 @@ const defaultDivisions = [
     description:
       "Robot beroda maupun berkaki yang bertempur dalam arena ABU Robocon — tantangan teknis tertinggi di skala Asia.",
     skills: ["Kontrol Otomatis", "Navigasi Lapangan", "Strategi Tim"],
-    accent: "#0066b1",
     tag: "Flagship",
-    tagColor: "#e22718",
   },
   {
     id: "krsbi-b",
@@ -50,9 +48,7 @@ const defaultDivisions = [
     description:
       "Robot beroda yang bermain sepak bola sesungguhnya, dengan sistem visi komputer dan koordinasi tim real-time.",
     skills: ["Computer Vision", "Locomotion", "Ball Control"],
-    accent: "#1c69d4",
     tag: "Populer",
-    tagColor: "#1c69d4",
   },
   {
     id: "krsbi-h",
@@ -60,11 +56,9 @@ const defaultDivisions = [
     name: "Sepak Bola Robot Humanoid",
     category: "Divisi 03",
     description:
-      "Robot humanoid bipedal yang bergerak layaknya manusia and bertanding dalam pertandingan sepak bola 5 lawan 5.",
+      "Robot humanoid bipedal yang bergerak layaknya manusia dan bertanding dalam pertandingan sepak bola 5 lawan 5.",
     skills: ["Bipedal Walking", "Balance Control", "AI Decision"],
-    accent: "#0066b1",
     tag: "Humanoid",
-    tagColor: "#0066b1",
   },
   {
     id: "krsti",
@@ -74,9 +68,7 @@ const defaultDivisions = [
     description:
       "Robot humanoid yang menarikan tari tradisional Indonesia dengan sinkronisasi musik dan gerakan presisi milimeter.",
     skills: ["Motion Planning", "Rhythm Sync", "Servo Control"],
-    accent: "#1c69d4",
     tag: "Budaya",
-    tagColor: "#1c69d4",
   },
   {
     id: "krsri",
@@ -86,9 +78,7 @@ const defaultDivisions = [
     description:
       "Robot pencari dan penyelamat korban bencana — mensimulasikan operasi SAR nyata di medan rusak dan berantakan.",
     skills: ["SLAM Navigation", "Sensor Fusion", "Autonomous SAR"],
-    accent: "#e22718",
     tag: "SAR",
-    tagColor: "#e22718",
   },
 ];
 
@@ -107,118 +97,110 @@ export function DivisionsSection({
           category: `Divisi ${String(div.sort_order).padStart(2, "0")}`,
           description: div.short_description,
           skills: div.tags,
-          accent: div.accent_color || "#0066b1",
           tag: div.badge_label || "Robot",
-          tagColor: div.badge_color || "#0066b1",
         }))
       : defaultDivisions;
 
   return (
-    <section className="bg-surface-soft-light py-20" ref={ref}>
-      <div className="max-w-[1320px] mx-auto px-6">
-        {/* Section header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-14">
+    <section
+      className="bg-mist-gray/40 dark:bg-dongker-ink/40 py-16 sm:py-20 4k:py-36 border-t border-border transition-colors duration-200"
+      ref={ref}
+    >
+      <div className="max-w-330 2xl:max-w-384 4k:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 4k:px-20">
+        {/* Section Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 4k:mb-16">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={inView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.5 }}
           >
-            <span className="font-mono text-[11px] font-medium uppercase tracking-[2px] text-cyber-blue block mb-3">
-              — Eksplorasi Divisi
+            <span className="font-mono text-micro sm:text-xs 4k:text-lg font-semibold uppercase tracking-[2px] text-pnp-orange block mb-2">
+              — EKSPLORASI DIVISI
             </span>
-            <h2 className="font-sans font-bold text-[36px] md:text-[42px] uppercase text-canvas-dark leading-none">
-              5 Divisi
-              <br />
-              <span className="text-cyber-blue">Robot Kompetisi</span>
+            <h2 className="font-display font-bold text-2xl sm:text-3xl md:text-4xl 4k:text-6xl uppercase text-foreground leading-none">
+              5 DIVISI <span className="text-pnp-orange">ROBOT KOMPETISI</span>
             </h2>
           </motion.div>
+
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={inView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-canvas-dark/60 text-base font-light leading-relaxed max-w-md"
+            className="text-muted-foreground text-sm sm:text-base 4k:text-2xl font-light leading-relaxed max-w-md 4k:max-w-xl"
           >
-            Setiap divisi membawa tantangan rekayasa yang unik — dari robot
-            humanoid menari hingga unit SAR otonom di medan bencana.
+            Setiap divisi membawa tantangan rekayasa unik — dari robot humanoid
+            bipedal hingga unit SAR otonom di medan bencana.
           </motion.p>
         </div>
 
-        {/* Tricolor divider */}
-        <div className="h-[3px] bg-linear-to-r from-cyber-blue via-tech-navy to-crimson-red mb-14" />
+        {/* Section Divider */}
+        <div className="dashed-divider mb-12 4k:mb-20" />
 
-        {/* Divisions grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-px bg-hairline-light">
+        {/* Divisions Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 4k:gap-12">
           {renderedDivisions.map((div, i) => (
             <motion.div
               key={div.id}
               initial={{ opacity: 0, y: 30 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.5, delay: i * 0.08 }}
-              className={`bg-white group hover:bg-canvas-dark transition-all duration-400 cursor-default relative flex flex-col ${
+              className={`bg-card dark:bg-[#112240] border border-border dark:border-white/12 rounded-xl p-6 sm:p-8 4k:p-12 shadow-blueprint hover:border-pnp-orange/40 transition-all duration-300 relative flex flex-col group overflow-hidden ${
                 i === 4 ? "md:col-span-2 lg:col-span-1" : ""
               }`}
             >
-              {/* Top accent */}
-              <div
-                className="h-[3px] w-0 group-hover:w-full transition-all duration-500"
-                style={{ background: div.accent }}
-              />
+              {/* Left edge 4px vertical accent */}
+              <div className="absolute left-0 top-0 bottom-0 w-1 sm:w-1.5 bg-dongker-surface dark:bg-pnp-orange/60 group-hover:bg-pnp-orange transition-colors duration-300" />
 
-              <div className="p-8 flex flex-col flex-1">
+              <div className="flex flex-col flex-1">
                 {/* Header */}
-                <div className="flex items-start justify-between mb-6">
+                <div className="flex items-start justify-between mb-4">
                   <div>
-                    <p className="font-mono text-[10px] uppercase tracking-[2px] text-cyber-blue group-hover:text-cyber-blue mb-1">
+                    <span className="font-mono text-micro 4k:text-base uppercase tracking-widest text-pnp-orange font-semibold block mb-1">
                       {div.category}
-                    </p>
-                    <h3 className="font-sans font-bold text-[28px] uppercase text-canvas-dark group-hover:text-white leading-none transition-colors duration-400">
+                    </span>
+                    <h3 className="font-display font-bold text-2xl 4k:text-4xl uppercase text-foreground group-hover:text-pnp-orange transition-colors">
                       {div.code}
                     </h3>
                   </div>
-                  <span
-                    className="font-mono text-[9px] uppercase tracking-[1.5px] px-2 py-1 border"
-                    style={{
-                      color: div.tagColor,
-                      borderColor: div.tagColor,
-                      background: `${div.tagColor}15`,
-                    }}
-                  >
+
+                  {/* Status Badge per DESIGN.md */}
+                  <span className="font-mono text-micro 4k:text-base uppercase tracking-wider font-semibold px-2.5 py-1 4k:px-4 4k:py-2 rounded-full bg-orange-wash dark:bg-pnp-orange/15 text-orange-deep dark:text-pnp-orange border border-pnp-orange/30">
                     {div.tag}
                   </span>
                 </div>
 
                 {/* Full name */}
-                <p className="font-mono text-[10px] uppercase tracking-[1px] text-canvas-dark/40 group-hover:text-white/40 mb-4 transition-colors duration-400">
+                <p className="font-mono text-micro 4k:text-base uppercase tracking-wider text-muted-foreground mb-4 font-medium">
                   {div.name}
                 </p>
 
                 {/* Description */}
-                <p className="text-canvas-dark/60 group-hover:text-white/60 text-sm font-light leading-relaxed mb-6 flex-1 transition-colors duration-400">
+                <p className="text-muted-foreground text-sm sm:text-base 4k:text-xl font-light leading-relaxed mb-6 flex-1">
                   {div.description}
                 </p>
 
-                {/* Skills */}
+                {/* Skills Tags */}
                 <div className="flex flex-wrap gap-2 mb-6">
                   {div.skills.map((skill) => (
                     <span
                       key={skill}
-                      className="font-mono text-[9px] uppercase tracking-[1px] px-2.5 py-1 border border-hairline-light group-hover:border-hairline-dark text-canvas-dark/50 group-hover:text-white/40 transition-all duration-400"
+                      className="font-mono text-micro 4k:text-base uppercase tracking-wider px-2.5 py-1 4k:px-4 4k:py-2 rounded-md bg-muted dark:bg-white/5 text-muted-foreground dark:text-slate-300 border border-border dark:border-white/10 font-medium"
                     >
                       {skill}
                     </span>
                   ))}
                 </div>
 
-                {/* CTA */}
+                {/* CTA Link */}
                 <Link
                   href={`/divisi/${div.id}`}
-                  className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-[1.5px] text-cyber-blue hover:gap-4 transition-all duration-200 mt-auto group/link"
+                  className="inline-flex items-center gap-2 font-mono text-xs 4k:text-lg font-semibold uppercase tracking-wider text-pnp-orange hover:text-dongker-surface dark:hover:text-white transition-all mt-auto group/link"
                 >
                   Lihat Detail
                   <HugeiconsIcon
                     icon={ArrowRight01Icon}
                     size={14}
-                    className="group-hover/link:translate-x-1 transition-transform duration-200"
+                    className="group-hover/link:translate-x-1 transition-transform duration-200 4k:w-6 4k:h-6"
                   />
                 </Link>
               </div>
@@ -226,22 +208,22 @@ export function DivisionsSection({
           ))}
         </div>
 
-        {/* View all CTA */}
+        {/* View All CTA */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.5, delay: 0.5 }}
-          className="flex justify-center mt-12"
+          className="flex justify-center mt-12 4k:mt-20"
         >
           <Link
             href="/divisi"
-            className="inline-flex items-center gap-3 font-mono text-[12px] font-medium uppercase tracking-[1.5px] px-8 py-3.5 bg-canvas-dark text-white hover:bg-transparent hover:text-canvas-dark border border-canvas-dark transition-all duration-200 group"
+            className="inline-flex items-center gap-3 font-mono text-xs sm:text-sm 4k:text-xl font-semibold uppercase tracking-[1.5px] px-8 py-3.5 4k:px-12 4k:py-6 bg-dongker-surface text-white hover:bg-dongker-hover dark:bg-pnp-orange dark:hover:bg-pnp-orange/90 rounded-md shadow-md transition-all group"
           >
             Lihat Semua Divisi
             <HugeiconsIcon
               icon={ArrowRight01Icon}
               size={16}
-              className="group-hover:translate-x-1 transition-transform duration-200"
+              className="group-hover:translate-x-1 transition-transform duration-200 4k:w-6 4k:h-6"
             />
           </Link>
         </motion.div>
