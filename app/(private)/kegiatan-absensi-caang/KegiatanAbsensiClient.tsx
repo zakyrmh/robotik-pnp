@@ -99,7 +99,6 @@ function formatDate(dateStr: string) {
   });
 }
 
-
 function toLocalDatetimeInput(dateStr: string) {
   const d = new Date(dateStr);
   const offset = d.getTimezoneOffset();
@@ -322,9 +321,9 @@ export function KegiatanAbsensiClient({
     const st = getActivityStatus(activity);
     if (st === "ongoing")
       return (
-        <span className="inline-flex items-center gap-1 px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider border rounded-none bg-[#10b981]/15 text-[#10b981] border-[#10b981]/30">
-          <span className="w-1.5 h-1.5 bg-[#10b981] rounded-full animate-ping inline-block" />
-          BERLANGSUNG
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 font-mono text-[9px] uppercase tracking-wider border rounded-none bg-[#f97316]/15 text-[#f97316] border-[#f97316]/30">
+          <span className="w-1.5 h-1.5 bg-[#f97316] rounded-full animate-ping inline-block" />
+          ONGOING
         </span>
       );
     if (st === "upcoming")
@@ -600,7 +599,11 @@ export function KegiatanAbsensiClient({
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => router.push(`/kegiatan-absensi-caang/${activity.id}`)}
+                              onClick={() =>
+                                router.push(
+                                  `/kegiatan-absensi-caang/${activity.id}`,
+                                )
+                              }
                               className="h-8 rounded-none border border-zinc-200 dark:border-zinc-800 font-mono text-[10px] uppercase tracking-wider hover:bg-[#1c69d4]/10 hover:text-[#1c69d4] transition-colors"
                             >
                               Detail
@@ -701,7 +704,11 @@ export function KegiatanAbsensiClient({
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => router.push(`/kegiatan-absensi-caang/${activity.id}`)}
+                          onClick={() =>
+                            router.push(
+                              `/kegiatan-absensi-caang/${activity.id}`,
+                            )
+                          }
                           className="flex-1 rounded-none border-zinc-200 dark:border-zinc-800 font-mono text-[10px] uppercase h-8 bg-zinc-50 dark:bg-zinc-900"
                         >
                           Detail
@@ -845,7 +852,10 @@ export function KegiatanAbsensiClient({
                           const status = item.attendances[
                             act.id
                           ] as StatusAbsensi | null;
-                          const cfg = (status && STATUS_CONFIG[status]) ? STATUS_CONFIG[status] : null;
+                          const cfg =
+                            status && STATUS_CONFIG[status]
+                              ? STATUS_CONFIG[status]
+                              : null;
                           const isOpen =
                             overrideCell?.profileId === item.profileId &&
                             overrideCell?.activityId === act.id;
@@ -980,9 +990,10 @@ export function KegiatanAbsensiClient({
                           const status = item.attendances[
                             act.id
                           ] as StatusAbsensi | null;
-                          const cfg = (status && STATUS_CONFIG[status])
-                            ? STATUS_CONFIG[status]
-                            : STATUS_CONFIG.alfa;
+                          const cfg =
+                            status && STATUS_CONFIG[status]
+                              ? STATUS_CONFIG[status]
+                              : STATUS_CONFIG.alfa;
                           return (
                             <div
                               key={act.id}

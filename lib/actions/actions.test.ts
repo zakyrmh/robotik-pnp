@@ -5,6 +5,7 @@ import {
   generateAttendanceQR,
   scanAttendanceQR,
   manualOverrideAttendance,
+  submitLeaveRequest,
 } from "./attendance";
 
 // Hoist the mock definition to prevent initialization ordering errors in Vitest
@@ -323,6 +324,34 @@ describe("Attendance Server Actions", () => {
       expect(res.success).toBe(false);
       expect(res.error?.code).toBe("BAD_REQUEST");
       expect(res.message).toContain("Catatan penyesuaian wajib diisi");
+    });
+  });
+
+  describe("submitLeaveRequest", () => {
+    it("should reject if 24 hours grace period has expired", async () => {
+      mockSupabase.auth.getUser.mockResolvedValueOnce({
+        data: { user: { id: "user-id" } },
+      });
+      mockSupabase.from.mockReturnThis();
+      mockSupabase.select.mockReturnThis();
+      mockSupabase.eq.mockReturnThis();
+
+      const expiredEnd = new Date(
+        Date.now() - 25 * 60 * 60 * 1000,
+      ).toISOString();
+      mockSupabase.single.mockResolvedValueOnce({
+        data: { end_date: expiredEnd },
+      });
+
+      const formData = new FormData();
+      formData.append("activity_id", "act-id");
+      formData.append("status", "sakit");
+      formData.append("notes", "Sakit demam tinggi");
+
+      const res = await submitLeaveRequest(formData);
+      expect(res.success).toBe(false);
+      expect(res.error?.code).toBe("BAD_REQUEST");
+      expect(res.message).toContain("24 jam");
     });
   });
 });

@@ -17,18 +17,26 @@ interface DecryptedPayload {
  */
 export async function generateAttendanceQR(
   activityId: string,
-  coordinates?: { latitude?: number; longitude?: number; lat?: number; lng?: number }
+  coordinates?: {
+    latitude?: number;
+    longitude?: number;
+    lat?: number;
+    lng?: number;
+  },
 ): Promise<ServerActionResponse<{ qrString: string; expiresAt: string }>> {
   try {
     const supabase = await createClient();
 
     // 1. Get authenticated user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
       return {
         success: false,
         message: "Sesi tidak ditemukan. Silakan login kembali.",
-        error: { code: "UNAUTHORIZED", details: "User is not logged in" }
+        error: { code: "UNAUTHORIZED", details: "User is not logged in" },
       };
     }
 
@@ -43,15 +51,16 @@ export async function generateAttendanceQR(
       return {
         success: false,
         message: "Profil tidak ditemukan.",
-        error: { code: "NOT_FOUND", details: "Profile not found" }
+        error: { code: "NOT_FOUND", details: "Profile not found" },
       };
     }
 
     if (profile.role !== "caang" && profile.role !== "anggota") {
       return {
         success: false,
-        message: "Hanya Calon Anggota (Caang) dan Anggota yang dapat melakukan absensi.",
-        error: { code: "FORBIDDEN", details: "Role is not authorized" }
+        message:
+          "Hanya Calon Anggota (Caang) dan Anggota yang dapat melakukan absensi.",
+        error: { code: "FORBIDDEN", details: "Role is not authorized" },
       };
     }
 
@@ -66,7 +75,7 @@ export async function generateAttendanceQR(
       return {
         success: false,
         message: "Kegiatan tidak ditemukan.",
-        error: { code: "NOT_FOUND", details: "Activity not found" }
+        error: { code: "NOT_FOUND", details: "Activity not found" },
       };
     }
 
@@ -76,22 +85,29 @@ export async function generateAttendanceQR(
 
     // Absensi dibuka 2 jam sebelum kegiatan dimulai
     const attendanceOpen = new Date(startDate.getTime() - 2 * 60 * 60 * 1000);
-    // Absensi ditutup 2 jam setelah kegiatan berakhir
-    const attendanceClose = new Date(endDate.getTime() + 2 * 60 * 60 * 1000);
+    // Absensi ditutup tepat saat kegiatan berakhir (end_date)
+    const attendanceClose = endDate;
 
     if (now < attendanceOpen) {
       return {
         success: false,
-        message: "Absensi belum dibuka. Absensi dapat diakses mulai 2 jam sebelum kegiatan.",
-        error: { code: "BAD_REQUEST", details: "Activity has not reached its attendance window yet" }
+        message:
+          "Absensi belum dibuka. Absensi dapat diakses mulai 2 jam sebelum kegiatan.",
+        error: {
+          code: "BAD_REQUEST",
+          details: "Activity has not reached its attendance window yet",
+        },
       };
     }
 
     if (now > attendanceClose) {
       return {
         success: false,
-        message: "Absensi sudah ditutup. Batas akhir absensi adalah 2 jam setelah kegiatan selesai.",
-        error: { code: "BAD_REQUEST", details: "Activity attendance window has already closed" }
+        message: "Absensi QR sudah ditutup karena kegiatan telah selesai.",
+        error: {
+          code: "BAD_REQUEST",
+          details: "Activity attendance window has already closed",
+        },
       };
     }
 
@@ -108,7 +124,7 @@ export async function generateAttendanceQR(
       profile_id: user.id,
       activity_id: activityId,
       generated_at: Date.now(),
-      coordinates: coords
+      coordinates: coords,
     };
 
     const qrString = encryptToken(payload);
@@ -119,15 +135,15 @@ export async function generateAttendanceQR(
       message: "QR Code berhasil dibuat.",
       data: {
         qrString,
-        expiresAt
-      }
+        expiresAt,
+      },
     };
   } catch (err: unknown) {
     const errMsg = err instanceof Error ? err.message : String(err);
     return {
       success: false,
       message: "Gagal membuat QR Code absensi.",
-      error: { code: "SERVER_ERROR", details: errMsg }
+      error: { code: "SERVER_ERROR", details: errMsg },
     };
   }
 }
@@ -137,7 +153,7 @@ export async function generateAttendanceQR(
  * Only accessible by admins. Computes lateness and upserts.
  */
 export async function scanAttendanceQR(
-  qrString: string
+  qrString: string,
 ): Promise<ServerActionResponse<{ name: string; status: "hadir" | "telat" }>> {
   console.log("=== SERVER DEBUG: scanAttendanceQR STARTED ===");
   console.log("qrString received:", qrString);
@@ -145,14 +161,22 @@ export async function scanAttendanceQR(
     const supabase = await createClient();
 
     // 1. Verify that the scanning user is an admin
-    const { data: { user: adminUser }, error: authError } = await supabase.auth.getUser();
-    console.log("Auth user retrieval completed. adminUser ID:", adminUser?.id, "Error if any:", authError);
+    const {
+      data: { user: adminUser },
+      error: authError,
+    } = await supabase.auth.getUser();
+    console.log(
+      "Auth user retrieval completed. adminUser ID:",
+      adminUser?.id,
+      "Error if any:",
+      authError,
+    );
     if (authError || !adminUser) {
       console.warn("Auth check failed or no user logged in.");
       return {
         success: false,
         message: "Sesi tidak ditemukan. Silakan login kembali.",
-        error: { code: "UNAUTHORIZED", details: "Admin is not logged in" }
+        error: { code: "UNAUTHORIZED", details: "Admin is not logged in" },
       };
     }
 
@@ -162,23 +186,31 @@ export async function scanAttendanceQR(
       .eq("id", adminUser.id)
       .single();
 
-    console.log("Admin profile check completed. Role:", adminProfile?.role, "Error if any:", adminProfileError);
+    console.log(
+      "Admin profile check completed. Role:",
+      adminProfile?.role,
+      "Error if any:",
+      adminProfileError,
+    );
     if (adminProfileError || !adminProfile) {
       console.warn("Failed to find admin profile in DB.");
       return {
         success: false,
         message: "Profil admin tidak ditemukan.",
-        error: { code: "NOT_FOUND", details: "Admin profile not found" }
+        error: { code: "NOT_FOUND", details: "Admin profile not found" },
       };
     }
 
     const allowedRoles = ["admin-komdis", "admin-or", "super-admin"];
     if (!allowedRoles.includes(adminProfile.role)) {
-      console.warn("Role not authorized. Required: admin, got:", adminProfile.role);
+      console.warn(
+        "Role not authorized. Required: admin, got:",
+        adminProfile.role,
+      );
       return {
         success: false,
         message: "Hanya Admin yang dapat memindai QR Code absensi.",
-        error: { code: "FORBIDDEN", details: "User role is not admin" }
+        error: { code: "FORBIDDEN", details: "User role is not admin" },
       };
     }
 
@@ -193,7 +225,7 @@ export async function scanAttendanceQR(
       return {
         success: false,
         message: "QR Code tidak valid.",
-        error: { code: "INVALID_TOKEN", details: errorMsg }
+        error: { code: "INVALID_TOKEN", details: errorMsg },
       };
     }
 
@@ -203,18 +235,31 @@ export async function scanAttendanceQR(
       return {
         success: false,
         message: "Struktur QR Code tidak valid.",
-        error: { code: "INVALID_STRUCTURE", details: "Missing required payload fields" }
+        error: {
+          code: "INVALID_STRUCTURE",
+          details: "Missing required payload fields",
+        },
       };
     }
 
     const now = Date.now();
-    console.log("Checking token age. Token generated_at:", generated_at, "Current time:", now, "Diff (ms):", now - generated_at);
+    console.log(
+      "Checking token age. Token generated_at:",
+      generated_at,
+      "Current time:",
+      now,
+      "Diff (ms):",
+      now - generated_at,
+    );
     if (now > generated_at + 5 * 60 * 1000) {
       console.warn("Token has expired. Age exceeds 5 minutes limit.");
       return {
         success: false,
         message: "QR Code Expired.",
-        error: { code: "TOKEN_EXPIRED", details: "Token is older than 5 minutes" }
+        error: {
+          code: "TOKEN_EXPIRED",
+          details: "Token is older than 5 minutes",
+        },
       };
     }
 
@@ -225,13 +270,18 @@ export async function scanAttendanceQR(
       .eq("id", activity_id)
       .single();
 
-    console.log("Fetched activity details. Start date:", activity?.start_date, "Error if any:", activityError);
+    console.log(
+      "Fetched activity details. Start date:",
+      activity?.start_date,
+      "Error if any:",
+      activityError,
+    );
     if (activityError || !activity) {
       console.warn("Activity not found in DB.");
       return {
         success: false,
         message: "Kegiatan tidak ditemukan.",
-        error: { code: "NOT_FOUND", details: "Activity not found" }
+        error: { code: "NOT_FOUND", details: "Activity not found" },
       };
     }
 
@@ -240,8 +290,16 @@ export async function scanAttendanceQR(
     // Batas toleransi: 15 menit setelah start_date
     const toleranceLimit = new Date(startTime.getTime() + 15 * 60 * 1000);
 
-    const status: "hadir" | "telat" = checkInTime > toleranceLimit ? "telat" : "hadir";
-    console.log("Check-in calculation. Time:", checkInTime.toISOString(), "Limit:", toleranceLimit.toISOString(), "Status assigned:", status);
+    const status: "hadir" | "telat" =
+      checkInTime > toleranceLimit ? "telat" : "hadir";
+    console.log(
+      "Check-in calculation. Time:",
+      checkInTime.toISOString(),
+      "Limit:",
+      toleranceLimit.toISOString(),
+      "Status assigned:",
+      status,
+    );
 
     // 4. Fetch user's profile and name
     const { data: targetProfile, error: targetProfileError } = await supabase
@@ -250,13 +308,20 @@ export async function scanAttendanceQR(
       .eq("id", profile_id)
       .single();
 
-    console.log("Fetched target student profile. Role:", targetProfile?.role, "NIM:", targetProfile?.nim, "Error if any:", targetProfileError);
+    console.log(
+      "Fetched target student profile. Role:",
+      targetProfile?.role,
+      "NIM:",
+      targetProfile?.nim,
+      "Error if any:",
+      targetProfileError,
+    );
     if (targetProfileError || !targetProfile) {
       console.warn("Student profile not found in DB.");
       return {
         success: false,
         message: "Profil mahasiswa tidak ditemukan.",
-        error: { code: "NOT_FOUND", details: "Target profile not found" }
+        error: { code: "NOT_FOUND", details: "Target profile not found" },
       };
     }
 
@@ -280,27 +345,33 @@ export async function scanAttendanceQR(
 
     // 5. Upsert attendance record
     console.log("Attempting database upsert on attendances table...");
-    const { error: upsertError } = await supabase
-      .from("attendances")
-      .upsert({
+    const { error: upsertError } = await supabase.from("attendances").upsert(
+      {
         activity_id,
         profile_id,
         check_in_at: checkInTime.toISOString(),
         status,
-        notes: coordinates ? `Coordinates: ${JSON.stringify(coordinates)}` : null,
-        verified_by: adminUser.id
-      }, {
-        onConflict: "activity_id,profile_id"
-      });
+        notes: coordinates
+          ? `Coordinates: ${JSON.stringify(coordinates)}`
+          : null,
+        verified_by: adminUser.id,
+      },
+      {
+        onConflict: "activity_id,profile_id",
+      },
+    );
 
     if (upsertError) {
       console.error("=== SERVER DATABASE UPSERT ERROR ===");
       console.error("Message:", upsertError.message);
-      console.error("Full details object:", JSON.stringify(upsertError, null, 2));
+      console.error(
+        "Full details object:",
+        JSON.stringify(upsertError, null, 2),
+      );
       return {
         success: false,
         message: "Gagal mencatat absensi ke database.",
-        error: { code: "DATABASE_ERROR", details: upsertError.message }
+        error: { code: "DATABASE_ERROR", details: upsertError.message },
       };
     }
 
@@ -310,8 +381,8 @@ export async function scanAttendanceQR(
       message: "Absensi berhasil dicatat.",
       data: {
         name,
-        status
-      }
+        status,
+      },
     };
   } catch (err: unknown) {
     const errMsg = err instanceof Error ? err.message : String(err);
@@ -320,7 +391,7 @@ export async function scanAttendanceQR(
     return {
       success: false,
       message: "Gagal memproses pemindaian QR Code absensi.",
-      error: { code: "SERVER_ERROR", details: errMsg }
+      error: { code: "SERVER_ERROR", details: errMsg },
     };
   } finally {
     console.log("=== SERVER DEBUG: scanAttendanceQR FINISHED ===");
@@ -333,18 +404,21 @@ export async function scanAttendanceQR(
  * Inserts/upserts an attendance record with verified_by = null.
  */
 export async function submitLeaveRequest(
-  formData: FormData
+  formData: FormData,
 ): Promise<ServerActionResponse> {
   try {
     const supabase = await createClient();
 
     // 1. Get user session
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
       return {
         success: false,
         message: "Sesi tidak ditemukan. Silakan login kembali.",
-        error: { code: "UNAUTHORIZED", details: "User is not logged in" }
+        error: { code: "UNAUTHORIZED", details: "User is not logged in" },
       };
     }
 
@@ -357,7 +431,7 @@ export async function submitLeaveRequest(
       return {
         success: false,
         message: "Semua kolom input wajib diisi.",
-        error: { code: "BAD_REQUEST", details: "Missing required fields" }
+        error: { code: "BAD_REQUEST", details: "Missing required fields" },
       };
     }
 
@@ -365,7 +439,38 @@ export async function submitLeaveRequest(
       return {
         success: false,
         message: "Status tidak valid.",
-        error: { code: "BAD_REQUEST", details: "Status must be sakit or izin" }
+        error: { code: "BAD_REQUEST", details: "Status must be sakit or izin" },
+      };
+    }
+
+    // Verify activity grace period (24 hours after end_date)
+    const { data: activity, error: activityError } = await supabase
+      .from("activities")
+      .select("end_date")
+      .eq("id", activityId)
+      .single();
+
+    if (activityError || !activity) {
+      return {
+        success: false,
+        message: "Kegiatan tidak ditemukan.",
+        error: { code: "NOT_FOUND", details: "Activity not found" },
+      };
+    }
+
+    const now = new Date();
+    const endDate = new Date(activity.end_date);
+    const gracePeriodEnd = new Date(endDate.getTime() + 24 * 60 * 60 * 1000);
+
+    if (now > gracePeriodEnd) {
+      return {
+        success: false,
+        message:
+          "Tenggat waktu pengajuan izin/sakit (maksimal 24 jam setelah kegiatan selesai) telah berakhir.",
+        error: {
+          code: "BAD_REQUEST",
+          details: "Grace period for leave request expired",
+        },
       };
     }
 
@@ -384,14 +489,14 @@ export async function submitLeaveRequest(
         .from("registrations")
         .upload(filePath, buffer, {
           contentType: file.type,
-          upsert: true
+          upsert: true,
         });
 
       if (uploadError) {
         return {
           success: false,
           message: "Gagal mengunggah file bukti.",
-          error: { code: "STORAGE_ERROR", details: uploadError.message }
+          error: { code: "STORAGE_ERROR", details: uploadError.message },
         };
       }
 
@@ -400,43 +505,44 @@ export async function submitLeaveRequest(
       return {
         success: false,
         message: "File bukti izin atau sakit wajib diunggah.",
-        error: { code: "BAD_REQUEST", details: "File is missing" }
+        error: { code: "BAD_REQUEST", details: "File is missing" },
       };
     }
 
     // 2. Record attendance in database
-    const { error: upsertError } = await supabase
-      .from("attendances")
-      .upsert({
+    const { error: upsertError } = await supabase.from("attendances").upsert(
+      {
         activity_id: activityId,
         profile_id: user.id,
         check_in_at: new Date().toISOString(),
         status,
         notes,
         proof_url: proofUrl,
-        verified_by: null // waiting for admin intervention
-      }, {
-        onConflict: "activity_id,profile_id"
-      });
+        verified_by: null, // waiting for admin intervention
+      },
+      {
+        onConflict: "activity_id,profile_id",
+      },
+    );
 
     if (upsertError) {
       return {
         success: false,
         message: "Gagal mencatat pengajuan izin.",
-        error: { code: "DATABASE_ERROR", details: upsertError.message }
+        error: { code: "DATABASE_ERROR", details: upsertError.message },
       };
     }
 
     return {
       success: true,
-      message: "Pengajuan izin berhasil dikirim. Menunggu verifikasi admin."
+      message: "Pengajuan izin berhasil dikirim. Menunggu verifikasi admin.",
     };
   } catch (err: unknown) {
     const errMsg = err instanceof Error ? err.message : String(err);
     return {
       success: false,
       message: "Gagal mengirim pengajuan izin.",
-      error: { code: "SERVER_ERROR", details: errMsg }
+      error: { code: "SERVER_ERROR", details: errMsg },
     };
   }
 }
@@ -448,18 +554,21 @@ export async function submitLeaveRequest(
 export async function manualOverrideAttendance(
   attendanceId: string,
   status: string,
-  adminNotes: string
+  adminNotes: string,
 ): Promise<ServerActionResponse> {
   try {
     const supabase = await createClient();
 
     // 1. Get current user and verify admin role
-    const { data: { user: adminUser }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user: adminUser },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !adminUser) {
       return {
         success: false,
         message: "Sesi tidak ditemukan. Silakan login kembali.",
-        error: { code: "UNAUTHORIZED", details: "Admin is not logged in" }
+        error: { code: "UNAUTHORIZED", details: "Admin is not logged in" },
       };
     }
 
@@ -473,7 +582,7 @@ export async function manualOverrideAttendance(
       return {
         success: false,
         message: "Profil admin tidak ditemukan.",
-        error: { code: "NOT_FOUND", details: "Admin profile not found" }
+        error: { code: "NOT_FOUND", details: "Admin profile not found" },
       };
     }
 
@@ -482,7 +591,7 @@ export async function manualOverrideAttendance(
       return {
         success: false,
         message: "Hanya Admin yang dapat memodifikasi absensi secara manual.",
-        error: { code: "FORBIDDEN", details: "User role is not admin" }
+        error: { code: "FORBIDDEN", details: "User role is not admin" },
       };
     }
 
@@ -491,7 +600,7 @@ export async function manualOverrideAttendance(
       return {
         success: false,
         message: "Catatan penyesuaian wajib diisi.",
-        error: { code: "BAD_REQUEST", details: "Admin notes cannot be empty" }
+        error: { code: "BAD_REQUEST", details: "Admin notes cannot be empty" },
       };
     }
 
@@ -501,7 +610,10 @@ export async function manualOverrideAttendance(
       return {
         success: false,
         message: "Status absensi tidak valid.",
-        error: { code: "BAD_REQUEST", details: `Status must be one of: ${validStatuses.join(", ")}` }
+        error: {
+          code: "BAD_REQUEST",
+          details: `Status must be one of: ${validStatuses.join(", ")}`,
+        },
       };
     }
 
@@ -511,7 +623,7 @@ export async function manualOverrideAttendance(
       .update({
         status: status as "hadir" | "izin" | "sakit" | "alfa",
         notes: adminNotes,
-        verified_by: adminUser.id
+        verified_by: adminUser.id,
       })
       .eq("id", attendanceId);
 
@@ -519,20 +631,20 @@ export async function manualOverrideAttendance(
       return {
         success: false,
         message: "Gagal menyesuaikan status absensi.",
-        error: { code: "DATABASE_ERROR", details: updateError.message }
+        error: { code: "DATABASE_ERROR", details: updateError.message },
       };
     }
 
     return {
       success: true,
-      message: "Status absensi berhasil diperbarui secara manual."
+      message: "Status absensi berhasil diperbarui secara manual.",
     };
   } catch (err: unknown) {
     const errMsg = err instanceof Error ? err.message : String(err);
     return {
       success: false,
       message: "Gagal memproses penyesuaian absensi manual.",
-      error: { code: "SERVER_ERROR", details: errMsg }
+      error: { code: "SERVER_ERROR", details: errMsg },
     };
   }
 }

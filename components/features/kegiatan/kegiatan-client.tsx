@@ -9,6 +9,9 @@ import {
   Search01Icon,
   EyeIcon,
   CalendarAdd01Icon,
+  Edit02Icon,
+  Delete01Icon,
+  Loading03Icon,
 } from "@hugeicons/core-free-icons";
 import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,8 +23,13 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { CreateKomdisActivityDialog } from "@/components/features/komdis/create-komdis-activity-dialog";
+import { EditKomdisActivityDialog } from "@/components/features/komdis/edit-komdis-activity-dialog";
+import { deleteKomdisActivity } from "@/lib/actions/komdis";
+import { toast } from "sonner";
 
 interface Activity {
   id: string;
@@ -43,17 +51,36 @@ export function KegiatanClient() {
   const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editingKomdisActivity, setEditingKomdisActivity] =
+    useState<Activity | null>(null);
+  const [deletingKomdisActivity, setDeletingKomdisActivity] =
+    useState<Activity | null>(null);
+  const [isDeletingKomdis, setIsDeletingKomdis] = useState(false);
 
-  // Helper to check if attendance window is active (2 hours before start until 2 hours after end)
+  const handleDeleteKomdis = async () => {
+    if (!deletingKomdisActivity) return;
+    setIsDeletingKomdis(true);
+    try {
+      await deleteKomdisActivity(deletingKomdisActivity.id);
+      toast.success("Kegiatan Komdis berhasil dihapus.");
+      setDeletingKomdisActivity(null);
+      fetchActivities();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error(msg);
+    } finally {
+      setIsDeletingKomdis(false);
+    }
+  };
+
+  // Helper to check if attendance window is active (2 hours before start until activity end_date)
   const isAttendanceWindowActive = (activity: Activity | null) => {
     if (!activity) return false;
     const now = new Date();
     const startWindow = new Date(
       new Date(activity.start_date).getTime() - 2 * 60 * 60 * 1000,
     );
-    const endWindow = new Date(
-      new Date(activity.end_date).getTime() + 2 * 60 * 60 * 1000,
-    );
+    const endWindow = new Date(activity.end_date);
     return now >= startWindow && now <= endWindow;
   };
 
@@ -590,18 +617,49 @@ export function KegiatanClient() {
                     variant="outline"
                     size="sm"
                     onClick={() => setSelectedActivity(activity)}
-                    className={`rounded-lg border border-slate-200 dark:border-slate-700 text-[#0a192f] dark:text-slate-200 font-mono text-[11px] uppercase tracking-wider px-3 h-9 hover:bg-slate-100 dark:hover:bg-slate-800 ${isAttendanceWindowActive(activity) ? "w-1/2" : "w-full"}`}
+                    className="rounded-lg border border-slate-200 dark:border-slate-700 text-[#0a192f] dark:text-slate-200 font-mono text-[11px] uppercase tracking-wider px-3 h-9 hover:bg-slate-100 dark:hover:bg-slate-800"
                   >
                     <HugeiconsIcon icon={EyeIcon} size={14} className="mr-1" />
                     Detail
                   </Button>
+                  {(user?.role === "admin-komdis" ||
+                    user?.role === "super-admin") && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setEditingKomdisActivity(activity)}
+                        className="rounded-lg border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 font-mono text-[11px] uppercase tracking-wider px-3 h-9 hover:bg-blue-50 dark:hover:bg-blue-950/40"
+                      >
+                        <HugeiconsIcon
+                          icon={Edit02Icon}
+                          size={14}
+                          className="mr-1"
+                        />
+                        Edit
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setDeletingKomdisActivity(activity)}
+                        className="rounded-lg border border-slate-200 dark:border-slate-700 text-red-600 dark:text-red-400 font-mono text-[11px] uppercase tracking-wider px-3 h-9 hover:bg-red-50 dark:hover:bg-red-950/40"
+                      >
+                        <HugeiconsIcon
+                          icon={Delete01Icon}
+                          size={14}
+                          className="mr-1"
+                        />
+                        Hapus
+                      </Button>
+                    </>
+                  )}
                   {isAttendanceWindowActive(activity) && (
                     <Button
                       size="sm"
                       onClick={() =>
                         router.push(`/kegiatan/${activity.id}/absensi`)
                       }
-                      className="rounded-lg bg-[#1e3a8a] dark:bg-blue-600 text-white font-mono text-[11px] uppercase tracking-wider px-3 h-9 hover:bg-[#1e40af] dark:hover:bg-blue-500 w-1/2"
+                      className="rounded-lg bg-[#1e3a8a] dark:bg-blue-600 text-white font-mono text-[11px] uppercase tracking-wider px-3 h-9 hover:bg-[#1e40af] dark:hover:bg-blue-500"
                     >
                       Absen
                     </Button>
@@ -631,7 +689,7 @@ export function KegiatanClient() {
                   <th className="p-4 w-32 font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
                     Status
                   </th>
-                  <th className="p-4 w-36 text-center font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
+                  <th className="p-4 w-44 text-center font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
                     Aksi
                   </th>
                 </tr>
@@ -700,12 +758,12 @@ export function KegiatanClient() {
                     </td>
 
                     <td className="p-4 align-middle text-center">
-                      <div className="flex justify-center items-center gap-2">
+                      <div className="flex justify-center items-center gap-1.5">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => setSelectedActivity(activity)}
-                          className="rounded-lg border border-slate-200 dark:border-slate-700 text-[#0a192f] dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 h-8 px-3 font-mono text-[11px] uppercase tracking-wider"
+                          className="rounded-lg border border-slate-200 dark:border-slate-700 text-[#0a192f] dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 h-8 px-2.5 font-mono text-[11px] uppercase tracking-wider"
                         >
                           <HugeiconsIcon
                             icon={EyeIcon}
@@ -714,13 +772,38 @@ export function KegiatanClient() {
                           />
                           Detail
                         </Button>
+                        {(user?.role === "admin-komdis" ||
+                          user?.role === "super-admin") && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => setEditingKomdisActivity(activity)}
+                              className="h-8 w-8 rounded-lg border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40"
+                              title="Edit Kegiatan"
+                            >
+                              <HugeiconsIcon icon={Edit02Icon} size={14} />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() =>
+                                setDeletingKomdisActivity(activity)
+                              }
+                              className="h-8 w-8 rounded-lg border border-slate-200 dark:border-slate-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
+                              title="Hapus Kegiatan"
+                            >
+                              <HugeiconsIcon icon={Delete01Icon} size={14} />
+                            </Button>
+                          </>
+                        )}
                         {isAttendanceWindowActive(activity) && (
                           <Button
                             size="sm"
                             onClick={() =>
                               router.push(`/kegiatan/${activity.id}/absensi`)
                             }
-                            className="rounded-lg bg-[#1e3a8a] dark:bg-blue-600 text-white hover:bg-[#1e40af] dark:hover:bg-blue-500 h-8 px-3 font-mono text-[11px] uppercase tracking-wider"
+                            className="rounded-lg bg-[#1e3a8a] dark:bg-blue-600 text-white hover:bg-[#1e40af] dark:hover:bg-blue-500 h-8 px-2.5 font-mono text-[11px] uppercase tracking-wider"
                           >
                             Absen
                           </Button>
@@ -843,6 +926,62 @@ export function KegiatanClient() {
         onClose={() => setIsCreateModalOpen(false)}
         onSuccess={fetchActivities}
       />
+
+      {/* Modal: Edit Komdis Activity */}
+      <EditKomdisActivityDialog
+        activity={editingKomdisActivity}
+        isOpen={!!editingKomdisActivity}
+        onClose={() => setEditingKomdisActivity(null)}
+        onSuccess={fetchActivities}
+      />
+
+      {/* Modal: Delete Confirmation */}
+      <Dialog
+        open={!!deletingKomdisActivity}
+        onOpenChange={(open) => !open && setDeletingKomdisActivity(null)}
+      >
+        <DialogContent className="max-w-md rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-[#0a192f] dark:text-slate-100 font-display">
+              Konfirmasi Hapus Kegiatan
+            </DialogTitle>
+            <DialogDescription className="text-xs text-slate-500 dark:text-slate-400 font-sans mt-2">
+              Apakah Anda yakin ingin menghapus kegiatan &quot;
+              {deletingKomdisActivity?.title}&quot;? Tindakan ini tidak dapat
+              dibatalkan.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
+            <Button
+              variant="outline"
+              onClick={() => setDeletingKomdisActivity(null)}
+              disabled={isDeletingKomdis}
+              className="rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-mono text-xs uppercase"
+            >
+              Batal
+            </Button>
+            <Button
+              onClick={handleDeleteKomdis}
+              disabled={isDeletingKomdis}
+              className="rounded-lg bg-red-600 hover:bg-red-700 text-white font-mono text-xs uppercase tracking-wider"
+            >
+              {isDeletingKomdis ? (
+                <>
+                  <HugeiconsIcon
+                    icon={Loading03Icon}
+                    size={14}
+                    className="animate-spin mr-1.5"
+                  />
+                  Menghapus...
+                </>
+              ) : (
+                "Hapus Kegiatan"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

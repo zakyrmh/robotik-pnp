@@ -25,9 +25,11 @@ let mockRpcData: Array<{ profile_id: string }> | null = [
 let mockRpcError: { message: string } | null = null;
 let mockActivityData: {
   start_date: string;
+  end_date: string;
   late_tolerance_minutes: number;
 } | null = {
   start_date: new Date(Date.now() - 5 * 60000).toISOString(),
+  end_date: new Date(Date.now() + 60 * 60000).toISOString(),
   late_tolerance_minutes: 15,
 };
 
@@ -71,6 +73,19 @@ vi.mock("@/lib/supabase/server", () => ({
               })),
             })),
           })),
+          update: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              select: vi.fn(() => ({
+                single: vi.fn(async () => ({
+                  data: { id: VALID_UUID_1, title: "Rapat Komdis Updated" },
+                  error: mockUpdateError,
+                })),
+              })),
+            })),
+          })),
+          delete: vi.fn(() => ({
+            eq: vi.fn(async () => ({ error: mockUpdateError })),
+          })),
           select: vi.fn(() => ({
             eq: vi.fn(() => ({
               single: vi.fn(async () => ({
@@ -106,6 +121,9 @@ vi.mock("@/lib/supabase/server", () => ({
 
 import {
   createKomdisActivity,
+  updateKomdisActivity,
+  deleteKomdisActivity,
+  recordSelfAttendanceKomdis,
   scanAttendanceQRByAdmin,
   reviewLeaveRequest,
   batchMarkAlfa,
@@ -126,6 +144,7 @@ describe("Modul Server Actions Komdis Attendance", () => {
     mockRpcError = null;
     mockActivityData = {
       start_date: new Date(Date.now() - 5 * 60000).toISOString(),
+      end_date: new Date(Date.now() + 60 * 60000).toISOString(),
       late_tolerance_minutes: 15,
     };
   });
@@ -162,6 +181,44 @@ describe("Modul Server Actions Komdis Attendance", () => {
       };
 
       await expect(createKomdisActivity(input)).rejects.toThrow("Forbidden");
+    });
+  });
+
+  // --- Test 1b: updateKomdisActivity ---
+  describe("updateKomdisActivity", () => {
+    it("harus sukses memperbarui kegiatan komdis saat role admin-komdis", async () => {
+      const input = {
+        activityId: VALID_UUID_1,
+        title: "Rapat Eval Komdis Revisi",
+        description: "Deskripsi baru",
+        start_date: "2026-08-01T10:00:00Z",
+        end_date: "2026-08-01T12:00:00Z",
+        location: "Ruang Rapat",
+        checkin_open_at: "2026-08-01T09:30:00Z",
+        checkin_close_at: "2026-08-01T10:30:00Z",
+        late_tolerance_minutes: 15,
+      };
+
+      const result = await updateKomdisActivity(input);
+      expect(result.success).toBe(true);
+      expect(result.data.title).toBe("Rapat Komdis Updated");
+    });
+  });
+
+  // --- Test 1c: deleteKomdisActivity ---
+  describe("deleteKomdisActivity", () => {
+    it("harus sukses menghapus kegiatan komdis saat role admin-komdis", async () => {
+      const result = await deleteKomdisActivity(VALID_UUID_1);
+      expect(result.success).toBe(true);
+    });
+  });
+
+  // --- Test 1d: recordSelfAttendanceKomdis ---
+  describe("recordSelfAttendanceKomdis", () => {
+    it("harus sukses mencatat presensi mandiri admin komdis", async () => {
+      const result = await recordSelfAttendanceKomdis(VALID_UUID_1);
+      expect(result.success).toBe(true);
+      expect(result.message).toContain("Berhasil mencatat presensi mandiri");
     });
   });
 
@@ -205,6 +262,24 @@ describe("Modul Server Actions Komdis Attendance", () => {
       const res = await scanAttendanceQRByAdmin(VALID_UUID_1, token);
       expect(res.success).toBe(false);
       expect(res.message).toContain("salah kegiatan");
+    });
+
+    it("harus menolak jika sesi absensi telah ditutup (end_date + 2 jam)", async () => {
+      mockActivityData = {
+        start_date: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
+        end_date: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(),
+        late_tolerance_minutes: 15,
+      };
+
+      const token = encryptToken({
+        profile_id: VALID_UUID_2,
+        activity_id: VALID_UUID_1,
+        generated_at: Date.now(),
+      });
+
+      const res = await scanAttendanceQRByAdmin(VALID_UUID_1, token);
+      expect(res.success).toBe(false);
+      expect(res.message).toContain("telah ditutup");
     });
   });
 

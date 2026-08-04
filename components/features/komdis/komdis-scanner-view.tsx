@@ -7,6 +7,7 @@ import {
   scanAttendanceQRByAdmin,
   recordManualAttendance,
   batchMarkAlfa,
+  recordSelfAttendanceKomdis,
 } from "@/lib/actions/komdis";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -218,6 +219,25 @@ export function KomdisScannerView({
     });
   };
 
+  const handleSelfAttendance = () => {
+    startTransition(async () => {
+      try {
+        const res = await recordSelfAttendanceKomdis(activityId);
+        if (res.success) {
+          toast.success(res.message);
+        } else {
+          toast.error(res.message);
+        }
+      } catch (err: unknown) {
+        toast.error(
+          err instanceof Error
+            ? err.message
+            : "Gagal mencatat presensi mandiri",
+        );
+      }
+    });
+  };
+
   return (
     <div className="space-y-4 sm:space-y-6 max-w-xl mx-auto w-full">
       {/* Header Info - Light/Dark Mode & Precision Blueprint */}
@@ -270,13 +290,23 @@ export function KomdisScannerView({
       </Card>
 
       {/* Action Controls - Mobile First */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+        <Button
+          type="button"
+          disabled={isPending}
+          onClick={handleSelfAttendance}
+          className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-medium text-xs rounded-lg cursor-pointer py-3 shadow-xs"
+        >
+          <HugeiconsIcon icon={UserCheck01Icon} size={16} className="mr-1.5" />
+          PRESENSI DIRI
+        </Button>
+
         <Button
           type="button"
           onClick={() => setIsManualOpen(true)}
           className="bg-[#1e3a8a] hover:bg-[#1e40af] dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-medium text-xs rounded-lg cursor-pointer py-3 shadow-xs"
         >
-          <HugeiconsIcon icon={UserCheck01Icon} size={16} className="mr-2" />
+          <HugeiconsIcon icon={UserCheck01Icon} size={16} className="mr-1.5" />
           OVERRIDE MANUAL
         </Button>
 
@@ -286,8 +316,8 @@ export function KomdisScannerView({
           onClick={handleBatchAlfa}
           className="bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-500 text-white font-medium text-xs rounded-lg cursor-pointer py-3 shadow-xs"
         >
-          <HugeiconsIcon icon={UserGroupIcon} size={16} className="mr-2" />
-          BATCH MARK ALFA
+          <HugeiconsIcon icon={UserGroupIcon} size={16} className="mr-1.5" />
+          BATCH ALFA
         </Button>
       </div>
 

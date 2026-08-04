@@ -7,11 +7,13 @@ import { createClient } from "@/lib/supabase/server";
 import { decryptQRToken } from "@/lib/utils/crypto";
 import {
   CreateKomdisActivitySchema,
+  UpdateKomdisActivitySchema,
   ReviewLeaveSchema,
   LogPointReductionSchema,
   IssueSanctionSchema,
   ManualAttendanceSchema,
   type CreateKomdisActivityInput,
+  type UpdateKomdisActivityInput,
   type ReviewLeaveInput,
   type LogPointReductionInput,
   type IssueSanctionInput,
@@ -87,6 +89,60 @@ export async function createKomdisActivity(
 }
 
 /**
+ * 1b. Memperbarui Kegiatan Komdis (Target Audience Otomatis 'anggota')
+ */
+export async function updateKomdisActivity(
+  rawInput: UpdateKomdisActivityInput,
+) {
+  const { supabase } = await verifyKomdisRole();
+  const validated = UpdateKomdisActivitySchema.parse(rawInput);
+
+  const { data, error } = await supabase
+    .from("activities")
+    .update({
+      title: validated.title,
+      description: validated.description || null,
+      start_date: validated.start_date,
+      end_date: validated.end_date,
+      location: validated.location,
+      checkin_open_at: validated.checkin_open_at,
+      checkin_close_at: validated.checkin_close_at,
+      late_tolerance_minutes: validated.late_tolerance_minutes,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", validated.activityId)
+    .select()
+    .single();
+
+  if (error) throw new Error(`Gagal memperbarui kegiatan: ${error.message}`);
+
+  revalidatePath("/kegiatan");
+  revalidatePath(`/kegiatan/${validated.activityId}`);
+  return { success: true, data };
+}
+
+/**
+ * 1c. Menghapus Kegiatan Komdis
+ */
+export async function deleteKomdisActivity(activityId: string) {
+  const { supabase } = await verifyKomdisRole();
+
+  if (!activityId) {
+    throw new Error("ID kegiatan tidak valid.");
+  }
+
+  const { error } = await supabase
+    .from("activities")
+    .delete()
+    .eq("id", activityId);
+
+  if (error) throw new Error(`Gagal menghapus kegiatan: ${error.message}`);
+
+  revalidatePath("/kegiatan");
+  return { success: true };
+}
+
+/**
  * 2. Scan QR Code Presensi oleh Kamera HP Admin Komdis
  */
 export async function scanAttendanceQRByAdmin(
@@ -134,7 +190,7 @@ export async function scanAttendanceQRByAdmin(
   // Ambil data kegiatan untuk kalkulasi keterlambatan
   const { data: activity } = await supabase
     .from("activities")
-    .select("start_date, late_tolerance_minutes")
+    .select("start_date, end_date, late_tolerance_minutes")
     .eq("id", activityId)
     .single();
 
@@ -144,6 +200,17 @@ export async function scanAttendanceQRByAdmin(
 
   const now = new Date();
   const startDate = new Date(activity.start_date);
+  const endDate = new Date(activity.end_date);
+  const attendanceClose = new Date(endDate.getTime() + 2 * 60 * 60 * 1000);
+
+  if (now > attendanceClose) {
+    return {
+      success: false,
+      message:
+        "Sesi presensi untuk kegiatan ini telah ditutup (batas 2 jam setelah kegiatan selesai).",
+    };
+  }
+
   const lateLimit = new Date(
     startDate.getTime() + (activity.late_tolerance_minutes || 15) * 60000,
   );
@@ -177,6 +244,48 @@ export async function scanAttendanceQRByAdmin(
     success: true,
     status,
     message: `Presensi Berhasil (${status.toUpperCase()})`,
+  };
+}
+
+/**
+ * 2b. Presensi Mandiri oleh Admin Komdis yang Bertugas
+ */
+export async function recordSelfAttendanceKomdis(activityId: string) {
+  const { supabase, user } = await verifyKomdisRole();
+
+  if (!activityId) {
+    return { success: false, message: "ID kegiatan tidak valid." };
+  }
+
+  const now = new Date().toISOString();
+
+  const { error } = await supabase.from("attendances").upsert(
+    {
+      activity_id: activityId,
+      profile_id: user.id,
+      check_in_at: now,
+      status: "hadir",
+      approval_status: "approved",
+      verified_by: user.id,
+      verified_at: now,
+      points_awarded: 0,
+    },
+    { onConflict: "activity_id,profile_id" },
+  );
+
+  if (error) {
+    return {
+      success: false,
+      message: `Gagal mencatat presensi mandiri: ${error.message}`,
+    };
+  }
+
+  revalidatePath(`/kegiatan/${activityId}`);
+  revalidatePath(`/kegiatan/${activityId}/absensi`);
+  return {
+    success: true,
+    message:
+      "Berhasil mencatat presensi mandiri sebagai Admin Komdis bertugas.",
   };
 }
 
