@@ -41,10 +41,14 @@ let mockUpdateUserResult: { error: { message: string } | null } = {
 vi.mock("server-only", () => ({}));
 
 // -----------------------------------------------------------------------
-// Mock: next/cache
+// Mock: next/cache & next/headers
 // -----------------------------------------------------------------------
 vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
+}));
+
+vi.mock("next/headers", () => ({
+  headers: vi.fn(async () => new Map([["x-forwarded-for", "127.0.0.1"]])),
 }));
 
 // -----------------------------------------------------------------------

@@ -34,6 +34,51 @@ function isOldFormat(token: string): boolean {
   );
 }
 
+function writeBigInt64BE(
+  buf: Buffer,
+  value: bigint | number,
+  offset: number,
+): void {
+  if (typeof buf.writeBigInt64BE === "function") {
+    buf.writeBigInt64BE(BigInt(value), offset);
+  } else {
+    const big = BigInt(value);
+    const shift = BigInt(32);
+    const mask = BigInt(0xffffffff);
+    const high = Number((big >> shift) & mask);
+    const low = Number(big & mask);
+    buf.writeUInt32BE(high, offset);
+    buf.writeUInt32BE(low, offset + 4);
+  }
+}
+
+function readBigInt64BE(buf: Buffer, offset: number): bigint {
+  if (typeof buf.readBigInt64BE === "function") {
+    return buf.readBigInt64BE(offset);
+  } else {
+    const high = buf.readUInt32BE(offset);
+    const low = buf.readUInt32BE(offset + 4);
+    const shift = BigInt(32);
+    return (BigInt(high) << shift) | BigInt(low);
+  }
+}
+
+function bufferToBase64Url(buf: Buffer): string {
+  return buf
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+}
+
+function base64UrlToBuffer(str: string): Buffer {
+  let base64 = str.replace(/-/g, "+").replace(/_/g, "/");
+  while (base64.length % 4 !== 0) {
+    base64 += "=";
+  }
+  return Buffer.from(base64, "base64");
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function encryptToken(payload: any): string {
   // If payload matches the expected attendance format, pack it compactly
@@ -59,7 +104,7 @@ export function encryptToken(payload: any): string {
     profileBuf.copy(buf, 0);
     activityBuf.copy(buf, 16);
 
-    buf.writeBigInt64BE(BigInt(payload.generated_at), 32);
+    writeBigInt64BE(buf, BigInt(payload.generated_at), 32);
     buf.writeUInt8(hasCoords ? 1 : 0, 40);
 
     if (hasCoords) {
@@ -72,7 +117,7 @@ export function encryptToken(payload: any): string {
     const encrypted = Buffer.concat([cipher.update(buf), cipher.final()]);
 
     // Combine IV and encrypted buffer, encode to base64url
-    return Buffer.concat([iv, encrypted]).toString("base64url");
+    return bufferToBase64Url(Buffer.concat([iv, encrypted]));
   }
 
   // Fallback for general objects (original implementation using JSON string)
@@ -98,7 +143,7 @@ export function decryptToken(token: string): Record<string, any> {
 
   // Otherwise, assume compact binary format encoded in base64url
   try {
-    const tokenBuf = Buffer.from(token, "base64url");
+    const tokenBuf = base64UrlToBuffer(token);
     if (tokenBuf.length < 16 + 16) {
       throw new Error("Invalid token format");
     }
@@ -115,7 +160,7 @@ export function decryptToken(token: string): Record<string, any> {
     // Unpack binary structure
     const profileId = bufferToUuid(decrypted.subarray(0, 16));
     const activityId = bufferToUuid(decrypted.subarray(16, 32));
-    const generatedAt = Number(decrypted.readBigInt64BE(32));
+    const generatedAt = Number(readBigInt64BE(decrypted, 32));
     const hasCoords = decrypted.readUInt8(40) === 1;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
