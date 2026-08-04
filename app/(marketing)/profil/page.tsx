@@ -143,7 +143,7 @@ export default async function ProfilPage() {
       <BphSection members={bphMembers} />
 
       {/* 6. Galeri Workshop & Ekosistem Riset */}
-      <WorkshopGallerySection />
+      {/* <WorkshopGallerySection /> */}
     </div>
   );
 }
