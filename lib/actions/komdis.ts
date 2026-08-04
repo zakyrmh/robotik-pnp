@@ -84,6 +84,38 @@ export async function createKomdisActivity(
 
   if (error) throw new Error(`Gagal membuat kegiatan: ${error.message}`);
 
+  // ── Kirim notifikasi in-app ke semua anggota aktif (non-caang) ──
+  try {
+    const { data: recipients } = await supabase
+      .from("profiles")
+      .select("id")
+      .neq("role", "caang")
+      .eq("is_onboarded", true)
+      .is("deleted_at", null)
+      .neq("id", user.id); // Jangan kirim ke pembuat kegiatan
+
+    if (recipients && recipients.length > 0) {
+      const formattedDate = new Date(validated.start_date).toLocaleDateString(
+        "id-ID",
+        { weekday: "long", year: "numeric", month: "long", day: "numeric" },
+      );
+
+      const notifications = recipients.map((r) => ({
+        recipient_id: r.id,
+        title: `Kegiatan Baru: ${validated.title}`,
+        message: `Kegiatan "${validated.title}" telah dijadwalkan pada ${formattedDate} di ${validated.location}.`,
+        type: "activity",
+        reference_id: data.id,
+        reference_type: "activity",
+      }));
+
+      await supabase.from("in_app_notifications").insert(notifications);
+    }
+  } catch (notifErr) {
+    // Notifikasi gagal tidak boleh menggagalkan pembuatan kegiatan
+    console.error("Gagal mengirim notifikasi kegiatan:", notifErr);
+  }
+
   revalidatePath("/kegiatan");
   return { success: true, data };
 }

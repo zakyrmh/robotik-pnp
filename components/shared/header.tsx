@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Notification01Icon,
@@ -15,6 +15,13 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
+import {
+  getUnreadNotificationCount,
+  getNotifications,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+  type InAppNotification,
+} from "@/lib/actions/notifications";
 
 // Custom SVG Icon for Logout
 const LogoutIcon = () => (
@@ -39,19 +46,88 @@ export function Header() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [mounted, setMounted] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifications, setNotifications] = useState<InAppNotification[]>([]);
+  const [notifLoading, setNotifLoading] = useState(false);
 
   // Close dropdown on outside click
   useEffect(() => {
-    if (!isDropdownOpen) return;
+    if (!isDropdownOpen && !isNotifOpen) return;
     const handleOutsideClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (!target.closest("#avatar-dropdown-container")) {
+      if (isDropdownOpen && !target.closest("#avatar-dropdown-container")) {
         setIsDropdownOpen(false);
+      }
+      if (isNotifOpen && !target.closest("#notif-dropdown-container")) {
+        setIsNotifOpen(false);
       }
     };
     window.addEventListener("click", handleOutsideClick);
     return () => window.removeEventListener("click", handleOutsideClick);
-  }, [isDropdownOpen]);
+  }, [isDropdownOpen, isNotifOpen]);
+
+  // Fetch unread notification count on mount & periodically
+  useEffect(() => {
+    let isMounted = true;
+    const fetchUnreadCount = async () => {
+      if (!user) return;
+      try {
+        const res = await getUnreadNotificationCount();
+        if (isMounted && res.success && res.data) {
+          setUnreadCount(res.data.count);
+        }
+      } catch {
+        // Silently fail — badge will show 0
+      }
+    };
+
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 60000); // Poll setiap 60 detik
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [user]);
+
+  // Load notifications when dropdown opens
+  const loadNotifications = useCallback(async () => {
+    if (!user) return;
+    setNotifLoading(true);
+    try {
+      const res = await getNotifications(15);
+      if (res.success && res.data) {
+        setNotifications(res.data);
+      }
+    } catch {
+      // Silently fail
+    } finally {
+      setNotifLoading(false);
+    }
+  }, [user]);
+
+  const handleNotifToggle = () => {
+    const next = !isNotifOpen;
+    setIsNotifOpen(next);
+    if (next) {
+      setIsDropdownOpen(false);
+      loadNotifications();
+    }
+  };
+
+  const handleMarkRead = async (id: string) => {
+    await markNotificationAsRead(id);
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)),
+    );
+    setUnreadCount((prev) => Math.max(0, prev - 1));
+  };
+
+  const handleMarkAllRead = async () => {
+    await markAllNotificationsAsRead();
+    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    setUnreadCount(0);
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -134,19 +210,110 @@ export function Header() {
           </Button>
         </motion.div>
 
-        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-          {/* Tombol Notifikasi */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="relative rounded-none border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 hover:dark:text-zinc-50 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-all"
-          >
-            <HugeiconsIcon icon={Notification01Icon} size={20} />
-            <Badge className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center p-0 text-[9px] font-mono font-bold bg-[#e22718] text-white border border-[#e22718] rounded-none shadow-[0_0_8px_rgba(226,39,24,0.4)]">
-              2
-            </Badge>
-          </Button>
-        </motion.div>
+        <div id="notif-dropdown-container" className="relative">
+          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            {/* Tombol Notifikasi */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleNotifToggle}
+              className="relative rounded-none border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 hover:dark:text-zinc-50 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-all"
+            >
+              <HugeiconsIcon icon={Notification01Icon} size={20} />
+              {unreadCount > 0 && (
+                <Badge className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center p-0 text-[9px] font-mono font-bold bg-[#e22718] text-white border border-[#e22718] rounded-none shadow-[0_0_8px_rgba(226,39,24,0.4)]">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </Badge>
+              )}
+            </Button>
+          </motion.div>
+
+          {/* Notification Dropdown Panel */}
+          <AnimatePresence>
+            {isNotifOpen && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                transition={{ duration: 0.15 }}
+                className="absolute right-0 top-full mt-2 w-80 sm:w-96 rounded-none border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-lg z-50 overflow-hidden"
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-100 dark:border-zinc-900">
+                  <span className="text-xs font-mono font-bold uppercase tracking-widest text-zinc-900 dark:text-zinc-50">
+                    NOTIFIKASI
+                  </span>
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={handleMarkAllRead}
+                      className="text-[10px] font-mono uppercase tracking-wider text-[#1c69d4] hover:text-[#0066b1] dark:text-[#1c69d4] dark:hover:text-[#4d9cf7] transition-colors cursor-pointer border-none bg-transparent"
+                    >
+                      TANDAI SEMUA DIBACA
+                    </button>
+                  )}
+                </div>
+
+                {/* Notification List */}
+                <div className="max-h-80 overflow-y-auto">
+                  {notifLoading ? (
+                    <div className="px-4 py-6 text-center">
+                      <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+                        MEMUAT...
+                      </span>
+                    </div>
+                  ) : notifications.length === 0 ? (
+                    <div className="px-4 py-6 text-center">
+                      <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
+                        TIDAK ADA NOTIFIKASI
+                      </span>
+                    </div>
+                  ) : (
+                    notifications.map((notif) => (
+                      <button
+                        key={notif.id}
+                        onClick={() =>
+                          !notif.is_read && handleMarkRead(notif.id)
+                        }
+                        className={`w-full text-left px-4 py-3 border-b border-zinc-50 dark:border-zinc-900/50 transition-colors cursor-pointer border-x-0 border-t-0 ${
+                          notif.is_read
+                            ? "bg-transparent"
+                            : "bg-blue-50/50 dark:bg-blue-950/20"
+                        } hover:bg-zinc-50 dark:hover:bg-zinc-900/50`}
+                      >
+                        <div className="flex items-start gap-2.5">
+                          {!notif.is_read && (
+                            <span className="mt-1.5 h-2 w-2 rounded-full bg-[#1c69d4] shrink-0" />
+                          )}
+                          <div
+                            className={`min-w-0 flex-1 ${notif.is_read ? "pl-[18px]" : ""}`}
+                          >
+                            <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate">
+                              {notif.title}
+                            </p>
+                            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 line-clamp-2 leading-relaxed">
+                              {notif.message}
+                            </p>
+                            <span className="text-[9px] font-mono uppercase tracking-wider text-zinc-400 dark:text-zinc-600 mt-1 block">
+                              {new Date(notif.created_at).toLocaleDateString(
+                                "id-ID",
+                                {
+                                  day: "numeric",
+                                  month: "short",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                },
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
         <div className="h-8 w-px bg-zinc-200 dark:bg-zinc-800 mx-1 hidden lg:block" />
 
