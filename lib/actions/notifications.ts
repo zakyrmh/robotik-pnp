@@ -191,3 +191,47 @@ export async function markAllNotificationsAsRead(): Promise<ServerActionResponse
     };
   }
 }
+
+// ============================================================================
+// GET: Cek Ketersediaan Kegiatan (Sebelum Navigasi Notifikasi)
+// ============================================================================
+
+export async function checkActivityExists(
+  activityId: string,
+): Promise<ServerActionResponse<{ exists: boolean }>> {
+  try {
+    const { supabase } = await verifyUser();
+
+    if (!activityId) {
+      return { success: true, message: "Berhasil.", data: { exists: false } };
+    }
+
+    const { data, error } = await supabase
+      .from("activities")
+      .select("id")
+      .eq("id", activityId)
+      .is("deleted_at", null)
+      .maybeSingle();
+
+    if (error) {
+      return {
+        success: false,
+        message: "Gagal memeriksa status kegiatan.",
+        error: { code: "DB_ERROR", details: error.message },
+      };
+    }
+
+    return {
+      success: true,
+      message: "Berhasil.",
+      data: { exists: !!data },
+    };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return {
+      success: false,
+      message: msg,
+      error: { code: "SERVER_ERROR", details: msg },
+    };
+  }
+}

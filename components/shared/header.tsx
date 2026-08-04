@@ -9,6 +9,8 @@ import {
   Sun01Icon,
   Moon01Icon,
 } from "@hugeicons/core-free-icons";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +22,7 @@ import {
   getNotifications,
   markNotificationAsRead,
   markAllNotificationsAsRead,
+  checkActivityExists,
   type InAppNotification,
 } from "@/lib/actions/notifications";
 
@@ -42,6 +45,7 @@ const LogoutIcon = () => (
 );
 
 export function Header() {
+  const router = useRouter();
   const { user, logout } = useAuth();
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [mounted, setMounted] = useState(false);
@@ -127,6 +131,26 @@ export function Header() {
     await markAllNotificationsAsRead();
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
     setUnreadCount(0);
+  };
+
+  const handleNotificationClick = async (notif: InAppNotification) => {
+    if (!notif.is_read) {
+      await handleMarkRead(notif.id);
+    }
+
+    if (notif.type === "activity" || notif.reference_type === "activity") {
+      if (!notif.reference_id) {
+        toast.error("Kegiatan ini telah dibatalkan atau dihapus oleh Admin");
+        return;
+      }
+      const checkRes = await checkActivityExists(notif.reference_id);
+      if (checkRes.success && checkRes.data?.exists) {
+        setIsNotifOpen(false);
+        router.push(`/kegiatan/${notif.reference_id}`);
+      } else {
+        toast.error("Kegiatan ini telah dibatalkan atau dihapus oleh Admin");
+      }
+    }
   };
 
   useEffect(() => {
@@ -271,9 +295,7 @@ export function Header() {
                     notifications.map((notif) => (
                       <button
                         key={notif.id}
-                        onClick={() =>
-                          !notif.is_read && handleMarkRead(notif.id)
-                        }
+                        onClick={() => handleNotificationClick(notif)}
                         className={`w-full text-left px-4 py-3 border-b border-zinc-50 dark:border-zinc-900/50 transition-colors cursor-pointer border-x-0 border-t-0 ${
                           notif.is_read
                             ? "bg-transparent"

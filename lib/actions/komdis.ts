@@ -3,7 +3,7 @@
 import "server-only";
 
 import { revalidatePath } from "next/cache";
-import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { decryptQRToken } from "@/lib/utils/crypto";
 import {
   CreateKomdisActivitySchema,
@@ -58,6 +58,7 @@ async function verifyKomdisRole() {
 
 /**
  * 1. Membuat Kegiatan Baru Khusus Komdis (Target Audience Otomatis 'anggota')
+ *    Notifikasi diproses otomatis oleh Database Trigger handle_new_activity_notification.
  */
 export async function createKomdisActivity(
   rawInput: CreateKomdisActivityInput,
@@ -83,57 +84,6 @@ export async function createKomdisActivity(
     .single();
 
   if (error) throw new Error(`Gagal membuat kegiatan: ${error.message}`);
-
-  // ── Kirim notifikasi in-app ke semua anggota aktif (non-caang) ──
-  try {
-    const supabaseAdmin =
-      process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-        ? createAdminClient()
-        : supabase;
-
-    const { data: recipients, error: recErr } = await supabaseAdmin
-      .from("profiles")
-      .select("id")
-      .neq("role", "caang")
-      .eq("is_onboarded", true)
-      .is("deleted_at", null)
-      .neq("id", user.id); // Jangan kirim ke pembuat kegiatan
-
-    if (recErr) {
-      console.error("Gagal mengambil penerima notifikasi:", recErr.message);
-    }
-
-    if (recipients && recipients.length > 0) {
-      const formattedDate = new Date(validated.start_date).toLocaleDateString(
-        "id-ID",
-        { weekday: "long", year: "numeric", month: "long", day: "numeric" },
-      );
-
-      const notifications = recipients.map((r) => ({
-        recipient_id: r.id,
-        title: `Kegiatan Baru: ${validated.title}`,
-        message: `Kegiatan "${validated.title}" telah dijadwalkan pada ${formattedDate} di ${validated.location}.`,
-        type: "activity",
-        reference_id: data.id,
-        reference_type: "activity",
-      }));
-
-      const { error: insertErr } = await supabaseAdmin
-        .from("in_app_notifications")
-        .insert(notifications);
-
-      if (insertErr) {
-        console.error(
-          "Gagal menyimpan in_app_notifications:",
-          insertErr.message,
-        );
-      }
-    }
-  } catch (notifErr) {
-    // Notifikasi gagal tidak boleh menggagalkan pembuatan kegiatan
-    console.error("Gagal mengirim notifikasi kegiatan:", notifErr);
-  }
 
   revalidatePath("/kegiatan");
   return { success: true, data };
