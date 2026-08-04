@@ -23,7 +23,7 @@ export default async function OnboardingFlowLayout({
                 width={32}
                 height={32}
                 priority
-                className="object-contain"
+                className="object-contain h-auto w-auto"
               />
             </div>
             <div className="h-4 w-px bg-border" />

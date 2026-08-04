@@ -42,7 +42,7 @@ export function PageLoader({ message = "Memuat data..." }: PageLoaderProps) {
               alt="UKM Robotik PNP"
               width={64}
               height={64}
-              className="object-contain p-1"
+              className="object-contain h-auto w-auto p-1"
               priority
             />
           </div>

@@ -57,9 +57,6 @@ export default withSentryConfig(nextConfig, {
     deleteSourcemapsAfterUpload: true,
   },
 
-  // Nonaktifkan logger Sentry saat build
-  disableLogger: true,
-
   // Senyapkan log jika bukan lingkungan CI
   silent: !process.env.CI,
 });
