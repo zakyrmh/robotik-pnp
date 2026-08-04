@@ -3,7 +3,7 @@
 import "server-only";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { decryptQRToken } from "@/lib/utils/crypto";
 import {
   CreateKomdisActivitySchema,
@@ -86,13 +86,23 @@ export async function createKomdisActivity(
 
   // ── Kirim notifikasi in-app ke semua anggota aktif (non-caang) ──
   try {
-    const { data: recipients } = await supabase
+    const supabaseAdmin =
+      process.env.NEXT_PUBLIC_SUPABASE_URL &&
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+        ? createAdminClient()
+        : supabase;
+
+    const { data: recipients, error: recErr } = await supabaseAdmin
       .from("profiles")
       .select("id")
       .neq("role", "caang")
       .eq("is_onboarded", true)
       .is("deleted_at", null)
       .neq("id", user.id); // Jangan kirim ke pembuat kegiatan
+
+    if (recErr) {
+      console.error("Gagal mengambil penerima notifikasi:", recErr.message);
+    }
 
     if (recipients && recipients.length > 0) {
       const formattedDate = new Date(validated.start_date).toLocaleDateString(
@@ -109,7 +119,16 @@ export async function createKomdisActivity(
         reference_type: "activity",
       }));
 
-      await supabase.from("in_app_notifications").insert(notifications);
+      const { error: insertErr } = await supabaseAdmin
+        .from("in_app_notifications")
+        .insert(notifications);
+
+      if (insertErr) {
+        console.error(
+          "Gagal menyimpan in_app_notifications:",
+          insertErr.message,
+        );
+      }
     }
   } catch (notifErr) {
     // Notifikasi gagal tidak boleh menggagalkan pembuatan kegiatan

@@ -42,8 +42,8 @@ vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
 }));
 
-vi.mock("@/lib/supabase/server", () => ({
-  createClient: vi.fn(async () => ({
+vi.mock("@/lib/supabase/server", () => {
+  const getMockSupabase = () => ({
     auth: {
       getUser: vi.fn(async () => ({
         data: { user: mockUser },
@@ -58,6 +58,16 @@ vi.mock("@/lib/supabase/server", () => ({
               single: vi.fn(async () => ({
                 data: { role: mockProfileRole },
                 error: null,
+              })),
+            })),
+            neq: vi.fn(() => ({
+              eq: vi.fn(() => ({
+                is: vi.fn(() => ({
+                  neq: vi.fn(async () => ({
+                    data: [{ id: VALID_UUID_2 }],
+                    error: null,
+                  })),
+                })),
               })),
             })),
           })),
@@ -96,7 +106,7 @@ vi.mock("@/lib/supabase/server", () => ({
           })),
         };
       }
-      if (table === "attendances") {
+      if (table === "attendances" || table === "in_app_notifications") {
         return {
           upsert: vi.fn(async () => ({ error: mockUpsertError })),
           update: vi.fn(() => ({
@@ -116,8 +126,13 @@ vi.mock("@/lib/supabase/server", () => ({
       data: mockRpcData,
       error: mockRpcError,
     })),
-  })),
-}));
+  });
+
+  return {
+    createClient: vi.fn(async () => getMockSupabase()),
+    createAdminClient: vi.fn(() => getMockSupabase()),
+  };
+});
 
 import {
   createKomdisActivity,
