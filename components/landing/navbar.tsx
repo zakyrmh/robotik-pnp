@@ -211,7 +211,7 @@ export function LandingNavbar() {
                 <span>MODE TEMA: {theme === "light" ? "LIGHT" : "DARK"}</span>
                 <button
                   onClick={toggleTheme}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-border bg-muted/60 text-foreground font-mono text-[11px] uppercase tracking-wider cursor-pointer hover:bg-muted"
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-border bg-muted/60 text-foreground font-mono text-micro uppercase tracking-wider cursor-pointer hover:bg-muted"
                 >
                   <HugeiconsIcon
                     icon={theme === "light" ? Moon01Icon : Sun01Icon}
