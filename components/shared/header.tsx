@@ -307,12 +307,12 @@ export function Header() {
                             <span className="mt-1.5 h-2 w-2 rounded-full bg-[#1c69d4] shrink-0" />
                           )}
                           <div
-                            className={`min-w-0 flex-1 ${notif.is_read ? "pl-[18px]" : ""}`}
+                            className={`min-w-0 flex-1 ${notif.is_read ? "pl-4.5" : ""}`}
                           >
                             <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate">
                               {notif.title}
                             </p>
-                            <p className="text-[11px] text-zinc-500 dark:text-zinc-400 mt-0.5 line-clamp-2 leading-relaxed">
+                            <p className="text-micro text-zinc-500 dark:text-zinc-400 mt-0.5 line-clamp-2 leading-relaxed">
                               {notif.message}
                             </p>
                             <span className="text-[9px] font-mono uppercase tracking-wider text-zinc-400 dark:text-zinc-600 mt-1 block">
