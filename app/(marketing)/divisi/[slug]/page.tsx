@@ -4,7 +4,6 @@ import { createClient } from "@/lib/supabase/server";
 import { divisionsData } from "@/lib/data/divisions";
 
 import { HeroSection } from "@/components/divisi/HeroSection";
-import { TechSpecsTabs } from "@/components/divisi/TechSpecsTabs";
 import { DivisionLineUp } from "@/components/divisi/DivisionLineUp";
 import { BentoMilestones } from "@/components/divisi/BentoMilestones";
 import { ResearchGallery } from "@/components/divisi/ResearchGallery";
@@ -22,7 +21,7 @@ export async function generateMetadata({
   }
 
   return {
-    title: `${data.hero.title} | Spesifikasi Divisi | UKM Robotik PNP`,
+    title: `${data.hero.title} | Profil Divisi | UKM Robotik PNP`,
     description: data.hero.subtitle,
   };
 }
@@ -65,7 +64,7 @@ export default async function DivisionDetailPage({
   }
 
   return (
-    <div className="bg-canvas-dark">
+    <div className="min-h-screen bg-background text-foreground">
       {/* SECTION 1: HERO */}
       <HeroSection
         badge={staticData.hero.badge}
@@ -74,16 +73,13 @@ export default async function DivisionDetailPage({
         image={staticData.hero.image}
       />
 
-      {/* SECTION 2: TECH SPECS */}
-      <TechSpecsTabs specs={staticData.specs} />
-
-      {/* SECTION 3: LINE-UP */}
+      {/* SECTION 2: LINE-UP */}
       <DivisionLineUp members={staticData.team} />
 
-      {/* SECTION 4: MILESTONES (DYNAMIC) */}
+      {/* SECTION 3: MILESTONES (DYNAMIC) */}
       <BentoMilestones milestones={milestones} />
 
-      {/* SECTION 5: GALLERY */}
+      {/* SECTION 4: GALLERY */}
       <ResearchGallery items={staticData.gallery} />
     </div>
   );
