@@ -50,11 +50,6 @@ export function PageLoader({ message = "Memuat data..." }: PageLoaderProps) {
 
         {/* Text Area & Eyebrow */}
         <div className="flex flex-col items-center gap-2">
-          <div className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[2px] font-semibold text-pnp-orange bg-orange-wash dark:bg-pnp-orange/15 border border-pnp-orange/30 px-3 py-1 rounded-full pointer-events-none">
-            <span className="w-1.5 h-1.5 rounded-full bg-pnp-orange animate-pulse" />
-            SYSTEM INITIALIZING
-          </div>
-
           <h1 className="text-xl sm:text-2xl font-bold font-display tracking-tight text-foreground uppercase">
             UKM ROBOTIK PNP
           </h1>
