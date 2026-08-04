@@ -42,17 +42,6 @@ export function HeroSection({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 4k:gap-20 items-center">
           {/* Left: Text content (7 cols) */}
           <div className="lg:col-span-7 space-y-6 sm:space-y-8 4k:space-y-12">
-            {/* Eyebrow Status Badge */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="inline-flex items-center gap-2.5 font-mono text-micro sm:text-xs 4k:text-base uppercase tracking-[2px] font-semibold text-orange-deep dark:text-pnp-orange bg-orange-wash dark:bg-pnp-orange/15 border border-pnp-orange/30 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full shadow-xs"
-            >
-              <span className="w-2 h-2 4k:w-3 4k:h-3 rounded-full bg-pnp-orange animate-pulse" />
-              UKM ROBOTIKA // POLITEKNIK NEGERI PADANG
-            </motion.div>
-
             {/* Main Headline */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
