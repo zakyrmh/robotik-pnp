@@ -2,7 +2,10 @@ import crypto from "crypto";
 
 const ALGORITHM = "aes-256-cbc";
 const SECRET_KEY =
-  process.env.SUPABASE_SERVICE_ROLE_KEY || "default-fallback-key-32-chars-long";
+  process.env.NEXT_PUBLIC_QR_SECRET_KEY ||
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||
+  "default-fallback-key-32-chars-long";
 
 // Derive a 32-byte key from the secret
 const key = crypto.createHash("sha256").update(SECRET_KEY).digest();
