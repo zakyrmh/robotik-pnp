@@ -28,9 +28,9 @@ import {
 } from "@/components/ui/dialog";
 import { CreateKomdisActivityDialog } from "@/components/features/komdis/create-komdis-activity-dialog";
 import { EditKomdisActivityDialog } from "@/components/features/komdis/edit-komdis-activity-dialog";
-import { deleteKomdisActivity } from "@/lib/actions/komdis";
+import { softDeleteKomdisActivity } from "@/lib/actions/komdis";
+import { softDeleteActivity } from "@/lib/actions/activities";
 import { toast } from "sonner";
-
 interface Activity {
   id: string;
   title: string;
@@ -57,12 +57,16 @@ export function KegiatanClient() {
     useState<Activity | null>(null);
   const [isDeletingKomdis, setIsDeletingKomdis] = useState(false);
 
-  const handleDeleteKomdis = async () => {
+  const handleSoftDelete = async () => {
     if (!deletingKomdisActivity) return;
     setIsDeletingKomdis(true);
     try {
-      await deleteKomdisActivity(deletingKomdisActivity.id);
-      toast.success("Kegiatan Komdis berhasil dihapus.");
+      if (deletingKomdisActivity.target_audience === "anggota") {
+        await softDeleteKomdisActivity(deletingKomdisActivity.id);
+      } else {
+        await softDeleteActivity(deletingKomdisActivity.id);
+      }
+      toast.success("Kegiatan berhasil dipindahkan ke tempat sampah.");
       setDeletingKomdisActivity(null);
       fetchActivities();
     } catch (err: unknown) {
@@ -72,7 +76,6 @@ export function KegiatanClient() {
       setIsDeletingKomdis(false);
     }
   };
-
   // Helper to check if attendance window is active (2 hours before start until activity end_date)
   const isAttendanceWindowActive = (activity: Activity | null) => {
     if (!activity) return false;
@@ -110,8 +113,8 @@ export function KegiatanClient() {
           .from("activities")
           .select("*")
           .eq("target_audience", audience)
+          .is("deleted_at", null)
           .order("start_date", { ascending: true });
-
         if (queryError) throw queryError;
         if (isMounted) {
           setActivities(data || []);
@@ -300,22 +303,33 @@ export function KegiatanClient() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
-            {(user?.role === "admin-komdis" ||
-              user?.role === "super-admin") && (
-              <Button
-                onClick={() => setIsCreateModalOpen(true)}
-                className="w-full sm:w-auto bg-[#1e3a8a] hover:bg-[#1e40af] dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-medium text-xs rounded-lg px-4 py-2.5 shadow-xs transition-colors"
-              >
-                <HugeiconsIcon
-                  icon={CalendarAdd01Icon}
-                  size={16}
-                  className="mr-2"
-                />
-                Buat Kegiatan Komdis
-              </Button>
-            )}
-            <Badge className="bg-slate-100 dark:bg-slate-800 text-[#0a192f] dark:text-slate-200 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-full font-mono text-[11px] uppercase tracking-wider font-semibold">
-              TOTAL: {activities.length}
+            <div className="flex gap-2 w-full sm:w-auto">
+              {(user?.role === "admin-or" || user?.role === "admin-komdis" || user?.role === "super-admin") && (
+                <Button
+                  onClick={() => router.push("/kegiatan/sampah")}
+                  variant="outline"
+                  className="w-full sm:w-auto rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 shadow-xs font-mono text-[11px] uppercase tracking-wider px-4 py-2.5"
+                >
+                  <HugeiconsIcon icon={Delete01Icon} size={16} className="mr-2" />
+                  Sampah
+                </Button>
+              )}
+              {(user?.role === "admin-komdis" ||
+                user?.role === "super-admin") && (
+                <Button
+                  onClick={() => setIsCreateModalOpen(true)}
+                  className="w-full sm:w-auto bg-[#1e3a8a] hover:bg-[#1e40af] dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-medium text-xs rounded-lg px-4 py-2.5 shadow-xs transition-colors"
+                >
+                  <HugeiconsIcon
+                    icon={CalendarAdd01Icon}
+                    size={16}
+                    className="mr-2"
+                  />
+                  Buat Kegiatan Komdis
+                </Button>
+              )}
+            </div>
+            <Badge className="bg-slate-100 dark:bg-slate-800 text-[#0a192f] dark:text-slate-200 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-full font-mono text-[11px] uppercase tracking-wider font-semibold">              TOTAL: {activities.length}
             </Badge>
           </div>
         </div>
@@ -772,18 +786,22 @@ export function KegiatanClient() {
                           />
                           Detail
                         </Button>
-                        {(user?.role === "admin-komdis" ||
-                          user?.role === "super-admin") && (
+                        {(
+                          (activity.target_audience === "anggota" && (user?.role === "admin-komdis" || user?.role === "super-admin")) ||
+                          (activity.target_audience === "caang" && (user?.role === "admin-or" || user?.role === "super-admin"))
+                        ) && (
                           <>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              onClick={() => setEditingKomdisActivity(activity)}
-                              className="h-8 w-8 rounded-lg border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40"
-                              title="Edit Kegiatan"
-                            >
-                              <HugeiconsIcon icon={Edit02Icon} size={14} />
-                            </Button>
+                            {activity.target_audience === "anggota" && (
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => setEditingKomdisActivity(activity)}
+                                className="h-8 w-8 rounded-lg border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40"
+                                title="Edit Kegiatan"
+                              >
+                                <HugeiconsIcon icon={Edit02Icon} size={14} />
+                              </Button>
+                            )}
                             <Button
                               variant="outline"
                               size="icon"
@@ -796,8 +814,7 @@ export function KegiatanClient() {
                               <HugeiconsIcon icon={Delete01Icon} size={14} />
                             </Button>
                           </>
-                        )}
-                        {isAttendanceWindowActive(activity) && (
+                        )}                        {isAttendanceWindowActive(activity) && (
                           <Button
                             size="sm"
                             onClick={() =>
@@ -962,12 +979,11 @@ export function KegiatanClient() {
               Batal
             </Button>
             <Button
-              onClick={handleDeleteKomdis}
+              onClick={handleSoftDelete}
               disabled={isDeletingKomdis}
               className="rounded-lg bg-red-600 hover:bg-red-700 text-white font-mono text-xs uppercase tracking-wider"
             >
-              {isDeletingKomdis ? (
-                <>
+              {isDeletingKomdis ? (                <>
                   <HugeiconsIcon
                     icon={Loading03Icon}
                     size={14}

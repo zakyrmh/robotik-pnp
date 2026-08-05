@@ -123,7 +123,50 @@ export async function updateKomdisActivity(
 }
 
 /**
- * 1c. Menghapus Kegiatan Komdis
+ * 1c. Soft Delete Kegiatan Komdis
+ */
+export async function softDeleteKomdisActivity(activityId: string) {
+  const { supabase } = await verifyKomdisRole();
+
+  if (!activityId) {
+    throw new Error("ID kegiatan tidak valid.");
+  }
+
+  const { error } = await supabase
+    .from("activities")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", activityId);
+
+  if (error) throw new Error(`Gagal memindahkan kegiatan ke tempat sampah: ${error.message}`);
+
+  revalidatePath("/kegiatan");
+  return { success: true };
+}
+
+/**
+ * 1d. Restore Kegiatan Komdis
+ */
+export async function restoreKomdisActivity(activityId: string) {
+  const { supabase } = await verifyKomdisRole();
+
+  if (!activityId) {
+    throw new Error("ID kegiatan tidak valid.");
+  }
+
+  const { error } = await supabase
+    .from("activities")
+    .update({ deleted_at: null })
+    .eq("id", activityId);
+
+  if (error) throw new Error(`Gagal memulihkan kegiatan: ${error.message}`);
+
+  revalidatePath("/kegiatan");
+  revalidatePath("/kegiatan/sampah");
+  return { success: true };
+}
+
+/**
+ * 1e. Menghapus Kegiatan Komdis Permanen
  */
 export async function deleteKomdisActivity(activityId: string) {
   const { supabase } = await verifyKomdisRole();
@@ -137,9 +180,10 @@ export async function deleteKomdisActivity(activityId: string) {
     .delete()
     .eq("id", activityId);
 
-  if (error) throw new Error(`Gagal menghapus kegiatan: ${error.message}`);
+  if (error) throw new Error(`Gagal menghapus kegiatan secara permanen: ${error.message}`);
 
   revalidatePath("/kegiatan");
+  revalidatePath("/kegiatan/sampah");
   return { success: true };
 }
 
