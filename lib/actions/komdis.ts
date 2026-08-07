@@ -809,3 +809,237 @@ export async function getKomdisActivityAttendanceSummary(): Promise<
     };
   });
 }
+
+/**
+ * 10. Detail Presensi Per Kegiatan Spesifik (Khusus Admin Komdis & Super Admin)
+ */
+export interface ActivityAttendanceMemberDetail {
+  profileId: string;
+  fullName: string;
+  nim: string;
+  photoUrl: string | null;
+  role: string;
+  studyProgramName: string;
+  majorName: string;
+  status: "hadir" | "telat" | "izin" | "sakit" | "alfa" | "unrecorded";
+  checkInAt: string | null;
+  notes: string | null;
+  proofUrl: string | null;
+  pointsAwarded: number;
+}
+
+export interface ActivityAttendanceDetailResult {
+  activity: {
+    id: string;
+    title: string;
+    description: string | null;
+    startDate: string;
+    endDate: string;
+    location: string | null;
+    targetAudience: string;
+  };
+  summary: {
+    totalExpected: number;
+    counts: {
+      hadir: number;
+      telat: number;
+      izin: number;
+      sakit: number;
+      alfa: number;
+      unrecorded: number;
+    };
+    attendanceRate: number;
+    totalPenaltyPoints: number;
+  };
+  members: ActivityAttendanceMemberDetail[];
+}
+
+export async function getActivityAttendanceDetail(
+  activityId: string,
+): Promise<ActivityAttendanceDetailResult> {
+  const { supabase } = await verifyKomdisRole();
+
+  const supabaseAdmin = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+
+  // 1. Ambil detail kegiatan
+  const { data: activity, error: actError } = await supabase
+    .from("activities")
+    .select(
+      "id, title, description, start_date, end_date, location, target_audience",
+    )
+    .eq("id", activityId)
+    .single();
+
+  if (actError || !activity) {
+    throw new Error("Kegiatan tidak ditemukan atau telah dihapus.");
+  }
+
+  // 2. Ambil seluruh anggota aktif (role admin & anggota)
+  const { data: registrationsData, error: regError } = await supabaseAdmin
+    .from("registrations")
+    .select(
+      `
+      full_name,
+      photo_url,
+      deleted_at,
+      study_programs (
+        name,
+        degree,
+        majors ( name )
+      ),
+      profiles!inner (
+        id,
+        nim,
+        role,
+        is_onboarded
+      )
+    `,
+    )
+    .in("profiles.role", [
+      "super-admin",
+      "admin-komdis",
+      "admin-or",
+      "admin-kestari",
+      "admin-divisi",
+      "anggota",
+    ])
+    .is("deleted_at", null)
+    .order("full_name", { ascending: true });
+
+  if (regError) {
+    throw new Error(`Gagal memuat daftar anggota: ${regError.message}`);
+  }
+
+  // 3. Ambil data presensi kegiatan ini
+  const { data: attendancesData, error: attError } = await supabaseAdmin
+    .from("attendances")
+    .select("profile_id, status, check_in_at, notes, proof_url, points_awarded")
+    .eq("activity_id", activityId);
+
+  if (attError) {
+    throw new Error(`Gagal memuat presensi kegiatan: ${attError.message}`);
+  }
+
+  // Build lookup map for attendances
+  const attendanceMap: Record<
+    string,
+    {
+      status: string;
+      checkInAt: string | null;
+      notes: string | null;
+      proofUrl: string | null;
+      pointsAwarded: number;
+    }
+  > = {};
+
+  for (const att of attendancesData ?? []) {
+    if (!att.profile_id) continue;
+    attendanceMap[att.profile_id] = {
+      status: att.status,
+      checkInAt: att.check_in_at,
+      notes: att.notes,
+      proofUrl: att.proof_url,
+      pointsAwarded: att.points_awarded || 0,
+    };
+  }
+
+  type RawRegistration = {
+    full_name: string | null;
+    photo_url: string | null;
+    deleted_at: string | null;
+    study_programs: {
+      name: string;
+      degree: string;
+      majors: { name: string } | { name: string }[] | null;
+    } | null;
+    profiles:
+      | { id: string; nim: string | null; role: string; is_onboarded: boolean }
+      | {
+          id: string;
+          nim: string | null;
+          role: string;
+          is_onboarded: boolean;
+        }[]
+      | null;
+  };
+
+  const counts = {
+    hadir: 0,
+    telat: 0,
+    izin: 0,
+    sakit: 0,
+    alfa: 0,
+    unrecorded: 0,
+  };
+  let totalPenaltyPoints = 0;
+
+  const members: ActivityAttendanceMemberDetail[] = (
+    (registrationsData as unknown as RawRegistration[]) ?? []
+  ).map((reg) => {
+    const profile = Array.isArray(reg.profiles)
+      ? reg.profiles[0]
+      : reg.profiles;
+    const sp = Array.isArray(reg.study_programs)
+      ? reg.study_programs[0]
+      : reg.study_programs;
+    const major = sp?.majors
+      ? Array.isArray(sp.majors)
+        ? sp.majors[0]
+        : sp.majors
+      : null;
+    const profileId = profile?.id ?? "";
+
+    const att = attendanceMap[profileId];
+    const status = (att?.status ??
+      "unrecorded") as ActivityAttendanceMemberDetail["status"];
+    const pointsAwarded = att?.pointsAwarded || 0;
+
+    if (status in counts) {
+      counts[status as keyof typeof counts]++;
+    }
+    totalPenaltyPoints += pointsAwarded;
+
+    return {
+      profileId,
+      fullName: reg.full_name || "—",
+      nim: profile?.nim || "—",
+      photoUrl: reg.photo_url || null,
+      role: profile?.role || "anggota",
+      studyProgramName: sp ? `${sp.degree} ${sp.name}` : "—",
+      majorName: major?.name || "—",
+      status,
+      checkInAt: att?.checkInAt || null,
+      notes: att?.notes || null,
+      proofUrl: att?.proofUrl || null,
+      pointsAwarded,
+    };
+  });
+
+  const totalExpected = members.length;
+  const attendanceRate =
+    totalExpected > 0
+      ? Math.round(((counts.hadir + counts.telat) / totalExpected) * 100)
+      : 0;
+
+  return {
+    activity: {
+      id: activity.id,
+      title: activity.title,
+      description: activity.description,
+      startDate: activity.start_date,
+      endDate: activity.end_date,
+      location: activity.location,
+      targetAudience: activity.target_audience,
+    },
+    summary: {
+      totalExpected,
+      counts,
+      attendanceRate,
+      totalPenaltyPoints,
+    },
+    members,
+  };
+}

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { PresensiClient } from "@/components/features/absensi/presensi-client";
+import { PresensiClient } from "@/components/features/presensi/presensi-client";
 import {
   getKomdisMemberAttendanceSummary,
   getKomdisActivityAttendanceSummary,

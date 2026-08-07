@@ -311,7 +311,7 @@ export function KomdisActivityAttendanceTab({
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => router.push(`/kegiatan/${act.id}`)}
+                    onClick={() => router.push(`/kegiatan/${act.id}/presensi`)}
                     className="rounded-lg border border-slate-200 dark:border-slate-700 text-[#0a192f] dark:text-slate-200 h-9 font-mono text-[11px] uppercase tracking-wider px-3"
                   >
                     <HugeiconsIcon icon={EyeIcon} size={14} className="mr-1" />
@@ -475,7 +475,9 @@ export function KomdisActivityAttendanceTab({
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => router.push(`/kegiatan/${act.id}`)}
+                          onClick={() =>
+                            router.push(`/kegiatan/${act.id}/presensi`)
+                          }
                           className="rounded-lg border border-slate-200 dark:border-slate-700 text-[#0a192f] dark:text-slate-200 h-8 px-2.5 font-mono text-[11px] uppercase tracking-wider"
                           title="Lihat Detail Agenda"
                         >
