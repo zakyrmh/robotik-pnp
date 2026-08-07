@@ -43,12 +43,24 @@ interface Activity {
   created_at: string;
 }
 
-export function KegiatanClient() {
+interface KegiatanClientProps {
+  initialActivities?: Activity[];
+  userRole?: string;
+}
+
+export function KegiatanClient({
+  initialActivities = [],
+  userRole,
+}: KegiatanClientProps = {}) {
   const supabase = createClient();
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
+  const activeRole = userRole || user?.role;
+
+  const [activities, setActivities] = useState<Activity[]>(initialActivities);
+  const [loadingData, setLoadingData] = useState(
+    initialActivities.length === 0,
+  );
   const [error, setError] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingKomdisActivity, setEditingKomdisActivity] =
@@ -304,13 +316,25 @@ export function KegiatanClient() {
 
           <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
             <div className="flex gap-2 w-full sm:w-auto">
-              {(user?.role === "admin-or" || user?.role === "admin-komdis" || user?.role === "super-admin") && (
+              {(activeRole === "admin-or" ||
+                activeRole === "admin-komdis" ||
+                activeRole === "super-admin") && (
                 <Button
-                  onClick={() => router.push("/kegiatan/sampah")}
+                  onClick={() =>
+                    router.push(
+                      activeRole === "admin-or"
+                        ? "/kegiatan-absensi-caang/trash"
+                        : "/kegiatan/sampah",
+                    )
+                  }
                   variant="outline"
                   className="w-full sm:w-auto rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 shadow-xs font-mono text-[11px] uppercase tracking-wider px-4 py-2.5"
                 >
-                  <HugeiconsIcon icon={Delete01Icon} size={16} className="mr-2" />
+                  <HugeiconsIcon
+                    icon={Delete01Icon}
+                    size={16}
+                    className="mr-2"
+                  />
                   Sampah
                 </Button>
               )}
@@ -329,7 +353,9 @@ export function KegiatanClient() {
                 </Button>
               )}
             </div>
-            <Badge className="bg-slate-100 dark:bg-slate-800 text-[#0a192f] dark:text-slate-200 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-full font-mono text-[11px] uppercase tracking-wider font-semibold">              TOTAL: {activities.length}
+            <Badge className="bg-slate-100 dark:bg-slate-800 text-[#0a192f] dark:text-slate-200 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-full font-mono text-[11px] uppercase tracking-wider font-semibold">
+              {" "}
+              TOTAL: {activities.length}
             </Badge>
           </div>
         </div>
@@ -786,16 +812,20 @@ export function KegiatanClient() {
                           />
                           Detail
                         </Button>
-                        {(
-                          (activity.target_audience === "anggota" && (user?.role === "admin-komdis" || user?.role === "super-admin")) ||
-                          (activity.target_audience === "caang" && (user?.role === "admin-or" || user?.role === "super-admin"))
-                        ) && (
+                        {((activity.target_audience === "anggota" &&
+                          (user?.role === "admin-komdis" ||
+                            user?.role === "super-admin")) ||
+                          (activity.target_audience === "caang" &&
+                            (user?.role === "admin-or" ||
+                              user?.role === "super-admin"))) && (
                           <>
                             {activity.target_audience === "anggota" && (
                               <Button
                                 variant="outline"
                                 size="icon"
-                                onClick={() => setEditingKomdisActivity(activity)}
+                                onClick={() =>
+                                  setEditingKomdisActivity(activity)
+                                }
                                 className="h-8 w-8 rounded-lg border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40"
                                 title="Edit Kegiatan"
                               >
@@ -814,7 +844,8 @@ export function KegiatanClient() {
                               <HugeiconsIcon icon={Delete01Icon} size={14} />
                             </Button>
                           </>
-                        )}                        {isAttendanceWindowActive(activity) && (
+                        )}{" "}
+                        {isAttendanceWindowActive(activity) && (
                           <Button
                             size="sm"
                             onClick={() =>
@@ -983,7 +1014,8 @@ export function KegiatanClient() {
               disabled={isDeletingKomdis}
               className="rounded-lg bg-red-600 hover:bg-red-700 text-white font-mono text-xs uppercase tracking-wider"
             >
-              {isDeletingKomdis ? (                <>
+              {isDeletingKomdis ? (
+                <>
                   <HugeiconsIcon
                     icon={Loading03Icon}
                     size={14}

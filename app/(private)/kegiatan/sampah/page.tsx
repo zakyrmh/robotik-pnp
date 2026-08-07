@@ -4,12 +4,12 @@ import { getDeletedActivities } from "@/lib/actions/activities";
 import { TrashActivitiesClient } from "@/components/features/kegiatan/trash-activities-client";
 
 export const metadata = {
-  title: "Trash Kegiatan Caang | UKM Robotik PNP",
+  title: "Tempat Sampah Kegiatan | UKM Robotik PNP",
   description:
-    "Daftar kegiatan calon anggota yang dihapus sementara. Pulihkan atau hapus secara permanen.",
+    "Daftar kegiatan anggota yang dihapus sementara. Pulihkan atau hapus secara permanen.",
 };
 
-export default async function CaangTrashPage() {
+export default async function KomdisTrashPage() {
   const supabase = await createClient();
 
   const {
@@ -28,21 +28,23 @@ export default async function CaangTrashPage() {
     .single();
 
   const rawProfile = profile as { id: string; role: string } | null;
+
+  // Hanya admin-komdis dan super-admin yang diizinkan mengakses sampah kegiatan anggota
   if (
     !rawProfile ||
-    (rawProfile.role !== "admin-or" && rawProfile.role !== "super-admin")
+    (rawProfile.role !== "admin-komdis" && rawProfile.role !== "super-admin")
   ) {
-    redirect("/dashboard");
+    redirect("/kegiatan");
   }
 
-  const res = await getDeletedActivities("caang");
+  const res = await getDeletedActivities("anggota");
   const deletedActivities = res.success && res.data ? res.data : [];
 
   return (
     <TrashActivitiesClient
       initialDeletedActivities={deletedActivities}
-      targetAudience="caang"
-      backPath="/kegiatan-absensi-caang"
+      targetAudience="anggota"
+      backPath="/kegiatan"
       userRole={rawProfile.role}
     />
   );

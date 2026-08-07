@@ -1,31 +1,42 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import { getActivities, type ActivityItem } from "@/lib/actions/activities";
 import { KegiatanClient } from "@/components/features/kegiatan/kegiatan-client";
-import { Skeleton } from "@/components/ui/skeleton";
 
 export const metadata: Metadata = {
   title: "Kegiatan UKM | UKM Robotik PNP",
   description: "Agenda Pelatihan, Rapat, dan Workshop Teknologi Robotik PNP",
 };
 
-export default function KegiatanPage() {
-  return (
-    <Suspense fallback={<KegiatanSkeleton />}>
-      <KegiatanClient />
-    </Suspense>
-  );
-}
+export default async function KegiatanPage() {
+  const supabase = await createClient();
 
-function KegiatanSkeleton() {
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    redirect("/login");
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("id, role")
+    .eq("id", user.id)
+    .single();
+
+  const rawProfile = profile as { id: string; role: string } | null;
+  const userRole = rawProfile?.role || "anggota";
+
+  const targetAudience = userRole === "caang" ? "caang" : "anggota";
+
+  const res = await getActivities(targetAudience);
+  const initialActivities: ActivityItem[] =
+    res.success && res.data ? res.data : [];
+
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-6 px-1 lg:px-4">
-      <Skeleton className="h-24 w-full rounded-xl" />
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Skeleton className="h-40 w-full rounded-xl" />
-        <Skeleton className="h-40 w-full rounded-xl" />
-        <Skeleton className="h-40 w-full rounded-xl" />
-      </div>
-      <Skeleton className="h-64 w-full rounded-xl" />
-    </div>
+    <KegiatanClient initialActivities={initialActivities} userRole={userRole} />
   );
 }
