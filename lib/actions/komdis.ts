@@ -4,6 +4,7 @@ import "server-only";
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { decryptQRToken } from "@/lib/utils/crypto";
 import {
   CreateKomdisActivitySchema,
@@ -137,7 +138,10 @@ export async function softDeleteKomdisActivity(activityId: string) {
     .update({ deleted_at: new Date().toISOString() })
     .eq("id", activityId);
 
-  if (error) throw new Error(`Gagal memindahkan kegiatan ke tempat sampah: ${error.message}`);
+  if (error)
+    throw new Error(
+      `Gagal memindahkan kegiatan ke tempat sampah: ${error.message}`,
+    );
 
   revalidatePath("/kegiatan");
   return { success: true };
@@ -180,7 +184,10 @@ export async function deleteKomdisActivity(activityId: string) {
     .delete()
     .eq("id", activityId);
 
-  if (error) throw new Error(`Gagal menghapus kegiatan secara permanen: ${error.message}`);
+  if (error)
+    throw new Error(
+      `Gagal menghapus kegiatan secara permanen: ${error.message}`,
+    );
 
   revalidatePath("/kegiatan");
   revalidatePath("/kegiatan/sampah");
@@ -472,4 +479,333 @@ export async function recordManualAttendance(rawInput: ManualAttendanceInput) {
 
   revalidatePath(`/kegiatan/${validated.activityId}`);
   return { success: true };
+}
+
+// ============================================================================
+// REKAP PRESENSI KOMDIS (REKAP PER ANGGOTA & REKAP PER KEGIATAN)
+// ============================================================================
+
+export interface KomdisMemberAttendanceItem {
+  profileId: string;
+  fullName: string;
+  nim: string;
+  photoUrl: string | null;
+  role: string;
+  studyProgramName: string;
+  majorName: string;
+  attendances: Record<
+    string,
+    "hadir" | "telat" | "izin" | "sakit" | "alfa" | null
+  >;
+  totals: {
+    hadir: number;
+    telat: number;
+    izin: number;
+    sakit: number;
+    alfa: number;
+  };
+  totalPoints: number;
+}
+
+export interface KomdisActivitySummaryItem {
+  id: string;
+  title: string;
+  description: string | null;
+  startDate: string;
+  endDate: string;
+  location: string | null;
+  totalExpected: number;
+  counts: {
+    hadir: number;
+    telat: number;
+    izin: number;
+    sakit: number;
+    alfa: number;
+    unrecorded: number;
+  };
+  attendanceRate: number;
+}
+
+/**
+ * 8. Ambil Rekap Presensi Komdis Berdasarkan Anggota
+ */
+export async function getKomdisMemberAttendanceSummary(): Promise<{
+  activities: { id: string; title: string; start_date: string }[];
+  members: KomdisMemberAttendanceItem[];
+}> {
+  const { supabase } = await verifyKomdisRole();
+
+  const supabaseAdmin = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+
+  // 1. Ambil semua kegiatan komdis (target_audience = 'anggota') yang belum di-soft-delete
+  const { data: activities, error: actError } = await supabase
+    .from("activities")
+    .select("id, title, start_date")
+    .eq("target_audience", "anggota")
+    .is("deleted_at", null)
+    .order("start_date", { ascending: true });
+
+  if (actError) {
+    throw new Error(`Gagal memuat kegiatan komdis: ${actError.message}`);
+  }
+
+  // 2. Ambil data anggota aktif (anggota dan role admin) beserta informasi profil/registrasi
+  const { data: registrationsData, error: regError } = await supabaseAdmin
+    .from("registrations")
+    .select(
+      `
+      full_name,
+      photo_url,
+      deleted_at,
+      study_programs (
+        name,
+        degree,
+        majors ( name )
+      ),
+      profiles!inner (
+        id,
+        nim,
+        role,
+        is_onboarded
+      )
+    `,
+    )
+    .in("profiles.role", [
+      "anggota",
+      "admin-komdis",
+      "admin-or",
+      "admin-kestari",
+      "admin-divisi",
+      "super-admin",
+    ])
+    .is("deleted_at", null)
+    .order("full_name", { ascending: true });
+
+  if (regError) {
+    throw new Error(`Gagal memuat data anggota: ${regError.message}`);
+  }
+
+  const activityIds = (activities ?? []).map((a) => a.id);
+
+  let attendancesData: {
+    activity_id: string;
+    profile_id: string;
+    status: string;
+    points_awarded?: number | null;
+  }[] = [];
+
+  if (activityIds.length > 0) {
+    const { data: attData, error: attError } = await supabaseAdmin
+      .from("attendances")
+      .select("activity_id, profile_id, status, points_awarded")
+      .in("activity_id", activityIds);
+
+    if (attError) {
+      throw new Error(`Gagal memuat data presensi: ${attError.message}`);
+    }
+    attendancesData = attData ?? [];
+  }
+
+  // Build lookup map: attendanceMap[profileId][activityId] = { status, points }
+  const attendanceMap: Record<
+    string,
+    Record<string, { status: string; points: number }>
+  > = {};
+
+  for (const att of attendancesData) {
+    if (!att.profile_id || !att.activity_id) continue;
+    if (!attendanceMap[att.profile_id]) {
+      attendanceMap[att.profile_id] = {};
+    }
+    attendanceMap[att.profile_id][att.activity_id] = {
+      status: att.status,
+      points: att.points_awarded || 0,
+    };
+  }
+
+  type RawRegistration = {
+    full_name: string | null;
+    photo_url: string | null;
+    deleted_at: string | null;
+    study_programs: {
+      name: string;
+      degree: string;
+      majors: { name: string } | { name: string }[] | null;
+    } | null;
+    profiles:
+      | { id: string; nim: string | null; role: string; is_onboarded: boolean }
+      | {
+          id: string;
+          nim: string | null;
+          role: string;
+          is_onboarded: boolean;
+        }[]
+      | null;
+  };
+
+  const members: KomdisMemberAttendanceItem[] = (
+    (registrationsData as unknown as RawRegistration[]) ?? []
+  ).map((reg) => {
+    const profile = Array.isArray(reg.profiles)
+      ? reg.profiles[0]
+      : reg.profiles;
+    const sp = Array.isArray(reg.study_programs)
+      ? reg.study_programs[0]
+      : reg.study_programs;
+    const major = sp?.majors
+      ? Array.isArray(sp.majors)
+        ? sp.majors[0]
+        : sp.majors
+      : null;
+    const profileId = profile?.id ?? "";
+
+    const userAttendances: Record<
+      string,
+      "hadir" | "telat" | "izin" | "sakit" | "alfa" | null
+    > = {};
+    const totals = { hadir: 0, telat: 0, izin: 0, sakit: 0, alfa: 0 };
+    let totalPoints = 0;
+
+    for (const activity of activities ?? []) {
+      const attRecord = attendanceMap[profileId]?.[activity.id];
+      const status = (attRecord?.status ?? null) as
+        | "hadir"
+        | "telat"
+        | "izin"
+        | "sakit"
+        | "alfa"
+        | null;
+
+      userAttendances[activity.id] = status;
+
+      if (status && status in totals) {
+        totals[status as keyof typeof totals]++;
+      }
+      if (attRecord?.points) {
+        totalPoints += attRecord.points;
+      }
+    }
+
+    return {
+      profileId,
+      fullName: reg.full_name || "—",
+      nim: profile?.nim || "—",
+      photoUrl: reg.photo_url || null,
+      role: profile?.role || "anggota",
+      studyProgramName: sp ? `${sp.degree} ${sp.name}` : "—",
+      majorName: major?.name || "—",
+      attendances: userAttendances,
+      totals,
+      totalPoints,
+    };
+  });
+
+  return {
+    activities: activities ?? [],
+    members,
+  };
+}
+
+/**
+ * 9. Ambil Rekap Presensi Komdis Berdasarkan Kegiatan
+ */
+export async function getKomdisActivityAttendanceSummary(): Promise<
+  KomdisActivitySummaryItem[]
+> {
+  const { supabase } = await verifyKomdisRole();
+
+  const supabaseAdmin = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+
+  // 1. Ambil kegiatan komdis aktif
+  const { data: activities, error: actError } = await supabase
+    .from("activities")
+    .select("id, title, description, start_date, end_date, location")
+    .eq("target_audience", "anggota")
+    .is("deleted_at", null)
+    .order("start_date", { ascending: false });
+
+  if (actError) {
+    throw new Error(`Gagal memuat kegiatan komdis: ${actError.message}`);
+  }
+
+  if (!activities || activities.length === 0) {
+    return [];
+  }
+
+  // 2. Ambil total anggota aktif (target audience)
+  const { count: totalMembers } = await supabaseAdmin
+    .from("profiles")
+    .select("id", { count: "exact", head: true })
+    .in("role", [
+      "anggota",
+      "admin-komdis",
+      "admin-or",
+      "admin-kestari",
+      "admin-divisi",
+      "super-admin",
+    ]);
+
+  const totalExpected = totalMembers || 0;
+  const activityIds = activities.map((a) => a.id);
+
+  // 3. Ambil semua data presensi untuk kegiatan-kegiatan di atas
+  const { data: attData } = await supabaseAdmin
+    .from("attendances")
+    .select("activity_id, status")
+    .in("activity_id", activityIds);
+
+  const countsMap: Record<
+    string,
+    { hadir: number; telat: number; izin: number; sakit: number; alfa: number }
+  > = {};
+
+  for (const act of activities) {
+    countsMap[act.id] = { hadir: 0, telat: 0, izin: 0, sakit: 0, alfa: 0 };
+  }
+
+  for (const att of attData ?? []) {
+    if (!att.activity_id || !countsMap[att.activity_id]) continue;
+    const st = att.status as keyof (typeof countsMap)[string];
+    if (st && st in countsMap[att.activity_id]) {
+      countsMap[att.activity_id][st]++;
+    }
+  }
+
+  return activities.map((act) => {
+    const counts = countsMap[act.id] || {
+      hadir: 0,
+      telat: 0,
+      izin: 0,
+      sakit: 0,
+      alfa: 0,
+    };
+    const totalRecorded =
+      counts.hadir + counts.telat + counts.izin + counts.sakit + counts.alfa;
+    const unrecorded = Math.max(0, totalExpected - totalRecorded);
+    const attendanceRate =
+      totalExpected > 0
+        ? Math.round(((counts.hadir + counts.telat) / totalExpected) * 100)
+        : 0;
+
+    return {
+      id: act.id,
+      title: act.title,
+      description: act.description,
+      startDate: act.start_date,
+      endDate: act.end_date,
+      location: act.location,
+      totalExpected,
+      counts: {
+        ...counts,
+        unrecorded,
+      },
+      attendanceRate,
+    };
+  });
 }

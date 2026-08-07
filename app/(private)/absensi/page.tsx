@@ -2,12 +2,19 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { AbsensiHistoryClient } from "@/components/features/absensi/absensi-history-client";
+import { PresensiClient } from "@/components/features/absensi/presensi-client";
+import {
+  getKomdisMemberAttendanceSummary,
+  getKomdisActivityAttendanceSummary,
+  type KomdisMemberAttendanceItem,
+  type KomdisActivitySummaryItem,
+} from "@/lib/actions/komdis";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const metadata: Metadata = {
-  title: "Histori Absensi | UKM Robotik PNP",
-  description: "Riwayat dan histori presensi kegiatan UKM Robotik PNP",
+  title: "Presensi UKM | UKM Robotik PNP",
+  description:
+    "Manajemen, rekapitulasi, dan histori presensi kegiatan UKM Robotik PNP",
 };
 
 interface RawHistoryItem {
@@ -38,7 +45,7 @@ export default async function AbsensiPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, role, full_name, nim")
+    .select("id, role")
     .eq("id", user.id)
     .single();
 
@@ -46,7 +53,10 @@ export default async function AbsensiPage() {
     redirect("/login");
   }
 
-  // Fetch user's attendance history (joins with activities)
+  const userRole = profile.role;
+  const isKomdis = ["admin-komdis", "super-admin"].includes(userRole);
+
+  // Fetch user's personal attendance history
   const { data: history } = await supabase
     .from("attendances")
     .select(
@@ -67,7 +77,6 @@ export default async function AbsensiPage() {
     .eq("profile_id", user.id)
     .order("check_in_at", { ascending: false });
 
-  // Convert join result types safely without any
   const formattedHistory = ((history as unknown as RawHistoryItem[]) || []).map(
     (item) => ({
       id: item.id,
@@ -82,22 +91,42 @@ export default async function AbsensiPage() {
     }),
   );
 
+  let initialMemberSummary: {
+    activities: { id: string; title: string; start_date: string }[];
+    members: KomdisMemberAttendanceItem[];
+  } | null = null;
+
+  let initialActivitySummary: KomdisActivitySummaryItem[] | null = null;
+
+  if (isKomdis) {
+    try {
+      const [memberSum, activitySum] = await Promise.all([
+        getKomdisMemberAttendanceSummary(),
+        getKomdisActivityAttendanceSummary(),
+      ]);
+      initialMemberSummary = memberSum;
+      initialActivitySummary = activitySum;
+    } catch (err) {
+      console.error("Error fetching Komdis presensi summaries:", err);
+    }
+  }
+
   return (
-    <Suspense fallback={<AbsensiHistorySkeleton />}>
-      <AbsensiHistoryClient
-        profileName={profile.full_name || "Pengguna"}
-        nim={profile.nim || "-"}
-        role={profile.role}
-        initialHistory={formattedHistory}
+    <Suspense fallback={<PresensiSkeleton />}>
+      <PresensiClient
+        userRole={userRole}
+        initialPersonalHistory={formattedHistory}
+        initialMemberSummary={initialMemberSummary}
+        initialActivitySummary={initialActivitySummary}
       />
     </Suspense>
   );
 }
 
-function AbsensiHistorySkeleton() {
+function PresensiSkeleton() {
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-6 px-2 sm:px-4 lg:px-6">
-      <Skeleton className="h-24 w-full rounded-xl bg-slate-200 dark:bg-slate-800" />
+    <div className="w-full max-w-7xl mx-auto space-y-6">
+      <Skeleton className="h-36 w-full rounded-2xl bg-slate-200 dark:bg-slate-800" />
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <Skeleton className="h-20 w-full rounded-xl bg-slate-200 dark:bg-slate-800" />
         <Skeleton className="h-20 w-full rounded-xl bg-slate-200 dark:bg-slate-800" />

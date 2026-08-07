@@ -958,7 +958,7 @@ export function KegiatanClient({
                       }}
                       className="rounded-lg bg-[#1e3a8a] dark:bg-blue-600 text-white hover:bg-[#1e40af] dark:hover:bg-blue-500 font-mono text-xs uppercase"
                     >
-                      Buka Modul Absensi
+                      Buka Modul Presensi
                     </Button>
                   )}
                 </div>
