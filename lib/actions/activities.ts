@@ -29,7 +29,10 @@ export interface AttendanceSummaryItem {
   photoUrl: string | null;
   studyProgramName: string;
   majorName: string;
-  attendances: Record<string, "hadir" | "izin" | "sakit" | "alfa" | "telat" | null>;
+  attendances: Record<
+    string,
+    "hadir" | "izin" | "sakit" | "alfa" | "telat" | null
+  >;
   totals: {
     hadir: number;
     izin: number;
@@ -39,9 +42,9 @@ export interface AttendanceSummaryItem {
   };
 }
 
-// ─── Helper: Verify Admin OR / Super-Admin ────────────────────────────────────
+// ─── Helper: Verify User Auth & RBAC ──────────────────────────────────────────
 
-async function verifyAdminOrAccess() {
+async function verifyUserAuth() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -49,7 +52,13 @@ async function verifyAdminOrAccess() {
   } = await supabase.auth.getUser();
 
   if (error || !user) {
-    return { authorized: false as const, error: "Sesi tidak ditemukan. Silakan login kembali.", supabase, user: null };
+    return {
+      authorized: false as const,
+      error: "Sesi tidak ditemukan. Silakan login kembali.",
+      supabase,
+      user: null,
+      role: null,
+    };
   }
 
   const { data: profile } = await supabase
@@ -58,38 +67,77 @@ async function verifyAdminOrAccess() {
     .eq("id", user.id)
     .single();
 
-  const allowedRoles = ["admin-or", "super-admin"];
-  if (!profile || !allowedRoles.includes(profile.role)) {
-    return { authorized: false as const, error: "Akses ditolak. Anda tidak memiliki izin.", supabase, user: null };
+  if (!profile) {
+    return {
+      authorized: false as const,
+      error: "Profil user tidak ditemukan.",
+      supabase,
+      user,
+      role: null,
+    };
   }
 
-  return { authorized: true as const, error: null, supabase, user };
+  return {
+    authorized: true as const,
+    error: null,
+    supabase,
+    user,
+    role: profile.role as string,
+  };
+}
+
+/**
+ * Check if the user role has CUD permission for a specific target audience.
+ * - caang: admin-or, super-admin
+ * - anggota: admin-komdis, super-admin
+ */
+function isAuthorizedForTargetAudience(
+  role: string,
+  targetAudience: "caang" | "anggota",
+): boolean {
+  if (role === "super-admin") return true;
+  if (targetAudience === "caang") return role === "admin-or";
+  if (targetAudience === "anggota") return role === "admin-komdis";
+  return false;
 }
 
 // ─── GET: Daftar Kegiatan Aktif (belum di-soft-delete) ────────────────────────
 
-export async function getActivities(): Promise<
-  ServerActionResponse<ActivityItem[]>
-> {
-  const auth = await verifyAdminOrAccess();
+export async function getActivities(
+  targetAudience?: "caang" | "anggota",
+): Promise<ServerActionResponse<ActivityItem[]>> {
+  const auth = await verifyUserAuth();
   if (!auth.authorized) {
     return { success: false, message: auth.error! };
   }
 
+  // Determine audience filter based on param or user role
+  const audience =
+    targetAudience ||
+    (auth.role === "admin-komdis" || auth.role === "anggota"
+      ? "anggota"
+      : "caang");
+
   try {
     const { data, error } = await auth.supabase
       .from("activities")
-      .select(`
+      .select(
+        `
         id, title, description, start_date, end_date, location,
         banner_url, target_audience, created_at, updated_at, deleted_at,
         creator:profiles!activities_created_by_fkey(full_name:id)
-      `)
-      .eq("target_audience", "caang")
+      `,
+      )
+      .eq("target_audience", audience)
       .is("deleted_at", null)
       .order("start_date", { ascending: false });
 
     if (error) {
-      return { success: false, message: "Gagal memuat daftar kegiatan.", error: { code: "DB_ERROR", details: error.message } };
+      return {
+        success: false,
+        message: "Gagal memuat daftar kegiatan.",
+        error: { code: "DB_ERROR", details: error.message },
+      };
     }
 
     const activities: ActivityItem[] = (data ?? []).map((row) => ({
@@ -110,33 +158,53 @@ export async function getActivities(): Promise<
     return { success: true, message: "Berhasil.", data: activities };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    return { success: false, message: "Terjadi kesalahan tidak terduga.", error: { code: "SERVER_ERROR", details: msg } };
+    return {
+      success: false,
+      message: "Terjadi kesalahan tidak terduga.",
+      error: { code: "SERVER_ERROR", details: msg },
+    };
   }
 }
 
 // ─── GET: Daftar Kegiatan yang Sudah Di-Soft-Delete (Trash) ───────────────────
 
-export async function getDeletedActivities(): Promise<
-  ServerActionResponse<ActivityItem[]>
-> {
-  const auth = await verifyAdminOrAccess();
+export async function getDeletedActivities(
+  targetAudience?: "caang" | "anggota",
+): Promise<ServerActionResponse<ActivityItem[]>> {
+  const auth = await verifyUserAuth();
   if (!auth.authorized) {
     return { success: false, message: auth.error! };
+  }
+
+  const audience =
+    targetAudience || (auth.role === "admin-komdis" ? "anggota" : "caang");
+
+  if (!isAuthorizedForTargetAudience(auth.role!, audience)) {
+    return {
+      success: false,
+      message: "Akses ditolak. Anda tidak memiliki izin mengelola sampah ini.",
+    };
   }
 
   try {
     const { data, error } = await auth.supabase
       .from("activities")
-      .select(`
+      .select(
+        `
         id, title, description, start_date, end_date, location,
         banner_url, target_audience, created_at, updated_at, deleted_at
-      `)
-      .eq("target_audience", "caang")
+      `,
+      )
+      .eq("target_audience", audience)
       .not("deleted_at", "is", null)
       .order("deleted_at", { ascending: false });
 
     if (error) {
-      return { success: false, message: "Gagal memuat daftar kegiatan terhapus.", error: { code: "DB_ERROR", details: error.message } };
+      return {
+        success: false,
+        message: "Gagal memuat daftar kegiatan terhapus.",
+        error: { code: "DB_ERROR", details: error.message },
+      };
     }
 
     const activities: ActivityItem[] = (data ?? []).map((row) => ({
@@ -147,33 +215,57 @@ export async function getDeletedActivities(): Promise<
     return { success: true, message: "Berhasil.", data: activities };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    return { success: false, message: "Terjadi kesalahan tidak terduga.", error: { code: "SERVER_ERROR", details: msg } };
+    return {
+      success: false,
+      message: "Terjadi kesalahan tidak terduga.",
+      error: { code: "SERVER_ERROR", details: msg },
+    };
   }
 }
 
 // ─── CREATE: Tambah Kegiatan Baru ─────────────────────────────────────────────
 
 export async function createActivity(
-  formData: FormData
+  formData: FormData,
 ): Promise<ServerActionResponse<{ id: string }>> {
-  const auth = await verifyAdminOrAccess();
+  const auth = await verifyUserAuth();
   if (!auth.authorized) {
     return { success: false, message: auth.error! };
   }
 
+  const rawAudience =
+    (formData.get("target_audience") as string | null) || "caang";
+  const targetAudience: "caang" | "anggota" =
+    rawAudience === "anggota" ? "anggota" : "caang";
+
+  if (!isAuthorizedForTargetAudience(auth.role!, targetAudience)) {
+    return {
+      success: false,
+      message:
+        "Akses ditolak. Anda tidak memiliki izin membuat kegiatan untuk target audience ini.",
+    };
+  }
+
   const title = (formData.get("title") as string | null)?.trim();
-  const description = (formData.get("description") as string | null)?.trim() || null;
+  const description =
+    (formData.get("description") as string | null)?.trim() || null;
   const startDate = formData.get("start_date") as string | null;
   const endDate = formData.get("end_date") as string | null;
   const location = (formData.get("location") as string | null)?.trim() || null;
   const bannerFile = formData.get("banner") as File | null;
 
   if (!title || !startDate || !endDate) {
-    return { success: false, message: "Judul, Waktu Mulai, dan Waktu Berakhir wajib diisi." };
+    return {
+      success: false,
+      message: "Judul, Waktu Mulai, dan Waktu Berakhir wajib diisi.",
+    };
   }
 
   if (new Date(endDate) < new Date(startDate)) {
-    return { success: false, message: "Waktu berakhir tidak boleh lebih awal dari waktu mulai." };
+    return {
+      success: false,
+      message: "Waktu berakhir tidak boleh lebih awal dari waktu mulai.",
+    };
   }
 
   try {
@@ -188,10 +280,17 @@ export async function createActivity(
 
       const { error: uploadError } = await auth.supabase.storage
         .from("activity-banners")
-        .upload(fileName, buffer, { contentType: bannerFile.type, upsert: false });
+        .upload(fileName, buffer, {
+          contentType: bannerFile.type,
+          upsert: false,
+        });
 
       if (uploadError) {
-        return { success: false, message: "Gagal mengunggah banner.", error: { code: "STORAGE_ERROR", details: uploadError.message } };
+        return {
+          success: false,
+          message: "Gagal mengunggah banner.",
+          error: { code: "STORAGE_ERROR", details: uploadError.message },
+        };
       }
 
       const { data: urlData } = auth.supabase.storage
@@ -210,21 +309,34 @@ export async function createActivity(
         end_date: endDate,
         location,
         banner_url: bannerUrl,
-        target_audience: "caang",
+        target_audience: targetAudience,
         created_by: auth.user!.id,
       })
       .select("id")
       .single();
 
     if (insertError) {
-      return { success: false, message: "Gagal menyimpan kegiatan.", error: { code: "DB_ERROR", details: insertError.message } };
+      return {
+        success: false,
+        message: "Gagal menyimpan kegiatan.",
+        error: { code: "DB_ERROR", details: insertError.message },
+      };
     }
 
+    revalidatePath("/kegiatan");
     revalidatePath("/kegiatan-absensi-caang");
-    return { success: true, message: "Kegiatan berhasil ditambahkan.", data: { id: inserted.id } };
+    return {
+      success: true,
+      message: "Kegiatan berhasil ditambahkan.",
+      data: { id: inserted.id },
+    };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    return { success: false, message: "Terjadi kesalahan tidak terduga.", error: { code: "SERVER_ERROR", details: msg } };
+    return {
+      success: false,
+      message: "Terjadi kesalahan tidak terduga.",
+      error: { code: "SERVER_ERROR", details: msg },
+    };
   }
 }
 
@@ -232,30 +344,62 @@ export async function createActivity(
 
 export async function updateActivity(
   activityId: string,
-  formData: FormData
+  formData: FormData,
 ): Promise<ServerActionResponse> {
-  const auth = await verifyAdminOrAccess();
+  const auth = await verifyUserAuth();
   if (!auth.authorized) {
     return { success: false, message: auth.error! };
   }
 
-  const title = (formData.get("title") as string | null)?.trim();
-  const description = (formData.get("description") as string | null)?.trim() || null;
-  const startDate = formData.get("start_date") as string | null;
-  const endDate = formData.get("end_date") as string | null;
-  const location = (formData.get("location") as string | null)?.trim() || null;
-  const bannerFile = formData.get("banner") as File | null;
-  const existingBannerUrl = formData.get("existing_banner_url") as string | null;
-
-  if (!title || !startDate || !endDate) {
-    return { success: false, message: "Judul, Waktu Mulai, dan Waktu Berakhir wajib diisi." };
-  }
-
-  if (new Date(endDate) < new Date(startDate)) {
-    return { success: false, message: "Waktu berakhir tidak boleh lebih awal dari waktu mulai." };
-  }
-
   try {
+    // Ambil data kegiatan existing untuk verifikasi target_audience & izin
+    const { data: existingActivity, error: fetchError } = await auth.supabase
+      .from("activities")
+      .select("target_audience")
+      .eq("id", activityId)
+      .single();
+
+    if (fetchError || !existingActivity) {
+      return { success: false, message: "Kegiatan tidak ditemukan." };
+    }
+
+    const targetAudience = existingActivity.target_audience as
+      | "caang"
+      | "anggota";
+    if (!isAuthorizedForTargetAudience(auth.role!, targetAudience)) {
+      return {
+        success: false,
+        message:
+          "Akses ditolak. Anda tidak memiliki izin memperbarui kegiatan ini.",
+      };
+    }
+
+    const title = (formData.get("title") as string | null)?.trim();
+    const description =
+      (formData.get("description") as string | null)?.trim() || null;
+    const startDate = formData.get("start_date") as string | null;
+    const endDate = formData.get("end_date") as string | null;
+    const location =
+      (formData.get("location") as string | null)?.trim() || null;
+    const bannerFile = formData.get("banner") as File | null;
+    const existingBannerUrl = formData.get("existing_banner_url") as
+      | string
+      | null;
+
+    if (!title || !startDate || !endDate) {
+      return {
+        success: false,
+        message: "Judul, Waktu Mulai, dan Waktu Berakhir wajib diisi.",
+      };
+    }
+
+    if (new Date(endDate) < new Date(startDate)) {
+      return {
+        success: false,
+        message: "Waktu berakhir tidak boleh lebih awal dari waktu mulai.",
+      };
+    }
+
     let bannerUrl: string | null = existingBannerUrl || null;
 
     // Replace banner jika ada file baru
@@ -267,10 +411,17 @@ export async function updateActivity(
 
       const { error: uploadError } = await auth.supabase.storage
         .from("activity-banners")
-        .upload(fileName, buffer, { contentType: bannerFile.type, upsert: false });
+        .upload(fileName, buffer, {
+          contentType: bannerFile.type,
+          upsert: false,
+        });
 
       if (uploadError) {
-        return { success: false, message: "Gagal mengunggah banner baru.", error: { code: "STORAGE_ERROR", details: uploadError.message } };
+        return {
+          success: false,
+          message: "Gagal mengunggah banner baru.",
+          error: { code: "STORAGE_ERROR", details: uploadError.message },
+        };
       }
 
       const { data: urlData } = auth.supabase.storage
@@ -294,91 +445,188 @@ export async function updateActivity(
       .eq("id", activityId);
 
     if (updateError) {
-      return { success: false, message: "Gagal memperbarui kegiatan.", error: { code: "DB_ERROR", details: updateError.message } };
+      return {
+        success: false,
+        message: "Gagal memperbarui kegiatan.",
+        error: { code: "DB_ERROR", details: updateError.message },
+      };
     }
 
+    revalidatePath("/kegiatan");
     revalidatePath("/kegiatan-absensi-caang");
+    revalidatePath(`/kegiatan/${activityId}`);
     return { success: true, message: "Kegiatan berhasil diperbarui." };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    return { success: false, message: "Terjadi kesalahan tidak terduga.", error: { code: "SERVER_ERROR", details: msg } };
+    return {
+      success: false,
+      message: "Terjadi kesalahan tidak terduga.",
+      error: { code: "SERVER_ERROR", details: msg },
+    };
   }
 }
 
 // ─── SOFT DELETE: Arsipkan Kegiatan ──────────────────────────────────────────
 
 export async function softDeleteActivity(
-  activityId: string
+  activityId: string,
 ): Promise<ServerActionResponse> {
-  const auth = await verifyAdminOrAccess();
+  const auth = await verifyUserAuth();
   if (!auth.authorized) {
     return { success: false, message: auth.error! };
   }
 
   try {
+    const { data: activity, error: fetchError } = await auth.supabase
+      .from("activities")
+      .select("target_audience")
+      .eq("id", activityId)
+      .single();
+
+    if (fetchError || !activity) {
+      return { success: false, message: "Kegiatan tidak ditemukan." };
+    }
+
+    if (
+      !isAuthorizedForTargetAudience(
+        auth.role!,
+        activity.target_audience as "caang" | "anggota",
+      )
+    ) {
+      return {
+        success: false,
+        message:
+          "Akses ditolak. Anda tidak memiliki izin menghapus kegiatan ini.",
+      };
+    }
+
     const { error } = await auth.supabase
       .from("activities")
       .update({ deleted_at: new Date().toISOString() })
       .eq("id", activityId);
 
     if (error) {
-      return { success: false, message: "Gagal menghapus kegiatan.", error: { code: "DB_ERROR", details: error.message } };
+      return {
+        success: false,
+        message: "Gagal menghapus kegiatan.",
+        error: { code: "DB_ERROR", details: error.message },
+      };
     }
 
+    revalidatePath("/kegiatan");
+    revalidatePath("/kegiatan/sampah");
     revalidatePath("/kegiatan-absensi-caang");
-    return { success: true, message: "Kegiatan berhasil dipindahkan ke Trash." };
+    revalidatePath("/kegiatan-absensi-caang/trash");
+    return {
+      success: true,
+      message: "Kegiatan berhasil dipindahkan ke tempat sampah.",
+    };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    return { success: false, message: "Terjadi kesalahan tidak terduga.", error: { code: "SERVER_ERROR", details: msg } };
+    return {
+      success: false,
+      message: "Terjadi kesalahan tidak terduga.",
+      error: { code: "SERVER_ERROR", details: msg },
+    };
   }
 }
 
 // ─── RESTORE: Pulihkan Kegiatan dari Trash ────────────────────────────────────
 
 export async function restoreActivity(
-  activityId: string
+  activityId: string,
 ): Promise<ServerActionResponse> {
-  const auth = await verifyAdminOrAccess();
+  const auth = await verifyUserAuth();
   if (!auth.authorized) {
     return { success: false, message: auth.error! };
   }
 
   try {
+    const { data: activity, error: fetchError } = await auth.supabase
+      .from("activities")
+      .select("target_audience")
+      .eq("id", activityId)
+      .single();
+
+    if (fetchError || !activity) {
+      return { success: false, message: "Kegiatan tidak ditemukan." };
+    }
+
+    if (
+      !isAuthorizedForTargetAudience(
+        auth.role!,
+        activity.target_audience as "caang" | "anggota",
+      )
+    ) {
+      return {
+        success: false,
+        message:
+          "Akses ditolak. Anda tidak memiliki izin memulihkan kegiatan ini.",
+      };
+    }
+
     const { error } = await auth.supabase
       .from("activities")
       .update({ deleted_at: null })
       .eq("id", activityId);
 
     if (error) {
-      return { success: false, message: "Gagal memulihkan kegiatan.", error: { code: "DB_ERROR", details: error.message } };
+      return {
+        success: false,
+        message: "Gagal memulihkan kegiatan.",
+        error: { code: "DB_ERROR", details: error.message },
+      };
     }
 
+    revalidatePath("/kegiatan");
+    revalidatePath("/kegiatan/sampah");
     revalidatePath("/kegiatan-absensi-caang");
     revalidatePath("/kegiatan-absensi-caang/trash");
     return { success: true, message: "Kegiatan berhasil dipulihkan." };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    return { success: false, message: "Terjadi kesalahan tidak terduga.", error: { code: "SERVER_ERROR", details: msg } };
+    return {
+      success: false,
+      message: "Terjadi kesalahan tidak terduga.",
+      error: { code: "SERVER_ERROR", details: msg },
+    };
   }
 }
 
 // ─── HARD DELETE: Hapus Permanen ─────────────────────────────────────────────
 
 export async function hardDeleteActivity(
-  activityId: string
+  activityId: string,
 ): Promise<ServerActionResponse> {
-  const auth = await verifyAdminOrAccess();
+  const auth = await verifyUserAuth();
   if (!auth.authorized) {
     return { success: false, message: auth.error! };
   }
 
   try {
-    // Ambil banner_url sebelum dihapus
-    const { data: activity } = await auth.supabase
+    // Ambil data kegiatan & banner_url sebelum dihapus
+    const { data: activity, error: fetchError } = await auth.supabase
       .from("activities")
-      .select("banner_url")
+      .select("banner_url, target_audience")
       .eq("id", activityId)
       .single();
+
+    if (fetchError || !activity) {
+      return { success: false, message: "Kegiatan tidak ditemukan." };
+    }
+
+    if (
+      !isAuthorizedForTargetAudience(
+        auth.role!,
+        activity.target_audience as "caang" | "anggota",
+      )
+    ) {
+      return {
+        success: false,
+        message:
+          "Akses ditolak. Anda tidak memiliki izin menghapus permanen kegiatan ini.",
+      };
+    }
 
     // Hapus baris dari database
     const { error: deleteError } = await auth.supabase
@@ -387,7 +635,11 @@ export async function hardDeleteActivity(
       .eq("id", activityId);
 
     if (deleteError) {
-      return { success: false, message: "Gagal menghapus kegiatan secara permanen.", error: { code: "DB_ERROR", details: deleteError.message } };
+      return {
+        success: false,
+        message: "Gagal menghapus kegiatan secara permanen.",
+        error: { code: "DB_ERROR", details: deleteError.message },
+      };
     }
 
     // Hapus banner dari storage jika ada
@@ -400,12 +652,21 @@ export async function hardDeleteActivity(
       }
     }
 
+    revalidatePath("/kegiatan");
+    revalidatePath("/kegiatan/sampah");
     revalidatePath("/kegiatan-absensi-caang");
     revalidatePath("/kegiatan-absensi-caang/trash");
-    return { success: true, message: "Kegiatan berhasil dihapus secara permanen." };
+    return {
+      success: true,
+      message: "Kegiatan berhasil dihapus secara permanen.",
+    };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    return { success: false, message: "Terjadi kesalahan tidak terduga.", error: { code: "SERVER_ERROR", details: msg } };
+    return {
+      success: false,
+      message: "Terjadi kesalahan tidak terduga.",
+      error: { code: "SERVER_ERROR", details: msg },
+    };
   }
 }
 
@@ -417,15 +678,22 @@ export async function getAttendanceSummary(): Promise<
     summary: AttendanceSummaryItem[];
   }>
 > {
-  const auth = await verifyAdminOrAccess();
+  const auth = await verifyUserAuth();
   if (!auth.authorized) {
     return { success: false, message: auth.error! };
+  }
+
+  if (auth.role !== "admin-or" && auth.role !== "super-admin") {
+    return {
+      success: false,
+      message: "Akses ditolak. Rekap absensi caang hanya untuk Admin OR.",
+    };
   }
 
   // Use service-role client to bypass RLS (mirrors caang.ts pattern)
   const supabaseAdmin = createAdminClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
 
   try {
@@ -438,14 +706,20 @@ export async function getAttendanceSummary(): Promise<
       .order("start_date", { ascending: true });
 
     if (activitiesError) {
-      return { success: false, message: "Gagal memuat data kegiatan.", error: { code: "DB_ERROR", details: activitiesError.message } };
+      return {
+        success: false,
+        message: "Gagal memuat data kegiatan.",
+        error: { code: "DB_ERROR", details: activitiesError.message },
+      };
     }
 
     // 2. Ambil semua Caang yang sudah onboarding — query dari registrations seperti caang.ts
     //    Gunakan service-role client agar RLS tidak memblokir akses ke photo_url
-    const { data: registrationsData, error: registrationsError } = await supabaseAdmin
-      .from("registrations")
-      .select(`
+    const { data: registrationsData, error: registrationsError } =
+      await supabaseAdmin
+        .from("registrations")
+        .select(
+          `
         full_name,
         photo_url,
         deleted_at,
@@ -460,20 +734,29 @@ export async function getAttendanceSummary(): Promise<
           role,
           is_onboarded
         )
-      `)
-      .eq("profiles.role", "caang")
-      .eq("profiles.is_onboarded", true)
-      .is("deleted_at", null)
-      .order("full_name", { ascending: true });
+      `,
+        )
+        .eq("profiles.role", "caang")
+        .eq("profiles.is_onboarded", true)
+        .is("deleted_at", null)
+        .order("full_name", { ascending: true });
 
     if (registrationsError) {
-      return { success: false, message: "Gagal memuat data Caang.", error: { code: "DB_ERROR", details: registrationsError.message } };
+      return {
+        success: false,
+        message: "Gagal memuat data Caang.",
+        error: { code: "DB_ERROR", details: registrationsError.message },
+      };
     }
 
     // 3. Ambil semua record absensi untuk kegiatan-kegiatan di atas
-    const activityIds = (activitiesData ?? []).map((a) => a.id);
+    const activityIds = (activitiesData ?? []).map((a: { id: string }) => a.id);
 
-    let attendancesData: { activity_id: string; profile_id: string; status: string }[] = [];
+    let attendancesData: {
+      activity_id: string;
+      profile_id: string;
+      status: string;
+    }[] = [];
     if (activityIds.length > 0) {
       const { data: attData, error: attError } = await supabaseAdmin
         .from("attendances")
@@ -481,7 +764,11 @@ export async function getAttendanceSummary(): Promise<
         .in("activity_id", activityIds);
 
       if (attError) {
-        return { success: false, message: "Gagal memuat data absensi.", error: { code: "DB_ERROR", details: attError.message } };
+        return {
+          success: false,
+          message: "Gagal memuat data absensi.",
+          error: { code: "DB_ERROR", details: attError.message },
+        };
       }
       attendancesData = attData ?? [];
     }
@@ -506,8 +793,18 @@ export async function getAttendanceSummary(): Promise<
         majors: { name: string } | { name: string }[] | null;
       } | null;
       profiles:
-        | { id: string; nim: string | null; role: string; is_onboarded: boolean }
-        | { id: string; nim: string | null; role: string; is_onboarded: boolean }[]
+        | {
+            id: string;
+            nim: string | null;
+            role: string;
+            is_onboarded: boolean;
+          }
+        | {
+            id: string;
+            nim: string | null;
+            role: string;
+            is_onboarded: boolean;
+          }[]
         | null;
     };
 
@@ -531,7 +828,10 @@ export async function getAttendanceSummary(): Promise<
 
       const profileId = profile?.id ?? "";
 
-      const userAttendances: Record<string, "hadir" | "izin" | "sakit" | "alfa" | "telat" | null> = {};
+      const userAttendances: Record<
+        string,
+        "hadir" | "izin" | "sakit" | "alfa" | "telat" | null
+      > = {};
       const totals = { hadir: 0, izin: 0, sakit: 0, alfa: 0, telat: 0 };
 
       for (const activity of activitiesData ?? []) {
@@ -573,7 +873,11 @@ export async function getAttendanceSummary(): Promise<
     };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    return { success: false, message: "Terjadi kesalahan tidak terduga.", error: { code: "SERVER_ERROR", details: msg } };
+    return {
+      success: false,
+      message: "Terjadi kesalahan tidak terduga.",
+      error: { code: "SERVER_ERROR", details: msg },
+    };
   }
 }
 
@@ -582,11 +886,18 @@ export async function getAttendanceSummary(): Promise<
 export async function upsertAttendanceStatus(
   activityId: string,
   profileId: string,
-  status: "hadir" | "izin" | "sakit" | "alfa" | "telat"
+  status: "hadir" | "izin" | "sakit" | "alfa" | "telat",
 ): Promise<ServerActionResponse> {
-  const auth = await verifyAdminOrAccess();
+  const auth = await verifyUserAuth();
   if (!auth.authorized) {
     return { success: false, message: auth.error! };
+  }
+
+  if (auth.role !== "admin-or" && auth.role !== "super-admin") {
+    return {
+      success: false,
+      message: "Akses ditolak. Pembaharuan absensi caang hanya untuk Admin OR.",
+    };
   }
 
   const validStatuses = ["hadir", "izin", "sakit", "alfa", "telat"];
@@ -595,44 +906,62 @@ export async function upsertAttendanceStatus(
   }
 
   try {
-    const { error } = await auth.supabase
-      .from("attendances")
-      .upsert(
-        {
-          activity_id: activityId,
-          profile_id: profileId,
-          status,
-          check_in_at: new Date().toISOString(),
-          verified_by: auth.user!.id,
-        },
-        { onConflict: "activity_id,profile_id" }
-      );
+    const { error } = await auth.supabase.from("attendances").upsert(
+      {
+        activity_id: activityId,
+        profile_id: profileId,
+        status,
+        check_in_at: new Date().toISOString(),
+        verified_by: auth.user!.id,
+      },
+      { onConflict: "activity_id,profile_id" },
+    );
 
     if (error) {
-      return { success: false, message: "Gagal memperbarui status absensi.", error: { code: "DB_ERROR", details: error.message } };
+      return {
+        success: false,
+        message: "Gagal memperbarui status absensi.",
+        error: { code: "DB_ERROR", details: error.message },
+      };
     }
 
     revalidatePath("/kegiatan-absensi-caang");
-    return { success: true, message: `Status absensi berhasil diperbarui menjadi "${status}".` };
+    return {
+      success: true,
+      message: `Status absensi berhasil diperbarui menjadi "${status}".`,
+    };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    return { success: false, message: "Terjadi kesalahan tidak terduga.", error: { code: "SERVER_ERROR", details: msg } };
+    return {
+      success: false,
+      message: "Terjadi kesalahan tidak terduga.",
+      error: { code: "SERVER_ERROR", details: msg },
+    };
   }
 }
 
 // ─── GET: Detail Absensi Spesifik Satu Kegiatan ──────────────────────────────
 
 export async function getActivityAttendances(
-  activityId: string
-): Promise<ServerActionResponse<{ activity: ActivityItem; summary: AttendanceSummaryItem[] }>> {
-  const auth = await verifyAdminOrAccess();
+  activityId: string,
+): Promise<
+  ServerActionResponse<{
+    activity: ActivityItem;
+    summary: AttendanceSummaryItem[];
+  }>
+> {
+  const auth = await verifyUserAuth();
   if (!auth.authorized) {
     return { success: false, message: auth.error! };
   }
 
+  if (auth.role !== "admin-or" && auth.role !== "super-admin") {
+    return { success: false, message: "Akses ditolak." };
+  }
+
   const supabaseAdmin = createAdminClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
 
   try {
@@ -644,13 +973,19 @@ export async function getActivityAttendances(
       .single();
 
     if (activityError || !activity) {
-      return { success: false, message: "Kegiatan tidak ditemukan.", error: { code: "NOT_FOUND", details: activityError?.message ?? "" } };
+      return {
+        success: false,
+        message: "Kegiatan tidak ditemukan.",
+        error: { code: "NOT_FOUND", details: activityError?.message ?? "" },
+      };
     }
 
     // 2. Ambil data Caang yang onboarded
-    const { data: registrationsData, error: registrationsError } = await supabaseAdmin
-      .from("registrations")
-      .select(`
+    const { data: registrationsData, error: registrationsError } =
+      await supabaseAdmin
+        .from("registrations")
+        .select(
+          `
         full_name,
         photo_url,
         deleted_at,
@@ -665,14 +1000,19 @@ export async function getActivityAttendances(
           role,
           is_onboarded
         )
-      `)
-      .eq("profiles.role", "caang")
-      .eq("profiles.is_onboarded", true)
-      .is("deleted_at", null)
-      .order("full_name", { ascending: true });
+      `,
+        )
+        .eq("profiles.role", "caang")
+        .eq("profiles.is_onboarded", true)
+        .is("deleted_at", null)
+        .order("full_name", { ascending: true });
 
     if (registrationsError) {
-      return { success: false, message: "Gagal memuat data Caang.", error: { code: "DB_ERROR", details: registrationsError.message } };
+      return {
+        success: false,
+        message: "Gagal memuat data Caang.",
+        error: { code: "DB_ERROR", details: registrationsError.message },
+      };
     }
 
     // 3. Ambil absensi untuk activityId
@@ -682,7 +1022,11 @@ export async function getActivityAttendances(
       .eq("activity_id", activityId);
 
     if (attError) {
-      return { success: false, message: "Gagal memuat data absensi.", error: { code: "DB_ERROR", details: attError.message } };
+      return {
+        success: false,
+        message: "Gagal memuat data absensi.",
+        error: { code: "DB_ERROR", details: attError.message },
+      };
     }
 
     const attendanceMap: Record<string, string> = {};
@@ -701,23 +1045,50 @@ export async function getActivityAttendances(
         majors: { name: string } | { name: string }[] | null;
       } | null;
       profiles:
-        | { id: string; nim: string | null; role: string; is_onboarded: boolean }
-        | { id: string; nim: string | null; role: string; is_onboarded: boolean }[]
+        | {
+            id: string;
+            nim: string | null;
+            role: string;
+            is_onboarded: boolean;
+          }
+        | {
+            id: string;
+            nim: string | null;
+            role: string;
+            is_onboarded: boolean;
+          }[]
         | null;
     };
 
     const summary: AttendanceSummaryItem[] = (
       (registrationsData as unknown as RawRegistration[]) ?? []
     ).map((reg) => {
-      const profile = Array.isArray(reg.profiles) ? reg.profiles[0] : reg.profiles;
-      const sp = Array.isArray(reg.study_programs) ? reg.study_programs[0] : reg.study_programs;
-      const major = sp?.majors ? (Array.isArray(sp.majors) ? sp.majors[0] : sp.majors) : null;
+      const profile = Array.isArray(reg.profiles)
+        ? reg.profiles[0]
+        : reg.profiles;
+      const sp = Array.isArray(reg.study_programs)
+        ? reg.study_programs[0]
+        : reg.study_programs;
+      const major = sp?.majors
+        ? Array.isArray(sp.majors)
+          ? sp.majors[0]
+          : sp.majors
+        : null;
       const profileId = profile?.id ?? "";
 
-      const userAttendances: Record<string, "hadir" | "izin" | "sakit" | "alfa" | "telat" | null> = {};
+      const userAttendances: Record<
+        string,
+        "hadir" | "izin" | "sakit" | "alfa" | "telat" | null
+      > = {};
       const totals = { hadir: 0, izin: 0, sakit: 0, alfa: 0, telat: 0 };
 
-      const status = (attendanceMap[profileId] ?? null) as "hadir" | "izin" | "sakit" | "alfa" | "telat" | null;
+      const status = (attendanceMap[profileId] ?? null) as
+        | "hadir"
+        | "izin"
+        | "sakit"
+        | "alfa"
+        | "telat"
+        | null;
       userAttendances[activityId] = status;
 
       if (status && status in totals) {
@@ -748,6 +1119,10 @@ export async function getActivityAttendances(
     };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    return { success: false, message: "Terjadi kesalahan tidak terduga.", error: { code: "SERVER_ERROR", details: msg } };
+    return {
+      success: false,
+      message: "Terjadi kesalahan tidak terduga.",
+      error: { code: "SERVER_ERROR", details: msg },
+    };
   }
 }
