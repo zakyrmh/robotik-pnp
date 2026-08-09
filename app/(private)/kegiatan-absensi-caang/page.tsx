@@ -1,11 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { getActivities, getAttendanceSummary } from "@/lib/actions/activities";
-import { KegiatanAbsensiClient } from "./KegiatanAbsensiClient";
+import { KegiatanClient } from "@/components/features/kegiatan/kegiatan-client";
 
 export const metadata = {
   title: "Kegiatan & Absensi Caang | UKM Robotik PNP",
-  description: "Manajemen kegiatan dan rekap absensi Calon Anggota (Caang) UKM Robotik Politeknik Negeri Padang.",
+  description:
+    "Manajemen kegiatan dan rekap absensi Calon Anggota (Caang) UKM Robotik Politeknik Negeri Padang.",
 };
 
 export default async function KegiatanAbsensiCaangPage() {
@@ -27,7 +28,10 @@ export default async function KegiatanAbsensiCaangPage() {
     .single();
 
   const rawProfile = profile as { id: string; role: string } | null;
-  if (!rawProfile || (rawProfile.role !== "admin-or" && rawProfile.role !== "super-admin")) {
+  if (
+    !rawProfile ||
+    (rawProfile.role !== "admin-or" && rawProfile.role !== "super-admin")
+  ) {
     redirect("/dashboard");
   }
 
@@ -37,16 +41,20 @@ export default async function KegiatanAbsensiCaangPage() {
     getAttendanceSummary(),
   ]);
 
-  const activities = activitiesRes.success && activitiesRes.data ? activitiesRes.data : [];
-  const summaryData = summaryRes.success && summaryRes.data
-    ? summaryRes.data
-    : { activities: [], summary: [] };
+  const activities =
+    activitiesRes.success && activitiesRes.data ? activitiesRes.data : [];
+  const summaryData =
+    summaryRes.success && summaryRes.data
+      ? summaryRes.data
+      : { activities: [], summary: [] };
 
   return (
-    <KegiatanAbsensiClient
+    <KegiatanClient
+      variant="caang-recruitment"
       initialActivities={activities}
       initialActivitiesForSummary={summaryData.activities}
       initialSummary={summaryData.summary}
+      userRole={rawProfile.role}
     />
   );
 }
