@@ -799,62 +799,62 @@ export function DashboardClient({ data }: DashboardClientProps) {
           </div>
           {/* Telemetry Stat Cards Grid */}
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
-            <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs p-4 flex justify-between items-center border-l-4 border-l-red-500">
-              <div>
-                <span className="text-[10px] font-mono uppercase text-slate-400 dark:text-slate-500 block">
+            <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs p-4 flex flex-row items-center justify-between border-l-4 border-l-red-500 min-h-[88px]">
+              <div className="flex flex-col justify-center min-w-0">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 block truncate">
                   DISPENSASI PENDING
                 </span>
-                <span className="font-display text-3xl font-bold text-red-600 dark:text-red-400 mt-1 block">
+                <span className="font-display text-3xl font-bold text-red-600 dark:text-red-400 mt-1 block leading-none">
                   {data.adminKomdisStats.pendingLeaves}
                 </span>
               </div>
-              <div className="p-3 bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 rounded-lg">
+              <div className="p-3 bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 rounded-lg shrink-0 flex items-center justify-center">
                 <HugeiconsIcon icon={Shield01Icon} size={22} />
               </div>
             </Card>
 
-            <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs p-4 flex justify-between items-center border-l-4 border-l-amber-500">
-              <div>
-                <span className="text-[10px] font-mono uppercase text-slate-400 dark:text-slate-500 block">
+            <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs p-4 flex flex-row items-center justify-between border-l-4 border-l-amber-500 min-h-[88px]">
+              <div className="flex flex-col justify-center min-w-0">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 block truncate">
                   AGENDA HARI INI
                 </span>
-                <span className="font-display text-3xl font-bold text-dongker-ink dark:text-slate-100 mt-1 block">
+                <span className="font-display text-3xl font-bold text-dongker-ink dark:text-slate-100 mt-1 block leading-none">
                   {data.adminKomdisStats.todayActivitiesCount}
                 </span>
               </div>
-              <div className="p-3 bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 rounded-lg">
+              <div className="p-3 bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 rounded-lg shrink-0 flex items-center justify-center">
                 <HugeiconsIcon icon={Calendar03Icon} size={22} />
               </div>
             </Card>
 
-            <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs p-4 flex justify-between items-center border-l-4 border-l-emerald-500">
-              <div>
-                <span className="text-[10px] font-mono uppercase text-slate-400 dark:text-slate-500 block">
+            <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs p-4 flex flex-row items-center justify-between border-l-4 border-l-emerald-500 min-h-[88px]">
+              <div className="flex flex-col justify-center min-w-0">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 block truncate">
                   ABSENSI MASUK HARI INI
                 </span>
-                <span className="font-display text-3xl font-bold text-emerald-600 dark:text-emerald-400 mt-1 block">
+                <span className="font-display text-3xl font-bold text-emerald-600 dark:text-emerald-400 mt-1 block leading-none">
                   {data.adminKomdisStats.todayAttendancesCount}
                 </span>
               </div>
-              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-lg">
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-lg shrink-0 flex items-center justify-center">
                 <HugeiconsIcon icon={CheckmarkCircle01Icon} size={22} />
               </div>
             </Card>
 
-            <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs p-4 flex justify-between items-center border-l-4 border-l-purple-500">
-              <div>
-                <span className="text-[10px] font-mono uppercase text-slate-400 dark:text-slate-500 block">
+            <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs p-4 flex flex-row items-center justify-between border-l-4 border-l-purple-500 min-h-[88px]">
+              <div className="flex flex-col justify-center min-w-0">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 block truncate">
                   SANKSI SP AKTIF
                 </span>
-                <span className="font-display text-3xl font-bold text-purple-600 dark:text-purple-400 mt-1 block">
+                <span className="font-display text-3xl font-bold text-purple-600 dark:text-purple-400 mt-1 block leading-none">
                   {data.adminKomdisStats.activeSanctionsCount}
                 </span>
               </div>
-              <div className="p-3 bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 rounded-lg">
+              <div className="p-3 bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 rounded-lg shrink-0 flex items-center justify-center">
                 <HugeiconsIcon icon={Task01Icon} size={22} />
               </div>
             </Card>
-          </div>{" "}
+          </div>
           {/* Vertical Stack Container (Semua Lebar Device) */}
           {/* 1. Agenda Kegiatan Keanggotaan */}
           <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs">

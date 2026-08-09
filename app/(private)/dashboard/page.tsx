@@ -255,12 +255,14 @@ export default async function DashboardPage() {
       totalTasks: totalTasks || 0,
     };
   } else if (profile.role === "admin-komdis") {
-    // 1. Pending leave requests
+    // 1. Pending leave requests (hanya anggota/pengurus aktif, exclude caang & alumni)
     const { count: pendingLeaves } = await supabase
       .from("attendances")
-      .select("*", { count: "exact", head: true })
+      .select("id, profiles!inner(role)", { count: "exact", head: true })
       .in("status", ["sakit", "izin"])
-      .is("verified_by", null);
+      .is("verified_by", null)
+      .neq("profiles.role", "caang")
+      .neq("profiles.role", "alumni");
 
     // 2. Today's activities
     const startOfToday = new Date();
