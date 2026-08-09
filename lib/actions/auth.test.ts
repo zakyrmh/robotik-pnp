@@ -103,6 +103,16 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 // -----------------------------------------------------------------------
+// Mock: @/lib/turnstile — verifikasi CAPTCHA dikontrol per-test
+// -----------------------------------------------------------------------
+let mockTurnstileValid = true;
+vi.mock("@/lib/turnstile", () => ({
+  verifyTurnstileToken: vi.fn(async () => mockTurnstileValid),
+}));
+
+const VALID_CAPTCHA_TOKEN = "test-turnstile-token";
+
+// -----------------------------------------------------------------------
 // Helper: Membuat objek FormData untuk keperluan test
 // -----------------------------------------------------------------------
 function createFormData(fields: Record<string, string>): FormData {
@@ -131,6 +141,7 @@ describe("A. Server Action: register()", () => {
     mockSignInResult = { error: null };
     mockRedirectCalled = false;
     mockRedirectTarget = "";
+    mockTurnstileValid = true;
   });
 
   // --- Test Case 1: Happy Path ---
@@ -139,6 +150,7 @@ describe("A. Server Action: register()", () => {
       email: "zaky@robotik.org",
       password: "Rahasia123",
       confirmPassword: "Rahasia123",
+      captchaToken: VALID_CAPTCHA_TOKEN,
     });
 
     const result = await register(null, fd);
@@ -156,6 +168,7 @@ describe("A. Server Action: register()", () => {
       email: "zaky@robotik.org",
       password: "Rahasia123",
       confirmPassword: "Rahasia321",
+      captchaToken: VALID_CAPTCHA_TOKEN,
     });
 
     const result = await register(null, fd);
@@ -171,6 +184,7 @@ describe("A. Server Action: register()", () => {
       email: "zaky-bukan-email",
       password: "Rahasia123",
       confirmPassword: "Rahasia123",
+      captchaToken: VALID_CAPTCHA_TOKEN,
     });
 
     const result = await register(null, fd);
@@ -187,6 +201,7 @@ describe("A. Server Action: register()", () => {
       email: "existing@robotik.org",
       password: "Rahasia123",
       confirmPassword: "Rahasia123",
+      captchaToken: VALID_CAPTCHA_TOKEN,
     });
 
     const result = await register(null, fd);
@@ -201,6 +216,7 @@ describe("A. Server Action: register()", () => {
       email: "",
       password: "Rahasia123",
       confirmPassword: "Rahasia123",
+      captchaToken: VALID_CAPTCHA_TOKEN,
     });
 
     const result = await register(null, fd);
@@ -215,11 +231,41 @@ describe("A. Server Action: register()", () => {
       email: "zaky@robotik.org",
       password: "abc",
       confirmPassword: "abc",
+      captchaToken: VALID_CAPTCHA_TOKEN,
     });
 
     const result = await register(null, fd);
 
     expect(result?.error).toBe("Password minimal 8 karakter.");
+    expect(mockRedirectCalled).toBe(false);
+  });
+
+  it("[TC-R7] CAPTCHA kosong → request ditolak sebelum Supabase", async () => {
+    const fd = createFormData({
+      email: "zaky@robotik.org",
+      password: "Rahasia123",
+      confirmPassword: "Rahasia123",
+      captchaToken: "",
+    });
+
+    const result = await register(null, fd);
+
+    expect(result?.error).toContain("CAPTCHA");
+    expect(mockRedirectCalled).toBe(false);
+  });
+
+  it("[TC-R8] CAPTCHA siteverify gagal → request ditolak", async () => {
+    mockTurnstileValid = false;
+    const fd = createFormData({
+      email: "zaky@robotik.org",
+      password: "Rahasia123",
+      confirmPassword: "Rahasia123",
+      captchaToken: VALID_CAPTCHA_TOKEN,
+    });
+
+    const result = await register(null, fd);
+
+    expect(result?.error).toContain("Verifikasi keamanan gagal");
     expect(mockRedirectCalled).toBe(false);
   });
 });
@@ -234,6 +280,7 @@ describe("B. Server Action: login()", () => {
     mockSignInResult = { error: null };
     mockRedirectCalled = false;
     mockRedirectTarget = "";
+    mockTurnstileValid = true;
   });
 
   // --- Test Case 1: Happy Path ---
@@ -241,6 +288,7 @@ describe("B. Server Action: login()", () => {
     const fd = createFormData({
       email: "zaky@robotik.org",
       password: "Rahasia123",
+      captchaToken: VALID_CAPTCHA_TOKEN,
     });
 
     const result = await login(null, fd);
@@ -259,6 +307,7 @@ describe("B. Server Action: login()", () => {
     const fd = createFormData({
       email: "zaky@robotik.org",
       password: "SalahPassword!",
+      captchaToken: VALID_CAPTCHA_TOKEN,
     });
 
     const result = await login(null, fd);
@@ -293,6 +342,7 @@ describe("B. Server Action: login()", () => {
     const fd = createFormData({
       email: "belumkonfirmasi@robotik.org",
       password: "Rahasia123",
+      captchaToken: VALID_CAPTCHA_TOKEN,
     });
 
     const result = await login(null, fd);
@@ -300,6 +350,33 @@ describe("B. Server Action: login()", () => {
     expect(result?.error).toBe(
       "Email Anda belum dikonfirmasi. Silahkan cek inbox Anda.",
     );
+    expect(mockRedirectCalled).toBe(false);
+  });
+
+  it("[TC-L6] CAPTCHA kosong → login ditolak sebelum Supabase", async () => {
+    const fd = createFormData({
+      email: "zaky@robotik.org",
+      password: "Rahasia123",
+      captchaToken: "",
+    });
+
+    const result = await login(null, fd);
+
+    expect(result?.error).toContain("CAPTCHA");
+    expect(mockRedirectCalled).toBe(false);
+  });
+
+  it("[TC-L7] CAPTCHA siteverify gagal → login ditolak", async () => {
+    mockTurnstileValid = false;
+    const fd = createFormData({
+      email: "zaky@robotik.org",
+      password: "Rahasia123",
+      captchaToken: VALID_CAPTCHA_TOKEN,
+    });
+
+    const result = await login(null, fd);
+
+    expect(result?.error).toContain("Verifikasi keamanan gagal");
     expect(mockRedirectCalled).toBe(false);
   });
 });
@@ -316,6 +393,7 @@ describe("C. Server Actions: forgotPassword() & updatePassword()", () => {
     mockGetUserResult = { data: { user: null }, error: null };
     mockResetPasswordResult = { error: null };
     mockUpdateUserResult = { error: null };
+    mockTurnstileValid = true;
   });
 
   it("[TC-FP1] NIM atau Email kosong → return error validation", async () => {
@@ -325,14 +403,22 @@ describe("C. Server Actions: forgotPassword() & updatePassword()", () => {
   });
 
   it("[TC-FP2] Format email tidak valid → return error validation", async () => {
-    const fd = createFormData({ nim: "2301091001", email: "bukan-email" });
+    const fd = createFormData({
+      nim: "2301091001",
+      email: "bukan-email",
+      captchaToken: VALID_CAPTCHA_TOKEN,
+    });
     const res = await forgotPassword(null, fd);
     expect(res?.error).toBe("Format email tidak valid.");
   });
 
   it("[TC-FP3] NIM tidak ditemukan → return error NIM tidak ditemukan", async () => {
     mockProfileResult = { data: null, error: { message: "Not found" } };
-    const fd = createFormData({ nim: "999999", email: "user@pnp.ac.id" });
+    const fd = createFormData({
+      nim: "999999",
+      email: "user@pnp.ac.id",
+      captchaToken: VALID_CAPTCHA_TOKEN,
+    });
     const res = await forgotPassword(null, fd);
     expect(res?.error).toBe("NIM tidak ditemukan.");
   });
@@ -342,7 +428,11 @@ describe("C. Server Actions: forgotPassword() & updatePassword()", () => {
       data: { id: "user-1", email: "asli@pnp.ac.id", nim: "2301091001" },
       error: null,
     };
-    const fd = createFormData({ nim: "2301091001", email: "salah@pnp.ac.id" });
+    const fd = createFormData({
+      nim: "2301091001",
+      email: "salah@pnp.ac.id",
+      captchaToken: VALID_CAPTCHA_TOKEN,
+    });
     const res = await forgotPassword(null, fd);
     expect(res?.error).toBe(
       "Email tidak terdaftar atau tidak cocok dengan NIM.",
@@ -354,11 +444,26 @@ describe("C. Server Actions: forgotPassword() & updatePassword()", () => {
       data: { id: "user-1", email: "user@pnp.ac.id", nim: "2301091001" },
       error: null,
     };
-    const fd = createFormData({ nim: "2301091001", email: "USER@pnp.ac.id" });
+    const fd = createFormData({
+      nim: "2301091001",
+      email: "USER@pnp.ac.id",
+      captchaToken: VALID_CAPTCHA_TOKEN,
+    });
     const res = await forgotPassword(null, fd);
     expect(res?.error).toBeUndefined();
     expect(mockRedirectCalled).toBe(true);
     expect(mockRedirectTarget).toBe("/forgot-password/waiting");
+  });
+
+  it("[TC-FP6] CAPTCHA kosong → forgotPassword ditolak", async () => {
+    const fd = createFormData({
+      nim: "2301091001",
+      email: "user@pnp.ac.id",
+      captchaToken: "",
+    });
+    const res = await forgotPassword(null, fd);
+    expect(res?.error).toContain("CAPTCHA");
+    expect(mockRedirectCalled).toBe(false);
   });
 
   it("[TC-UP1] Sesi tidak valid saat updatePassword → return error", async () => {
