@@ -590,30 +590,36 @@ export function KegiatanClient({
           <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
             {isRecruitmentMode ? (
               <>
-                <Button
-                  variant="outline"
-                  onClick={() => router.push("/kegiatan-absensi-caang/trash")}
-                  className="rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 shadow-xs font-mono text-micro uppercase tracking-wider px-3.5 h-9"
-                >
-                  <HugeiconsIcon
-                    icon={Archive01Icon}
-                    size={15}
-                    className="mr-1.5 text-slate-500"
-                  />
-                  Trash
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => router.push("/kegiatan-absensi-caang/scan")}
-                  className="rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 shadow-xs font-mono text-micro uppercase tracking-wider px-3.5 h-9"
-                >
-                  <HugeiconsIcon
-                    icon={QrCode01Icon}
-                    size={15}
-                    className="mr-1.5 text-slate-500"
-                  />
-                  Scan QR
-                </Button>
+                {(activeRole === "admin-or" ||
+                  activeRole === "super-admin") && (
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push("/kegiatan-absensi-caang/trash")}
+                    className="rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 shadow-xs font-mono text-micro uppercase tracking-wider px-3.5 h-9"
+                  >
+                    <HugeiconsIcon
+                      icon={Archive01Icon}
+                      size={15}
+                      className="mr-1.5 text-slate-500"
+                    />
+                    Trash
+                  </Button>
+                )}
+                {(activeRole === "admin-or" ||
+                  activeRole === "super-admin") && (
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push("/kegiatan-absensi-caang/scan")}
+                    className="rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 shadow-xs font-mono text-micro uppercase tracking-wider px-3.5 h-9"
+                  >
+                    <HugeiconsIcon
+                      icon={QrCode01Icon}
+                      size={15}
+                      className="mr-1.5 text-slate-500"
+                    />
+                    Scan QR
+                  </Button>
+                )}
                 {(activeRole === "admin-or" ||
                   activeRole === "super-admin") && (
                   <Button
@@ -631,17 +637,10 @@ export function KegiatanClient({
               </>
             ) : (
               <>
-                {(activeRole === "admin-or" ||
-                  activeRole === "admin-komdis" ||
+                {(activeRole === "admin-komdis" ||
                   activeRole === "super-admin") && (
                   <Button
-                    onClick={() =>
-                      router.push(
-                        activeRole === "admin-or"
-                          ? "/kegiatan-absensi-caang/trash"
-                          : "/kegiatan/sampah",
-                      )
-                    }
+                    onClick={() => router.push("/kegiatan/sampah")}
                     variant="outline"
                     className="w-full sm:w-auto rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 shadow-xs font-mono text-micro uppercase tracking-wider px-4 h-9"
                   >

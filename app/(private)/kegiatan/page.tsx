@@ -30,9 +30,12 @@ export default async function KegiatanPage() {
   const rawProfile = profile as { id: string; role: string } | null;
   const userRole = rawProfile?.role || "anggota";
 
-  const targetAudience = userRole === "caang" ? "caang" : "anggota";
+  // Rule 7: caang tidak diizinkan mengakses /kegiatan
+  if (userRole === "caang") {
+    redirect("/dashboard");
+  }
 
-  const res = await getActivities(targetAudience);
+  const res = await getActivities("anggota");
   const initialActivities: ActivityItem[] =
     res.success && res.data ? res.data : [];
 

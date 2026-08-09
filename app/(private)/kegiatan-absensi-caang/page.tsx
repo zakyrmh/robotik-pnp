@@ -28,16 +28,20 @@ export default async function KegiatanAbsensiCaangPage() {
     .single();
 
   const rawProfile = profile as { id: string; role: string } | null;
+  // Rules 1, 3, 7: Hanya super-admin, admin-or, dan caang yang boleh mengakses /kegiatan-absensi-caang
+  // Admin-komdis, admin-kestari, admin-divisi, dan anggota dilempar ke /dashboard
   if (
     !rawProfile ||
-    (rawProfile.role !== "admin-or" && rawProfile.role !== "super-admin")
+    (rawProfile.role !== "admin-or" &&
+      rawProfile.role !== "super-admin" &&
+      rawProfile.role !== "caang")
   ) {
     redirect("/dashboard");
   }
 
   // Fetch initial data in parallel
   const [activitiesRes, summaryRes] = await Promise.all([
-    getActivities(),
+    getActivities("caang"),
     getAttendanceSummary(),
   ]);
 
