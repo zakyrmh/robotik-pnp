@@ -1,0 +1,715 @@
+<?xml version="1.0" encoding="windows-1252"?>
+<xmi:XMI xmi:version="2.1" xmlns:uml="http://schema.omg.org/spec/UML/2.1" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1">
+	<xmi:Documentation exporter="Enterprise Architect" exporterVersion="6.5" exporterID="1559"/>
+	<uml:Model xmi:type="uml:Model" name="EA_Model" visibility="public">
+		<packagedElement xmi:type="uml:Package" xmi:id="EAPK_5F050354_E421_405a_AD1B_C65B11D21A1E" name="04.1 - Deployment Diagrams" visibility="public">
+			<packagedElement xmi:type="uml:Node" xmi:id="EAID_A006CB5D_6909_45de_A786_8F620CC57767" name="Client" visibility="public">
+				<ownedAttribute xmi:type="uml:Property" xmi:id="EAID_dst12F79F_B683_4b37_9CC9_D521B2B109C7" visibility="public" association="EAID_6D12F79F_B683_4b37_9CC9_D521B2B109C7" isStatic="false" isReadOnly="false" isDerived="false" isOrdered="false" isUnique="true" isDerivedUnion="false" aggregation="none">
+					<type xmi:idref="EAID_4A7C3BF2_2064_4d21_8552_2D5F95DC5DB4"/>
+				</ownedAttribute>
+				<ownedAttribute xmi:type="uml:Property" xmi:id="EAID_dstE4C259_619A_4495_9446_B8460BC63384" visibility="public" association="EAID_C5E4C259_619A_4495_9446_B8460BC63384" isStatic="false" isReadOnly="false" isDerived="false" isOrdered="false" isUnique="true" isDerivedUnion="false" aggregation="none">
+					<type xmi:idref="EAID_33C55179_FE2A_49ae_A417_5347993BE707"/>
+				</ownedAttribute>
+			</packagedElement>
+			<packagedElement xmi:type="uml:CommunicationPath" xmi:id="EAID_6D12F79F_B683_4b37_9CC9_D521B2B109C7" name="HTTPS" visibility="public">
+				<memberEnd xmi:idref="EAID_dst12F79F_B683_4b37_9CC9_D521B2B109C7"/>
+				<memberEnd xmi:idref="EAID_src12F79F_B683_4b37_9CC9_D521B2B109C7"/>
+				<ownedEnd xmi:type="uml:Property" xmi:id="EAID_src12F79F_B683_4b37_9CC9_D521B2B109C7" visibility="public" association="EAID_6D12F79F_B683_4b37_9CC9_D521B2B109C7" isStatic="false" isReadOnly="false" isDerived="false" isOrdered="false" isUnique="true" isDerivedUnion="false" aggregation="none">
+					<type xmi:idref="EAID_A006CB5D_6909_45de_A786_8F620CC57767"/>
+				</ownedEnd>
+			</packagedElement>
+			<packagedElement xmi:type="uml:CommunicationPath" xmi:id="EAID_C5E4C259_619A_4495_9446_B8460BC63384" name="HTTPS" visibility="public">
+				<memberEnd xmi:idref="EAID_dstE4C259_619A_4495_9446_B8460BC63384"/>
+				<memberEnd xmi:idref="EAID_srcE4C259_619A_4495_9446_B8460BC63384"/>
+				<ownedEnd xmi:type="uml:Property" xmi:id="EAID_srcE4C259_619A_4495_9446_B8460BC63384" visibility="public" association="EAID_C5E4C259_619A_4495_9446_B8460BC63384" isStatic="false" isReadOnly="false" isDerived="false" isOrdered="false" isUnique="true" isDerivedUnion="false" aggregation="none">
+					<type xmi:idref="EAID_A006CB5D_6909_45de_A786_8F620CC57767"/>
+				</ownedEnd>
+			</packagedElement>
+			<packagedElement xmi:type="uml:Node" xmi:id="EAID_33C55179_FE2A_49ae_A417_5347993BE707" name="Cloudflare Turnstile" visibility="public"/>
+			<packagedElement xmi:type="uml:CommunicationPath" xmi:id="EAID_2F1D6C96_AA3C_463f_892E_DD6C6243106C" name="HTTPS (siteverify API)" visibility="public">
+				<memberEnd xmi:idref="EAID_dst1D6C96_AA3C_463f_892E_DD6C6243106C"/>
+				<memberEnd xmi:idref="EAID_src1D6C96_AA3C_463f_892E_DD6C6243106C"/>
+				<ownedEnd xmi:type="uml:Property" xmi:id="EAID_src1D6C96_AA3C_463f_892E_DD6C6243106C" visibility="public" association="EAID_2F1D6C96_AA3C_463f_892E_DD6C6243106C" isStatic="false" isReadOnly="false" isDerived="false" isOrdered="false" isUnique="true" isDerivedUnion="false" aggregation="none">
+					<type xmi:idref="EAID_4A7C3BF2_2064_4d21_8552_2D5F95DC5DB4"/>
+				</ownedEnd>
+			</packagedElement>
+			<packagedElement xmi:type="uml:Node" xmi:id="EAID_9A5AAF4F_A3E3_4c92_83A6_B8E8816E9F8E" name="Supabase Cloud" visibility="public"/>
+			<packagedElement xmi:type="uml:CommunicationPath" xmi:id="EAID_4A9515BA_7F07_4d9c_9490_988B7FC7E9C7" name="HTTPS (PostgREST/Supabase Client)" visibility="public">
+				<memberEnd xmi:idref="EAID_dst9515BA_7F07_4d9c_9490_988B7FC7E9C7"/>
+				<memberEnd xmi:idref="EAID_src9515BA_7F07_4d9c_9490_988B7FC7E9C7"/>
+				<ownedEnd xmi:type="uml:Property" xmi:id="EAID_src9515BA_7F07_4d9c_9490_988B7FC7E9C7" visibility="public" association="EAID_4A9515BA_7F07_4d9c_9490_988B7FC7E9C7" isStatic="false" isReadOnly="false" isDerived="false" isOrdered="false" isUnique="true" isDerivedUnion="false" aggregation="none">
+					<type xmi:idref="EAID_4A7C3BF2_2064_4d21_8552_2D5F95DC5DB4"/>
+				</ownedEnd>
+			</packagedElement>
+			<packagedElement xmi:type="uml:Node" xmi:id="EAID_89AF2DD6_2960_4a58_929D_CC38F6C2BF19" name="Upstash Redis" visibility="public"/>
+			<packagedElement xmi:type="uml:CommunicationPath" xmi:id="EAID_DB4D24B4_F0B0_4c9e_A874_A1B6E3E7DFF2" name="HTTPS (REST API)" visibility="public">
+				<memberEnd xmi:idref="EAID_dst4D24B4_F0B0_4c9e_A874_A1B6E3E7DFF2"/>
+				<memberEnd xmi:idref="EAID_src4D24B4_F0B0_4c9e_A874_A1B6E3E7DFF2"/>
+				<ownedEnd xmi:type="uml:Property" xmi:id="EAID_src4D24B4_F0B0_4c9e_A874_A1B6E3E7DFF2" visibility="public" association="EAID_DB4D24B4_F0B0_4c9e_A874_A1B6E3E7DFF2" isStatic="false" isReadOnly="false" isDerived="false" isOrdered="false" isUnique="true" isDerivedUnion="false" aggregation="none">
+					<type xmi:idref="EAID_4A7C3BF2_2064_4d21_8552_2D5F95DC5DB4"/>
+				</ownedEnd>
+			</packagedElement>
+			<packagedElement xmi:type="uml:Node" xmi:id="EAID_4A7C3BF2_2064_4d21_8552_2D5F95DC5DB4" name="Vercel" visibility="public">
+				<ownedAttribute xmi:type="uml:Property" xmi:id="EAID_dst1D6C96_AA3C_463f_892E_DD6C6243106C" visibility="public" association="EAID_2F1D6C96_AA3C_463f_892E_DD6C6243106C" isStatic="false" isReadOnly="false" isDerived="false" isOrdered="false" isUnique="true" isDerivedUnion="false" aggregation="none">
+					<type xmi:idref="EAID_33C55179_FE2A_49ae_A417_5347993BE707"/>
+				</ownedAttribute>
+				<ownedAttribute xmi:type="uml:Property" xmi:id="EAID_dst9515BA_7F07_4d9c_9490_988B7FC7E9C7" visibility="public" association="EAID_4A9515BA_7F07_4d9c_9490_988B7FC7E9C7" isStatic="false" isReadOnly="false" isDerived="false" isOrdered="false" isUnique="true" isDerivedUnion="false" aggregation="none">
+					<type xmi:idref="EAID_9A5AAF4F_A3E3_4c92_83A6_B8E8816E9F8E"/>
+				</ownedAttribute>
+				<ownedAttribute xmi:type="uml:Property" xmi:id="EAID_dst4D24B4_F0B0_4c9e_A874_A1B6E3E7DFF2" visibility="public" association="EAID_DB4D24B4_F0B0_4c9e_A874_A1B6E3E7DFF2" isStatic="false" isReadOnly="false" isDerived="false" isOrdered="false" isUnique="true" isDerivedUnion="false" aggregation="none">
+					<type xmi:idref="EAID_89AF2DD6_2960_4a58_929D_CC38F6C2BF19"/>
+				</ownedAttribute>
+			</packagedElement>
+			<packagedElement xmi:type="uml:Artifact" xmi:id="EAID_3473FFAC_81AC_4c32_8F1F_B3A162B485DC" name="Next.js 16 App (App Router)" visibility="public"/>
+			<packagedElement xmi:type="uml:Deployment" xmi:id="EAID_E75E07A9_164B_4d4d_B4D8_C396B924088D" visibility="public" deployedArtifact="EAID_4A7C3BF2_2064_4d21_8552_2D5F95DC5DB4" supplier="EAID_4A7C3BF2_2064_4d21_8552_2D5F95DC5DB4" client="EAID_3473FFAC_81AC_4c32_8F1F_B3A162B485DC"/>
+			<packagedElement xmi:type="uml:Artifact" xmi:id="EAID_AE1083E0_BF2B_412b_AFC9_142D67727378" name="PostgreSQL Database" visibility="public"/>
+			<packagedElement xmi:type="uml:Deployment" xmi:id="EAID_5D6D5BA6_ECE6_4f9c_B9CF_9D89705A6816" visibility="public" deployedArtifact="EAID_9A5AAF4F_A3E3_4c92_83A6_B8E8816E9F8E" supplier="EAID_9A5AAF4F_A3E3_4c92_83A6_B8E8816E9F8E" client="EAID_AE1083E0_BF2B_412b_AFC9_142D67727378"/>
+			<packagedElement xmi:type="uml:Artifact" xmi:id="EAID_C0808F12_0F3E_4a03_8188_1DDF6F34F4D7" name="Redis Instance (Rate Limiter)" visibility="public"/>
+			<packagedElement xmi:type="uml:Deployment" xmi:id="EAID_995EC9E2_CB9E_4b6f_A6A8_93FBA59EBA6D" visibility="public" deployedArtifact="EAID_89AF2DD6_2960_4a58_929D_CC38F6C2BF19" supplier="EAID_89AF2DD6_2960_4a58_929D_CC38F6C2BF19" client="EAID_C0808F12_0F3E_4a03_8188_1DDF6F34F4D7"/>
+			<packagedElement xmi:type="uml:Artifact" xmi:id="EAID_D3A0457E_A637_4651_91D0_CD44EA14A468" name="Supabase Auth" visibility="public"/>
+			<packagedElement xmi:type="uml:Deployment" xmi:id="EAID_1B305D62_AC06_4a4f_B3B9_82517A47F164" visibility="public" deployedArtifact="EAID_9A5AAF4F_A3E3_4c92_83A6_B8E8816E9F8E" supplier="EAID_9A5AAF4F_A3E3_4c92_83A6_B8E8816E9F8E" client="EAID_D3A0457E_A637_4651_91D0_CD44EA14A468"/>
+			<packagedElement xmi:type="uml:Artifact" xmi:id="EAID_12AA5CB5_DAFC_48df_9C28_479450C8C1E3" name="Supabase Realtime" visibility="public"/>
+			<packagedElement xmi:type="uml:Deployment" xmi:id="EAID_8A9D5571_5837_4bdd_85BD_A4A1A6C40BA7" visibility="public" deployedArtifact="EAID_9A5AAF4F_A3E3_4c92_83A6_B8E8816E9F8E" supplier="EAID_9A5AAF4F_A3E3_4c92_83A6_B8E8816E9F8E" client="EAID_12AA5CB5_DAFC_48df_9C28_479450C8C1E3"/>
+			<packagedElement xmi:type="uml:Artifact" xmi:id="EAID_943F02B7_6582_4f4b_B2C2_61B9CF388F78" name="Supabase Storage" visibility="public"/>
+			<packagedElement xmi:type="uml:Deployment" xmi:id="EAID_4F5488D9_EB8B_44fb_BD33_F09AA47316AA" visibility="public" deployedArtifact="EAID_9A5AAF4F_A3E3_4c92_83A6_B8E8816E9F8E" supplier="EAID_9A5AAF4F_A3E3_4c92_83A6_B8E8816E9F8E" client="EAID_943F02B7_6582_4f4b_B2C2_61B9CF388F78"/>
+			<packagedElement xmi:type="uml:Artifact" xmi:id="EAID_065AD23A_09BA_4f18_BF11_0277933F79B7" name="Turnstile Widget Service" visibility="public"/>
+			<packagedElement xmi:type="uml:Deployment" xmi:id="EAID_526A0412_255A_48f1_B93D_BEB629C29027" visibility="public" deployedArtifact="EAID_33C55179_FE2A_49ae_A417_5347993BE707" supplier="EAID_33C55179_FE2A_49ae_A417_5347993BE707" client="EAID_065AD23A_09BA_4f18_BF11_0277933F79B7"/>
+		</packagedElement>
+	</uml:Model>
+	<xmi:Extension extender="Enterprise Architect" extenderID="6.5">
+		<elements>
+			<element xmi:idref="EAPK_5F050354_E421_405a_AD1B_C65B11D21A1E" xmi:type="uml:Package" name="04.1 - Deployment Diagrams" scope="public">
+				<model package2="EAID_5F050354_E421_405a_AD1B_C65B11D21A1E" package="EAPK_9668DC3C_2686_4de5_855C_BDBC4D0EC805" tpos="0" ea_localid="28" ea_eleType="package"/>
+				<properties isSpecification="false" sType="Package" nType="0" scope="public"/>
+				<project author="Administrator" version="1.0" phase="1.0" created="2026-08-09 16:14:58" modified="2026-08-09 16:14:58" complexity="1" status="Proposed"/>
+				<code gentype="Java"/>
+				<style appearance="BackColor=-1;BorderColor=-1;BorderWidth=-1;FontColor=-1;VSwimLanes=1;HSwimLanes=1;BorderStyle=0;"/>
+				<tags/>
+				<xrefs/>
+				<extendedProperties tagged="0" package_name="04 - Physical &amp; Deployment"/>
+				<packageproperties version="1.0"/>
+				<paths/>
+				<times created="2026-08-09 16:14:58" modified="2026-08-09 16:14:58"/>
+				<flags iscontrolled="FALSE" isprotected="FALSE" usedtd="FALSE" logxml="FALSE"/>
+			</element>
+			<element xmi:idref="EAID_A006CB5D_6909_45de_A786_8F620CC57767" xmi:type="uml:Node" name="Client" scope="public">
+				<model package="EAPK_5F050354_E421_405a_AD1B_C65B11D21A1E" tpos="0" ea_localid="323" ea_eleType="element"/>
+				<properties isSpecification="false" sType="Node" nType="0" scope="public" isRoot="false" isLeaf="false" isAbstract="false"/>
+				<project author="Administrator" version="1.0" phase="1.0" created="2026-08-09 16:15:40" modified="2026-08-09 16:15:42" complexity="1" status="Proposed"/>
+				<code gentype="Java"/>
+				<style appearance="BackColor=-1;BorderColor=-1;BorderWidth=-1;FontColor=-1;VSwimLanes=1;HSwimLanes=1;BorderStyle=0;"/>
+				<tags/>
+				<xrefs/>
+				<extendedProperties tagged="0" package_name="04.1 - Deployment Diagrams"/>
+				<links>
+					<CommunicationPath xmi:id="EAID_6D12F79F_B683_4b37_9CC9_D521B2B109C7" start="EAID_A006CB5D_6909_45de_A786_8F620CC57767" end="EAID_4A7C3BF2_2064_4d21_8552_2D5F95DC5DB4"/>
+					<CommunicationPath xmi:id="EAID_C5E4C259_619A_4495_9446_B8460BC63384" start="EAID_A006CB5D_6909_45de_A786_8F620CC57767" end="EAID_33C55179_FE2A_49ae_A417_5347993BE707"/>
+				</links>
+			</element>
+			<element xmi:idref="EAID_33C55179_FE2A_49ae_A417_5347993BE707" xmi:type="uml:Node" name="Cloudflare Turnstile" scope="public">
+				<model package="EAPK_5F050354_E421_405a_AD1B_C65B11D21A1E" tpos="0" ea_localid="327" ea_eleType="element"/>
+				<properties isSpecification="false" sType="Node" nType="0" scope="public" isRoot="false" isLeaf="false" isAbstract="false"/>
+				<project author="Administrator" version="1.0" phase="1.0" created="2026-08-09 16:16:16" modified="2026-08-09 16:16:16" complexity="1" status="Proposed"/>
+				<code gentype="Java"/>
+				<style appearance="BackColor=-1;BorderColor=-1;BorderWidth=-1;FontColor=-1;VSwimLanes=1;HSwimLanes=1;BorderStyle=0;"/>
+				<tags/>
+				<xrefs/>
+				<extendedProperties tagged="0" package_name="04.1 - Deployment Diagrams"/>
+				<links>
+					<Deployment xmi:id="EAID_526A0412_255A_48f1_B93D_BEB629C29027" start="EAID_33C55179_FE2A_49ae_A417_5347993BE707" end="EAID_065AD23A_09BA_4f18_BF11_0277933F79B7"/>
+					<CommunicationPath xmi:id="EAID_2F1D6C96_AA3C_463f_892E_DD6C6243106C" start="EAID_4A7C3BF2_2064_4d21_8552_2D5F95DC5DB4" end="EAID_33C55179_FE2A_49ae_A417_5347993BE707"/>
+					<CommunicationPath xmi:id="EAID_C5E4C259_619A_4495_9446_B8460BC63384" start="EAID_A006CB5D_6909_45de_A786_8F620CC57767" end="EAID_33C55179_FE2A_49ae_A417_5347993BE707"/>
+				</links>
+			</element>
+			<element xmi:idref="EAID_9A5AAF4F_A3E3_4c92_83A6_B8E8816E9F8E" xmi:type="uml:Node" name="Supabase Cloud" scope="public">
+				<model package="EAPK_5F050354_E421_405a_AD1B_C65B11D21A1E" tpos="0" ea_localid="325" ea_eleType="element"/>
+				<properties isSpecification="false" sType="Node" nType="0" scope="public" isRoot="false" isLeaf="false" isAbstract="false"/>
+				<project author="Administrator" version="1.0" phase="1.0" created="2026-08-09 16:16:04" modified="2026-08-09 16:16:04" complexity="1" status="Proposed"/>
+				<code gentype="Java"/>
+				<style appearance="BackColor=-1;BorderColor=-1;BorderWidth=-1;FontColor=-1;VSwimLanes=1;HSwimLanes=1;BorderStyle=0;"/>
+				<tags/>
+				<xrefs/>
+				<extendedProperties tagged="0" package_name="04.1 - Deployment Diagrams"/>
+				<links>
+					<Deployment xmi:id="EAID_1B305D62_AC06_4a4f_B3B9_82517A47F164" start="EAID_9A5AAF4F_A3E3_4c92_83A6_B8E8816E9F8E" end="EAID_D3A0457E_A637_4651_91D0_CD44EA14A468"/>
+					<Deployment xmi:id="EAID_4F5488D9_EB8B_44fb_BD33_F09AA47316AA" start="EAID_9A5AAF4F_A3E3_4c92_83A6_B8E8816E9F8E" end="EAID_943F02B7_6582_4f4b_B2C2_61B9CF388F78"/>
+					<Deployment xmi:id="EAID_5D6D5BA6_ECE6_4f9c_B9CF_9D89705A6816" start="EAID_9A5AAF4F_A3E3_4c92_83A6_B8E8816E9F8E" end="EAID_AE1083E0_BF2B_412b_AFC9_142D67727378"/>
+					<Deployment xmi:id="EAID_8A9D5571_5837_4bdd_85BD_A4A1A6C40BA7" start="EAID_9A5AAF4F_A3E3_4c92_83A6_B8E8816E9F8E" end="EAID_12AA5CB5_DAFC_48df_9C28_479450C8C1E3"/>
+					<CommunicationPath xmi:id="EAID_4A9515BA_7F07_4d9c_9490_988B7FC7E9C7" start="EAID_4A7C3BF2_2064_4d21_8552_2D5F95DC5DB4" end="EAID_9A5AAF4F_A3E3_4c92_83A6_B8E8816E9F8E"/>
+				</links>
+			</element>
+			<element xmi:idref="EAID_89AF2DD6_2960_4a58_929D_CC38F6C2BF19" xmi:type="uml:Node" name="Upstash Redis" scope="public">
+				<model package="EAPK_5F050354_E421_405a_AD1B_C65B11D21A1E" tpos="0" ea_localid="326" ea_eleType="element"/>
+				<properties isSpecification="false" sType="Node" nType="0" scope="public" isRoot="false" isLeaf="false" isAbstract="false"/>
+				<project author="Administrator" version="1.0" phase="1.0" created="2026-08-09 16:16:10" modified="2026-08-09 16:16:10" complexity="1" status="Proposed"/>
+				<code gentype="Java"/>
+				<style appearance="BackColor=-1;BorderColor=-1;BorderWidth=-1;FontColor=-1;VSwimLanes=1;HSwimLanes=1;BorderStyle=0;"/>
+				<tags/>
+				<xrefs/>
+				<extendedProperties tagged="0" package_name="04.1 - Deployment Diagrams"/>
+				<links>
+					<Deployment xmi:id="EAID_995EC9E2_CB9E_4b6f_A6A8_93FBA59EBA6D" start="EAID_89AF2DD6_2960_4a58_929D_CC38F6C2BF19" end="EAID_C0808F12_0F3E_4a03_8188_1DDF6F34F4D7"/>
+					<CommunicationPath xmi:id="EAID_DB4D24B4_F0B0_4c9e_A874_A1B6E3E7DFF2" start="EAID_4A7C3BF2_2064_4d21_8552_2D5F95DC5DB4" end="EAID_89AF2DD6_2960_4a58_929D_CC38F6C2BF19"/>
+				</links>
+			</element>
+			<element xmi:idref="EAID_4A7C3BF2_2064_4d21_8552_2D5F95DC5DB4" xmi:type="uml:Node" name="Vercel" scope="public">
+				<model package="EAPK_5F050354_E421_405a_AD1B_C65B11D21A1E" tpos="0" ea_localid="324" ea_eleType="element"/>
+				<properties isSpecification="false" sType="Node" nType="0" scope="public" isRoot="false" isLeaf="false" isAbstract="false"/>
+				<project author="Administrator" version="1.0" phase="1.0" created="2026-08-09 16:15:47" modified="2026-08-09 16:15:50" complexity="1" status="Proposed"/>
+				<code gentype="Java"/>
+				<style appearance="BackColor=-1;BorderColor=-1;BorderWidth=-1;FontColor=-1;VSwimLanes=1;HSwimLanes=1;BorderStyle=0;"/>
+				<tags/>
+				<xrefs/>
+				<extendedProperties tagged="0" package_name="04.1 - Deployment Diagrams"/>
+				<links>
+					<CommunicationPath xmi:id="EAID_2F1D6C96_AA3C_463f_892E_DD6C6243106C" start="EAID_4A7C3BF2_2064_4d21_8552_2D5F95DC5DB4" end="EAID_33C55179_FE2A_49ae_A417_5347993BE707"/>
+					<CommunicationPath xmi:id="EAID_4A9515BA_7F07_4d9c_9490_988B7FC7E9C7" start="EAID_4A7C3BF2_2064_4d21_8552_2D5F95DC5DB4" end="EAID_9A5AAF4F_A3E3_4c92_83A6_B8E8816E9F8E"/>
+					<CommunicationPath xmi:id="EAID_DB4D24B4_F0B0_4c9e_A874_A1B6E3E7DFF2" start="EAID_4A7C3BF2_2064_4d21_8552_2D5F95DC5DB4" end="EAID_89AF2DD6_2960_4a58_929D_CC38F6C2BF19"/>
+					<Deployment xmi:id="EAID_E75E07A9_164B_4d4d_B4D8_C396B924088D" start="EAID_4A7C3BF2_2064_4d21_8552_2D5F95DC5DB4" end="EAID_3473FFAC_81AC_4c32_8F1F_B3A162B485DC"/>
+					<CommunicationPath xmi:id="EAID_6D12F79F_B683_4b37_9CC9_D521B2B109C7" start="EAID_A006CB5D_6909_45de_A786_8F620CC57767" end="EAID_4A7C3BF2_2064_4d21_8552_2D5F95DC5DB4"/>
+				</links>
+			</element>
+			<element xmi:idref="EAID_3473FFAC_81AC_4c32_8F1F_B3A162B485DC" xmi:type="uml:Artifact" name="Next.js 16 App (App Router)" scope="public">
+				<model package="EAPK_5F050354_E421_405a_AD1B_C65B11D21A1E" tpos="0" ea_localid="328" ea_eleType="element"/>
+				<properties documentation="Serverless Functions + Edge Middleware + static assets" isSpecification="false" sType="Artifact" nType="0" scope="public" isRoot="false" isLeaf="false" isAbstract="false"/>
+				<project author="Administrator" version="1.0" phase="1.0" created="2026-08-09 16:19:41" modified="2026-08-09 16:20:09" complexity="1" status="Proposed"/>
+				<code gentype="Java"/>
+				<style appearance="BackColor=-1;BorderColor=-1;BorderWidth=-1;FontColor=-1;VSwimLanes=1;HSwimLanes=1;BorderStyle=0;"/>
+				<tags/>
+				<xrefs/>
+				<extendedProperties tagged="0" package_name="04.1 - Deployment Diagrams"/>
+				<links>
+					<Deployment xmi:id="EAID_E75E07A9_164B_4d4d_B4D8_C396B924088D" start="EAID_4A7C3BF2_2064_4d21_8552_2D5F95DC5DB4" end="EAID_3473FFAC_81AC_4c32_8F1F_B3A162B485DC"/>
+				</links>
+			</element>
+			<element xmi:idref="EAID_AE1083E0_BF2B_412b_AFC9_142D67727378" xmi:type="uml:Artifact" name="PostgreSQL Database" scope="public">
+				<model package="EAPK_5F050354_E421_405a_AD1B_C65B11D21A1E" tpos="0" ea_localid="329" ea_eleType="element"/>
+				<properties isSpecification="false" sType="Artifact" nType="0" scope="public" isRoot="false" isLeaf="false" isAbstract="false"/>
+				<project author="Administrator" version="1.0" phase="1.0" created="2026-08-09 16:20:19" modified="2026-08-09 16:20:20" complexity="1" status="Proposed"/>
+				<code gentype="Java"/>
+				<style appearance="BackColor=-1;BorderColor=-1;BorderWidth=-1;FontColor=-1;VSwimLanes=1;HSwimLanes=1;BorderStyle=0;"/>
+				<tags/>
+				<xrefs/>
+				<extendedProperties tagged="0" package_name="04.1 - Deployment Diagrams"/>
+				<links>
+					<Deployment xmi:id="EAID_5D6D5BA6_ECE6_4f9c_B9CF_9D89705A6816" start="EAID_9A5AAF4F_A3E3_4c92_83A6_B8E8816E9F8E" end="EAID_AE1083E0_BF2B_412b_AFC9_142D67727378"/>
+				</links>
+			</element>
+			<element xmi:idref="EAID_C0808F12_0F3E_4a03_8188_1DDF6F34F4D7" xmi:type="uml:Artifact" name="Redis Instance (Rate Limiter)" scope="public">
+				<model package="EAPK_5F050354_E421_405a_AD1B_C65B11D21A1E" tpos="0" ea_localid="333" ea_eleType="element"/>
+				<properties documentation="Saat ini cuma dipakai untuk rate limit halaman auth; nama artifact sengaja spesifik supaya jelas cakupannya masih terbatas" isSpecification="false" sType="Artifact" nType="0" scope="public" isRoot="false" isLeaf="false" isAbstract="false"/>
+				<project author="Administrator" version="1.0" phase="1.0" created="2026-08-09 16:20:57" modified="2026-08-09 16:21:19" complexity="1" status="Proposed"/>
+				<code gentype="Java"/>
+				<style appearance="BackColor=-1;BorderColor=-1;BorderWidth=-1;FontColor=-1;VSwimLanes=1;HSwimLanes=1;BorderStyle=0;"/>
+				<tags/>
+				<xrefs/>
+				<extendedProperties tagged="0" package_name="04.1 - Deployment Diagrams"/>
+				<links>
+					<Deployment xmi:id="EAID_995EC9E2_CB9E_4b6f_A6A8_93FBA59EBA6D" start="EAID_89AF2DD6_2960_4a58_929D_CC38F6C2BF19" end="EAID_C0808F12_0F3E_4a03_8188_1DDF6F34F4D7"/>
+				</links>
+			</element>
+			<element xmi:idref="EAID_D3A0457E_A637_4651_91D0_CD44EA14A468" xmi:type="uml:Artifact" name="Supabase Auth" scope="public">
+				<model package="EAPK_5F050354_E421_405a_AD1B_C65B11D21A1E" tpos="0" ea_localid="330" ea_eleType="element"/>
+				<properties isSpecification="false" sType="Artifact" nType="0" scope="public" isRoot="false" isLeaf="false" isAbstract="false"/>
+				<project author="Administrator" version="1.0" phase="1.0" created="2026-08-09 16:20:27" modified="2026-08-09 16:20:27" complexity="1" status="Proposed"/>
+				<code gentype="Java"/>
+				<style appearance="BackColor=-1;BorderColor=-1;BorderWidth=-1;FontColor=-1;VSwimLanes=1;HSwimLanes=1;BorderStyle=0;"/>
+				<tags/>
+				<xrefs/>
+				<extendedProperties tagged="0" package_name="04.1 - Deployment Diagrams"/>
+				<links>
+					<Deployment xmi:id="EAID_1B305D62_AC06_4a4f_B3B9_82517A47F164" start="EAID_9A5AAF4F_A3E3_4c92_83A6_B8E8816E9F8E" end="EAID_D3A0457E_A637_4651_91D0_CD44EA14A468"/>
+				</links>
+			</element>
+			<element xmi:idref="EAID_12AA5CB5_DAFC_48df_9C28_479450C8C1E3" xmi:type="uml:Artifact" name="Supabase Realtime" scope="public">
+				<model package="EAPK_5F050354_E421_405a_AD1B_C65B11D21A1E" tpos="0" ea_localid="332" ea_eleType="element"/>
+				<properties isSpecification="false" sType="Artifact" nType="0" scope="public" isRoot="false" isLeaf="false" isAbstract="false"/>
+				<project author="Administrator" version="1.0" phase="1.0" created="2026-08-09 16:20:39" modified="2026-08-09 16:20:40" complexity="1" status="Proposed"/>
+				<code gentype="Java"/>
+				<style appearance="BackColor=-1;BorderColor=-1;BorderWidth=-1;FontColor=-1;VSwimLanes=1;HSwimLanes=1;BorderStyle=0;"/>
+				<tags/>
+				<xrefs/>
+				<extendedProperties tagged="0" package_name="04.1 - Deployment Diagrams"/>
+				<links>
+					<Deployment xmi:id="EAID_8A9D5571_5837_4bdd_85BD_A4A1A6C40BA7" start="EAID_9A5AAF4F_A3E3_4c92_83A6_B8E8816E9F8E" end="EAID_12AA5CB5_DAFC_48df_9C28_479450C8C1E3"/>
+				</links>
+			</element>
+			<element xmi:idref="EAID_943F02B7_6582_4f4b_B2C2_61B9CF388F78" xmi:type="uml:Artifact" name="Supabase Storage" scope="public">
+				<model package="EAPK_5F050354_E421_405a_AD1B_C65B11D21A1E" tpos="0" ea_localid="331" ea_eleType="element"/>
+				<properties isSpecification="false" sType="Artifact" nType="0" scope="public" isRoot="false" isLeaf="false" isAbstract="false"/>
+				<project author="Administrator" version="1.0" phase="1.0" created="2026-08-09 16:20:34" modified="2026-08-09 16:20:35" complexity="1" status="Proposed"/>
+				<code gentype="Java"/>
+				<style appearance="BackColor=-1;BorderColor=-1;BorderWidth=-1;FontColor=-1;VSwimLanes=1;HSwimLanes=1;BorderStyle=0;"/>
+				<tags/>
+				<xrefs/>
+				<extendedProperties tagged="0" package_name="04.1 - Deployment Diagrams"/>
+				<links>
+					<Deployment xmi:id="EAID_4F5488D9_EB8B_44fb_BD33_F09AA47316AA" start="EAID_9A5AAF4F_A3E3_4c92_83A6_B8E8816E9F8E" end="EAID_943F02B7_6582_4f4b_B2C2_61B9CF388F78"/>
+				</links>
+			</element>
+			<element xmi:idref="EAID_065AD23A_09BA_4f18_BF11_0277933F79B7" xmi:type="uml:Artifact" name="Turnstile Widget Service" scope="public">
+				<model package="EAPK_5F050354_E421_405a_AD1B_C65B11D21A1E" tpos="0" ea_localid="334" ea_eleType="element"/>
+				<properties documentation="Bukan proxy/CDN — murni layanan verifikasi CAPTCHA pihak ketiga" isSpecification="false" sType="Artifact" nType="0" scope="public" isRoot="false" isLeaf="false" isAbstract="false"/>
+				<project author="Administrator" version="1.0" phase="1.0" created="2026-08-09 16:21:06" modified="2026-08-09 16:21:29" complexity="1" status="Proposed"/>
+				<code gentype="Java"/>
+				<style appearance="BackColor=-1;BorderColor=-1;BorderWidth=-1;FontColor=-1;VSwimLanes=1;HSwimLanes=1;BorderStyle=0;"/>
+				<tags/>
+				<xrefs/>
+				<extendedProperties tagged="0" package_name="04.1 - Deployment Diagrams"/>
+				<links>
+					<Deployment xmi:id="EAID_526A0412_255A_48f1_B93D_BEB629C29027" start="EAID_33C55179_FE2A_49ae_A417_5347993BE707" end="EAID_065AD23A_09BA_4f18_BF11_0277933F79B7"/>
+				</links>
+			</element>
+		</elements>
+		<connectors>
+			<connector xmi:idref="EAID_6D12F79F_B683_4b37_9CC9_D521B2B109C7" name="HTTPS">
+				<source xmi:idref="EAID_A006CB5D_6909_45de_A786_8F620CC57767">
+					<model ea_localid="323" type="Node" name="Client"/>
+					<role visibility="Public" targetScope="instance"/>
+					<type aggregation="none" containment="Unspecified"/>
+					<constraints/>
+					<modifiers isOrdered="false" changeable="none" isNavigable="false"/>
+					<style value="Union=0;Derived=0;AllowDuplicates=0;Owned=0;Navigable=Non-Navigable;"/>
+					<documentation/>
+					<xrefs/>
+					<tags/>
+				</source>
+				<target xmi:idref="EAID_4A7C3BF2_2064_4d21_8552_2D5F95DC5DB4">
+					<model ea_localid="324" type="Node" name="Vercel"/>
+					<role visibility="Public" targetScope="instance"/>
+					<type aggregation="none" containment="Unspecified"/>
+					<constraints/>
+					<modifiers isOrdered="false" changeable="none" isNavigable="true"/>
+					<style value="Union=0;Derived=0;AllowDuplicates=0;Owned=0;Navigable=Navigable;"/>
+					<documentation/>
+					<xrefs/>
+					<tags/>
+				</target>
+				<model ea_localid="221"/>
+				<properties ea_type="CommunicationPath" direction="Source -&gt; Destination"/>
+				<modifiers isRoot="false" isLeaf="false"/>
+				<parameterSubstitutions/>
+				<documentation value="Page load, form submission, Server Actions"/>
+				<appearance linemode="3" linecolor="-1" linewidth="0" seqno="0" headStyle="0" lineStyle="0"/>
+				<labels mt="HTTPS"/>
+				<extendedProperties/>
+				<style/>
+				<xrefs/>
+				<tags/>
+			</connector>
+			<connector xmi:idref="EAID_C5E4C259_619A_4495_9446_B8460BC63384" name="HTTPS">
+				<source xmi:idref="EAID_A006CB5D_6909_45de_A786_8F620CC57767">
+					<model ea_localid="323" type="Node" name="Client"/>
+					<role visibility="Public" targetScope="instance"/>
+					<type aggregation="none" containment="Unspecified"/>
+					<constraints/>
+					<modifiers isOrdered="false" changeable="none" isNavigable="false"/>
+					<style value="Union=0;Derived=0;AllowDuplicates=0;Owned=0;Navigable=Non-Navigable;"/>
+					<documentation/>
+					<xrefs/>
+					<tags/>
+				</source>
+				<target xmi:idref="EAID_33C55179_FE2A_49ae_A417_5347993BE707">
+					<model ea_localid="327" type="Node" name="Cloudflare Turnstile"/>
+					<role visibility="Public" targetScope="instance"/>
+					<type aggregation="none" containment="Unspecified"/>
+					<constraints/>
+					<modifiers isOrdered="false" changeable="none" isNavigable="true"/>
+					<style value="Union=0;Derived=0;AllowDuplicates=0;Owned=0;Navigable=Navigable;"/>
+					<documentation/>
+					<xrefs/>
+					<tags/>
+				</target>
+				<model ea_localid="222"/>
+				<properties ea_type="CommunicationPath" direction="Source -&gt; Destination"/>
+				<modifiers isRoot="false" isLeaf="false"/>
+				<parameterSubstitutions/>
+				<documentation value="Load widget CAPTCHA di sisi client (browser)"/>
+				<appearance linemode="3" linecolor="-1" linewidth="0" seqno="0" headStyle="0" lineStyle="0"/>
+				<labels mt="HTTPS"/>
+				<extendedProperties/>
+				<style/>
+				<xrefs/>
+				<tags/>
+			</connector>
+			<connector xmi:idref="EAID_526A0412_255A_48f1_B93D_BEB629C29027">
+				<source xmi:idref="EAID_33C55179_FE2A_49ae_A417_5347993BE707">
+					<model ea_localid="327" type="Node" name="Cloudflare Turnstile"/>
+					<role visibility="Public" targetScope="instance"/>
+					<type aggregation="none" containment="Unspecified"/>
+					<constraints/>
+					<modifiers isOrdered="false" changeable="none" isNavigable="false"/>
+					<style value="Union=0;Derived=0;AllowDuplicates=0;Owned=0;Navigable=Non-Navigable;"/>
+					<documentation/>
+					<xrefs/>
+					<tags/>
+				</source>
+				<target xmi:idref="EAID_065AD23A_09BA_4f18_BF11_0277933F79B7">
+					<model ea_localid="334" type="Artifact" name="Turnstile Widget Service"/>
+					<role visibility="Public" targetScope="instance"/>
+					<type aggregation="none" containment="Unspecified"/>
+					<constraints/>
+					<modifiers isOrdered="false" changeable="none" isNavigable="true"/>
+					<style value="Union=0;Derived=0;AllowDuplicates=0;Owned=0;Navigable=Navigable;"/>
+					<documentation/>
+					<xrefs/>
+					<tags/>
+				</target>
+				<model ea_localid="232"/>
+				<properties ea_type="Deployment" direction="Source -&gt; Destination"/>
+				<documentation/>
+				<appearance linemode="3" linecolor="-1" linewidth="0" seqno="0" headStyle="0" lineStyle="0"/>
+				<labels mb="«deploy»"/>
+				<extendedProperties conditional="«deploy»" virtualInheritance="0"/>
+				<style/>
+				<xrefs/>
+				<tags/>
+			</connector>
+			<connector xmi:idref="EAID_2F1D6C96_AA3C_463f_892E_DD6C6243106C" name="HTTPS (siteverify API)">
+				<source xmi:idref="EAID_4A7C3BF2_2064_4d21_8552_2D5F95DC5DB4">
+					<model ea_localid="324" type="Node" name="Vercel"/>
+					<role visibility="Public" targetScope="instance"/>
+					<type aggregation="none" containment="Unspecified"/>
+					<constraints/>
+					<modifiers isOrdered="false" changeable="none" isNavigable="false"/>
+					<style value="Union=0;Derived=0;AllowDuplicates=0;Owned=0;Navigable=Non-Navigable;"/>
+					<documentation/>
+					<xrefs/>
+					<tags/>
+				</source>
+				<target xmi:idref="EAID_33C55179_FE2A_49ae_A417_5347993BE707">
+					<model ea_localid="327" type="Node" name="Cloudflare Turnstile"/>
+					<role visibility="Public" targetScope="instance"/>
+					<type aggregation="none" containment="Unspecified"/>
+					<constraints/>
+					<modifiers isOrdered="false" changeable="none" isNavigable="true"/>
+					<style value="Union=0;Derived=0;AllowDuplicates=0;Owned=0;Navigable=Navigable;"/>
+					<documentation/>
+					<xrefs/>
+					<tags/>
+				</target>
+				<model ea_localid="223"/>
+				<properties ea_type="CommunicationPath" direction="Source -&gt; Destination"/>
+				<modifiers isRoot="false" isLeaf="false"/>
+				<parameterSubstitutions/>
+				<documentation value="Validasi token CAPTCHA di server sebelum proses form auth dilanjutkan"/>
+				<appearance linemode="3" linecolor="-1" linewidth="0" seqno="0" headStyle="0" lineStyle="0"/>
+				<labels mt="HTTPS (siteverify API)"/>
+				<extendedProperties/>
+				<style/>
+				<xrefs/>
+				<tags/>
+			</connector>
+			<connector xmi:idref="EAID_1B305D62_AC06_4a4f_B3B9_82517A47F164">
+				<source xmi:idref="EAID_9A5AAF4F_A3E3_4c92_83A6_B8E8816E9F8E">
+					<model ea_localid="325" type="Node" name="Supabase Cloud"/>
+					<role visibility="Public" targetScope="instance"/>
+					<type aggregation="none" containment="Unspecified"/>
+					<constraints/>
+					<modifiers isOrdered="false" changeable="none" isNavigable="false"/>
+					<style value="Union=0;Derived=0;AllowDuplicates=0;Owned=0;Navigable=Non-Navigable;"/>
+					<documentation/>
+					<xrefs/>
+					<tags/>
+				</source>
+				<target xmi:idref="EAID_D3A0457E_A637_4651_91D0_CD44EA14A468">
+					<model ea_localid="330" type="Artifact" name="Supabase Auth"/>
+					<role visibility="Public" targetScope="instance"/>
+					<type aggregation="none" containment="Unspecified"/>
+					<constraints/>
+					<modifiers isOrdered="false" changeable="none" isNavigable="true"/>
+					<style value="Union=0;Derived=0;AllowDuplicates=0;Owned=0;Navigable=Navigable;"/>
+					<documentation/>
+					<xrefs/>
+					<tags/>
+				</target>
+				<model ea_localid="228"/>
+				<properties ea_type="Deployment" direction="Source -&gt; Destination"/>
+				<documentation/>
+				<appearance linemode="3" linecolor="-1" linewidth="0" seqno="0" headStyle="0" lineStyle="0"/>
+				<labels mb="«deploy»"/>
+				<extendedProperties conditional="«deploy»" virtualInheritance="0"/>
+				<style/>
+				<xrefs/>
+				<tags/>
+			</connector>
+			<connector xmi:idref="EAID_4F5488D9_EB8B_44fb_BD33_F09AA47316AA">
+				<source xmi:idref="EAID_9A5AAF4F_A3E3_4c92_83A6_B8E8816E9F8E">
+					<model ea_localid="325" type="Node" name="Supabase Cloud"/>
+					<role visibility="Public" targetScope="instance"/>
+					<type aggregation="none" containment="Unspecified"/>
+					<constraints/>
+					<modifiers isOrdered="false" changeable="none" isNavigable="false"/>
+					<style value="Union=0;Derived=0;AllowDuplicates=0;Owned=0;Navigable=Non-Navigable;"/>
+					<documentation/>
+					<xrefs/>
+					<tags/>
+				</source>
+				<target xmi:idref="EAID_943F02B7_6582_4f4b_B2C2_61B9CF388F78">
+					<model ea_localid="331" type="Artifact" name="Supabase Storage"/>
+					<role visibility="Public" targetScope="instance"/>
+					<type aggregation="none" containment="Unspecified"/>
+					<constraints/>
+					<modifiers isOrdered="false" changeable="none" isNavigable="true"/>
+					<style value="Union=0;Derived=0;AllowDuplicates=0;Owned=0;Navigable=Navigable;"/>
+					<documentation/>
+					<xrefs/>
+					<tags/>
+				</target>
+				<model ea_localid="229"/>
+				<properties ea_type="Deployment" direction="Source -&gt; Destination"/>
+				<documentation/>
+				<appearance linemode="3" linecolor="-1" linewidth="0" seqno="0" headStyle="0" lineStyle="0"/>
+				<labels mb="«deploy»"/>
+				<extendedProperties conditional="«deploy»" virtualInheritance="0"/>
+				<style/>
+				<xrefs/>
+				<tags/>
+			</connector>
+			<connector xmi:idref="EAID_5D6D5BA6_ECE6_4f9c_B9CF_9D89705A6816">
+				<source xmi:idref="EAID_9A5AAF4F_A3E3_4c92_83A6_B8E8816E9F8E">
+					<model ea_localid="325" type="Node" name="Supabase Cloud"/>
+					<role visibility="Public" targetScope="instance"/>
+					<type aggregation="none" containment="Unspecified"/>
+					<constraints/>
+					<modifiers isOrdered="false" changeable="none" isNavigable="false"/>
+					<style value="Union=0;Derived=0;AllowDuplicates=0;Owned=0;Navigable=Non-Navigable;"/>
+					<documentation/>
+					<xrefs/>
+					<tags/>
+				</source>
+				<target xmi:idref="EAID_AE1083E0_BF2B_412b_AFC9_142D67727378">
+					<model ea_localid="329" type="Artifact" name="PostgreSQL Database"/>
+					<role visibility="Public" targetScope="instance"/>
+					<type aggregation="none" containment="Unspecified"/>
+					<constraints/>
+					<modifiers isOrdered="false" changeable="none" isNavigable="true"/>
+					<style value="Union=0;Derived=0;AllowDuplicates=0;Owned=0;Navigable=Navigable;"/>
+					<documentation/>
+					<xrefs/>
+					<tags/>
+				</target>
+				<model ea_localid="227"/>
+				<properties ea_type="Deployment" direction="Source -&gt; Destination"/>
+				<documentation/>
+				<appearance linemode="3" linecolor="-1" linewidth="0" seqno="0" headStyle="0" lineStyle="0"/>
+				<labels mb="«deploy»"/>
+				<extendedProperties conditional="«deploy»" virtualInheritance="0"/>
+				<style/>
+				<xrefs/>
+				<tags/>
+			</connector>
+			<connector xmi:idref="EAID_8A9D5571_5837_4bdd_85BD_A4A1A6C40BA7">
+				<source xmi:idref="EAID_9A5AAF4F_A3E3_4c92_83A6_B8E8816E9F8E">
+					<model ea_localid="325" type="Node" name="Supabase Cloud"/>
+					<role visibility="Public" targetScope="instance"/>
+					<type aggregation="none" containment="Unspecified"/>
+					<constraints/>
+					<modifiers isOrdered="false" changeable="none" isNavigable="false"/>
+					<style value="Union=0;Derived=0;AllowDuplicates=0;Owned=0;Navigable=Non-Navigable;"/>
+					<documentation/>
+					<xrefs/>
+					<tags/>
+				</source>
+				<target xmi:idref="EAID_12AA5CB5_DAFC_48df_9C28_479450C8C1E3">
+					<model ea_localid="332" type="Artifact" name="Supabase Realtime"/>
+					<role visibility="Public" targetScope="instance"/>
+					<type aggregation="none" containment="Unspecified"/>
+					<constraints/>
+					<modifiers isOrdered="false" changeable="none" isNavigable="true"/>
+					<style value="Union=0;Derived=0;AllowDuplicates=0;Owned=0;Navigable=Navigable;"/>
+					<documentation/>
+					<xrefs/>
+					<tags/>
+				</target>
+				<model ea_localid="230"/>
+				<properties ea_type="Deployment" direction="Source -&gt; Destination"/>
+				<documentation/>
+				<appearance linemode="3" linecolor="-1" linewidth="0" seqno="0" headStyle="0" lineStyle="0"/>
+				<labels mb="«deploy»"/>
+				<extendedProperties conditional="«deploy»" virtualInheritance="0"/>
+				<style/>
+				<xrefs/>
+				<tags/>
+			</connector>
+			<connector xmi:idref="EAID_4A9515BA_7F07_4d9c_9490_988B7FC7E9C7" name="HTTPS (PostgREST/Supabase Client)">
+				<source xmi:idref="EAID_4A7C3BF2_2064_4d21_8552_2D5F95DC5DB4">
+					<model ea_localid="324" type="Node" name="Vercel"/>
+					<role visibility="Public" targetScope="instance"/>
+					<type aggregation="none" containment="Unspecified"/>
+					<constraints/>
+					<modifiers isOrdered="false" changeable="none" isNavigable="false"/>
+					<style value="Union=0;Derived=0;AllowDuplicates=0;Owned=0;Navigable=Non-Navigable;"/>
+					<documentation/>
+					<xrefs/>
+					<tags/>
+				</source>
+				<target xmi:idref="EAID_9A5AAF4F_A3E3_4c92_83A6_B8E8816E9F8E">
+					<model ea_localid="325" type="Node" name="Supabase Cloud"/>
+					<role visibility="Public" targetScope="instance"/>
+					<type aggregation="none" containment="Unspecified"/>
+					<constraints/>
+					<modifiers isOrdered="false" changeable="none" isNavigable="true"/>
+					<style value="Union=0;Derived=0;AllowDuplicates=0;Owned=0;Navigable=Navigable;"/>
+					<documentation/>
+					<xrefs/>
+					<tags/>
+				</target>
+				<model ea_localid="224"/>
+				<properties ea_type="CommunicationPath" direction="Source -&gt; Destination"/>
+				<modifiers isRoot="false" isLeaf="false"/>
+				<parameterSubstitutions/>
+				<documentation value="Bukan koneksi TCP Postgres langsung — serverless function tidak cocok pegang koneksi persisten"/>
+				<appearance linemode="3" linecolor="-1" linewidth="0" seqno="0" headStyle="0" lineStyle="0"/>
+				<labels mt="HTTPS (PostgREST/Supabase Client)"/>
+				<extendedProperties/>
+				<style/>
+				<xrefs/>
+				<tags/>
+			</connector>
+			<connector xmi:idref="EAID_995EC9E2_CB9E_4b6f_A6A8_93FBA59EBA6D">
+				<source xmi:idref="EAID_89AF2DD6_2960_4a58_929D_CC38F6C2BF19">
+					<model ea_localid="326" type="Node" name="Upstash Redis"/>
+					<role visibility="Public" targetScope="instance"/>
+					<type aggregation="none" containment="Unspecified"/>
+					<constraints/>
+					<modifiers isOrdered="false" changeable="none" isNavigable="false"/>
+					<style value="Union=0;Derived=0;AllowDuplicates=0;Owned=0;Navigable=Non-Navigable;"/>
+					<documentation/>
+					<xrefs/>
+					<tags/>
+				</source>
+				<target xmi:idref="EAID_C0808F12_0F3E_4a03_8188_1DDF6F34F4D7">
+					<model ea_localid="333" type="Artifact" name="Redis Instance (Rate Limiter)"/>
+					<role visibility="Public" targetScope="instance"/>
+					<type aggregation="none" containment="Unspecified"/>
+					<constraints/>
+					<modifiers isOrdered="false" changeable="none" isNavigable="true"/>
+					<style value="Union=0;Derived=0;AllowDuplicates=0;Owned=0;Navigable=Navigable;"/>
+					<documentation/>
+					<xrefs/>
+					<tags/>
+				</target>
+				<model ea_localid="231"/>
+				<properties ea_type="Deployment" direction="Source -&gt; Destination"/>
+				<documentation/>
+				<appearance linemode="3" linecolor="-1" linewidth="0" seqno="0" headStyle="0" lineStyle="0"/>
+				<labels mb="«deploy»"/>
+				<extendedProperties conditional="«deploy»" virtualInheritance="0"/>
+				<style/>
+				<xrefs/>
+				<tags/>
+			</connector>
+			<connector xmi:idref="EAID_DB4D24B4_F0B0_4c9e_A874_A1B6E3E7DFF2" name="HTTPS (REST API)">
+				<source xmi:idref="EAID_4A7C3BF2_2064_4d21_8552_2D5F95DC5DB4">
+					<model ea_localid="324" type="Node" name="Vercel"/>
+					<role visibility="Public" targetScope="instance"/>
+					<type aggregation="none" containment="Unspecified"/>
+					<constraints/>
+					<modifiers isOrdered="false" changeable="none" isNavigable="false"/>
+					<style value="Union=0;Derived=0;AllowDuplicates=0;Owned=0;Navigable=Non-Navigable;"/>
+					<documentation/>
+					<xrefs/>
+					<tags/>
+				</source>
+				<target xmi:idref="EAID_89AF2DD6_2960_4a58_929D_CC38F6C2BF19">
+					<model ea_localid="326" type="Node" name="Upstash Redis"/>
+					<role visibility="Public" targetScope="instance"/>
+					<type aggregation="none" containment="Unspecified"/>
+					<constraints/>
+					<modifiers isOrdered="false" changeable="none" isNavigable="true"/>
+					<style value="Union=0;Derived=0;AllowDuplicates=0;Owned=0;Navigable=Navigable;"/>
+					<documentation/>
+					<xrefs/>
+					<tags/>
+				</target>
+				<model ea_localid="225"/>
+				<properties ea_type="CommunicationPath" direction="Source -&gt; Destination"/>
+				<modifiers isRoot="false" isLeaf="false"/>
+				<parameterSubstitutions/>
+				<documentation value="Cek &amp;amp; increment rate limit saat percobaan login/register"/>
+				<appearance linemode="3" linecolor="-1" linewidth="0" seqno="0" headStyle="0" lineStyle="0"/>
+				<labels mt="HTTPS (REST API)"/>
+				<extendedProperties/>
+				<style/>
+				<xrefs/>
+				<tags/>
+			</connector>
+			<connector xmi:idref="EAID_E75E07A9_164B_4d4d_B4D8_C396B924088D">
+				<source xmi:idref="EAID_4A7C3BF2_2064_4d21_8552_2D5F95DC5DB4">
+					<model ea_localid="324" type="Node" name="Vercel"/>
+					<role visibility="Public" targetScope="instance"/>
+					<type aggregation="none" containment="Unspecified"/>
+					<constraints/>
+					<modifiers isOrdered="false" changeable="none" isNavigable="false"/>
+					<style value="Union=0;Derived=0;AllowDuplicates=0;Owned=0;Navigable=Non-Navigable;"/>
+					<documentation/>
+					<xrefs/>
+					<tags/>
+				</source>
+				<target xmi:idref="EAID_3473FFAC_81AC_4c32_8F1F_B3A162B485DC">
+					<model ea_localid="328" type="Artifact" name="Next.js 16 App (App Router)"/>
+					<role visibility="Public" targetScope="instance"/>
+					<type aggregation="none" containment="Unspecified"/>
+					<constraints/>
+					<modifiers isOrdered="false" changeable="none" isNavigable="true"/>
+					<style value="Union=0;Derived=0;AllowDuplicates=0;Owned=0;Navigable=Navigable;"/>
+					<documentation/>
+					<xrefs/>
+					<tags/>
+				</target>
+				<model ea_localid="226"/>
+				<properties ea_type="Deployment" direction="Source -&gt; Destination"/>
+				<documentation/>
+				<appearance linemode="3" linecolor="-1" linewidth="0" seqno="0" headStyle="0" lineStyle="0"/>
+				<labels mb="«deploy»"/>
+				<extendedProperties conditional="«deploy»" virtualInheritance="0"/>
+				<style/>
+				<xrefs/>
+				<tags/>
+			</connector>
+		</connectors>
+		<primitivetypes>
+			<packagedElement xmi:type="uml:Package" xmi:id="EAPrimitiveTypesPackage" name="EA_PrimitiveTypes_Package" visibility="public"/>
+		</primitivetypes>
+		<profiles/>
+		<diagrams>
+			<diagram xmi:id="EAID_4A272ACD_25F6_450e_905E_8264F05C983C">
+				<model package="EAPK_5F050354_E421_405a_AD1B_C65B11D21A1E" localID="13" owner="EAPK_5F050354_E421_405a_AD1B_C65B11D21A1E"/>
+				<properties name="04.1 - Deployment Diagrams" type="Deployment"/>
+				<project author="Administrator" version="1.0" created="2026-08-09 16:15:14" modified="2026-08-09 16:24:43"/>
+				<style1 value="ShowPrivate=1;ShowProtected=1;ShowPublic=1;HideRelationships=0;Locked=0;Border=1;HighlightForeign=1;PackageContents=1;SequenceNotes=0;ScalePrintImage=0;PPgs.cx=0;PPgs.cy=0;DocSize.cx=826;DocSize.cy=1169;ShowDetails=0;Orientation=P;Zoom=100;ShowTags=0;OpParams=1;VisibleAttributeDetail=0;ShowOpRetType=1;ShowIcons=1;CollabNums=0;HideProps=0;ShowReqs=0;ShowCons=0;PaperSize=9;HideParents=0;UseAlias=0;HideAtts=0;HideOps=0;HideStereo=0;HideElemStereo=0;ShowTests=0;ShowMaint=0;ConnectorNotation=UML 2.1;ExplicitNavigability=0;ShowShape=1;AllDockable=0;AdvancedElementProps=1;AdvancedFeatureProps=1;AdvancedConnectorProps=1;m_bElementClassifier=1;SPT=1;ShowNotes=0;SuppressBrackets=0;SuppConnectorLabels=0;PrintPageHeadFoot=0;ShowAsList=0;"/>
+				<style2 value="ExcludeRTF=0;DocAll=0;HideQuals=0;AttPkg=1;ShowTests=0;ShowMaint=0;SuppressFOC=1;MatrixActive=0;SwimlanesActive=1;KanbanActive=0;MatrixLineWidth=1;MatrixLineClr=0;MatrixLocked=0;TConnectorNotation=UML 2.1;TExplicitNavigability=0;AdvancedElementProps=1;AdvancedFeatureProps=1;AdvancedConnectorProps=1;m_bElementClassifier=1;SPT=1;MDGDgm=;STBLDgm=;ShowNotes=0;VisibleAttributeDetail=0;ShowOpRetType=1;SuppressBrackets=0;SuppConnectorLabels=0;PrintPageHeadFoot=0;ShowAsList=0;SuppressedCompartments=;Theme=:119;SaveTag=F207606A;"/>
+				<swimlanes value="locked=false;orientation=0;width=0;inbar=false;names=false;color=-1;bold=false;fcol=0;tcol=-1;ofCol=-1;ufCol=-1;hl=1;ufh=0;hh=0;cls=0;bw=0;hli=0;bro=0;SwimlaneFont=lfh:-13,lfw:0,lfi:0,lfu:0,lfs:0,lfface:Calibri,lfe:0,lfo:0,lfchar:1,lfop:0,lfcp:0,lfq:0,lfpf=0,lfWidth=0;"/>
+				<matrixitems value="locked=false;matrixactive=false;swimlanesactive=true;kanbanactive=false;width=1;clrLine=0;"/>
+				<extendedProperties/>
+				<elements>
+					<element geometry="Left=634;Top=223;Right=724;Bottom=273;" subject="EAID_065AD23A_09BA_4f18_BF11_0277933F79B7" seqno="1" style="DUID=D7C4ACDF;"/>
+					<element geometry="Left=495;Top=376;Right=585;Bottom=426;" subject="EAID_C0808F12_0F3E_4a03_8188_1DDF6F34F4D7" seqno="2" style="DUID=BC8F05EB;"/>
+					<element geometry="Left=384;Top=521;Right=474;Bottom=571;" subject="EAID_12AA5CB5_DAFC_48df_9C28_479450C8C1E3" seqno="3" style="DUID=07FC6E0C;"/>
+					<element geometry="Left=272;Top=521;Right=362;Bottom=571;" subject="EAID_943F02B7_6582_4f4b_B2C2_61B9CF388F78" seqno="4" style="DUID=D6C38AEF;"/>
+					<element geometry="Left=160;Top=521;Right=250;Bottom=571;" subject="EAID_D3A0457E_A637_4651_91D0_CD44EA14A468" seqno="5" style="DUID=3F641AF3;"/>
+					<element geometry="Left=48;Top=522;Right=138;Bottom=572;" subject="EAID_AE1083E0_BF2B_412b_AFC9_142D67727378" seqno="6" style="DUID=FB3CA21F;"/>
+					<element geometry="Left=122;Top=223;Right=212;Bottom=273;" subject="EAID_3473FFAC_81AC_4c32_8F1F_B3A162B485DC" seqno="7" style="DUID=E9DBE86B;"/>
+					<element geometry="Left=495;Top=203;Right=585;Bottom=293;" subject="EAID_33C55179_FE2A_49ae_A417_5347993BE707" seqno="8" style="DUID=84640CAA;"/>
+					<element geometry="Left=355;Top=356;Right=445;Bottom=446;" subject="EAID_89AF2DD6_2960_4a58_929D_CC38F6C2BF19" seqno="9" style="DUID=37E44EA5;"/>
+					<element geometry="Left=174;Top=357;Right=264;Bottom=447;" subject="EAID_9A5AAF4F_A3E3_4c92_83A6_B8E8816E9F8E" seqno="10" style="DUID=030B0EBF;"/>
+					<element geometry="Left=265;Top=203;Right=355;Bottom=293;" subject="EAID_4A7C3BF2_2064_4d21_8552_2D5F95DC5DB4" seqno="11" style="DUID=58C293F4;"/>
+					<element geometry="Left=386;Top=77;Right=476;Bottom=167;" subject="EAID_A006CB5D_6909_45de_A786_8F620CC57767" seqno="12" style="DUID=417EE0B9;"/>
+					<element geometry="SX=0;SY=0;EX=0;EY=0;EDGE=3;$LLB=;LLT=;LMT=;LMB=CX=38:CY=14:OX=0:OY=0:HDN=0:BLD=0:ITA=0:UND=0:CLR=-1:ALN=1:DIR=0:ROT=0;LRT=;LRB=;IRHS=;ILHS=;Path=;" subject="EAID_4F5488D9_EB8B_44fb_BD33_F09AA47316AA" style="Mode=3;EOID=D6C38AEF;SOID=030B0EBF;Color=-1;LWidth=0;Hidden=0;"/>
+					<element geometry="SX=0;SY=0;EX=0;EY=0;EDGE=3;$LLB=;LLT=;LMT=;LMB=CX=38:CY=14:OX=0:OY=0:HDN=0:BLD=0:ITA=0:UND=0:CLR=-1:ALN=1:DIR=0:ROT=0;LRT=;LRB=;IRHS=;ILHS=;Path=;" subject="EAID_1B305D62_AC06_4a4f_B3B9_82517A47F164" style="Mode=3;EOID=3F641AF3;SOID=030B0EBF;Color=-1;LWidth=0;Hidden=0;"/>
+					<element geometry="SX=0;SY=0;EX=0;EY=0;EDGE=3;$LLB=;LLT=;LMT=;LMB=CX=38:CY=14:OX=0:OY=0:HDN=0:BLD=0:ITA=0:UND=0:CLR=-1:ALN=1:DIR=0:ROT=0;LRT=;LRB=;IRHS=;ILHS=;Path=;" subject="EAID_5D6D5BA6_ECE6_4f9c_B9CF_9D89705A6816" style="Mode=3;EOID=FB3CA21F;SOID=030B0EBF;Color=-1;LWidth=0;Hidden=0;"/>
+					<element geometry="SX=0;SY=0;EX=0;EY=0;EDGE=4;$LLB=;LLT=;LMT=;LMB=CX=38:CY=14:OX=0:OY=0:HDN=0:BLD=0:ITA=0:UND=0:CLR=-1:ALN=1:DIR=0:ROT=0;LRT=;LRB=;IRHS=;ILHS=;Path=;" subject="EAID_E75E07A9_164B_4d4d_B4D8_C396B924088D" style="Mode=3;EOID=E9DBE86B;SOID=58C293F4;Color=-1;LWidth=0;Hidden=0;"/>
+					<element geometry="SX=0;SY=0;EX=0;EY=0;EDGE=3;$LLB=;LLT=;LMT=CX=71:CY=14:OX=7:OY=15:HDN=0:BLD=0:ITA=0:UND=0:CLR=-1:ALN=1:DIR=0:ROT=0;LMB=;LRT=;LRB=;IRHS=;ILHS=;Path=;" subject="EAID_DB4D24B4_F0B0_4c9e_A874_A1B6E3E7DFF2" style="Mode=3;EOID=37E44EA5;SOID=58C293F4;Color=-1;LWidth=0;Hidden=0;"/>
+					<element geometry="SX=0;SY=0;EX=0;EY=0;EDGE=3;$LLB=;LLT=;LMT=CX=144:CY=14:OX=-15:OY=-12:HDN=0:BLD=0:ITA=0:UND=0:CLR=-1:ALN=1:DIR=0:ROT=0;LMB=;LRT=;LRB=;IRHS=;ILHS=;Path=;" subject="EAID_4A9515BA_7F07_4d9c_9490_988B7FC7E9C7" style="Mode=3;EOID=030B0EBF;SOID=58C293F4;Color=-1;LWidth=0;Hidden=0;"/>
+					<element geometry="SX=0;SY=0;EX=0;EY=0;EDGE=2;$LLB=;LLT=;LMT=CX=88:CY=14:OX=0:OY=0:HDN=0:BLD=0:ITA=0:UND=0:CLR=-1:ALN=1:DIR=0:ROT=0;LMB=;LRT=;LRB=;IRHS=;ILHS=;Path=;" subject="EAID_2F1D6C96_AA3C_463f_892E_DD6C6243106C" style="Mode=3;EOID=84640CAA;SOID=58C293F4;Color=-1;LWidth=0;Hidden=0;"/>
+					<element geometry="SX=0;SY=0;EX=0;EY=0;EDGE=3;$LLB=;LLT=;LMT=CX=27:CY=14:OX=0:OY=0:HDN=0:BLD=0:ITA=0:UND=0:CLR=-1:ALN=1:DIR=0:ROT=0;LMB=;LRT=;LRB=;IRHS=;ILHS=;Path=;" subject="EAID_C5E4C259_619A_4495_9446_B8460BC63384" style="Mode=3;EOID=84640CAA;SOID=417EE0B9;Color=-1;LWidth=0;Hidden=0;"/>
+					<element geometry="SX=0;SY=0;EX=0;EY=0;EDGE=3;$LLB=;LLT=;LMT=CX=27:CY=14:OX=0:OY=0:HDN=0:BLD=0:ITA=0:UND=0:CLR=-1:ALN=1:DIR=0:ROT=0;LMB=;LRT=;LRB=;IRHS=;ILHS=;Path=;" subject="EAID_6D12F79F_B683_4b37_9CC9_D521B2B109C7" style="Mode=3;EOID=58C293F4;SOID=417EE0B9;Color=-1;LWidth=0;Hidden=0;"/>
+					<element geometry="SX=0;SY=0;EX=0;EY=0;EDGE=2;$LLB=;LLT=;LMT=;LMB=CX=38:CY=14:OX=0:OY=0:HDN=0:BLD=0:ITA=0:UND=0:CLR=-1:ALN=1:DIR=0:ROT=0;LRT=;LRB=;IRHS=;ILHS=;Path=;" subject="EAID_526A0412_255A_48f1_B93D_BEB629C29027" style="Mode=3;EOID=D7C4ACDF;SOID=84640CAA;Color=-1;LWidth=0;Hidden=0;"/>
+					<element geometry="SX=0;SY=0;EX=0;EY=0;EDGE=2;$LLB=;LLT=;LMT=;LMB=CX=38:CY=14:OX=0:OY=0:HDN=0:BLD=0:ITA=0:UND=0:CLR=-1:ALN=1:DIR=0:ROT=0;LRT=;LRB=;IRHS=;ILHS=;Path=;" subject="EAID_995EC9E2_CB9E_4b6f_A6A8_93FBA59EBA6D" style="Mode=3;EOID=BC8F05EB;SOID=37E44EA5;Color=-1;LWidth=0;Hidden=0;"/>
+					<element geometry="SX=0;SY=0;EX=0;EY=0;EDGE=2;$LLB=;LLT=;LMT=;LMB=CX=38:CY=14:OX=0:OY=0:HDN=0:BLD=0:ITA=0:UND=0:CLR=-1:ALN=1:DIR=0:ROT=0;LRT=;LRB=;IRHS=;ILHS=;Path=;" subject="EAID_8A9D5571_5837_4bdd_85BD_A4A1A6C40BA7" style="Mode=3;EOID=07FC6E0C;SOID=030B0EBF;Color=-1;LWidth=0;Hidden=0;"/>
+				</elements>
+			</diagram>
+		</diagrams>
+	</xmi:Extension>
+</xmi:XMI>
