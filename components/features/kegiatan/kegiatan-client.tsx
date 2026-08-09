@@ -271,19 +271,19 @@ export function KegiatanClient({
 
     if (now < start) {
       return (
-        <Badge className="bg-blue-50 dark:bg-blue-950/60 text-[#1e3a8a] dark:text-blue-300 border border-blue-200 dark:border-blue-900/60 font-mono text-[11px] font-semibold rounded-full px-3 py-0.5 uppercase">
+        <Badge className="bg-blue-50 dark:bg-blue-950/60 text-dongker-surface dark:text-blue-300 border border-blue-200 dark:border-blue-900/60 font-mono text-micro font-semibold rounded-full px-3 py-0.5 uppercase">
           MENDATANG
         </Badge>
       );
     } else if (now >= start && now <= end) {
       return (
-        <Badge className="bg-[#ffedd5] dark:bg-orange-950/60 text-[#c2410c] dark:text-orange-300 border border-orange-200 dark:border-orange-900/60 font-mono text-[11px] font-semibold rounded-full px-3 py-0.5 uppercase animate-pulse">
+        <Badge className="bg-orange-wash dark:bg-orange-950/60 text-orange-deep dark:text-orange-300 border border-orange-200 dark:border-orange-900/60 font-mono text-micro font-semibold rounded-full px-3 py-0.5 uppercase animate-pulse">
           ONGOING
         </Badge>
       );
     } else {
       return (
-        <Badge className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 font-mono text-[11px] font-semibold rounded-full px-3 py-0.5 uppercase">
+        <Badge className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 font-mono text-micro font-semibold rounded-full px-3 py-0.5 uppercase">
           SELESAI
         </Badge>
       );
@@ -297,15 +297,15 @@ export function KegiatanClient({
       {/* Header Banner - Mobile First & Precision Blueprint Style */}
       <div className="relative border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-xl shadow-xs overflow-hidden">
         {/* Dongker & Orange Top Accent Line */}
-        <div className="absolute top-0 left-0 right-0 h-[3px] bg-linear-to-r from-[#1e3a8a] via-[#3b82f6] to-[#f97316]" />
+        <div className="absolute top-0 left-0 right-0 h-0.75 bg-linear-to-r from-dongker-surface via-[#3b82f6] to-pnp-orange" />
 
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-medium tracking-tight text-[#0a192f] dark:text-slate-100 font-display flex items-center gap-2.5">
+            <h1 className="text-xl sm:text-2xl font-medium tracking-tight text-dongker-ink dark:text-slate-100 font-display flex items-center gap-2.5">
               <HugeiconsIcon
                 icon={Calendar03Icon}
                 size={24}
-                className="text-[#1e3a8a] dark:text-blue-400 shrink-0"
+                className="text-dongker-surface dark:text-blue-400 shrink-0"
               />
               Kegiatan UKM Robotik
             </h1>
@@ -328,7 +328,7 @@ export function KegiatanClient({
                     )
                   }
                   variant="outline"
-                  className="w-full sm:w-auto rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 shadow-xs font-mono text-[11px] uppercase tracking-wider px-4 py-2.5"
+                  className="w-full sm:w-auto rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 shadow-xs font-mono text-micro uppercase tracking-wider px-4 py-2.5"
                 >
                   <HugeiconsIcon
                     icon={Delete01Icon}
@@ -342,7 +342,7 @@ export function KegiatanClient({
                 user?.role === "super-admin") && (
                 <Button
                   onClick={() => setIsCreateModalOpen(true)}
-                  className="w-full sm:w-auto bg-[#1e3a8a] hover:bg-[#1e40af] dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-medium text-xs rounded-lg px-4 py-2.5 shadow-xs transition-colors"
+                  className="w-full sm:w-auto bg-dongker-surface hover:bg-dongker-hover dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-medium text-xs rounded-lg px-4 py-2.5 shadow-xs transition-colors"
                 >
                   <HugeiconsIcon
                     icon={CalendarAdd01Icon}
@@ -353,7 +353,7 @@ export function KegiatanClient({
                 </Button>
               )}
             </div>
-            <Badge className="bg-slate-100 dark:bg-slate-800 text-[#0a192f] dark:text-slate-200 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-full font-mono text-[11px] uppercase tracking-wider font-semibold">
+            <Badge className="bg-slate-100 dark:bg-slate-800 text-dongker-ink dark:text-slate-200 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-full font-mono text-micro uppercase tracking-wider font-semibold">
               {" "}
               TOTAL: {activities.length}
             </Badge>
@@ -364,11 +364,11 @@ export function KegiatanClient({
       {/* Stats Cards Grid (Mobile-First: 1 col on mobile, 3 cols on md+) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
         {/* Card 1: Telemetry */}
-        <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-xl border-l-4 border-l-[#1e3a8a] dark:border-l-blue-500 flex flex-col justify-between min-h-[150px] shadow-xs">
+        <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-xl border-l-4 border-l-dongker-surface dark:border-l-blue-500 flex flex-col justify-between min-h-37.5 shadow-xs">
           <div>
-            <h3 className="font-mono text-[11px] font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400 flex items-center justify-between">
+            <h3 className="font-mono text-micro font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400 flex items-center justify-between">
               <span>ACTIVITY TELEMETRY</span>
-              <span className="bg-slate-100 dark:bg-slate-800 text-[#0a192f] dark:text-slate-200 px-2 py-0.5 rounded-full font-bold text-[10px]">
+              <span className="bg-slate-100 dark:bg-slate-800 text-dongker-ink dark:text-slate-200 px-2 py-0.5 rounded-full font-bold text-[10px]">
                 TOTAL: {stats.total}
               </span>
             </h3>
@@ -378,7 +378,7 @@ export function KegiatanClient({
                 <span className="font-mono text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
                   ONGOING
                 </span>
-                <span className="font-display text-2xl font-bold text-[#0a192f] dark:text-slate-100">
+                <span className="font-display text-2xl font-bold text-dongker-ink dark:text-slate-100">
                   {stats.ongoing}
                 </span>
               </div>
@@ -386,7 +386,7 @@ export function KegiatanClient({
                 <span className="font-mono text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
                   UPCOMING
                 </span>
-                <span className="font-display text-2xl font-bold text-[#0a192f] dark:text-slate-100">
+                <span className="font-display text-2xl font-bold text-dongker-ink dark:text-slate-100">
                   {stats.upcoming}
                 </span>
               </div>
@@ -394,7 +394,7 @@ export function KegiatanClient({
                 <span className="font-mono text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
                   COMPLETED
                 </span>
-                <span className="font-display text-2xl font-bold text-[#0a192f] dark:text-slate-100">
+                <span className="font-display text-2xl font-bold text-dongker-ink dark:text-slate-100">
                   {stats.completed}
                 </span>
               </div>
@@ -405,7 +405,7 @@ export function KegiatanClient({
             <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
               {stats.ongoing > 0 && (
                 <div
-                  className="h-full bg-[#f97316]"
+                  className="h-full bg-pnp-orange"
                   style={{
                     width: `${stats.total > 0 ? (stats.ongoing / stats.total) * 100 : 0}%`,
                   }}
@@ -413,7 +413,7 @@ export function KegiatanClient({
               )}
               {stats.upcoming > 0 && (
                 <div
-                  className="h-full bg-[#1e3a8a] dark:bg-blue-500"
+                  className="h-full bg-dongker-surface dark:bg-blue-500"
                   style={{
                     width: `${stats.total > 0 ? (stats.upcoming / stats.total) * 100 : 0}%`,
                   }}
@@ -430,10 +430,10 @@ export function KegiatanClient({
             </div>
             <div className="flex justify-between text-[10px] font-mono text-slate-500 dark:text-slate-400 uppercase">
               <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#f97316]" /> ONGOING
+                <span className="w-2 h-2 rounded-full bg-pnp-orange" /> ONGOING
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#1e3a8a] dark:bg-blue-500" />{" "}
+                <span className="w-2 h-2 rounded-full bg-dongker-surface dark:bg-blue-500" />{" "}
                 UPCOMING
               </span>
               <span className="flex items-center gap-1.5">
@@ -445,21 +445,21 @@ export function KegiatanClient({
         </div>
 
         {/* Card 2: Next Event Tracker */}
-        <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-xl border-l-4 border-l-[#f97316] flex flex-col justify-between min-h-[150px] shadow-xs">
+        <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-xl border-l-4 border-l-pnp-orange flex flex-col justify-between min-h-37.5 shadow-xs">
           <div>
-            <h3 className="font-mono text-[11px] font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3">
+            <h3 className="font-mono text-micro font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3">
               NEXT UPCOMING ACTIVITY
             </h3>
 
             {stats.next ? (
               <div className="space-y-1">
-                <span className="font-display text-base font-medium text-[#0a192f] dark:text-slate-100 block line-clamp-1">
+                <span className="font-display text-base font-medium text-dongker-ink dark:text-slate-100 block line-clamp-1">
                   {stats.next.title}
                 </span>
                 <span className="font-mono text-xs text-slate-500 dark:text-slate-400 block">
                   {formatIndoDate(stats.next.start_date)}
                 </span>
-                <span className="font-mono text-[11px] text-[#f97316] dark:text-orange-400 font-semibold block uppercase tracking-wide">
+                <span className="font-mono text-micro text-pnp-orange dark:text-orange-400 font-semibold block uppercase tracking-wide">
                   LOKASI: {stats.next.location || "TBA"}
                 </span>
               </div>
@@ -475,9 +475,9 @@ export function KegiatanClient({
         </div>
 
         {/* Card 3: Access & Location */}
-        <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-xl border-l-4 border-l-[#334155] dark:border-l-slate-400 sm:col-span-2 md:col-span-1 flex flex-col justify-between min-h-[150px] shadow-xs">
+        <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-xl border-l-4 border-l-slate-blue dark:border-l-slate-400 sm:col-span-2 md:col-span-1 flex flex-col justify-between min-h-37.5 shadow-xs">
           <div>
-            <h3 className="font-mono text-[11px] font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3">
+            <h3 className="font-mono text-micro font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3">
               SYSTEM TELEMETRY
             </h3>
 
@@ -486,7 +486,7 @@ export function KegiatanClient({
                 <span className="text-slate-500 dark:text-slate-400">
                   ROLE LEVEL:
                 </span>
-                <span className="font-bold text-[#0a192f] dark:text-slate-100 uppercase">
+                <span className="font-bold text-dongker-ink dark:text-slate-100 uppercase">
                   {user?.role || "GUEST"}
                 </span>
               </div>
@@ -494,7 +494,7 @@ export function KegiatanClient({
                 <span className="text-slate-500 dark:text-slate-400">
                   TARGET AUDIENCE:
                 </span>
-                <span className="font-bold text-[#1e3a8a] dark:text-blue-400 uppercase">
+                <span className="font-bold text-dongker-surface dark:text-blue-400 uppercase">
                   {user?.role === "caang" ? "KHUSUS CAANG" : "ANGGOTA"}
                 </span>
               </div>
@@ -502,7 +502,7 @@ export function KegiatanClient({
                 <span className="text-slate-500 dark:text-slate-400">
                   UNIQUE LOCATIONS:
                 </span>
-                <span className="font-bold text-[#0a192f] dark:text-slate-100">
+                <span className="font-bold text-dongker-ink dark:text-slate-100">
                   {stats.uniqueLocations}
                 </span>
               </div>
@@ -529,7 +529,7 @@ export function KegiatanClient({
             placeholder="Cari Kegiatan / Lokasi..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-10 w-full bg-slate-50 dark:bg-slate-800/60 pl-10 rounded-lg border border-slate-200 dark:border-slate-700 font-mono text-xs text-[#0a192f] dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-[#f97316]/20 focus-visible:border-[#f97316]"
+            className="h-10 w-full bg-slate-50 dark:bg-slate-800/60 pl-10 rounded-lg border border-slate-200 dark:border-slate-700 font-mono text-xs text-dongker-ink dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-pnp-orange/20 focus-visible:border-pnp-orange"
           />
         </div>
 
@@ -542,7 +542,7 @@ export function KegiatanClient({
                 e.target.value as "all" | "upcoming" | "ongoing" | "completed",
               )
             }
-            className="h-10 w-full bg-slate-50 dark:bg-slate-800/60 px-3 rounded-lg border border-slate-200 dark:border-slate-700 font-mono text-xs text-[#0a192f] dark:text-slate-100 focus:outline-hidden focus:border-[#f97316]"
+            className="h-10 w-full bg-slate-50 dark:bg-slate-800/60 px-3 rounded-lg border border-slate-200 dark:border-slate-700 font-mono text-xs text-dongker-ink dark:text-slate-100 focus:outline-hidden focus:border-pnp-orange"
           >
             <option value="all">Semua Status</option>
             <option value="upcoming">Mendatang</option>
@@ -615,7 +615,7 @@ export function KegiatanClient({
                       <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 uppercase tracking-widest block">
                         NAMA KEGIATAN
                       </span>
-                      <span className="text-sm font-display font-medium text-[#0a192f] dark:text-slate-100 truncate block">
+                      <span className="text-sm font-display font-medium text-dongker-ink dark:text-slate-100 truncate block">
                         {activity.title}
                       </span>
                     </div>
@@ -657,7 +657,7 @@ export function KegiatanClient({
                     variant="outline"
                     size="sm"
                     onClick={() => setSelectedActivity(activity)}
-                    className="rounded-lg border border-slate-200 dark:border-slate-700 text-[#0a192f] dark:text-slate-200 font-mono text-[11px] uppercase tracking-wider px-3 h-9 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    className="rounded-lg border border-slate-200 dark:border-slate-700 text-dongker-ink dark:text-slate-200 font-mono text-micro uppercase tracking-wider px-3 h-9 hover:bg-slate-100 dark:hover:bg-slate-800"
                   >
                     <HugeiconsIcon icon={EyeIcon} size={14} className="mr-1" />
                     Detail
@@ -669,7 +669,7 @@ export function KegiatanClient({
                         variant="outline"
                         size="sm"
                         onClick={() => setEditingKomdisActivity(activity)}
-                        className="rounded-lg border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 font-mono text-[11px] uppercase tracking-wider px-3 h-9 hover:bg-blue-50 dark:hover:bg-blue-950/40"
+                        className="rounded-lg border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 font-mono text-micro uppercase tracking-wider px-3 h-9 hover:bg-blue-50 dark:hover:bg-blue-950/40"
                       >
                         <HugeiconsIcon
                           icon={Edit02Icon}
@@ -682,7 +682,7 @@ export function KegiatanClient({
                         variant="outline"
                         size="sm"
                         onClick={() => setDeletingKomdisActivity(activity)}
-                        className="rounded-lg border border-slate-200 dark:border-slate-700 text-red-600 dark:text-red-400 font-mono text-[11px] uppercase tracking-wider px-3 h-9 hover:bg-red-50 dark:hover:bg-red-950/40"
+                        className="rounded-lg border border-slate-200 dark:border-slate-700 text-red-600 dark:text-red-400 font-mono text-micro uppercase tracking-wider px-3 h-9 hover:bg-red-50 dark:hover:bg-red-950/40"
                       >
                         <HugeiconsIcon
                           icon={Delete01Icon}
@@ -699,7 +699,7 @@ export function KegiatanClient({
                       onClick={() =>
                         router.push(`/kegiatan/${activity.id}/absensi`)
                       }
-                      className="rounded-lg bg-[#1e3a8a] dark:bg-blue-600 text-white font-mono text-[11px] uppercase tracking-wider px-3 h-9 hover:bg-[#1e40af] dark:hover:bg-blue-500"
+                      className="rounded-lg bg-dongker-surface dark:bg-blue-600 text-white font-mono text-micro uppercase tracking-wider px-3 h-9 hover:bg-dongker-hover dark:hover:bg-blue-500"
                     >
                       Absen
                     </Button>
@@ -711,25 +711,25 @@ export function KegiatanClient({
 
           {/* Desktop Table View (Hidden on mobile, shown on md+) */}
           <div className="hidden md:block overflow-x-auto border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl shadow-xs">
-            <table className="w-full min-w-[900px] border-collapse text-left">
+            <table className="w-full min-w-225 border-collapse text-left">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
-                  <th className="p-4 w-24 text-center font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
+                  <th className="p-4 w-24 text-center font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
                     Banner
                   </th>
-                  <th className="p-4 font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
+                  <th className="p-4 font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
                     Nama Kegiatan
                   </th>
-                  <th className="p-4 font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
+                  <th className="p-4 font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
                     Tanggal &amp; Waktu
                   </th>
-                  <th className="p-4 font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
+                  <th className="p-4 font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
                     Lokasi
                   </th>
-                  <th className="p-4 w-32 font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
+                  <th className="p-4 w-32 font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
                     Status
                   </th>
-                  <th className="p-4 w-44 text-center font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
+                  <th className="p-4 w-44 text-center font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
                     Aksi
                   </th>
                 </tr>
@@ -762,7 +762,7 @@ export function KegiatanClient({
 
                     <td className="p-4 align-middle">
                       <div
-                        className="font-display font-medium text-[#0a192f] dark:text-slate-100 text-sm truncate max-w-[280px]"
+                        className="font-display font-medium text-dongker-ink dark:text-slate-100 text-sm truncate max-w-70"
                         title={activity.title}
                       >
                         {activity.title}
@@ -773,10 +773,10 @@ export function KegiatanClient({
                     </td>
 
                     <td className="p-4 align-middle">
-                      <div className="text-[#0a192f] dark:text-slate-200 text-xs font-medium">
+                      <div className="text-dongker-ink dark:text-slate-200 text-xs font-medium">
                         {formatIndoDate(activity.start_date)}
                       </div>
-                      <div className="font-mono text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                      <div className="font-mono text-micro text-slate-500 dark:text-slate-400 mt-0.5">
                         {formatTimeRange(
                           activity.start_date,
                           activity.end_date,
@@ -786,7 +786,7 @@ export function KegiatanClient({
 
                     <td className="p-4 align-middle">
                       <div
-                        className="text-slate-700 dark:text-slate-300 text-xs truncate max-w-[220px]"
+                        className="text-slate-700 dark:text-slate-300 text-xs truncate max-w-55"
                         title={activity.location || "TBA"}
                       >
                         {activity.location || "TBA"}
@@ -803,7 +803,7 @@ export function KegiatanClient({
                           variant="outline"
                           size="sm"
                           onClick={() => setSelectedActivity(activity)}
-                          className="rounded-lg border border-slate-200 dark:border-slate-700 text-[#0a192f] dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 h-8 px-2.5 font-mono text-[11px] uppercase tracking-wider"
+                          className="rounded-lg border border-slate-200 dark:border-slate-700 text-dongker-ink dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 h-8 px-2.5 font-mono text-micro uppercase tracking-wider"
                         >
                           <HugeiconsIcon
                             icon={EyeIcon}
@@ -851,7 +851,7 @@ export function KegiatanClient({
                             onClick={() =>
                               router.push(`/kegiatan/${activity.id}/absensi`)
                             }
-                            className="rounded-lg bg-[#1e3a8a] dark:bg-blue-600 text-white hover:bg-[#1e40af] dark:hover:bg-blue-500 h-8 px-2.5 font-mono text-[11px] uppercase tracking-wider"
+                            className="rounded-lg bg-dongker-surface dark:bg-blue-600 text-white hover:bg-dongker-hover dark:hover:bg-blue-500 h-8 px-2.5 font-mono text-micro uppercase tracking-wider"
                           >
                             Absen
                           </Button>
@@ -875,7 +875,7 @@ export function KegiatanClient({
           {selectedActivity && (
             <>
               <div className="relative h-52 sm:h-64 w-full bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800 flex items-center justify-center overflow-hidden shrink-0">
-                <div className="absolute top-0 left-0 right-0 h-[3px] bg-linear-to-r from-[#1e3a8a] via-[#3b82f6] to-[#f97316] z-20" />
+                <div className="absolute top-0 left-0 right-0 h-0.75 bg-linear-to-r from-dongker-surface via-[#3b82f6] to-pnp-orange z-20" />
 
                 {selectedActivity.banner_url ? (
                   <Image
@@ -886,7 +886,7 @@ export function KegiatanClient({
                     className="object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full bg-linear-to-br from-[#1e3a8a]/10 via-[#f97316]/5 to-transparent flex items-center justify-center">
+                  <div className="w-full h-full bg-linear-to-br from-dongker-surface/10 via-pnp-orange/5 to-transparent flex items-center justify-center">
                     <HugeiconsIcon
                       icon={Calendar03Icon}
                       size={64}
@@ -905,7 +905,7 @@ export function KegiatanClient({
 
               <div className="p-4 sm:p-6 space-y-4 sm:space-y-5">
                 <DialogHeader>
-                  <DialogTitle className="text-lg sm:text-xl font-display font-medium text-[#0a192f] dark:text-slate-100">
+                  <DialogTitle className="text-lg sm:text-xl font-display font-medium text-dongker-ink dark:text-slate-100">
                     {selectedActivity.title}
                   </DialogTitle>
                 </DialogHeader>
@@ -915,7 +915,7 @@ export function KegiatanClient({
                     <span className="text-slate-400 dark:text-slate-500 uppercase tracking-widest block text-[10px]">
                       LOKASI
                     </span>
-                    <span className="text-[#0a192f] dark:text-slate-200 font-semibold">
+                    <span className="text-dongker-ink dark:text-slate-200 font-semibold">
                       {selectedActivity.location || "TBA"}
                     </span>
                   </div>
@@ -923,7 +923,7 @@ export function KegiatanClient({
                     <span className="text-slate-400 dark:text-slate-500 uppercase tracking-widest block text-[10px]">
                       WAKTU MULAI
                     </span>
-                    <span className="text-[#0a192f] dark:text-slate-200 font-semibold">
+                    <span className="text-dongker-ink dark:text-slate-200 font-semibold">
                       {formatIndoDate(selectedActivity.start_date)} (
                       {formatIndoTime(selectedActivity.start_date)})
                     </span>
@@ -932,7 +932,7 @@ export function KegiatanClient({
 
                 {selectedActivity.description && (
                   <div className="space-y-1.5">
-                    <h4 className="font-mono text-[11px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    <h4 className="font-mono text-micro font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                       DESKRIPSI KEGIATAN
                     </h4>
                     <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line bg-slate-50/50 dark:bg-slate-800/30 p-3 rounded-lg border border-slate-200/60 dark:border-slate-800/60 font-body">
@@ -956,7 +956,7 @@ export function KegiatanClient({
                         setSelectedActivity(null);
                         router.push(`/kegiatan/${id}/absensi`);
                       }}
-                      className="rounded-lg bg-[#1e3a8a] dark:bg-blue-600 text-white hover:bg-[#1e40af] dark:hover:bg-blue-500 font-mono text-xs uppercase"
+                      className="rounded-lg bg-dongker-surface dark:bg-blue-600 text-white hover:bg-dongker-hover dark:hover:bg-blue-500 font-mono text-xs uppercase"
                     >
                       Buka Modul Presensi
                     </Button>
@@ -990,7 +990,7 @@ export function KegiatanClient({
       >
         <DialogContent className="max-w-md rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold text-[#0a192f] dark:text-slate-100 font-display">
+            <DialogTitle className="text-lg font-bold text-dongker-ink dark:text-slate-100 font-display">
               Konfirmasi Hapus Kegiatan
             </DialogTitle>
             <DialogDescription className="text-xs text-slate-500 dark:text-slate-400 font-sans mt-2">
