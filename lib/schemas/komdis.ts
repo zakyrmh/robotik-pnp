@@ -15,6 +15,14 @@ export type CreateKomdisActivityInput = z.infer<
   typeof CreateKomdisActivitySchema
 >;
 
+export const UpdateKomdisActivitySchema = CreateKomdisActivitySchema.extend({
+  activityId: z.string().uuid("ID kegiatan tidak valid"),
+});
+
+export type UpdateKomdisActivityInput = z.infer<
+  typeof UpdateKomdisActivitySchema
+>;
+
 export const ReviewLeaveSchema = z.object({
   attendanceId: z.string().uuid("ID presensi tidak valid"),
   approvalStatus: z.enum(["approved", "rejected"]),

@@ -129,6 +129,7 @@ export function ForgotPasswordForm() {
                 }
                 onSuccess={(token: string) => setCaptchaToken(token)}
                 onExpire={() => setCaptchaToken("")}
+                onError={() => setCaptchaToken("")}
               />
             </div>
 
@@ -136,7 +137,7 @@ export function ForgotPasswordForm() {
             <Button
               type="submit"
               className="w-full h-11 sm:h-12 bg-dongker-surface hover:bg-dongker-hover dark:bg-pnp-orange dark:hover:bg-orange-deep text-white font-sans font-semibold uppercase tracking-wider rounded-lg transition-all shadow-sm cursor-pointer disabled:opacity-60"
-              disabled={isPending}
+              disabled={isPending || !captchaToken}
             >
               {isPending ? (
                 <>

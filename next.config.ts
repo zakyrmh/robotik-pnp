@@ -39,6 +39,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "images.unsplash.com",
       },
+      {
+        protocol: "https",
+        hostname: "api.qrserver.com",
+      },
     ],
   },
 };
@@ -52,9 +56,6 @@ export default withSentryConfig(nextConfig, {
   sourcemaps: {
     deleteSourcemapsAfterUpload: true,
   },
-
-  // Nonaktifkan logger Sentry saat build
-  disableLogger: true,
 
   // Senyapkan log jika bukan lingkungan CI
   silent: !process.env.CI,

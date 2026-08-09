@@ -546,6 +546,57 @@ export type Database = {
           },
         ];
       };
+      in_app_notifications: {
+        Row: {
+          created_at: string;
+          id: string;
+          is_read: boolean;
+          message: string;
+          recipient_id: string;
+          reference_id: string | null;
+          reference_type: string | null;
+          title: string;
+          type: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          is_read?: boolean;
+          message: string;
+          recipient_id: string;
+          reference_id?: string | null;
+          reference_type?: string | null;
+          title: string;
+          type?: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          is_read?: boolean;
+          message?: string;
+          recipient_id?: string;
+          reference_id?: string | null;
+          reference_type?: string | null;
+          title?: string;
+          type?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "in_app_notifications_recipient_id_fkey";
+            columns: ["recipient_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "in_app_notifications_recipient_id_fkey";
+            columns: ["recipient_id"];
+            isOneToOne: false;
+            referencedRelation: "v_user_discipline_summary";
+            referencedColumns: ["profile_id"];
+          },
+        ];
+      };
       internships: {
         Row: {
           created_at: string | null;

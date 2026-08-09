@@ -255,12 +255,14 @@ export default async function DashboardPage() {
       totalTasks: totalTasks || 0,
     };
   } else if (profile.role === "admin-komdis") {
-    // 1. Pending leave requests
+    // 1. Pending leave requests (hanya anggota/pengurus aktif, exclude caang & alumni)
     const { count: pendingLeaves } = await supabase
       .from("attendances")
-      .select("*", { count: "exact", head: true })
+      .select("id, profiles!inner(role)", { count: "exact", head: true })
       .in("status", ["sakit", "izin"])
-      .is("verified_by", null);
+      .is("verified_by", null)
+      .neq("profiles.role", "caang")
+      .neq("profiles.role", "alumni");
 
     // 2. Today's activities
     const startOfToday = new Date();
@@ -286,10 +288,57 @@ export default async function DashboardPage() {
       todayAttendancesCount = count || 0;
     }
 
+    // 4. Active Sanctions count across active members
+    const { count: activeSanctionsCount } = await supabase
+      .from("sanctions")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "active");
+
+    // 5. Piket assignment for admin-komdis (as a member)
+    const { data: piketMembers } = await supabase
+      .from("piket_members")
+      .select("piket_schedules(day)")
+      .eq("profile_id", user.id);
+    const piketDays = ((piketMembers as unknown as RawPiketMember[]) || [])
+      .map((pm) => pm.piket_schedules?.day)
+      .filter(Boolean) as string[];
+
+    const daysMap = [
+      "Minggu",
+      "Senin",
+      "Selasa",
+      "Rabu",
+      "Kamis",
+      "Jumat",
+      "Sabtu",
+    ] as const;
+    const todayDayName = daysMap[new Date().getDay()];
+    const isScheduledToday = piketDays.includes(todayDayName);
+
+    // 6. Piket reports submitted by admin-komdis
+    const { count: piketLogsCount } = await supabase
+      .from("piket_logs")
+      .select("*", { count: "exact", head: true })
+      .eq("reported_by", user.id);
+
+    // 7. Upcoming Activities for active members (limit 3)
+    const nowIso = new Date().toISOString();
+    const { data: upcomingActs } = await supabase
+      .from("activities")
+      .select("id, title, start_date, location")
+      .gte("end_date", nowIso)
+      .order("start_date", { ascending: true })
+      .limit(3);
+
     dataPayload.adminKomdisStats = {
       pendingLeaves: pendingLeaves || 0,
       todayActivitiesCount,
       todayAttendancesCount,
+      activeSanctionsCount: activeSanctionsCount || 0,
+      piketDays,
+      piketLogsCount: piketLogsCount || 0,
+      isScheduledToday,
+      upcomingActivities: upcomingActs || [],
     };
   } else if (profile.role === "super-admin") {
     // 1. Users list by role

@@ -10,6 +10,7 @@ import {
   loginRateLimiter,
   forgotPasswordRateLimiter,
 } from "@/lib/redis";
+import { verifyTurnstileToken } from "@/lib/turnstile";
 import type { RegisterState } from "@/lib/types/auth";
 import {
   registerSchema,
@@ -18,16 +19,23 @@ import {
   updatePasswordSchema,
 } from "@/lib/schemas/auth";
 
+const CAPTCHA_FAILED_MESSAGE =
+  "Verifikasi keamanan gagal atau kedaluwarsa. Silakan centang CAPTCHA lagi.";
+
+async function getClientIp(): Promise<string> {
+  const headerList = await headers();
+  return (
+    headerList.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    headerList.get("x-real-ip") ||
+    "127.0.0.1"
+  );
+}
+
 // ============================================================
 // Register Action
 // ============================================================
 export async function register(prevState: RegisterState, formData: FormData) {
-  // Rate Limiting Protection via Upstash Redis
-  const headerList = await headers();
-  const clientIp =
-    headerList.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    headerList.get("x-real-ip") ||
-    "127.0.0.1";
+  const clientIp = await getClientIp();
 
   const { success } = await registerRateLimiter.limit(clientIp);
   if (!success) {
@@ -40,7 +48,7 @@ export async function register(prevState: RegisterState, formData: FormData) {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
   const confirmPassword = formData.get("confirmPassword") as string;
-  const captchaToken = (formData.get("captchaToken") as string) || undefined;
+  const captchaToken = (formData.get("captchaToken") as string) || "";
 
   // Check required fields empty first for explicit error message compatibility
   if (!email || !password || !confirmPassword) {
@@ -59,6 +67,14 @@ export async function register(prevState: RegisterState, formData: FormData) {
     return { error: validation.error.issues[0].message };
   }
 
+  const isCaptchaValid = await verifyTurnstileToken(
+    validation.data.captchaToken,
+    clientIp,
+  );
+  if (!isCaptchaValid) {
+    return { error: CAPTCHA_FAILED_MESSAGE };
+  }
+
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
   if (!siteUrl) {
     console.error("NEXT_PUBLIC_SITE_URL is not configured");
@@ -67,17 +83,15 @@ export async function register(prevState: RegisterState, formData: FormData) {
 
   const supabase = await createClient();
 
+  // CAPTCHA sudah diverifikasi via Cloudflare siteverify (token one-time).
+  // Jangan kirim ulang ke Supabase Auth agar tidak double-consume token.
   const { error } = await supabase.auth.signUp({
     email: validation.data.email,
     password: validation.data.password,
     options: {
       emailRedirectTo: `${siteUrl}/callback`,
-      ...(validation.data.captchaToken
-        ? { captchaToken: validation.data.captchaToken }
-        : {}),
     },
   });
-
   if (error) {
     if (error.message.includes("already registered")) {
       return { error: "Email sudah terdaftar. Silahkan login." };
@@ -93,12 +107,7 @@ export async function register(prevState: RegisterState, formData: FormData) {
 // Login Action
 // ============================================================
 export async function login(prevState: RegisterState, formData: FormData) {
-  // Rate Limiting Protection via Upstash Redis
-  const headerList = await headers();
-  const clientIp =
-    headerList.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    headerList.get("x-real-ip") ||
-    "127.0.0.1";
+  const clientIp = await getClientIp();
 
   const { success } = await loginRateLimiter.limit(clientIp);
   if (!success) {
@@ -110,7 +119,7 @@ export async function login(prevState: RegisterState, formData: FormData) {
 
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
-  const captchaToken = (formData.get("captchaToken") as string) || undefined;
+  const captchaToken = (formData.get("captchaToken") as string) || "";
 
   if (!email || !password) {
     return { error: "Email dan password wajib diisi." };
@@ -126,18 +135,21 @@ export async function login(prevState: RegisterState, formData: FormData) {
     return { error: validation.error.issues[0].message };
   }
 
+  const isCaptchaValid = await verifyTurnstileToken(
+    validation.data.captchaToken,
+    clientIp,
+  );
+  if (!isCaptchaValid) {
+    return { error: CAPTCHA_FAILED_MESSAGE };
+  }
+
   const supabase = await createClient();
 
+  // CAPTCHA sudah diverifikasi via Cloudflare siteverify (token one-time).
   const { error } = await supabase.auth.signInWithPassword({
     email: validation.data.email,
     password: validation.data.password,
-    options: {
-      ...(validation.data.captchaToken
-        ? { captchaToken: validation.data.captchaToken }
-        : {}),
-    },
   });
-
   if (error) {
     // Penanganan error spesifik untuk pengalaman pengguna yang lebih baik
     if (error.message.includes("Invalid login credentials")) {
@@ -245,12 +257,7 @@ export async function forgotPassword(
   prevState: RegisterState,
   formData: FormData,
 ) {
-  // Rate Limiting Protection via Upstash Redis
-  const headerList = await headers();
-  const clientIp =
-    headerList.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    headerList.get("x-real-ip") ||
-    "127.0.0.1";
+  const clientIp = await getClientIp();
 
   const { success } = await forgotPasswordRateLimiter.limit(clientIp);
   if (!success) {
@@ -262,7 +269,7 @@ export async function forgotPassword(
 
   const rawEmail = formData.get("email") as string;
   const rawNim = formData.get("nim") as string;
-  const captchaToken = (formData.get("captchaToken") as string) || undefined;
+  const captchaToken = (formData.get("captchaToken") as string) || "";
 
   const email = rawEmail?.trim();
   const nim = rawNim?.trim();
@@ -276,6 +283,14 @@ export async function forgotPassword(
 
   if (!validation.success) {
     return { error: validation.error.issues[0].message };
+  }
+
+  const isCaptchaValid = await verifyTurnstileToken(
+    validation.data.captchaToken,
+    clientIp,
+  );
+  if (!isCaptchaValid) {
+    return { error: CAPTCHA_FAILED_MESSAGE };
   }
 
   const supabaseAdmin = createAdminClient();
@@ -302,16 +317,13 @@ export async function forgotPassword(
 
   const supabase = await createClient();
 
+  // CAPTCHA sudah diverifikasi via Cloudflare siteverify (token one-time).
   const { error } = await supabase.auth.resetPasswordForEmail(
     validation.data.email,
     {
       redirectTo: `${siteUrl}/callback?next=/update-password`,
-      ...(validation.data.captchaToken
-        ? { captchaToken: validation.data.captchaToken }
-        : {}),
     },
   );
-
   if (error) {
     return { error: error.message };
   }

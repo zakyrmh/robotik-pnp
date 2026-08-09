@@ -75,7 +75,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-background text-foreground transition-colors duration-200">
         <RecoveryHashListener />
         <InitialLoader>{children}</InitialLoader>
-        <Toaster position="top-center" closeButton richColors />
+        <Toaster position="bottom-right" closeButton richColors />
         <Analytics />
         <SpeedInsights />
       </body>

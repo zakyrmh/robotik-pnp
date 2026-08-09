@@ -35,8 +35,8 @@ export default async function DivisiIndexPage() {
   });
 
   return (
-    <div className="bg-canvas-dark min-h-screen text-white pt-24 pb-20">
-      <div className="max-w-[1320px] mx-auto px-4 lg:px-8">
+    <div className="min-h-screen bg-background text-foreground pt-24 pb-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <DivisiIndexClient divisions={divisions} />
       </div>
     </div>

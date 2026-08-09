@@ -75,6 +75,11 @@ export interface DashboardData {
     pendingLeaves: number;
     todayActivitiesCount: number;
     todayAttendancesCount: number;
+    activeSanctionsCount: number;
+    piketDays: string[];
+    piketLogsCount: number;
+    isScheduledToday: boolean;
+    upcomingActivities: ActivitySummary[];
   };
   superAdminStats?: {
     superAdmin: number;
@@ -240,224 +245,217 @@ export function DashboardClient({ data }: DashboardClientProps) {
             </Link>
           </div>
 
-          {/* Core Content Grid (Mobile First: 1 col, md: 3 cols) */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Left 2 Cols: Upcoming / Today's Kegiatan & Attendance Telemetry */}
-            <div className="md:col-span-2 space-y-6">
-              {/* Card 1: Agenda Kegiatan Mendatang */}
-              <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs">
-                <CardHeader className="border-b border-slate-100 dark:border-slate-800 pb-3 flex flex-row items-center justify-between">
-                  <div>
-                    <CardTitle className="text-base font-display font-medium text-dongker-ink dark:text-slate-100 flex items-center gap-2">
-                      <HugeiconsIcon
-                        icon={Calendar03Icon}
-                        size={18}
-                        className="text-dongker-surface dark:text-blue-400"
-                      />
-                      Agenda Kegiatan Mendatang
-                    </CardTitle>
-                    <CardDescription className="text-xs font-mono text-slate-500 dark:text-slate-400">
-                      Daftar kegiatan UKM Robotik PNP yang perlu Anda ikuti.
-                    </CardDescription>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    asChild
-                    className="text-xs font-mono text-dongker-surface dark:text-blue-400"
+          {/* Vertical Stack Container (Semua Lebar Device) */}
+          {/* 1. Agenda Kegiatan Keanggotaan */}
+          <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs">
+            <CardHeader className="border-b border-slate-100 dark:border-slate-800 pb-3 flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base font-display font-medium text-dongker-ink dark:text-slate-100 flex items-center gap-2">
+                  <HugeiconsIcon
+                    icon={Calendar03Icon}
+                    size={18}
+                    className="text-dongker-surface dark:text-blue-400"
+                  />
+                  Agenda Kegiatan Keanggotaan
+                </CardTitle>
+                <CardDescription className="text-xs font-mono text-slate-500 dark:text-slate-400">
+                  Daftar kegiatan UKM Robotik PNP yang perlu Anda ikuti.
+                </CardDescription>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                asChild
+                className="text-xs font-mono text-dongker-surface dark:text-blue-400"
+              >
+                <Link href="/kegiatan">Semua &rarr;</Link>
+              </Button>
+            </CardHeader>
+            <CardContent className="p-4 space-y-3">
+              {data.anggotaStats.upcomingActivities.length === 0 ? (
+                <div className="p-6 text-center text-slate-400 dark:text-slate-500 font-mono text-xs">
+                  Belum ada agenda kegiatan mendatang.
+                </div>
+              ) : (
+                data.anggotaStats.upcomingActivities.map((act) => (
+                  <div
+                    key={act.id}
+                    className="border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 p-3.5 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"
                   >
-                    <Link href="/kegiatan">Semua &rarr;</Link>
-                  </Button>
-                </CardHeader>
-                <CardContent className="p-4 space-y-3">
-                  {data.anggotaStats.upcomingActivities.length === 0 ? (
-                    <div className="p-6 text-center text-slate-400 dark:text-slate-500 font-mono text-xs">
-                      Belum ada agenda kegiatan mendatang.
-                    </div>
-                  ) : (
-                    data.anggotaStats.upcomingActivities.map((act) => (
-                      <div
-                        key={act.id}
-                        className="border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 p-3.5 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"
-                      >
-                        <div className="space-y-1">
-                          <span className="font-display font-medium text-sm text-dongker-ink dark:text-slate-100 block">
-                            {act.title}
-                          </span>
-                          <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400 font-mono">
-                            <span className="flex items-center gap-1">
-                              <HugeiconsIcon icon={Clock01Icon} size={13} />
-                              {new Date(act.start_date).toLocaleDateString(
-                                "id-ID",
-                                {
-                                  weekday: "short",
-                                  day: "numeric",
-                                  month: "short",
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                },
-                              )}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <HugeiconsIcon icon={Location01Icon} size={13} />
-                              {act.location || "Lab Robotik"}
-                            </span>
-                          </div>
-                        </div>
-
-                        <Button
-                          size="sm"
-                          asChild
-                          className="bg-dongker-surface hover:bg-dongker-hover dark:bg-blue-600 text-white font-mono text-xs h-8 px-3 rounded-lg shrink-0"
-                        >
-                          <Link href={`/kegiatan/${act.id}/absensi`}>
-                            Absen Sekarang
-                          </Link>
-                        </Button>
+                    <div className="space-y-1">
+                      <span className="font-display font-medium text-sm text-dongker-ink dark:text-slate-100 block">
+                        {act.title}
+                      </span>
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400 font-mono">
+                        <span className="flex items-center gap-1">
+                          <HugeiconsIcon icon={Clock01Icon} size={13} />
+                          {new Date(act.start_date).toLocaleDateString(
+                            "id-ID",
+                            {
+                              weekday: "short",
+                              day: "numeric",
+                              month: "short",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            },
+                          )}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <HugeiconsIcon icon={Location01Icon} size={13} />
+                          {act.location || "Lab Robotik"}
+                        </span>
                       </div>
-                    ))
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Card 2: Attendance Telemetry Summary */}
-              <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-display font-medium text-dongker-ink dark:text-slate-100 flex items-center gap-2">
-                    <HugeiconsIcon
-                      icon={CheckmarkCircle01Icon}
-                      size={18}
-                      className="text-emerald-600 dark:text-emerald-400"
-                    />
-                    Statistik Kehadiran Anda
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-2">
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div className="border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-3 rounded-lg text-center border-l-4 border-l-emerald-500">
-                      <span className="font-mono text-[10px] uppercase text-slate-400 dark:text-slate-500 block">
-                        HADIR
-                      </span>
-                      <span className="font-display text-xl font-bold text-emerald-600 dark:text-emerald-400">
-                        {data.anggotaStats.hadirCount}
-                      </span>
                     </div>
 
-                    <div className="border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-3 rounded-lg text-center border-l-4 border-l-amber-500">
-                      <span className="font-mono text-[10px] uppercase text-slate-400 dark:text-slate-500 block">
-                        TELAT
-                      </span>
-                      <span className="font-display text-xl font-bold text-amber-600 dark:text-amber-400">
-                        {data.anggotaStats.telatCount}
-                      </span>
-                    </div>
-
-                    <div className="border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-3 rounded-lg text-center border-l-4 border-l-blue-500">
-                      <span className="font-mono text-[10px] uppercase text-slate-400 dark:text-slate-500 block">
-                        IZIN / SAKIT
-                      </span>
-                      <span className="font-display text-xl font-bold text-dongker-surface dark:text-blue-400">
-                        {data.anggotaStats.izinCount}
-                      </span>
-                    </div>
-
-                    <div className="border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-3 rounded-lg text-center border-l-4 border-l-red-500">
-                      <span className="font-mono text-[10px] uppercase text-slate-400 dark:text-slate-500 block">
-                        ALFA
-                      </span>
-                      <span className="font-display text-xl font-bold text-red-600 dark:text-red-400">
-                        {data.anggotaStats.alfaCount}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Right 1 Col: Piket Duty Status Card */}
-            <div className="space-y-6">
-              <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl border-l-4 border-l-pnp-orange shadow-xs">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-sm font-display font-medium text-dongker-ink dark:text-slate-100 flex items-center gap-2">
-                    <HugeiconsIcon
-                      icon={CleanIcon}
-                      size={18}
-                      className="text-pnp-orange"
-                    />
-                    Status Piket Lab Anda
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg border border-slate-200 dark:border-slate-700 font-mono text-xs space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-500 dark:text-slate-400">
-                        JADWAL HARI:
-                      </span>
-                      {data.anggotaStats.piketDays.length > 0 ? (
-                        <div className="flex gap-1 flex-wrap">
-                          {data.anggotaStats.piketDays.map((day) => (
-                            <Badge
-                              key={day}
-                              className="bg-orange-50 dark:bg-orange-950/60 text-orange-deep dark:text-orange-300 border border-orange-200 dark:border-orange-900/60 text-[10px] rounded-full px-2"
-                            >
-                              {day}
-                            </Badge>
-                          ))}
-                        </div>
-                      ) : (
-                        <Badge
-                          variant="outline"
-                          className="text-slate-400 text-[10px]"
-                        >
-                          TIDAK ADA
-                        </Badge>
-                      )}
-                    </div>
-
-                    <div className="flex justify-between items-center pt-2 border-t border-slate-200 dark:border-slate-700">
-                      <span className="text-slate-500 dark:text-slate-400">
-                        LAPORAN MASUK:
-                      </span>
-                      <span className="font-bold text-dongker-ink dark:text-slate-100 text-sm">
-                        {data.anggotaStats.piketLogsCount} Laporan
-                      </span>
-                    </div>
-                  </div>
-
-                  {data.anggotaStats.isScheduledToday ? (
-                    <div className="space-y-2">
-                      <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-lg text-xs text-amber-700 dark:text-amber-300 font-mono">
-                        ⚠️ <strong>PERHATIAN:</strong> Hari ini adalah jadwal
-                        piket Anda! Harap kirim laporan sebelum lab tutup.
-                      </div>
-                      <Button
-                        asChild
-                        className="w-full bg-pnp-orange hover:bg-orange-deep text-white font-mono text-xs rounded-lg py-2.5 shadow-xs uppercase"
-                      >
-                        <Link href="/piket">Kirim Laporan Piket</Link>
-                      </Button>
-                    </div>
-                  ) : (
                     <Button
-                      variant="outline"
+                      size="sm"
                       asChild
-                      className="w-full border-slate-200 dark:border-slate-700 font-mono text-xs rounded-lg"
+                      className="bg-dongker-surface hover:bg-dongker-hover dark:bg-blue-600 text-white font-mono text-xs h-8 px-3 rounded-lg shrink-0"
                     >
-                      <Link href="/piket">Lihat Modul Piket</Link>
+                      <Link href={`/kegiatan/${act.id}/absensi`}>
+                        Absen Sekarang
+                      </Link>
                     </Button>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
 
-          {/* Widget Kedisiplinan Organisasi */}
+          {/* Statistik Kehadiran Anda */}
+          <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-display font-medium text-dongker-ink dark:text-slate-100 flex items-center gap-2">
+                <HugeiconsIcon
+                  icon={CheckmarkCircle01Icon}
+                  size={18}
+                  className="text-emerald-600 dark:text-emerald-400"
+                />
+                Statistik Kehadiran Anda
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-3 rounded-lg text-center border-l-4 border-l-emerald-500">
+                  <span className="font-mono text-[10px] uppercase text-slate-400 dark:text-slate-500 block">
+                    HADIR
+                  </span>
+                  <span className="font-display text-xl font-bold text-emerald-600 dark:text-emerald-400">
+                    {data.anggotaStats.hadirCount}
+                  </span>
+                </div>
+
+                <div className="border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-3 rounded-lg text-center border-l-4 border-l-amber-500">
+                  <span className="font-mono text-[10px] uppercase text-slate-400 dark:text-slate-500 block">
+                    TELAT
+                  </span>
+                  <span className="font-display text-xl font-bold text-amber-600 dark:text-amber-400">
+                    {data.anggotaStats.telatCount}
+                  </span>
+                </div>
+
+                <div className="border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-3 rounded-lg text-center border-l-4 border-l-blue-500">
+                  <span className="font-mono text-[10px] uppercase text-slate-400 dark:text-slate-500 block">
+                    IZIN / SAKIT
+                  </span>
+                  <span className="font-display text-xl font-bold text-dongker-surface dark:text-blue-400">
+                    {data.anggotaStats.izinCount}
+                  </span>
+                </div>
+
+                <div className="border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-3 rounded-lg text-center border-l-4 border-l-red-500">
+                  <span className="font-mono text-[10px] uppercase text-slate-400 dark:text-slate-500 block">
+                    ALFA
+                  </span>
+                  <span className="font-display text-xl font-bold text-red-600 dark:text-red-400">
+                    {data.anggotaStats.alfaCount}
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 2. RINGKASAN KEDISIPLINAN ORGANISASI */}
           {discipline && (
             <DisciplineWidget
               netPoints={discipline.netPoints}
               activeSpLevel={discipline.activeSpLevel}
             />
           )}
+
+          {/* 3. Status Penugasan Piket Kebersihan Anda */}
+          <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl border-l-4 border-l-pnp-orange shadow-xs">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-display font-medium text-dongker-ink dark:text-slate-100 flex items-center gap-2">
+                <HugeiconsIcon
+                  icon={CleanIcon}
+                  size={18}
+                  className="text-pnp-orange"
+                />
+                Status Penugasan Piket Kebersihan Anda
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg border border-slate-200 dark:border-slate-700 font-mono text-xs space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500 dark:text-slate-400">
+                    JADWAL HARI:
+                  </span>
+                  {data.anggotaStats.piketDays.length > 0 ? (
+                    <div className="flex gap-1 flex-wrap">
+                      {data.anggotaStats.piketDays.map((day) => (
+                        <Badge
+                          key={day}
+                          className="bg-orange-50 dark:bg-orange-950/60 text-orange-deep dark:text-orange-300 border border-orange-200 dark:border-orange-900/60 text-[10px] rounded-full px-2"
+                        >
+                          {day}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <Badge
+                      variant="outline"
+                      className="text-slate-400 text-[10px]"
+                    >
+                      TIDAK ADA
+                    </Badge>
+                  )}
+                </div>
+
+                <div className="flex justify-between items-center pt-2 border-t border-slate-200 dark:border-slate-700">
+                  <span className="text-slate-500 dark:text-slate-400">
+                    LAPORAN MASUK:
+                  </span>
+                  <span className="font-bold text-dongker-ink dark:text-slate-100 text-sm">
+                    {data.anggotaStats.piketLogsCount} Laporan
+                  </span>
+                </div>
+              </div>
+
+              {data.anggotaStats.isScheduledToday ? (
+                <div className="space-y-2">
+                  <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-lg text-xs text-amber-700 dark:text-amber-300 font-mono">
+                    ⚠️ <strong>PERHATIAN:</strong> Hari ini adalah jadwal piket
+                    Anda! Harap kirim laporan sebelum lab tutup.
+                  </div>
+                  <Button
+                    asChild
+                    className="w-full bg-pnp-orange hover:bg-orange-deep text-white font-mono text-xs rounded-lg py-2.5 shadow-xs uppercase"
+                  >
+                    <Link href="/piket">Kirim Laporan Piket</Link>
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  asChild
+                  className="w-full border-slate-200 dark:border-slate-700 font-mono text-xs rounded-lg"
+                >
+                  <Link href="/piket">Lihat Modul Piket</Link>
+                </Button>
+              )}
+            </CardContent>
+          </Card>
         </div>
       )}
 
@@ -704,47 +702,319 @@ export function DashboardClient({ data }: DashboardClientProps) {
       {/* 4. ADMIN KOMDIS DASHBOARD VIEW                       */}
       {/* ==================================================== */}
       {profile.role === "admin-komdis" && data.adminKomdisStats && (
-        <div className="grid gap-6 grid-cols-1 sm:grid-cols-3">
-          <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs p-4 flex justify-between items-center">
-            <div>
-              <span className="text-[10px] font-mono uppercase text-slate-400 dark:text-slate-500 block">
-                DISPENSASI PENDING
-              </span>
-              <span className="font-display text-3xl font-bold text-red-600 dark:text-red-400 mt-1 block">
-                {data.adminKomdisStats.pendingLeaves}
-              </span>
-            </div>
-            <div className="p-3 bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 rounded-lg">
-              <HugeiconsIcon icon={Shield01Icon} size={24} />
-            </div>
-          </Card>
+        <div className="space-y-6">
+          {/* Quick Access Shortcuts Bar for Admin Komdis */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <Link href="/kegiatan" className="group">
+              <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 rounded-xl shadow-xs hover:border-dongker-surface dark:hover:border-blue-500 transition-all flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-dongker-surface dark:text-blue-400">
+                    <HugeiconsIcon icon={Calendar03Icon} size={20} />
+                  </div>
+                  <div>
+                    <span className="font-display font-medium text-sm text-dongker-ink dark:text-slate-100 block group-hover:text-dongker-surface dark:group-hover:text-blue-400 transition-colors">
+                      Kegiatan &amp; Presensi
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 uppercase">
+                      Kelola Agenda Anggota
+                    </span>
+                  </div>
+                </div>
+                <HugeiconsIcon
+                  icon={ArrowRight01Icon}
+                  size={18}
+                  className="text-slate-400 group-hover:translate-x-1 transition-transform"
+                />
+              </div>
+            </Link>
 
-          <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs p-4 flex justify-between items-center">
-            <div>
-              <span className="text-[10px] font-mono uppercase text-slate-400 dark:text-slate-500 block">
-                AGENDA HARI INI
-              </span>
-              <span className="font-display text-3xl font-bold text-dongker-ink dark:text-slate-100 mt-1 block">
-                {data.adminKomdisStats.todayActivitiesCount}
-              </span>
-            </div>
-            <div className="p-3 bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 rounded-lg">
-              <HugeiconsIcon icon={Calendar03Icon} size={24} />
-            </div>
-          </Card>
+            <Link href="/perizinan" className="group">
+              <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 rounded-xl shadow-xs hover:border-red-500 transition-all flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-lg bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400">
+                    <HugeiconsIcon icon={Shield01Icon} size={20} />
+                  </div>
+                  <div>
+                    <span className="font-display font-medium text-sm text-dongker-ink dark:text-slate-100 block group-hover:text-red-600 dark:group-hover:text-red-400 transition-colors">
+                      Perizinan &amp; Izin
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 uppercase">
+                      Verifikasi Dispensasi
+                    </span>
+                  </div>
+                </div>
+                <HugeiconsIcon
+                  icon={ArrowRight01Icon}
+                  size={18}
+                  className="text-slate-400 group-hover:translate-x-1 transition-transform"
+                />
+              </div>
+            </Link>
 
-          <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs p-4 flex justify-between items-center">
-            <div>
-              <span className="text-[10px] font-mono uppercase text-slate-400 dark:text-slate-500 block">
-                ABSENSI MASUK HARI INI
-              </span>
-              <span className="font-display text-3xl font-bold text-emerald-600 dark:text-emerald-400 mt-1 block">
-                {data.adminKomdisStats.todayAttendancesCount}
-              </span>
-            </div>
-            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-lg">
-              <HugeiconsIcon icon={CheckmarkCircle01Icon} size={24} />
-            </div>
+            <Link href="/kedisiplinan" className="group">
+              <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 rounded-xl shadow-xs hover:border-purple-500 transition-all flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400">
+                    <HugeiconsIcon icon={Task01Icon} size={20} />
+                  </div>
+                  <div>
+                    <span className="font-display font-medium text-sm text-dongker-ink dark:text-slate-100 block group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                      Kedisiplinan &amp; SP
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 uppercase">
+                      Poin &amp; Sanksi Anggota
+                    </span>
+                  </div>
+                </div>
+                <HugeiconsIcon
+                  icon={ArrowRight01Icon}
+                  size={18}
+                  className="text-slate-400 group-hover:translate-x-1 transition-transform"
+                />
+              </div>
+            </Link>
+
+            <Link href="/piket" className="group">
+              <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 rounded-xl shadow-xs hover:border-pnp-orange transition-all flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-lg bg-orange-wash dark:bg-orange-950/60 text-orange-deep dark:text-orange-300">
+                    <HugeiconsIcon icon={CleanIcon} size={20} />
+                  </div>
+                  <div>
+                    <span className="font-display font-medium text-sm text-dongker-ink dark:text-slate-100 block group-hover:text-pnp-orange transition-colors">
+                      Piket Saya
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 uppercase">
+                      Laporan Kebersihan
+                    </span>
+                  </div>
+                </div>
+                <HugeiconsIcon
+                  icon={ArrowRight01Icon}
+                  size={18}
+                  className="text-slate-400 group-hover:translate-x-1 transition-transform"
+                />
+              </div>
+            </Link>
+          </div>
+          {/* Telemetry Stat Cards Grid */}
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
+            <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs p-4 flex flex-row items-center justify-between border-l-4 border-l-red-500 min-h-[88px]">
+              <div className="flex flex-col justify-center min-w-0">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 block truncate">
+                  DISPENSASI PENDING
+                </span>
+                <span className="font-display text-3xl font-bold text-red-600 dark:text-red-400 mt-1 block leading-none">
+                  {data.adminKomdisStats.pendingLeaves}
+                </span>
+              </div>
+              <div className="p-3 bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 rounded-lg shrink-0 flex items-center justify-center">
+                <HugeiconsIcon icon={Shield01Icon} size={22} />
+              </div>
+            </Card>
+
+            <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs p-4 flex flex-row items-center justify-between border-l-4 border-l-amber-500 min-h-[88px]">
+              <div className="flex flex-col justify-center min-w-0">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 block truncate">
+                  AGENDA HARI INI
+                </span>
+                <span className="font-display text-3xl font-bold text-dongker-ink dark:text-slate-100 mt-1 block leading-none">
+                  {data.adminKomdisStats.todayActivitiesCount}
+                </span>
+              </div>
+              <div className="p-3 bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 rounded-lg shrink-0 flex items-center justify-center">
+                <HugeiconsIcon icon={Calendar03Icon} size={22} />
+              </div>
+            </Card>
+
+            <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs p-4 flex flex-row items-center justify-between border-l-4 border-l-emerald-500 min-h-[88px]">
+              <div className="flex flex-col justify-center min-w-0">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 block truncate">
+                  ABSENSI MASUK HARI INI
+                </span>
+                <span className="font-display text-3xl font-bold text-emerald-600 dark:text-emerald-400 mt-1 block leading-none">
+                  {data.adminKomdisStats.todayAttendancesCount}
+                </span>
+              </div>
+              <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 rounded-lg shrink-0 flex items-center justify-center">
+                <HugeiconsIcon icon={CheckmarkCircle01Icon} size={22} />
+              </div>
+            </Card>
+
+            <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs p-4 flex flex-row items-center justify-between border-l-4 border-l-purple-500 min-h-[88px]">
+              <div className="flex flex-col justify-center min-w-0">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 dark:text-slate-500 block truncate">
+                  SANKSI SP AKTIF
+                </span>
+                <span className="font-display text-3xl font-bold text-purple-600 dark:text-purple-400 mt-1 block leading-none">
+                  {data.adminKomdisStats.activeSanctionsCount}
+                </span>
+              </div>
+              <div className="p-3 bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 rounded-lg shrink-0 flex items-center justify-center">
+                <HugeiconsIcon icon={Task01Icon} size={22} />
+              </div>
+            </Card>
+          </div>
+          {/* Vertical Stack Container (Semua Lebar Device) */}
+          {/* 1. Agenda Kegiatan Keanggotaan */}
+          <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs">
+            <CardHeader className="border-b border-slate-100 dark:border-slate-800 pb-3 flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base font-display font-medium text-dongker-ink dark:text-slate-100 flex items-center gap-2">
+                  <HugeiconsIcon
+                    icon={Calendar03Icon}
+                    size={18}
+                    className="text-dongker-surface dark:text-blue-400"
+                  />
+                  Agenda Kegiatan Keanggotaan
+                </CardTitle>
+                <CardDescription className="text-xs font-mono text-slate-500 dark:text-slate-400">
+                  Pelatihan, Rapat, dan Workshop Anggota Aktif UKM Robotik.
+                </CardDescription>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                asChild
+                className="text-xs font-mono text-dongker-surface dark:text-blue-400"
+              >
+                <Link href="/kegiatan">Semua &rarr;</Link>
+              </Button>
+            </CardHeader>
+            <CardContent className="p-4 space-y-3">
+              {data.adminKomdisStats.upcomingActivities.length === 0 ? (
+                <div className="p-6 text-center text-slate-400 dark:text-slate-500 font-mono text-xs">
+                  Belum ada agenda kegiatan mendatang.
+                </div>
+              ) : (
+                data.adminKomdisStats.upcomingActivities.map((act) => (
+                  <div
+                    key={act.id}
+                    className="border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 p-3.5 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"
+                  >
+                    <div className="space-y-1">
+                      <span className="font-display font-medium text-sm text-dongker-ink dark:text-slate-100 block">
+                        {act.title}
+                      </span>
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400 font-mono">
+                        <span className="flex items-center gap-1">
+                          <HugeiconsIcon icon={Clock01Icon} size={13} />
+                          {new Date(act.start_date).toLocaleDateString(
+                            "id-ID",
+                            {
+                              weekday: "short",
+                              day: "numeric",
+                              month: "short",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            },
+                          )}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <HugeiconsIcon icon={Location01Icon} size={13} />
+                          {act.location || "Lab Robotik"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <Button
+                      size="sm"
+                      asChild
+                      className="bg-dongker-surface hover:bg-dongker-hover dark:bg-blue-600 text-white font-mono text-xs h-8 px-3 rounded-lg shrink-0"
+                    >
+                      <Link href={`/kegiatan/${act.id}/absensi`}>
+                        Detail Presensi
+                      </Link>
+                    </Button>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+          {/* 2. RINGKASAN KEDISIPLINAN ORGANISASI */}
+          {discipline && (
+            <DisciplineWidget
+              netPoints={discipline.netPoints}
+              activeSpLevel={discipline.activeSpLevel}
+            />
+          )}
+          {/* 3. Status Penugasan Piket Kebersihan Anda */}
+          <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl border-l-4 border-l-pnp-orange shadow-xs">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-display font-medium text-dongker-ink dark:text-slate-100 flex items-center gap-2">
+                <HugeiconsIcon
+                  icon={CleanIcon}
+                  size={18}
+                  className="text-pnp-orange"
+                />
+                Status Penugasan Piket Kebersihan Anda
+              </CardTitle>
+              <CardDescription className="text-xs font-mono text-slate-500 dark:text-slate-400">
+                Jadwal piket Sekre &amp; Workshop dilakukan berkala. Submit
+                laporan foto piket saat giliran Anda (diverifikasi oleh Admin
+                Kestari).
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-lg border border-slate-200 dark:border-slate-700 font-mono text-xs space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-500 dark:text-slate-400">
+                    JADWAL SHIFT HARI:
+                  </span>
+                  {data.adminKomdisStats.piketDays.length > 0 ? (
+                    <div className="flex gap-1 flex-wrap">
+                      {data.adminKomdisStats.piketDays.map((day) => (
+                        <Badge
+                          key={day}
+                          className="bg-orange-50 dark:bg-orange-950/60 text-orange-deep dark:text-orange-300 border border-orange-200 dark:border-orange-900/60 text-[10px] rounded-full px-2"
+                        >
+                          {day}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <Badge
+                      variant="outline"
+                      className="text-slate-400 text-[10px]"
+                    >
+                      TIDAK ADA JADWAL HARI INI
+                    </Badge>
+                  )}
+                </div>
+
+                <div className="flex justify-between items-center pt-2 border-t border-slate-200 dark:border-slate-700">
+                  <span className="text-slate-500 dark:text-slate-400">
+                    TOTAL LAPORAN DIKIRIM:
+                  </span>
+                  <span className="font-bold text-dongker-ink dark:text-slate-100 text-sm">
+                    {data.adminKomdisStats.piketLogsCount} Laporan
+                  </span>
+                </div>
+              </div>
+
+              {data.adminKomdisStats.isScheduledToday ? (
+                <div className="space-y-2">
+                  <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-lg text-xs text-amber-700 dark:text-amber-300 font-mono">
+                    ⚠️ <strong>PERHATIAN:</strong> Hari ini giliran piket Anda!
+                    Harap unggah foto bukti kebersihan sebelum ruangan ditutup.
+                  </div>
+                  <Button
+                    asChild
+                    className="w-full bg-pnp-orange hover:bg-orange-deep text-white font-mono text-xs rounded-lg py-2.5 shadow-xs uppercase"
+                  >
+                    <Link href="/piket">Submit Laporan Piket</Link>
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  asChild
+                  className="w-full border-slate-200 dark:border-slate-700 font-mono text-xs rounded-lg"
+                >
+                  <Link href="/piket">Lihat Modul Piket</Link>
+                </Button>
+              )}
+            </CardContent>
           </Card>
         </div>
       )}

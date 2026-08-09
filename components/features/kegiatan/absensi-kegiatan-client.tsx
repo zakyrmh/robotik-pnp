@@ -16,6 +16,8 @@ interface ActivityInfo {
   id: string;
   title: string;
   target_audience: "caang" | "anggota";
+  start_date: string;
+  end_date: string;
 }
 
 interface ProfileInfo {
@@ -36,6 +38,7 @@ export function AbsensiKegiatanClient({
   const [activity, setActivity] = useState<ActivityInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"scanner" | "my_qr">("scanner");
 
   useEffect(() => {
     if (authLoading) return;
@@ -60,7 +63,7 @@ export function AbsensiKegiatanClient({
             .single(),
           supabase
             .from("activities")
-            .select("id, title, target_audience")
+            .select("id, title, target_audience, start_date, end_date")
             .eq("id", activityId)
             .single(),
         ]);
@@ -125,15 +128,54 @@ export function AbsensiKegiatanClient({
       {/* Precision Blueprint Top Tricolor Line */}
       <div className="h-1 w-full bg-linear-to-r from-[#1e3a8a] via-[#3b82f6] to-[#f97316] rounded-full" />
 
+      {isKomdisAdmin && (
+        <div className="flex border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl p-1.5 gap-1.5 shadow-xs max-w-md mx-auto">
+          <button
+            onClick={() => setViewMode("scanner")}
+            className={`flex-1 py-2 px-3 rounded-lg font-mono text-xs uppercase tracking-wider font-semibold transition-colors cursor-pointer ${
+              viewMode === "scanner"
+                ? "bg-[#1e3a8a] text-[#ffffff] dark:bg-blue-600"
+                : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+            }`}
+          >
+            Pemindai QR
+          </button>
+          <button
+            onClick={() => setViewMode("my_qr")}
+            className={`flex-1 py-2 px-3 rounded-lg font-mono text-xs uppercase tracking-wider font-semibold transition-colors cursor-pointer ${
+              viewMode === "my_qr"
+                ? "bg-[#1e3a8a] text-[#ffffff] dark:bg-blue-600"
+                : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+            }`}
+          >
+            QR Code Saya
+          </button>
+        </div>
+      )}
+
       {isKomdisAdmin ? (
-        <KomdisScannerView
-          activityId={activityId}
-          activityTitle={activity.title}
-        />
+        viewMode === "scanner" ? (
+          <KomdisScannerView
+            activityId={activityId}
+            activityTitle={activity.title}
+          />
+        ) : (
+          <AnggotaQrView
+            activityId={activityId}
+            activityTitle={activity.title}
+            startDate={activity.start_date}
+            endDate={activity.end_date}
+            profileId={profile.id}
+            profileName={profile.full_name || "Admin Komdis"}
+            nim={profile.nim || "-"}
+          />
+        )
       ) : (
         <AnggotaQrView
           activityId={activityId}
           activityTitle={activity.title}
+          startDate={activity.start_date}
+          endDate={activity.end_date}
           profileId={profile.id}
           profileName={profile.full_name || "Anggota"}
           nim={profile.nim || "-"}

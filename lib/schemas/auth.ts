@@ -1,5 +1,12 @@
 import { z } from "zod";
 
+const captchaTokenSchema = z
+  .string()
+  .min(
+    1,
+    "Verifikasi keamanan wajib dilengkapi. Centang CAPTCHA terlebih dahulu.",
+  );
+
 export const registerSchema = z
   .object({
     email: z
@@ -8,7 +15,7 @@ export const registerSchema = z
       .email("Format email tidak valid."),
     password: z.string().min(8, "Password minimal 8 karakter."),
     confirmPassword: z.string().min(1, "Semua field harus diisi."),
-    captchaToken: z.string().optional(),
+    captchaToken: captchaTokenSchema,
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Password tidak cocok.",
@@ -23,7 +30,7 @@ export const loginSchema = z.object({
     .min(1, "Email dan password wajib diisi.")
     .email("Format email tidak valid."),
   password: z.string().min(1, "Email dan password wajib diisi."),
-  captchaToken: z.string().optional(),
+  captchaToken: captchaTokenSchema,
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;
@@ -34,7 +41,7 @@ export const forgotPasswordSchema = z.object({
     .string()
     .min(1, "NIM dan Email wajib diisi.")
     .email("Format email tidak valid."),
-  captchaToken: z.string().optional(),
+  captchaToken: captchaTokenSchema,
 });
 
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;

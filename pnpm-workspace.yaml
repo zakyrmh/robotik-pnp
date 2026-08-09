@@ -1,5 +1,5 @@
 allowBuilds:
-  '@sentry/cli': set this to true or false
+  '@sentry/cli': false
   esbuild: true
   msw: false
   sharp: false

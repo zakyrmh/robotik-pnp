@@ -1,22 +1,24 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
-import { Html5QrcodeScanner } from "html5-qrcode";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { Html5Qrcode } from "html5-qrcode";
+import { toast } from "sonner";
 import {
   scanAttendanceQRByAdmin,
   recordManualAttendance,
   batchMarkAlfa,
+  recordSelfAttendanceKomdis,
 } from "@/lib/actions/komdis";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   QrCodeIcon,
-  CheckmarkCircle01Icon,
-  Cancel01Icon,
   Loading03Icon,
   UserCheck01Icon,
   UserGroupIcon,
+  Camera01Icon,
+  RefreshIcon,
 } from "@hugeicons/core-free-icons";
 
 interface KomdisScannerViewProps {
@@ -28,10 +30,8 @@ export function KomdisScannerView({
   activityId,
   activityTitle,
 }: KomdisScannerViewProps) {
-  const [scanResult, setScanResult] = useState<{
-    type: "success" | "error";
-    message: string;
-  } | null>(null);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
 
   const [isManualOpen, setIsManualOpen] = useState(false);
   const [manualProfileId, setManualProfileId] = useState("");
@@ -40,46 +40,138 @@ export function KomdisScannerView({
   >("hadir");
   const [manualPoints, setManualPoints] = useState<number>(0);
   const [manualNotes, setManualNotes] = useState("");
+  const [retryTrigger, setRetryTrigger] = useState(0);
 
   const [isPending, startTransition] = useTransition();
 
-  // HTML5 QR Code Scanner setup
-  useEffect(() => {
-    const scanner = new Html5QrcodeScanner(
-      "reader",
-      { fps: 10, qrbox: { width: 250, height: 250 } },
-      /* verbose= */ false,
-    );
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const lastScannedRef = useRef<{ token: string; time: number } | null>(null);
 
-    scanner.render(
-      async (decodedText) => {
+  const stopCurrentScanner = async () => {
+    if (scannerRef.current) {
+      const instance = scannerRef.current;
+      scannerRef.current = null;
+      try {
+        if (instance.isScanning) {
+          await instance.stop();
+        }
+        await instance.clear();
+      } catch (e) {
+        console.warn("Failed to stop/clear scanner instance:", e);
+      }
+    }
+    const readerElement = document.getElementById("reader");
+    if (readerElement) {
+      readerElement.innerHTML = "";
+    }
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function initScanner() {
+      await stopCurrentScanner();
+      if (!isMounted) return;
+
+      const readerElement = document.getElementById("reader");
+      if (!readerElement) return;
+
+      const html5QrCode = new Html5Qrcode("reader");
+      scannerRef.current = html5QrCode;
+
+      const onScanSuccess = (decodedText: string) => {
+        const now = Date.now();
+        if (
+          lastScannedRef.current &&
+          lastScannedRef.current.token === decodedText &&
+          now - lastScannedRef.current.time < 4000
+        ) {
+          return;
+        }
+        lastScannedRef.current = { token: decodedText, time: now };
+
+        const toastId = toast.loading("Memproses QR Code...");
         startTransition(async () => {
-          const res = await scanAttendanceQRByAdmin(activityId, decodedText);
-          if (res.success) {
-            setScanResult({
-              type: "success",
-              message: res.message || "Presensi Berhasil Dicatat",
-            });
-          } else {
-            setScanResult({
-              type: "error",
-              message: res.message || "Gagal memproses QR Code",
-            });
+          try {
+            const res = await scanAttendanceQRByAdmin(activityId, decodedText);
+            toast.dismiss(toastId);
+            if (res.success) {
+              toast.success(res.message || "Presensi Berhasil Dicatat");
+            } else {
+              toast.error(res.message || "Gagal memproses QR Code");
+            }
+          } catch (err: unknown) {
+            toast.dismiss(toastId);
+            const msg = err instanceof Error ? err.message : String(err);
+            toast.error("Gagal memproses QR Code: " + msg);
           }
         });
-      },
-      () => {},
-    );
+      };
+
+      const config = {
+        fps: 10,
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0,
+      };
+
+      try {
+        try {
+          await html5QrCode.start(
+            { facingMode: "environment" },
+            config,
+            onScanSuccess,
+            () => {},
+          );
+        } catch {
+          await html5QrCode.start(
+            { facingMode: "user" },
+            config,
+            onScanSuccess,
+            () => {},
+          );
+        }
+        if (isMounted) {
+          setIsScanning(true);
+        }
+      } catch (err: unknown) {
+        if (!isMounted) return;
+        console.error("Camera scanner start error:", err);
+        const msg = err instanceof Error ? err.message : String(err);
+        if (
+          msg.includes("NotAllowedError") ||
+          msg.includes("Permission") ||
+          msg.includes("denied")
+        ) {
+          setCameraError(
+            "Izin kamera tidak diberikan. Harap periksa izin kamera di browser dan Pengaturan Privasi Kamera Windows.",
+          );
+        } else if (msg.includes("NotReadableError") || msg.includes("in use")) {
+          setCameraError(
+            "Kamera sedang digunakan oleh aplikasi lain (Zoom, Teams, atau Kamera Windows). Silakan tutup aplikasi tersebut lalu klik Coba Lagi.",
+          );
+        } else if (
+          msg.includes("NotFoundError") ||
+          msg.includes("requested device")
+        ) {
+          setCameraError("Kamera tidak terdeteksi pada perangkat ini.");
+        } else {
+          setCameraError(`Gagal mengaktifkan kamera (${msg}).`);
+        }
+      }
+    }
+
+    initScanner();
 
     return () => {
-      scanner.clear().catch(() => {});
+      isMounted = false;
+      stopCurrentScanner();
     };
-  }, [activityId]);
+  }, [activityId, retryTrigger]);
 
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!manualProfileId.trim()) {
-      alert("ID Profil / UUID Anggota wajib diisi.");
+      toast.error("ID Profil / UUID Anggota wajib diisi.");
       return;
     }
 
@@ -95,12 +187,9 @@ export function KomdisScannerView({
         setIsManualOpen(false);
         setManualProfileId("");
         setManualNotes("");
-        setScanResult({
-          type: "success",
-          message: "Presensi manual berhasil dicatat.",
-        });
+        toast.success("Presensi manual berhasil dicatat.");
       } catch (err: unknown) {
-        alert(
+        toast.error(
           err instanceof Error ? err.message : "Gagal mencatat presensi manual",
         );
       }
@@ -119,13 +208,31 @@ export function KomdisScannerView({
     startTransition(async () => {
       try {
         const res = await batchMarkAlfa(activityId);
-        setScanResult({
-          type: "success",
-          message: `Berhasil memproses Penandaan Alfa Massal (${res.count} anggota).`,
-        });
+        toast.success(
+          `Berhasil memproses Penandaan Alfa Massal (${res.count} anggota).`,
+        );
       } catch (err: unknown) {
-        alert(
+        toast.error(
           err instanceof Error ? err.message : "Gagal memproses alfa massal",
+        );
+      }
+    });
+  };
+
+  const handleSelfAttendance = () => {
+    startTransition(async () => {
+      try {
+        const res = await recordSelfAttendanceKomdis(activityId);
+        if (res.success) {
+          toast.success(res.message);
+        } else {
+          toast.error(res.message);
+        }
+      } catch (err: unknown) {
+        toast.error(
+          err instanceof Error
+            ? err.message
+            : "Gagal mencatat presensi mandiri",
         );
       }
     });
@@ -146,54 +253,60 @@ export function KomdisScannerView({
         </CardHeader>
       </Card>
 
-      {/* Live Feedback Toast */}
-      {scanResult && (
-        <div
-          className={`p-3.5 sm:p-4 border rounded-xl font-mono text-xs uppercase tracking-wider flex items-center justify-between shadow-xs ${
-            scanResult.type === "success"
-              ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-900/60"
-              : "bg-red-50 dark:bg-red-950/40 text-red-800 dark:text-red-300 border-red-200 dark:border-red-900/60"
-          }`}
-        >
-          <div className="flex items-center gap-2.5">
-            <HugeiconsIcon
-              icon={
-                scanResult.type === "success"
-                  ? CheckmarkCircle01Icon
-                  : Cancel01Icon
-              }
-              size={20}
-            />
-            <span>{scanResult.message}</span>
-          </div>
-          <button
-            onClick={() => setScanResult(null)}
-            className="text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 cursor-pointer font-bold"
-          >
-            [ X ]
-          </button>
-        </div>
-      )}
-
       {/* Camera Scanner Box */}
       <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 sm:p-4 shadow-xs">
-        <div className="text-center mb-3 font-mono text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-widest font-semibold">
-          ARAHKAN KAMERA HP KE DYNAMIC QR CODE PESERTA
+        <div className="text-center mb-3 font-mono text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 uppercase tracking-widest font-semibold flex items-center justify-center gap-1.5">
+          <HugeiconsIcon icon={Camera01Icon} size={14} />
+          <span>
+            {isScanning
+              ? "KAMERA AKTIF & PROSES PEMINDAIAN"
+              : "ARAHKAN KAMERA HP KE DYNAMIC QR CODE PESERTA"}
+          </span>
         </div>
+
+        {cameraError ? (
+          <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-lg p-4 text-center space-y-3 font-mono text-xs text-amber-900 dark:text-amber-200">
+            <p className="leading-relaxed">{cameraError}</p>
+            <Button
+              type="button"
+              onClick={() => {
+                setCameraError(null);
+                setRetryTrigger((c) => c + 1);
+              }}
+              className="bg-amber-600 hover:bg-amber-700 text-white font-mono text-xs uppercase tracking-wider rounded-lg cursor-pointer py-2 px-4 shadow-xs"
+            >
+              <HugeiconsIcon icon={RefreshIcon} size={14} className="mr-1.5" />
+              COBA LAGI / REFRESH KAMERA
+            </Button>
+          </div>
+        ) : null}
+
         <div
           id="reader"
-          className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 overflow-hidden rounded-lg font-mono text-slate-900 dark:text-slate-100"
+          className={`w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 overflow-hidden rounded-lg font-mono text-slate-900 dark:text-slate-100 ${
+            cameraError ? "hidden" : "block"
+          }`}
         />
       </Card>
 
       {/* Action Controls - Mobile First */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+        <Button
+          type="button"
+          disabled={isPending}
+          onClick={handleSelfAttendance}
+          className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-medium text-xs rounded-lg cursor-pointer py-3 shadow-xs"
+        >
+          <HugeiconsIcon icon={UserCheck01Icon} size={16} className="mr-1.5" />
+          PRESENSI DIRI
+        </Button>
+
         <Button
           type="button"
           onClick={() => setIsManualOpen(true)}
           className="bg-[#1e3a8a] hover:bg-[#1e40af] dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-medium text-xs rounded-lg cursor-pointer py-3 shadow-xs"
         >
-          <HugeiconsIcon icon={UserCheck01Icon} size={16} className="mr-2" />
+          <HugeiconsIcon icon={UserCheck01Icon} size={16} className="mr-1.5" />
           OVERRIDE MANUAL
         </Button>
 
@@ -203,8 +316,8 @@ export function KomdisScannerView({
           onClick={handleBatchAlfa}
           className="bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-500 text-white font-medium text-xs rounded-lg cursor-pointer py-3 shadow-xs"
         >
-          <HugeiconsIcon icon={UserGroupIcon} size={16} className="mr-2" />
-          BATCH MARK ALFA
+          <HugeiconsIcon icon={UserGroupIcon} size={16} className="mr-1.5" />
+          BATCH ALFA
         </Button>
       </div>
 

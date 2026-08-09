@@ -40,9 +40,9 @@ const allMenuItems = {
     href: "/kegiatan",
     icon: Calendar03Icon,
   },
-  absensi: {
-    title: "Absensi",
-    href: "/absensi",
+  presensi: {
+    title: "Presensi",
+    href: "/presensi",
     icon: CalendarCheckIn01Icon,
   },
   perizinan: {
@@ -81,7 +81,7 @@ const allMenuItems = {
     icon: UserGroupIcon,
   },
   kegiatanAbsensiCaang: {
-    title: "Kegiatan & Absensi",
+    title: "Kegiatan & Presensi",
     href: "/kegiatan-absensi-caang",
     icon: CalendarAdd01Icon,
   },
@@ -114,11 +114,11 @@ const allMenuItems = {
 
 // Define which roles have access to which menu items
 const roleMenuKeys: Record<string, (keyof typeof allMenuItems)[]> = {
-  caang: ["dashboard", "kegiatan", "absensi", "tugas", "magang"],
+  caang: ["dashboard", "kegiatan", "presensi", "tugas", "magang"],
   anggota: [
     "dashboard",
     "kegiatan",
-    "absensi",
+    "presensi",
     "perizinan",
     "kedisiplinan",
     "piket",
@@ -126,7 +126,7 @@ const roleMenuKeys: Record<string, (keyof typeof allMenuItems)[]> = {
   "admin-komdis": [
     "dashboard",
     "kegiatan",
-    "absensi",
+    "presensi",
     "perizinan",
     "kedisiplinan",
     "piket",
@@ -139,7 +139,7 @@ const roleMenuKeys: Record<string, (keyof typeof allMenuItems)[]> = {
     "manajemenKelompokCaang",
     "manajemenMagang",
     "kegiatan",
-    "absensi",
+    "presensi",
     "perizinan",
     "kedisiplinan",
     "piket",
@@ -152,7 +152,7 @@ const roleMenuKeys: Record<string, (keyof typeof allMenuItems)[]> = {
     "manajemenKelompokCaang",
     "manajemenMagang",
     "kegiatan",
-    "absensi",
+    "presensi",
     "perizinan",
     "kedisiplinan",
     "piket",
@@ -200,7 +200,7 @@ export function Sidebar() {
       keys: [
         "dashboard",
         "kegiatan",
-        "absensi",
+        "presensi",
         "tugas",
         "magang",
         "piket",

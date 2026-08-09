@@ -15,6 +15,8 @@ import {
 interface AnggotaQrViewProps {
   activityId: string;
   activityTitle: string;
+  startDate?: string;
+  endDate?: string;
   profileId: string;
   profileName: string;
   nim: string;
@@ -23,6 +25,8 @@ interface AnggotaQrViewProps {
 export function AnggotaQrView({
   activityId,
   activityTitle,
+  startDate,
+  endDate,
   profileId,
   profileName,
   nim,
@@ -37,6 +41,21 @@ export function AnggotaQrView({
   const [countdown, setCountdown] = useState(300); // 5 menit TTL
   const [isLeaveFormOpen, setIsLeaveFormOpen] = useState(false);
 
+  const now = new Date();
+  const start = startDate ? new Date(startDate) : null;
+  const end = endDate ? new Date(endDate) : null;
+
+  // Window QR: 2 jam sebelum start s/d tepat waktu selesai (end_date)
+  const isQrWindowActive =
+    !start || !end
+      ? true
+      : now >= new Date(start.getTime() - 2 * 60 * 60 * 1000) && now <= end;
+
+  // Grace Period Izin/Sakit: 24 jam setelah end
+  const isLeaveGracePeriodActive = !end
+    ? true
+    : now <= new Date(end.getTime() + 24 * 60 * 60 * 1000);
+
   const generateNewQR = useCallback(() => {
     const token = encryptToken({
       profile_id: profileId,
@@ -48,6 +67,7 @@ export function AnggotaQrView({
   }, [activityId, profileId]);
 
   useEffect(() => {
+    if (!isQrWindowActive) return;
     const interval = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
@@ -59,7 +79,7 @@ export function AnggotaQrView({
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [generateNewQR]);
+  }, [generateNewQR, isQrWindowActive]);
 
   const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(
     qrToken,
@@ -86,61 +106,89 @@ export function AnggotaQrView({
         </CardHeader>
       </Card>
 
-      {/* QR Code Container */}
-      <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-6 text-center shadow-xs space-y-4">
-        <div className="relative w-56 h-56 sm:w-64 sm:h-64 mx-auto bg-white p-3 border-2 border-[#1e3a8a] dark:border-blue-500 rounded-lg shadow-sm">
-          {qrToken ? (
-            <Image
-              src={qrImageUrl}
-              alt="Dynamic QR Code"
-              fill
-              sizes="250px"
-              className="object-contain p-2"
-              priority
-            />
-          ) : (
-            <div className="h-full flex items-center justify-center font-mono text-xs text-slate-400">
-              MEMUAT QR CODE...
-            </div>
-          )}
-        </div>
-
-        {/* Countdown Indicator */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-center gap-2 font-mono text-xs uppercase tracking-wider text-[#1e3a8a] dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 py-2.5 px-4 rounded-lg border border-blue-200 dark:border-blue-900/60 font-semibold">
-            <HugeiconsIcon
-              icon={RefreshIcon}
-              size={14}
-              className="animate-spin"
-            />
-            <span>KEDALUWARSA DALAM: {countdown} DETIK</span>
+      {/* QR Code Container or Closed Alert */}
+      {isQrWindowActive ? (
+        <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-6 text-center shadow-xs space-y-4">
+          <div className="relative w-56 h-56 sm:w-64 sm:h-64 mx-auto bg-white p-3 border-2 border-[#1e3a8a] dark:border-blue-500 rounded-lg shadow-sm">
+            {qrToken ? (
+              <Image
+                src={qrImageUrl}
+                alt="Dynamic QR Code"
+                fill
+                sizes="250px"
+                className="object-contain p-2"
+                priority
+              />
+            ) : (
+              <div className="h-full flex items-center justify-center font-mono text-xs text-slate-400">
+                MEMUAT QR CODE...
+              </div>
+            )}
           </div>
-          <p className="font-mono text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest">
-            Tunjukkan QR Code ini kepada panitia Komdis di lokasi
-          </p>
-        </div>
 
-        <Button
-          type="button"
-          onClick={generateNewQR}
-          className="w-full bg-[#1e3a8a] hover:bg-[#1e40af] dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-mono text-xs uppercase tracking-wider rounded-lg cursor-pointer py-2.5 shadow-xs"
-        >
-          REFRESH QR CODE SEKARANG
-        </Button>
-      </Card>
+          {/* Countdown Indicator */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-center gap-2 font-mono text-xs uppercase tracking-wider text-[#1e3a8a] dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 py-2.5 px-4 rounded-lg border border-blue-200 dark:border-blue-900/60 font-semibold">
+              <HugeiconsIcon
+                icon={RefreshIcon}
+                size={14}
+                className="animate-spin"
+              />
+              <span>KEDALUWARSA DALAM: {countdown} DETIK</span>
+            </div>
+            <p className="font-mono text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+              Tunjukkan QR Code ini kepada panitia Komdis di lokasi
+            </p>
+          </div>
+
+          <Button
+            type="button"
+            onClick={generateNewQR}
+            className="w-full bg-[#1e3a8a] hover:bg-[#1e40af] dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-mono text-xs uppercase tracking-wider rounded-lg cursor-pointer py-2.5 shadow-xs"
+          >
+            REFRESH QR CODE SEKARANG
+          </Button>
+        </Card>
+      ) : (
+        <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 text-center shadow-xs space-y-3">
+          <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 mx-auto flex items-center justify-center font-mono font-bold text-lg">
+            !
+          </div>
+          <div className="font-mono text-xs uppercase tracking-wider text-amber-700 dark:text-amber-300 font-semibold">
+            PRESENSI QR DITUTUP
+          </div>
+          <p className="text-xs text-slate-600 dark:text-slate-400 font-sans leading-relaxed">
+            Sesi pemindaian QR Code untuk kegiatan ini telah berakhir pada{" "}
+            <strong className="font-mono">
+              {end ? end.toLocaleString("id-ID") : "kegiatan usai"}
+            </strong>
+            .
+          </p>
+        </Card>
+      )}
 
       {/* Leave Request Alternative */}
-      <div className="text-center pt-2">
-        <button
-          onClick={() => setIsLeaveFormOpen(!isLeaveFormOpen)}
-          className="font-mono text-xs uppercase tracking-widest text-[#f97316] dark:text-orange-400 hover:text-[#ea580c] dark:hover:text-orange-300 transition-colors cursor-pointer font-semibold"
-        >
-          AJUKAN SURAT IZIN ATAU SAKIT
-        </button>
-      </div>
+      {isLeaveGracePeriodActive ? (
+        <div className="text-center pt-2 space-y-1">
+          <button
+            onClick={() => setIsLeaveFormOpen(!isLeaveFormOpen)}
+            className="font-mono text-xs uppercase tracking-widest text-[#f97316] dark:text-orange-400 hover:text-[#ea580c] dark:hover:text-orange-300 transition-colors cursor-pointer font-semibold"
+          >
+            AJUKAN SURAT IZIN ATAU SAKIT
+          </button>
+          <p className="font-mono text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+            Tenggat izin/sakit: Maksimal 24 jam setelah kegiatan selesai
+          </p>
+        </div>
+      ) : (
+        <div className="text-center pt-2 font-mono text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500">
+          Batas pengajuan izin/sakit (24 jam setelah kegiatan selesai) telah
+          berakhir.
+        </div>
+      )}
 
       {/* Form Pengajuan Surat Izin / Sakit */}
-      {isLeaveFormOpen && (
+      {isLeaveGracePeriodActive && isLeaveFormOpen && (
         <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-6 shadow-xs space-y-4">
           <div className="border-b border-slate-200 dark:border-slate-800 pb-2 font-mono text-xs text-[#f97316] dark:text-orange-400 uppercase tracking-widest font-semibold flex items-center gap-2">
             <HugeiconsIcon icon={File01Icon} size={16} />

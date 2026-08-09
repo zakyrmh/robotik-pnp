@@ -1,69 +1,83 @@
-import React from 'react'
+import React from "react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Award01Icon } from "@hugeicons/core-free-icons";
 
 export interface Milestone {
-  id: string
-  title: string
-  level: string
-  year: number
-  description: string | null
+  id: string;
+  title: string;
+  level: string;
+  year: number;
+  description: string | null;
 }
 
 export interface BentoMilestonesProps {
-  milestones: Milestone[]
+  milestones: Milestone[];
 }
 
-export const BentoMilestones: React.FC<BentoMilestonesProps> = ({ milestones }) => {
+export const BentoMilestones: React.FC<BentoMilestonesProps> = ({
+  milestones,
+}) => {
   if (!milestones || milestones.length === 0) {
-    return null; // Don't render section if no achievements
+    return null;
   }
 
   return (
-    <section className="bg-[#0a0f24] text-white py-20 border-t border-[#222b54]">
-      <div className="max-w-[1320px] mx-auto px-4 lg:px-8">
-        <h2 className="font-sans text-[40px] font-bold mb-10 tracking-[-0.5px]">
-          Rekam Jejak & Prestasi
-        </h2>
+    <section className="bg-background text-foreground py-16 sm:py-20 border-b border-border">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center gap-3 mb-10">
+          <div className="p-2 rounded-md bg-orange-wash dark:bg-pnp-orange/15 border border-pnp-orange/30 text-pnp-orange">
+            <HugeiconsIcon icon={Award01Icon} size={20} />
+          </div>
+          <h2 className="font-display text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-foreground uppercase">
+            Rekam Jejak &amp; Prestasi
+          </h2>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {milestones.map((milestone, index) => {
-            // Make the first item larger if desired (bento style)
             const isFeatured = index === 0 && milestones.length > 2;
 
             return (
               <div
                 key={milestone.id}
-                className={`bg-[#131a3a] border border-[#222b54] rounded-sm p-6 lg:p-8 flex flex-col justify-between relative overflow-hidden group
-                  ${isFeatured ? 'md:col-span-2 md:row-span-2' : ''}
-                `}
+                className={`bg-card border border-border rounded-xl p-6 lg:p-8 flex flex-col justify-between relative overflow-hidden group hover:border-pnp-orange/60 hover:shadow-blueprint transition-all duration-300 ${
+                  isFeatured ? "md:col-span-2 md:row-span-2" : ""
+                }`}
               >
-                {/* Decorative gradient reflecting medal vibes (subtle) */}
-                <div className="absolute -right-20 -top-20 w-40 h-40 bg-gradient-to-br from-[#0066b1]/10 to-[#e22718]/5 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700" />
+                {/* Background Glow */}
+                <div className="absolute -right-20 -top-20 size-40 bg-gradient-to-br from-pnp-orange/10 via-dongker-surface/5 to-transparent rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700 pointer-events-none" />
 
                 <div className="relative z-10">
                   <div className="flex justify-between items-start mb-6">
-                    <span className="font-mono text-[12px] uppercase tracking-[1.5px] font-medium text-[#0066b1] bg-[#0066b1]/10 px-2 py-1 border border-[#0066b1]/30 rounded-sm">
+                    <span className="font-mono text-micro uppercase tracking-[1.5px] font-semibold text-orange-deep dark:text-pnp-orange bg-orange-wash dark:bg-pnp-orange/15 px-3 py-1 border border-pnp-orange/30 rounded-full shadow-xs">
                       {milestone.level}
                     </span>
-                    <span className="font-mono text-[28px] font-bold text-gray-500 opacity-50">
+                    <span className="font-mono text-2xl sm:text-3xl font-bold text-muted-foreground/30 group-hover:text-pnp-orange/40 transition-colors">
                       {milestone.year}
                     </span>
                   </div>
 
-                  <h3 className={`font-sans font-bold text-white mb-4 ${isFeatured ? 'text-[28px] lg:text-[40px]' : 'text-[20px]'}`}>
+                  <h3
+                    className={`font-display font-bold text-foreground group-hover:text-pnp-orange transition-colors mb-3 ${
+                      isFeatured
+                        ? "text-2xl sm:text-3xl lg:text-4xl"
+                        : "text-lg sm:text-xl"
+                    }`}
+                  >
                     {milestone.title}
                   </h3>
 
                   {milestone.description && (
-                    <p className="font-sans text-[16px] font-light text-gray-400">
+                    <p className="font-sans text-xs sm:text-sm font-normal text-muted-foreground leading-relaxed">
                       {milestone.description}
                     </p>
                   )}
                 </div>
               </div>
-            )
+            );
           })}
         </div>
       </div>
     </section>
-  )
-}
+  );
+};
