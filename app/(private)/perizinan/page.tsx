@@ -34,7 +34,7 @@ export default async function PerizinanPage() {
     redirect("/dashboard");
   }
 
-  // Fetch data perizinan
+  // Fetch data perizinan (hanya untuk anggota dan admin, mengabaikan caang & alumni)
   const { data: rawRequests } = await supabase
     .from("attendances")
     .select(
@@ -49,9 +49,10 @@ export default async function PerizinanPage() {
       points_awarded,
       rejection_reason,
       created_at,
-      profiles:profile_id (
+      profiles!inner (
         full_name,
-        nim
+        nim,
+        role
       ),
       activities:activity_id (
         title,
@@ -60,6 +61,8 @@ export default async function PerizinanPage() {
     `,
     )
     .in("status", ["izin", "sakit"])
+    .neq("profiles.role", "caang")
+    .neq("profiles.role", "alumni")
     .order("created_at", { ascending: false });
 
   // Map to strongly typed LeaveRequestItem array
