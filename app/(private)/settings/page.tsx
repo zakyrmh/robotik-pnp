@@ -4,7 +4,8 @@ import { SettingsClient } from "@/components/settings/SettingsClient";
 
 export const metadata = {
   title: "Pengaturan Akun | UKM Robotik PNP",
-  description: "Kelola profil, keamanan kata sandi, preferensi notifikasi, dan status keanggotaan UKM Robotik Politeknik Negeri Padang.",
+  description:
+    "Kelola profil, keamanan kata sandi, preferensi notifikasi, dan status keanggotaan UKM Robotik Politeknik Negeri Padang.",
 };
 
 export default async function SettingsPage() {
@@ -14,5 +15,11 @@ export default async function SettingsPage() {
     redirect("/login");
   }
 
-  return <SettingsClient settingsData={data as any} />;
+  return (
+    <SettingsClient
+      settingsData={
+        data as Parameters<typeof SettingsClient>[0]["settingsData"]
+      }
+    />
+  );
 }

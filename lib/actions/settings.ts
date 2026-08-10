@@ -9,7 +9,6 @@ import {
   updateEmailSchema,
   changePasswordSchema,
   deleteAccountSchema,
-  updateNotificationPreferencesSchema,
   type UpdateProfileInput,
   type UpdateEmailInput,
   type ChangePasswordInput,
@@ -94,7 +93,7 @@ export async function getSettingsDataAction() {
       const { data: histories } = await supabase
         .from("organizational_histories")
         .select(
-          "id, role_name, sub_section, departments(name), membership_periods(period_name)"
+          "id, role_name, sub_section, departments(name), membership_periods(period_name)",
         )
         .eq("nim_member", profile.nim);
       orgHistories = histories || [];
@@ -120,7 +119,7 @@ export async function getSettingsDataAction() {
  * Updates personal profile & registration biodata.
  */
 export async function updateProfileAction(
-  rawInput: UpdateProfileInput
+  rawInput: UpdateProfileInput,
 ): Promise<ServerActionResponse> {
   const supabase = await createClient();
 
@@ -218,7 +217,7 @@ export async function updateProfileAction(
  * Updates account email address with password confirmation.
  */
 export async function updateEmailAction(
-  rawInput: UpdateEmailInput
+  rawInput: UpdateEmailInput,
 ): Promise<ServerActionResponse> {
   const supabase = await createClient();
 
@@ -256,7 +255,7 @@ export async function updateEmailAction(
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
   const { error: updateErr } = await supabase.auth.updateUser(
     { email: validation.data.newEmail },
-    { emailRedirectTo: siteUrl ? `${siteUrl}/callback` : undefined }
+    { emailRedirectTo: siteUrl ? `${siteUrl}/callback` : undefined },
   );
 
   if (updateErr) {
@@ -266,7 +265,8 @@ export async function updateEmailAction(
   revalidatePath("/settings");
   return {
     success: true,
-    message: "Tautan konfirmasi perubahan email telah dikirim ke email baru Anda.",
+    message:
+      "Tautan konfirmasi perubahan email telah dikirim ke email baru Anda.",
   };
 }
 
@@ -274,7 +274,7 @@ export async function updateEmailAction(
  * Changes account password with current password verification.
  */
 export async function changePasswordAction(
-  rawInput: ChangePasswordInput
+  rawInput: ChangePasswordInput,
 ): Promise<ServerActionResponse> {
   const supabase = await createClient();
 
@@ -325,7 +325,7 @@ export async function changePasswordAction(
  * Requests soft deletion of account (Danger Zone / UU PDP & ISMS Compliance).
  */
 export async function requestAccountDeletionAction(
-  rawInput: DeleteAccountInput
+  rawInput: DeleteAccountInput,
 ): Promise<ServerActionResponse> {
   const clientIp = await getClientIp();
   const supabase = await createClient();
@@ -418,22 +418,28 @@ export async function exportUserDataAction(): Promise<ServerActionResponse> {
     return { success: false, message: "Anda harus login terlebih dahulu." };
   }
 
-  const [profileRes, regRes, attendanceRes, taskRes, piketRes, notificationRes] =
-    await Promise.all([
-      supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
-      supabase
-        .from("registrations")
-        .select("*")
-        .eq("profile_id", user.id)
-        .maybeSingle(),
-      supabase.from("attendances").select("*").eq("profile_id", user.id),
-      supabase.from("task_submissions").select("*").eq("profile_id", user.id),
-      supabase.from("piket_logs").select("*").eq("reported_by", user.id),
-      supabase
-        .from("in_app_notifications")
-        .select("*")
-        .eq("recipient_id", user.id),
-    ]);
+  const [
+    profileRes,
+    regRes,
+    attendanceRes,
+    taskRes,
+    piketRes,
+    notificationRes,
+  ] = await Promise.all([
+    supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+    supabase
+      .from("registrations")
+      .select("*")
+      .eq("profile_id", user.id)
+      .maybeSingle(),
+    supabase.from("attendances").select("*").eq("profile_id", user.id),
+    supabase.from("task_submissions").select("*").eq("profile_id", user.id),
+    supabase.from("piket_logs").select("*").eq("reported_by", user.id),
+    supabase
+      .from("in_app_notifications")
+      .select("*")
+      .eq("recipient_id", user.id),
+  ]);
 
   const exportPayload = {
     exported_at: new Date().toISOString(),

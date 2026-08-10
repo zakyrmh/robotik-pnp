@@ -50,7 +50,7 @@ interface EditProfileModalProps {
     id: string;
     name: string;
     degree: string;
-    majors?: { name: string } | null;
+    majors?: { name: string } | Array<{ name: string }> | null;
   }>;
 }
 
@@ -82,7 +82,7 @@ export function EditProfileModal({
 
   const handleChange = (
     field: keyof UpdateProfileInput,
-    value: string | number | null
+    value: string | number | null,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
@@ -117,7 +117,8 @@ export function EditProfileModal({
             </DialogTitle>
           </div>
           <DialogDescription className="text-xs text-slate-500 dark:text-slate-400">
-            Perbarui data diri, kontak, dan informasi pendaftaran Anda secara lengkap.
+            Perbarui data diri, kontak, dan informasi pendaftaran Anda secara
+            lengkap.
           </DialogDescription>
         </DialogHeader>
 
@@ -157,7 +158,9 @@ export function EditProfileModal({
               </Label>
               <Select
                 value={formData.gender || "L"}
-                onValueChange={(val) => handleChange("gender", val as "L" | "P")}
+                onValueChange={(val) =>
+                  handleChange("gender", val as "L" | "P")
+                }
               >
                 <SelectTrigger className="h-9 text-xs bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700">
                   <SelectValue placeholder="Pilih Jenis Kelamin" />
@@ -221,7 +224,10 @@ export function EditProfileModal({
                 <SelectContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 max-h-48 overflow-y-auto">
                   {studyPrograms.map((sp) => (
                     <SelectItem key={sp.id} value={sp.id}>
-                      {sp.degree} {sp.name} {sp.majors?.name ? `(${sp.majors.name})` : ""}
+                      {sp.degree} {sp.name}{" "}
+                      {sp.majors
+                        ? `(${Array.isArray(sp.majors) ? sp.majors[0]?.name : sp.majors.name})`
+                        : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -237,7 +243,9 @@ export function EditProfileModal({
               <Input
                 type="number"
                 value={formData.entry_year || new Date().getFullYear()}
-                onChange={(e) => handleChange("entry_year", Number(e.target.value))}
+                onChange={(e) =>
+                  handleChange("entry_year", Number(e.target.value))
+                }
                 className="h-9 text-xs bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"
               />
             </div>
@@ -287,7 +295,9 @@ export function EditProfileModal({
               </Label>
               <Textarea
                 value={formData.domicile_address || ""}
-                onChange={(e) => handleChange("domicile_address", e.target.value)}
+                onChange={(e) =>
+                  handleChange("domicile_address", e.target.value)
+                }
                 placeholder="Alamat kos / tempat tinggal sekarang"
                 rows={2}
                 className="text-xs bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 resize-none"

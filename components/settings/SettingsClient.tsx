@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { toast } from "sonner";
 import {
   User,
@@ -14,7 +15,6 @@ import {
   KeyRound,
   Trash2,
   Download,
-  ExternalLink,
   ChevronRight,
   Sparkles,
   Phone,
@@ -79,7 +79,7 @@ interface SettingsClientProps {
       id: string;
       name: string;
       degree: string;
-      majors?: { name: string } | null;
+      majors?: { name: string } | Array<{ name: string }> | null;
     }>;
     roleData: {
       caangGroup?: {
@@ -143,10 +143,11 @@ export function SettingsClient({ settingsData }: SettingsClientProps) {
         <div className="flex items-center gap-4 relative z-10">
           <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-slate-800 border-2 border-orange-500/80 overflow-hidden flex items-center justify-center shrink-0 shadow-md">
             {profile.avatar_url ? (
-              // eslint-disable-next-ok
-              <img
+              <Image
                 src={profile.avatar_url}
                 alt={profile.full_name || "Avatar"}
+                width={64}
+                height={64}
                 className="w-full h-full object-cover"
               />
             ) : (

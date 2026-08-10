@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { BadgeCheck, Building2, User, QrCode } from "lucide-react";
 import {
   Dialog,
@@ -89,10 +90,11 @@ export function MembershipDetailModal({
             <div className="flex items-center gap-3 pt-2">
               <div className="w-12 h-12 rounded-full bg-slate-800 border-2 border-orange-400/50 overflow-hidden flex items-center justify-center shrink-0">
                 {userProfile.avatar_url ? (
-                  // eslint-disable-next-ok
-                  <img
+                  <Image
                     src={userProfile.avatar_url}
                     alt="Avatar"
+                    width={48}
+                    height={48}
                     className="w-full h-full object-cover"
                   />
                 ) : (

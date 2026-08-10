@@ -4,7 +4,6 @@ import { vi, describe, it, expect, beforeEach } from "vitest";
 vi.mock("server-only", () => ({}));
 import {
   updateProfileSchema,
-  updateEmailSchema,
   changePasswordSchema,
   deleteAccountSchema,
 } from "@/lib/schemas/settings";
@@ -12,17 +11,24 @@ import {
 // Hoist mock for Supabase Server Client
 const { mockSupabase, mockGetUser } = vi.hoisted(() => {
   const mockGetUser = vi.fn();
-  
+
   const createQueryBuilder = () => {
-    const builder: any = {
+    const builder: Record<string, unknown> = {
       select: vi.fn(() => builder),
       update: vi.fn(() => builder),
       insert: vi.fn(() => builder),
       eq: vi.fn(() => builder),
-      single: vi.fn(async () => ({ data: { id: "user-123", full_name: "Test" }, error: null })),
-      maybeSingle: vi.fn(async () => ({ data: { id: "user-123", full_name: "Test" }, error: null })),
+      single: vi.fn(async () => ({
+        data: { id: "user-123", full_name: "Test" },
+        error: null,
+      })),
+      maybeSingle: vi.fn(async () => ({
+        data: { id: "user-123", full_name: "Test" },
+        error: null,
+      })),
       order: vi.fn(() => builder),
-      then: (resolve: any) => resolve({ data: [], error: null }),
+      then: (resolve: (val: unknown) => void) =>
+        resolve({ data: [], error: null }),
     };
     return builder;
   };
