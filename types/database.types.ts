@@ -4,1481 +4,1481 @@ export type Json =
   | boolean
   | null
   | { [key: string]: Json | undefined }
-  | Json[];
+  | Json[]
 
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5";
-  };
+    PostgrestVersion: "14.5"
+  }
   graphql_public: {
     Tables: {
-      [_ in never]: never;
-    };
+      [_ in never]: never
+    }
     Views: {
-      [_ in never]: never;
-    };
+      [_ in never]: never
+    }
     Functions: {
       graphql: {
         Args: {
-          extensions?: Json;
-          operationName?: string;
-          query?: string;
-          variables?: Json;
-        };
-        Returns: Json;
-      };
-    };
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
     Enums: {
-      [_ in never]: never;
-    };
+      [_ in never]: never
+    }
     CompositeTypes: {
-      [_ in never]: never;
-    };
-  };
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       achievements: {
         Row: {
-          created_at: string;
-          description: string | null;
-          division_id: string | null;
-          id: string;
-          level: string;
-          title: string;
-          year: number;
-        };
+          created_at: string
+          description: string | null
+          division_id: string | null
+          id: string
+          level: string
+          title: string
+          year: number
+        }
         Insert: {
-          created_at?: string;
-          description?: string | null;
-          division_id?: string | null;
-          id?: string;
-          level: string;
-          title: string;
-          year: number;
-        };
+          created_at?: string
+          description?: string | null
+          division_id?: string | null
+          id?: string
+          level: string
+          title: string
+          year: number
+        }
         Update: {
-          created_at?: string;
-          description?: string | null;
-          division_id?: string | null;
-          id?: string;
-          level?: string;
-          title?: string;
-          year?: number;
-        };
+          created_at?: string
+          description?: string | null
+          division_id?: string | null
+          id?: string
+          level?: string
+          title?: string
+          year?: number
+        }
         Relationships: [
           {
-            foreignKeyName: "achievements_division_id_fkey";
-            columns: ["division_id"];
-            isOneToOne: false;
-            referencedRelation: "divisions";
-            referencedColumns: ["id"];
+            foreignKeyName: "achievements_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       activities: {
         Row: {
-          banner_url: string | null;
-          checkin_close_at: string | null;
-          checkin_open_at: string | null;
-          created_at: string;
-          created_by: string | null;
-          deleted_at: string | null;
-          description: string | null;
-          end_date: string;
-          id: string;
-          late_tolerance_minutes: number;
-          location: string | null;
-          start_date: string;
-          target_audience: Database["public"]["Enums"]["activity_target"];
-          title: string;
-          updated_at: string;
-        };
+          banner_url: string | null
+          checkin_close_at: string | null
+          checkin_open_at: string | null
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          description: string | null
+          end_date: string
+          id: string
+          late_tolerance_minutes: number
+          location: string | null
+          start_date: string
+          target_audience: Database["public"]["Enums"]["activity_target"]
+          title: string
+          updated_at: string
+        }
         Insert: {
-          banner_url?: string | null;
-          checkin_close_at?: string | null;
-          checkin_open_at?: string | null;
-          created_at?: string;
-          created_by?: string | null;
-          deleted_at?: string | null;
-          description?: string | null;
-          end_date: string;
-          id?: string;
-          late_tolerance_minutes?: number;
-          location?: string | null;
-          start_date: string;
-          target_audience?: Database["public"]["Enums"]["activity_target"];
-          title: string;
-          updated_at?: string;
-        };
+          banner_url?: string | null
+          checkin_close_at?: string | null
+          checkin_open_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          end_date: string
+          id?: string
+          late_tolerance_minutes?: number
+          location?: string | null
+          start_date: string
+          target_audience?: Database["public"]["Enums"]["activity_target"]
+          title: string
+          updated_at?: string
+        }
         Update: {
-          banner_url?: string | null;
-          checkin_close_at?: string | null;
-          checkin_open_at?: string | null;
-          created_at?: string;
-          created_by?: string | null;
-          deleted_at?: string | null;
-          description?: string | null;
-          end_date?: string;
-          id?: string;
-          late_tolerance_minutes?: number;
-          location?: string | null;
-          start_date?: string;
-          target_audience?: Database["public"]["Enums"]["activity_target"];
-          title?: string;
-          updated_at?: string;
-        };
+          banner_url?: string | null
+          checkin_close_at?: string | null
+          checkin_open_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          description?: string | null
+          end_date?: string
+          id?: string
+          late_tolerance_minutes?: number
+          location?: string | null
+          start_date?: string
+          target_audience?: Database["public"]["Enums"]["activity_target"]
+          title?: string
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "activities_created_by_fkey";
-            columns: ["created_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "activities_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "activities_created_by_fkey";
-            columns: ["created_by"];
-            isOneToOne: false;
-            referencedRelation: "v_user_discipline_summary";
-            referencedColumns: ["profile_id"];
+            foreignKeyName: "activities_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "v_user_discipline_summary"
+            referencedColumns: ["profile_id"]
           },
-        ];
-      };
+        ]
+      }
       articles: {
         Row: {
-          author_id: string;
-          category: string;
-          content: string;
-          cover_image_url: string | null;
-          created_at: string;
-          deleted_at: string | null;
-          excerpt: string | null;
-          id: string;
-          is_published: boolean;
-          published_at: string | null;
-          slug: string;
-          title: string;
-          updated_at: string;
-        };
+          author_id: string
+          category: string
+          content: string
+          cover_image_url: string | null
+          created_at: string
+          deleted_at: string | null
+          excerpt: string | null
+          id: string
+          is_published: boolean
+          published_at: string | null
+          slug: string
+          title: string
+          updated_at: string
+        }
         Insert: {
-          author_id: string;
-          category: string;
-          content: string;
-          cover_image_url?: string | null;
-          created_at?: string;
-          deleted_at?: string | null;
-          excerpt?: string | null;
-          id?: string;
-          is_published?: boolean;
-          published_at?: string | null;
-          slug: string;
-          title: string;
-          updated_at?: string;
-        };
+          author_id: string
+          category: string
+          content: string
+          cover_image_url?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          excerpt?: string | null
+          id?: string
+          is_published?: boolean
+          published_at?: string | null
+          slug: string
+          title: string
+          updated_at?: string
+        }
         Update: {
-          author_id?: string;
-          category?: string;
-          content?: string;
-          cover_image_url?: string | null;
-          created_at?: string;
-          deleted_at?: string | null;
-          excerpt?: string | null;
-          id?: string;
-          is_published?: boolean;
-          published_at?: string | null;
-          slug?: string;
-          title?: string;
-          updated_at?: string;
-        };
+          author_id?: string
+          category?: string
+          content?: string
+          cover_image_url?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          excerpt?: string | null
+          id?: string
+          is_published?: boolean
+          published_at?: string | null
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "articles_author_id_fkey";
-            columns: ["author_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "articles_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "articles_author_id_fkey";
-            columns: ["author_id"];
-            isOneToOne: false;
-            referencedRelation: "v_user_discipline_summary";
-            referencedColumns: ["profile_id"];
+            foreignKeyName: "articles_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_discipline_summary"
+            referencedColumns: ["profile_id"]
           },
-        ];
-      };
+        ]
+      }
       attendances: {
         Row: {
-          activity_id: string | null;
-          approval_status: string | null;
-          check_in_at: string | null;
-          created_at: string | null;
-          id: string;
-          notes: string | null;
-          points_awarded: number;
-          profile_id: string | null;
-          proof_url: string | null;
-          rejection_reason: string | null;
-          status: Database["public"]["Enums"]["attendance_status"];
-          verified_at: string | null;
-          verified_by: string | null;
-        };
+          activity_id: string | null
+          approval_status: string | null
+          check_in_at: string | null
+          created_at: string | null
+          id: string
+          notes: string | null
+          points_awarded: number
+          profile_id: string | null
+          proof_url: string | null
+          rejection_reason: string | null
+          status: Database["public"]["Enums"]["attendance_status"]
+          verified_at: string | null
+          verified_by: string | null
+        }
         Insert: {
-          activity_id?: string | null;
-          approval_status?: string | null;
-          check_in_at?: string | null;
-          created_at?: string | null;
-          id?: string;
-          notes?: string | null;
-          points_awarded?: number;
-          profile_id?: string | null;
-          proof_url?: string | null;
-          rejection_reason?: string | null;
-          status?: Database["public"]["Enums"]["attendance_status"];
-          verified_at?: string | null;
-          verified_by?: string | null;
-        };
+          activity_id?: string | null
+          approval_status?: string | null
+          check_in_at?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          points_awarded?: number
+          profile_id?: string | null
+          proof_url?: string | null
+          rejection_reason?: string | null
+          status?: Database["public"]["Enums"]["attendance_status"]
+          verified_at?: string | null
+          verified_by?: string | null
+        }
         Update: {
-          activity_id?: string | null;
-          approval_status?: string | null;
-          check_in_at?: string | null;
-          created_at?: string | null;
-          id?: string;
-          notes?: string | null;
-          points_awarded?: number;
-          profile_id?: string | null;
-          proof_url?: string | null;
-          rejection_reason?: string | null;
-          status?: Database["public"]["Enums"]["attendance_status"];
-          verified_at?: string | null;
-          verified_by?: string | null;
-        };
+          activity_id?: string | null
+          approval_status?: string | null
+          check_in_at?: string | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          points_awarded?: number
+          profile_id?: string | null
+          proof_url?: string | null
+          rejection_reason?: string | null
+          status?: Database["public"]["Enums"]["attendance_status"]
+          verified_at?: string | null
+          verified_by?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "attendances_activity_id_fkey";
-            columns: ["activity_id"];
-            isOneToOne: false;
-            referencedRelation: "activities";
-            referencedColumns: ["id"];
+            foreignKeyName: "attendances_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "activities"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "attendances_profile_id_fkey";
-            columns: ["profile_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "attendances_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "attendances_profile_id_fkey";
-            columns: ["profile_id"];
-            isOneToOne: false;
-            referencedRelation: "v_user_discipline_summary";
-            referencedColumns: ["profile_id"];
+            foreignKeyName: "attendances_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_discipline_summary"
+            referencedColumns: ["profile_id"]
           },
           {
-            foreignKeyName: "attendances_verified_by_fkey";
-            columns: ["verified_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "attendances_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "attendances_verified_by_fkey";
-            columns: ["verified_by"];
-            isOneToOne: false;
-            referencedRelation: "v_user_discipline_summary";
-            referencedColumns: ["profile_id"];
+            foreignKeyName: "attendances_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "v_user_discipline_summary"
+            referencedColumns: ["profile_id"]
           },
-        ];
-      };
+        ]
+      }
       caang_groups: {
         Row: {
-          created_at: string | null;
-          id: string;
-          mentor_id: string | null;
-          name: string;
-          parent_id: string | null;
-        };
+          created_at: string | null
+          id: string
+          mentor_id: string | null
+          name: string
+          parent_id: string | null
+        }
         Insert: {
-          created_at?: string | null;
-          id?: string;
-          mentor_id?: string | null;
-          name: string;
-          parent_id?: string | null;
-        };
+          created_at?: string | null
+          id?: string
+          mentor_id?: string | null
+          name: string
+          parent_id?: string | null
+        }
         Update: {
-          created_at?: string | null;
-          id?: string;
-          mentor_id?: string | null;
-          name?: string;
-          parent_id?: string | null;
-        };
+          created_at?: string | null
+          id?: string
+          mentor_id?: string | null
+          name?: string
+          parent_id?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "caang_groups_mentor_id_fkey";
-            columns: ["mentor_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "caang_groups_mentor_id_fkey"
+            columns: ["mentor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "caang_groups_mentor_id_fkey";
-            columns: ["mentor_id"];
-            isOneToOne: false;
-            referencedRelation: "v_user_discipline_summary";
-            referencedColumns: ["profile_id"];
+            foreignKeyName: "caang_groups_mentor_id_fkey"
+            columns: ["mentor_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_discipline_summary"
+            referencedColumns: ["profile_id"]
           },
           {
-            foreignKeyName: "caang_groups_parent_id_fkey";
-            columns: ["parent_id"];
-            isOneToOne: false;
-            referencedRelation: "caang_groups";
-            referencedColumns: ["id"];
+            foreignKeyName: "caang_groups_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "caang_groups"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       contact_messages: {
         Row: {
-          category: string;
-          created_at: string;
-          email: string;
-          full_name: string;
-          id: string;
-          message: string;
-          organization: string | null;
-          status: string;
-          updated_at: string;
-        };
+          category: string
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          message: string
+          organization: string | null
+          status: string
+          updated_at: string
+        }
         Insert: {
-          category: string;
-          created_at?: string;
-          email: string;
-          full_name: string;
-          id?: string;
-          message: string;
-          organization?: string | null;
-          status?: string;
-          updated_at?: string;
-        };
+          category: string
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          message: string
+          organization?: string | null
+          status?: string
+          updated_at?: string
+        }
         Update: {
-          category?: string;
-          created_at?: string;
-          email?: string;
-          full_name?: string;
-          id?: string;
-          message?: string;
-          organization?: string | null;
-          status?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
+          category?: string
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          message?: string
+          organization?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       departments: {
         Row: {
-          category: string;
-          created_at: string;
-          id: string;
-          name: string;
-          sort_order: number | null;
-        };
+          category: string
+          created_at: string
+          id: string
+          name: string
+          sort_order: number | null
+        }
         Insert: {
-          category?: string;
-          created_at?: string;
-          id?: string;
-          name: string;
-          sort_order?: number | null;
-        };
+          category?: string
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number | null
+        }
         Update: {
-          category?: string;
-          created_at?: string;
-          id?: string;
-          name?: string;
-          sort_order?: number | null;
-        };
-        Relationships: [];
-      };
+          category?: string
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
       discipline_point_logs: {
         Row: {
-          category: string;
-          created_at: string;
-          created_by: string | null;
-          description: string;
-          id: string;
-          points: number;
-          profile_id: string;
-        };
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string
+          id: string
+          points: number
+          profile_id: string
+        }
         Insert: {
-          category: string;
-          created_at?: string;
-          created_by?: string | null;
-          description: string;
-          id?: string;
-          points: number;
-          profile_id: string;
-        };
+          category: string
+          created_at?: string
+          created_by?: string | null
+          description: string
+          id?: string
+          points: number
+          profile_id: string
+        }
         Update: {
-          category?: string;
-          created_at?: string;
-          created_by?: string | null;
-          description?: string;
-          id?: string;
-          points?: number;
-          profile_id?: string;
-        };
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string
+          id?: string
+          points?: number
+          profile_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "discipline_point_logs_created_by_fkey";
-            columns: ["created_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "discipline_point_logs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "discipline_point_logs_created_by_fkey";
-            columns: ["created_by"];
-            isOneToOne: false;
-            referencedRelation: "v_user_discipline_summary";
-            referencedColumns: ["profile_id"];
+            foreignKeyName: "discipline_point_logs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "v_user_discipline_summary"
+            referencedColumns: ["profile_id"]
           },
           {
-            foreignKeyName: "discipline_point_logs_profile_id_fkey";
-            columns: ["profile_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "discipline_point_logs_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "discipline_point_logs_profile_id_fkey";
-            columns: ["profile_id"];
-            isOneToOne: false;
-            referencedRelation: "v_user_discipline_summary";
-            referencedColumns: ["profile_id"];
+            foreignKeyName: "discipline_point_logs_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_discipline_summary"
+            referencedColumns: ["profile_id"]
           },
-        ];
-      };
+        ]
+      }
       divisions: {
         Row: {
-          accent_color: string | null;
-          badge_color: string | null;
-          badge_label: string | null;
-          created_at: string | null;
-          description: string | null;
-          id: string;
-          is_active: boolean;
-          name: string;
-          short_description: string;
-          slug: string;
-          sort_order: number | null;
-          tags: Json;
-        };
+          accent_color: string | null
+          badge_color: string | null
+          badge_label: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          short_description: string
+          slug: string
+          sort_order: number | null
+          tags: Json
+        }
         Insert: {
-          accent_color?: string | null;
-          badge_color?: string | null;
-          badge_label?: string | null;
-          created_at?: string | null;
-          description?: string | null;
-          id?: string;
-          is_active?: boolean;
-          name: string;
-          short_description: string;
-          slug: string;
-          sort_order?: number | null;
-          tags?: Json;
-        };
+          accent_color?: string | null
+          badge_color?: string | null
+          badge_label?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          short_description: string
+          slug: string
+          sort_order?: number | null
+          tags?: Json
+        }
         Update: {
-          accent_color?: string | null;
-          badge_color?: string | null;
-          badge_label?: string | null;
-          created_at?: string | null;
-          description?: string | null;
-          id?: string;
-          is_active?: boolean;
-          name?: string;
-          short_description?: string;
-          slug?: string;
-          sort_order?: number | null;
-          tags?: Json;
-        };
-        Relationships: [];
-      };
+          accent_color?: string | null
+          badge_color?: string | null
+          badge_label?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          short_description?: string
+          slug?: string
+          sort_order?: number | null
+          tags?: Json
+        }
+        Relationships: []
+      }
       group_members: {
         Row: {
-          group_id: string | null;
-          id: string;
-          joined_at: string | null;
-          profile_id: string | null;
-        };
+          group_id: string | null
+          id: string
+          joined_at: string | null
+          profile_id: string | null
+        }
         Insert: {
-          group_id?: string | null;
-          id?: string;
-          joined_at?: string | null;
-          profile_id?: string | null;
-        };
+          group_id?: string | null
+          id?: string
+          joined_at?: string | null
+          profile_id?: string | null
+        }
         Update: {
-          group_id?: string | null;
-          id?: string;
-          joined_at?: string | null;
-          profile_id?: string | null;
-        };
+          group_id?: string | null
+          id?: string
+          joined_at?: string | null
+          profile_id?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "group_members_group_id_fkey";
-            columns: ["group_id"];
-            isOneToOne: false;
-            referencedRelation: "caang_groups";
-            referencedColumns: ["id"];
+            foreignKeyName: "group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "caang_groups"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "group_members_profile_id_fkey";
-            columns: ["profile_id"];
-            isOneToOne: true;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "group_members_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "group_members_profile_id_fkey";
-            columns: ["profile_id"];
-            isOneToOne: true;
-            referencedRelation: "v_user_discipline_summary";
-            referencedColumns: ["profile_id"];
+            foreignKeyName: "group_members_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "v_user_discipline_summary"
+            referencedColumns: ["profile_id"]
           },
-        ];
-      };
+        ]
+      }
       in_app_notifications: {
         Row: {
-          created_at: string;
-          id: string;
-          is_read: boolean;
-          message: string;
-          recipient_id: string;
-          reference_id: string | null;
-          reference_type: string | null;
-          title: string;
-          type: string;
-        };
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          recipient_id: string
+          reference_id: string | null
+          reference_type: string | null
+          title: string
+          type: string
+        }
         Insert: {
-          created_at?: string;
-          id?: string;
-          is_read?: boolean;
-          message: string;
-          recipient_id: string;
-          reference_id?: string | null;
-          reference_type?: string | null;
-          title: string;
-          type?: string;
-        };
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          recipient_id: string
+          reference_id?: string | null
+          reference_type?: string | null
+          title: string
+          type?: string
+        }
         Update: {
-          created_at?: string;
-          id?: string;
-          is_read?: boolean;
-          message?: string;
-          recipient_id?: string;
-          reference_id?: string | null;
-          reference_type?: string | null;
-          title?: string;
-          type?: string;
-        };
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          recipient_id?: string
+          reference_id?: string | null
+          reference_type?: string | null
+          title?: string
+          type?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "in_app_notifications_recipient_id_fkey";
-            columns: ["recipient_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "in_app_notifications_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "in_app_notifications_recipient_id_fkey";
-            columns: ["recipient_id"];
-            isOneToOne: false;
-            referencedRelation: "v_user_discipline_summary";
-            referencedColumns: ["profile_id"];
+            foreignKeyName: "in_app_notifications_recipient_id_fkey"
+            columns: ["recipient_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_discipline_summary"
+            referencedColumns: ["profile_id"]
           },
-        ];
-      };
+        ]
+      }
       internships: {
         Row: {
-          created_at: string | null;
-          division_id: string | null;
-          id: string;
-          mentor_id: string | null;
-          profile_id: string | null;
-          task_description: string | null;
-        };
+          created_at: string | null
+          division_id: string | null
+          id: string
+          mentor_id: string | null
+          profile_id: string | null
+          task_description: string | null
+        }
         Insert: {
-          created_at?: string | null;
-          division_id?: string | null;
-          id?: string;
-          mentor_id?: string | null;
-          profile_id?: string | null;
-          task_description?: string | null;
-        };
+          created_at?: string | null
+          division_id?: string | null
+          id?: string
+          mentor_id?: string | null
+          profile_id?: string | null
+          task_description?: string | null
+        }
         Update: {
-          created_at?: string | null;
-          division_id?: string | null;
-          id?: string;
-          mentor_id?: string | null;
-          profile_id?: string | null;
-          task_description?: string | null;
-        };
+          created_at?: string | null
+          division_id?: string | null
+          id?: string
+          mentor_id?: string | null
+          profile_id?: string | null
+          task_description?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "internships_division_id_fkey";
-            columns: ["division_id"];
-            isOneToOne: false;
-            referencedRelation: "divisions";
-            referencedColumns: ["id"];
+            foreignKeyName: "internships_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "internships_mentor_id_fkey";
-            columns: ["mentor_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "internships_mentor_id_fkey"
+            columns: ["mentor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "internships_mentor_id_fkey";
-            columns: ["mentor_id"];
-            isOneToOne: false;
-            referencedRelation: "v_user_discipline_summary";
-            referencedColumns: ["profile_id"];
+            foreignKeyName: "internships_mentor_id_fkey"
+            columns: ["mentor_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_discipline_summary"
+            referencedColumns: ["profile_id"]
           },
           {
-            foreignKeyName: "internships_profile_id_fkey";
-            columns: ["profile_id"];
-            isOneToOne: true;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "internships_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "internships_profile_id_fkey";
-            columns: ["profile_id"];
-            isOneToOne: true;
-            referencedRelation: "v_user_discipline_summary";
-            referencedColumns: ["profile_id"];
+            foreignKeyName: "internships_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "v_user_discipline_summary"
+            referencedColumns: ["profile_id"]
           },
-        ];
-      };
+        ]
+      }
       legacy_members: {
         Row: {
-          avatar_url: string | null;
-          created_at: string | null;
-          full_name: string;
-          gender: string | null;
-          nim: string;
-          profile_id: string | null;
-          slug: string | null;
-          study_program_id: string | null;
-        };
+          avatar_url: string | null
+          created_at: string | null
+          full_name: string
+          gender: string | null
+          nim: string
+          profile_id: string | null
+          slug: string | null
+          study_program_id: string | null
+        }
         Insert: {
-          avatar_url?: string | null;
-          created_at?: string | null;
-          full_name: string;
-          gender?: string | null;
-          nim: string;
-          profile_id?: string | null;
-          slug?: string | null;
-          study_program_id?: string | null;
-        };
+          avatar_url?: string | null
+          created_at?: string | null
+          full_name: string
+          gender?: string | null
+          nim: string
+          profile_id?: string | null
+          slug?: string | null
+          study_program_id?: string | null
+        }
         Update: {
-          avatar_url?: string | null;
-          created_at?: string | null;
-          full_name?: string;
-          gender?: string | null;
-          nim?: string;
-          profile_id?: string | null;
-          slug?: string | null;
-          study_program_id?: string | null;
-        };
+          avatar_url?: string | null
+          created_at?: string | null
+          full_name?: string
+          gender?: string | null
+          nim?: string
+          profile_id?: string | null
+          slug?: string | null
+          study_program_id?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "legacy_members_profile_id_fkey";
-            columns: ["profile_id"];
-            isOneToOne: true;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "legacy_members_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "legacy_members_profile_id_fkey";
-            columns: ["profile_id"];
-            isOneToOne: true;
-            referencedRelation: "v_user_discipline_summary";
-            referencedColumns: ["profile_id"];
+            foreignKeyName: "legacy_members_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "v_user_discipline_summary"
+            referencedColumns: ["profile_id"]
           },
           {
-            foreignKeyName: "legacy_members_study_program_id_fkey";
-            columns: ["study_program_id"];
-            isOneToOne: false;
-            referencedRelation: "study_programs";
-            referencedColumns: ["id"];
+            foreignKeyName: "legacy_members_study_program_id_fkey"
+            columns: ["study_program_id"]
+            isOneToOne: false
+            referencedRelation: "study_programs"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       majors: {
         Row: {
-          created_at: string | null;
-          id: string;
-          name: string;
-        };
+          created_at: string | null
+          id: string
+          name: string
+        }
         Insert: {
-          created_at?: string | null;
-          id?: string;
-          name: string;
-        };
+          created_at?: string | null
+          id?: string
+          name: string
+        }
         Update: {
-          created_at?: string | null;
-          id?: string;
-          name?: string;
-        };
-        Relationships: [];
-      };
+          created_at?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       membership_periods: {
         Row: {
-          created_at: string;
-          id: string;
-          is_active: boolean;
-          period_name: string;
-          updated_at: string;
-        };
+          created_at: string
+          id: string
+          is_active: boolean
+          period_name: string
+          updated_at: string
+        }
         Insert: {
-          created_at?: string;
-          id?: string;
-          is_active?: boolean;
-          period_name: string;
-          updated_at?: string;
-        };
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          period_name: string
+          updated_at?: string
+        }
         Update: {
-          created_at?: string;
-          id?: string;
-          is_active?: boolean;
-          period_name?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          period_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       or_settings: {
         Row: {
-          biaya_pendaftaran: number;
-          created_at: string | null;
-          id: string;
-          kontak_panitia: Json;
-          link_komunitas: Json;
-          periode_recruitment: string;
-          rekening_penerima: Json;
-          status_pendaftaran: boolean;
-          tanggal_mulai: string | null;
-          tanggal_selesai: string | null;
-          timeline: Json;
-          updated_at: string | null;
-        };
+          biaya_pendaftaran: number
+          created_at: string | null
+          id: string
+          kontak_panitia: Json
+          link_komunitas: Json
+          periode_recruitment: string
+          rekening_penerima: Json
+          status_pendaftaran: boolean
+          tanggal_mulai: string | null
+          tanggal_selesai: string | null
+          timeline: Json
+          updated_at: string | null
+        }
         Insert: {
-          biaya_pendaftaran?: number;
-          created_at?: string | null;
-          id?: string;
-          kontak_panitia?: Json;
-          link_komunitas?: Json;
-          periode_recruitment?: string;
-          rekening_penerima?: Json;
-          status_pendaftaran?: boolean;
-          tanggal_mulai?: string | null;
-          tanggal_selesai?: string | null;
-          timeline?: Json;
-          updated_at?: string | null;
-        };
+          biaya_pendaftaran?: number
+          created_at?: string | null
+          id?: string
+          kontak_panitia?: Json
+          link_komunitas?: Json
+          periode_recruitment?: string
+          rekening_penerima?: Json
+          status_pendaftaran?: boolean
+          tanggal_mulai?: string | null
+          tanggal_selesai?: string | null
+          timeline?: Json
+          updated_at?: string | null
+        }
         Update: {
-          biaya_pendaftaran?: number;
-          created_at?: string | null;
-          id?: string;
-          kontak_panitia?: Json;
-          link_komunitas?: Json;
-          periode_recruitment?: string;
-          rekening_penerima?: Json;
-          status_pendaftaran?: boolean;
-          tanggal_mulai?: string | null;
-          tanggal_selesai?: string | null;
-          timeline?: Json;
-          updated_at?: string | null;
-        };
-        Relationships: [];
-      };
+          biaya_pendaftaran?: number
+          created_at?: string | null
+          id?: string
+          kontak_panitia?: Json
+          link_komunitas?: Json
+          periode_recruitment?: string
+          rekening_penerima?: Json
+          status_pendaftaran?: boolean
+          tanggal_mulai?: string | null
+          tanggal_selesai?: string | null
+          timeline?: Json
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       organizational_histories: {
         Row: {
-          created_at: string;
-          department_id: string;
-          division_id: string | null;
-          id: string;
-          nim_member: string;
-          period_id: string;
-          role_name: string;
-          sort_order: number | null;
-          sub_section: string | null;
-          updated_at: string;
-        };
+          created_at: string
+          department_id: string
+          division_id: string | null
+          id: string
+          nim_member: string
+          period_id: string
+          role_name: string
+          sort_order: number | null
+          sub_section: string | null
+          updated_at: string
+        }
         Insert: {
-          created_at?: string;
-          department_id: string;
-          division_id?: string | null;
-          id?: string;
-          nim_member: string;
-          period_id: string;
-          role_name?: string;
-          sort_order?: number | null;
-          sub_section?: string | null;
-          updated_at?: string;
-        };
+          created_at?: string
+          department_id: string
+          division_id?: string | null
+          id?: string
+          nim_member: string
+          period_id: string
+          role_name?: string
+          sort_order?: number | null
+          sub_section?: string | null
+          updated_at?: string
+        }
         Update: {
-          created_at?: string;
-          department_id?: string;
-          division_id?: string | null;
-          id?: string;
-          nim_member?: string;
-          period_id?: string;
-          role_name?: string;
-          sort_order?: number | null;
-          sub_section?: string | null;
-          updated_at?: string;
-        };
+          created_at?: string
+          department_id?: string
+          division_id?: string | null
+          id?: string
+          nim_member?: string
+          period_id?: string
+          role_name?: string
+          sort_order?: number | null
+          sub_section?: string | null
+          updated_at?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "org_histories_department_fkey";
-            columns: ["department_id"];
-            isOneToOne: false;
-            referencedRelation: "departments";
-            referencedColumns: ["id"];
+            foreignKeyName: "org_histories_department_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "org_histories_division_id_fkey";
-            columns: ["division_id"];
-            isOneToOne: false;
-            referencedRelation: "divisions";
-            referencedColumns: ["id"];
+            foreignKeyName: "org_histories_division_id_fkey"
+            columns: ["division_id"]
+            isOneToOne: false
+            referencedRelation: "divisions"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "org_histories_member_fkey";
-            columns: ["nim_member"];
-            isOneToOne: false;
-            referencedRelation: "legacy_members";
-            referencedColumns: ["nim"];
+            foreignKeyName: "org_histories_member_fkey"
+            columns: ["nim_member"]
+            isOneToOne: false
+            referencedRelation: "legacy_members"
+            referencedColumns: ["nim"]
           },
           {
-            foreignKeyName: "org_histories_period_fkey";
-            columns: ["period_id"];
-            isOneToOne: false;
-            referencedRelation: "membership_periods";
-            referencedColumns: ["id"];
+            foreignKeyName: "org_histories_period_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "membership_periods"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       piket_logs: {
         Row: {
-          created_at: string | null;
-          duty_date: string;
-          id: string;
-          is_verified: boolean | null;
-          notes: string;
-          proof_image_url: string;
-          reported_by: string | null;
-          schedule_id: string | null;
-          verified_by: string | null;
-        };
+          created_at: string | null
+          duty_date: string
+          id: string
+          is_verified: boolean | null
+          notes: string
+          proof_image_url: string
+          reported_by: string | null
+          schedule_id: string | null
+          verified_by: string | null
+        }
         Insert: {
-          created_at?: string | null;
-          duty_date?: string;
-          id?: string;
-          is_verified?: boolean | null;
-          notes: string;
-          proof_image_url: string;
-          reported_by?: string | null;
-          schedule_id?: string | null;
-          verified_by?: string | null;
-        };
+          created_at?: string | null
+          duty_date?: string
+          id?: string
+          is_verified?: boolean | null
+          notes: string
+          proof_image_url: string
+          reported_by?: string | null
+          schedule_id?: string | null
+          verified_by?: string | null
+        }
         Update: {
-          created_at?: string | null;
-          duty_date?: string;
-          id?: string;
-          is_verified?: boolean | null;
-          notes?: string;
-          proof_image_url?: string;
-          reported_by?: string | null;
-          schedule_id?: string | null;
-          verified_by?: string | null;
-        };
+          created_at?: string | null
+          duty_date?: string
+          id?: string
+          is_verified?: boolean | null
+          notes?: string
+          proof_image_url?: string
+          reported_by?: string | null
+          schedule_id?: string | null
+          verified_by?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "piket_logs_reported_by_fkey";
-            columns: ["reported_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "piket_logs_reported_by_fkey"
+            columns: ["reported_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "piket_logs_reported_by_fkey";
-            columns: ["reported_by"];
-            isOneToOne: false;
-            referencedRelation: "v_user_discipline_summary";
-            referencedColumns: ["profile_id"];
+            foreignKeyName: "piket_logs_reported_by_fkey"
+            columns: ["reported_by"]
+            isOneToOne: false
+            referencedRelation: "v_user_discipline_summary"
+            referencedColumns: ["profile_id"]
           },
           {
-            foreignKeyName: "piket_logs_schedule_id_fkey";
-            columns: ["schedule_id"];
-            isOneToOne: false;
-            referencedRelation: "piket_schedules";
-            referencedColumns: ["id"];
+            foreignKeyName: "piket_logs_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "piket_schedules"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "piket_logs_verified_by_fkey";
-            columns: ["verified_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "piket_logs_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "piket_logs_verified_by_fkey";
-            columns: ["verified_by"];
-            isOneToOne: false;
-            referencedRelation: "v_user_discipline_summary";
-            referencedColumns: ["profile_id"];
+            foreignKeyName: "piket_logs_verified_by_fkey"
+            columns: ["verified_by"]
+            isOneToOne: false
+            referencedRelation: "v_user_discipline_summary"
+            referencedColumns: ["profile_id"]
           },
-        ];
-      };
+        ]
+      }
       piket_members: {
         Row: {
-          id: string;
-          profile_id: string | null;
-          schedule_id: string | null;
-        };
+          id: string
+          profile_id: string | null
+          schedule_id: string | null
+        }
         Insert: {
-          id?: string;
-          profile_id?: string | null;
-          schedule_id?: string | null;
-        };
+          id?: string
+          profile_id?: string | null
+          schedule_id?: string | null
+        }
         Update: {
-          id?: string;
-          profile_id?: string | null;
-          schedule_id?: string | null;
-        };
+          id?: string
+          profile_id?: string | null
+          schedule_id?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "piket_members_profile_id_fkey";
-            columns: ["profile_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "piket_members_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "piket_members_profile_id_fkey";
-            columns: ["profile_id"];
-            isOneToOne: false;
-            referencedRelation: "v_user_discipline_summary";
-            referencedColumns: ["profile_id"];
+            foreignKeyName: "piket_members_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_discipline_summary"
+            referencedColumns: ["profile_id"]
           },
           {
-            foreignKeyName: "piket_members_schedule_id_fkey";
-            columns: ["schedule_id"];
-            isOneToOne: false;
-            referencedRelation: "piket_schedules";
-            referencedColumns: ["id"];
+            foreignKeyName: "piket_members_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "piket_schedules"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       piket_schedules: {
         Row: {
-          created_at: string | null;
-          day: Database["public"]["Enums"]["piket_day"];
-          id: string;
-        };
+          created_at: string | null
+          day: Database["public"]["Enums"]["piket_day"]
+          id: string
+        }
         Insert: {
-          created_at?: string | null;
-          day: Database["public"]["Enums"]["piket_day"];
-          id?: string;
-        };
+          created_at?: string | null
+          day: Database["public"]["Enums"]["piket_day"]
+          id?: string
+        }
         Update: {
-          created_at?: string | null;
-          day?: Database["public"]["Enums"]["piket_day"];
-          id?: string;
-        };
-        Relationships: [];
-      };
+          created_at?: string | null
+          day?: Database["public"]["Enums"]["piket_day"]
+          id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
-          avatar_url: string | null;
-          created_at: string;
-          delete_reason: string | null;
-          deleted_at: string | null;
-          email: string;
-          full_name: string | null;
-          id: string;
-          is_onboarded: boolean;
-          nim: string | null;
-          role: Database["public"]["Enums"]["user_role"];
-          updated_at: string;
-        };
+          avatar_url: string | null
+          created_at: string
+          delete_reason: string | null
+          deleted_at: string | null
+          email: string
+          full_name: string | null
+          id: string
+          is_onboarded: boolean
+          nim: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+        }
         Insert: {
-          avatar_url?: string | null;
-          created_at?: string;
-          delete_reason?: string | null;
-          deleted_at?: string | null;
-          email: string;
-          full_name?: string | null;
-          id: string;
-          is_onboarded?: boolean;
-          nim?: string | null;
-          role?: Database["public"]["Enums"]["user_role"];
-          updated_at?: string;
-        };
+          avatar_url?: string | null
+          created_at?: string
+          delete_reason?: string | null
+          deleted_at?: string | null
+          email: string
+          full_name?: string | null
+          id: string
+          is_onboarded?: boolean
+          nim?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
         Update: {
-          avatar_url?: string | null;
-          created_at?: string;
-          delete_reason?: string | null;
-          deleted_at?: string | null;
-          email?: string;
-          full_name?: string | null;
-          id?: string;
-          is_onboarded?: boolean;
-          nim?: string | null;
-          role?: Database["public"]["Enums"]["user_role"];
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
+          avatar_url?: string | null
+          created_at?: string
+          delete_reason?: string | null
+          deleted_at?: string | null
+          email?: string
+          full_name?: string | null
+          id?: string
+          is_onboarded?: boolean
+          nim?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       registrations: {
         Row: {
-          achievements: string | null;
-          created_at: string | null;
-          current_class: string | null;
-          delete_reason: string | null;
-          deleted_at: string | null;
-          dob: string;
-          domicile_address: string;
-          entry_year: number;
-          full_name: string;
-          gender: Database["public"]["Enums"]["gender_type"];
-          high_school: string | null;
-          id: string;
-          ktm_url: string | null;
-          motivation: string | null;
-          nickname: string;
-          org_experience: string | null;
-          origin_address: string;
-          payment_method: string | null;
-          payment_proof_url: string | null;
-          phone_number: string;
-          photo_url: string | null;
-          pob: string;
-          profile_id: string;
-          proof_follow_mrc: string | null;
-          proof_follow_robotik: string | null;
-          proof_sub_yt: string | null;
-          status: Database["public"]["Enums"]["reg_status"] | null;
-          study_program_id: string | null;
-          updated_at: string | null;
-        };
+          achievements: string | null
+          created_at: string | null
+          current_class: string | null
+          delete_reason: string | null
+          deleted_at: string | null
+          dob: string
+          domicile_address: string
+          entry_year: number
+          full_name: string
+          gender: Database["public"]["Enums"]["gender_type"]
+          high_school: string | null
+          id: string
+          ktm_url: string | null
+          motivation: string | null
+          nickname: string
+          org_experience: string | null
+          origin_address: string
+          payment_method: string | null
+          payment_proof_url: string | null
+          phone_number: string
+          photo_url: string | null
+          pob: string
+          profile_id: string
+          proof_follow_mrc: string | null
+          proof_follow_robotik: string | null
+          proof_sub_yt: string | null
+          status: Database["public"]["Enums"]["reg_status"] | null
+          study_program_id: string | null
+          updated_at: string | null
+        }
         Insert: {
-          achievements?: string | null;
-          created_at?: string | null;
-          current_class?: string | null;
-          delete_reason?: string | null;
-          deleted_at?: string | null;
-          dob: string;
-          domicile_address: string;
-          entry_year: number;
-          full_name: string;
-          gender: Database["public"]["Enums"]["gender_type"];
-          high_school?: string | null;
-          id?: string;
-          ktm_url?: string | null;
-          motivation?: string | null;
-          nickname: string;
-          org_experience?: string | null;
-          origin_address: string;
-          payment_method?: string | null;
-          payment_proof_url?: string | null;
-          phone_number: string;
-          photo_url?: string | null;
-          pob: string;
-          profile_id: string;
-          proof_follow_mrc?: string | null;
-          proof_follow_robotik?: string | null;
-          proof_sub_yt?: string | null;
-          status?: Database["public"]["Enums"]["reg_status"] | null;
-          study_program_id?: string | null;
-          updated_at?: string | null;
-        };
+          achievements?: string | null
+          created_at?: string | null
+          current_class?: string | null
+          delete_reason?: string | null
+          deleted_at?: string | null
+          dob: string
+          domicile_address: string
+          entry_year: number
+          full_name: string
+          gender: Database["public"]["Enums"]["gender_type"]
+          high_school?: string | null
+          id?: string
+          ktm_url?: string | null
+          motivation?: string | null
+          nickname: string
+          org_experience?: string | null
+          origin_address: string
+          payment_method?: string | null
+          payment_proof_url?: string | null
+          phone_number: string
+          photo_url?: string | null
+          pob: string
+          profile_id: string
+          proof_follow_mrc?: string | null
+          proof_follow_robotik?: string | null
+          proof_sub_yt?: string | null
+          status?: Database["public"]["Enums"]["reg_status"] | null
+          study_program_id?: string | null
+          updated_at?: string | null
+        }
         Update: {
-          achievements?: string | null;
-          created_at?: string | null;
-          current_class?: string | null;
-          delete_reason?: string | null;
-          deleted_at?: string | null;
-          dob?: string;
-          domicile_address?: string;
-          entry_year?: number;
-          full_name?: string;
-          gender?: Database["public"]["Enums"]["gender_type"];
-          high_school?: string | null;
-          id?: string;
-          ktm_url?: string | null;
-          motivation?: string | null;
-          nickname?: string;
-          org_experience?: string | null;
-          origin_address?: string;
-          payment_method?: string | null;
-          payment_proof_url?: string | null;
-          phone_number?: string;
-          photo_url?: string | null;
-          pob?: string;
-          profile_id?: string;
-          proof_follow_mrc?: string | null;
-          proof_follow_robotik?: string | null;
-          proof_sub_yt?: string | null;
-          status?: Database["public"]["Enums"]["reg_status"] | null;
-          study_program_id?: string | null;
-          updated_at?: string | null;
-        };
+          achievements?: string | null
+          created_at?: string | null
+          current_class?: string | null
+          delete_reason?: string | null
+          deleted_at?: string | null
+          dob?: string
+          domicile_address?: string
+          entry_year?: number
+          full_name?: string
+          gender?: Database["public"]["Enums"]["gender_type"]
+          high_school?: string | null
+          id?: string
+          ktm_url?: string | null
+          motivation?: string | null
+          nickname?: string
+          org_experience?: string | null
+          origin_address?: string
+          payment_method?: string | null
+          payment_proof_url?: string | null
+          phone_number?: string
+          photo_url?: string | null
+          pob?: string
+          profile_id?: string
+          proof_follow_mrc?: string | null
+          proof_follow_robotik?: string | null
+          proof_sub_yt?: string | null
+          status?: Database["public"]["Enums"]["reg_status"] | null
+          study_program_id?: string | null
+          updated_at?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "registrations_profile_id_fkey";
-            columns: ["profile_id"];
-            isOneToOne: true;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "registrations_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "registrations_profile_id_fkey";
-            columns: ["profile_id"];
-            isOneToOne: true;
-            referencedRelation: "v_user_discipline_summary";
-            referencedColumns: ["profile_id"];
+            foreignKeyName: "registrations_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "v_user_discipline_summary"
+            referencedColumns: ["profile_id"]
           },
           {
-            foreignKeyName: "registrations_study_program_id_fkey";
-            columns: ["study_program_id"];
-            isOneToOne: false;
-            referencedRelation: "study_programs";
-            referencedColumns: ["id"];
+            foreignKeyName: "registrations_study_program_id_fkey"
+            columns: ["study_program_id"]
+            isOneToOne: false
+            referencedRelation: "study_programs"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       sanctions: {
         Row: {
-          id: string;
-          issued_at: string;
-          issued_by: string | null;
-          notes: string | null;
-          points_at_issuance: number;
-          profile_id: string;
-          sp_level: number;
-          status: string;
-        };
+          id: string
+          issued_at: string
+          issued_by: string | null
+          notes: string | null
+          points_at_issuance: number
+          profile_id: string
+          sp_level: number
+          status: string
+        }
         Insert: {
-          id?: string;
-          issued_at?: string;
-          issued_by?: string | null;
-          notes?: string | null;
-          points_at_issuance: number;
-          profile_id: string;
-          sp_level: number;
-          status?: string;
-        };
+          id?: string
+          issued_at?: string
+          issued_by?: string | null
+          notes?: string | null
+          points_at_issuance: number
+          profile_id: string
+          sp_level: number
+          status?: string
+        }
         Update: {
-          id?: string;
-          issued_at?: string;
-          issued_by?: string | null;
-          notes?: string | null;
-          points_at_issuance?: number;
-          profile_id?: string;
-          sp_level?: number;
-          status?: string;
-        };
+          id?: string
+          issued_at?: string
+          issued_by?: string | null
+          notes?: string | null
+          points_at_issuance?: number
+          profile_id?: string
+          sp_level?: number
+          status?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "sanctions_issued_by_fkey";
-            columns: ["issued_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "sanctions_issued_by_fkey"
+            columns: ["issued_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "sanctions_issued_by_fkey";
-            columns: ["issued_by"];
-            isOneToOne: false;
-            referencedRelation: "v_user_discipline_summary";
-            referencedColumns: ["profile_id"];
+            foreignKeyName: "sanctions_issued_by_fkey"
+            columns: ["issued_by"]
+            isOneToOne: false
+            referencedRelation: "v_user_discipline_summary"
+            referencedColumns: ["profile_id"]
           },
           {
-            foreignKeyName: "sanctions_profile_id_fkey";
-            columns: ["profile_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "sanctions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "sanctions_profile_id_fkey";
-            columns: ["profile_id"];
-            isOneToOne: false;
-            referencedRelation: "v_user_discipline_summary";
-            referencedColumns: ["profile_id"];
+            foreignKeyName: "sanctions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_discipline_summary"
+            referencedColumns: ["profile_id"]
           },
-        ];
-      };
+        ]
+      }
       study_programs: {
         Row: {
-          created_at: string | null;
-          degree: string;
-          id: string;
-          major_id: string;
-          name: string;
-        };
+          created_at: string | null
+          degree: string
+          id: string
+          major_id: string
+          name: string
+        }
         Insert: {
-          created_at?: string | null;
-          degree: string;
-          id?: string;
-          major_id: string;
-          name: string;
-        };
+          created_at?: string | null
+          degree: string
+          id?: string
+          major_id: string
+          name: string
+        }
         Update: {
-          created_at?: string | null;
-          degree?: string;
-          id?: string;
-          major_id?: string;
-          name?: string;
-        };
+          created_at?: string | null
+          degree?: string
+          id?: string
+          major_id?: string
+          name?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "study_programs_major_id_fkey";
-            columns: ["major_id"];
-            isOneToOne: false;
-            referencedRelation: "majors";
-            referencedColumns: ["id"];
+            foreignKeyName: "study_programs_major_id_fkey"
+            columns: ["major_id"]
+            isOneToOne: false
+            referencedRelation: "majors"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       system_audit_logs: {
         Row: {
-          action_type: string;
-          actor_id: string | null;
-          created_at: string;
-          details: string | null;
-          id: string;
-          ip_address: string | null;
-          new_value: Json | null;
-          old_value: Json | null;
-          target_user_id: string | null;
-        };
+          action_type: string
+          actor_id: string | null
+          created_at: string
+          details: string | null
+          id: string
+          ip_address: string | null
+          new_value: Json | null
+          old_value: Json | null
+          target_user_id: string | null
+        }
         Insert: {
-          action_type: string;
-          actor_id?: string | null;
-          created_at?: string;
-          details?: string | null;
-          id?: string;
-          ip_address?: string | null;
-          new_value?: Json | null;
-          old_value?: Json | null;
-          target_user_id?: string | null;
-        };
+          action_type: string
+          actor_id?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          ip_address?: string | null
+          new_value?: Json | null
+          old_value?: Json | null
+          target_user_id?: string | null
+        }
         Update: {
-          action_type?: string;
-          actor_id?: string | null;
-          created_at?: string;
-          details?: string | null;
-          id?: string;
-          ip_address?: string | null;
-          new_value?: Json | null;
-          old_value?: Json | null;
-          target_user_id?: string | null;
-        };
+          action_type?: string
+          actor_id?: string | null
+          created_at?: string
+          details?: string | null
+          id?: string
+          ip_address?: string | null
+          new_value?: Json | null
+          old_value?: Json | null
+          target_user_id?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "system_audit_logs_actor_id_fkey";
-            columns: ["actor_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "system_audit_logs_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "system_audit_logs_actor_id_fkey";
-            columns: ["actor_id"];
-            isOneToOne: false;
-            referencedRelation: "v_user_discipline_summary";
-            referencedColumns: ["profile_id"];
+            foreignKeyName: "system_audit_logs_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_discipline_summary"
+            referencedColumns: ["profile_id"]
           },
           {
-            foreignKeyName: "system_audit_logs_target_user_id_fkey";
-            columns: ["target_user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "system_audit_logs_target_user_id_fkey"
+            columns: ["target_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "system_audit_logs_target_user_id_fkey";
-            columns: ["target_user_id"];
-            isOneToOne: false;
-            referencedRelation: "v_user_discipline_summary";
-            referencedColumns: ["profile_id"];
+            foreignKeyName: "system_audit_logs_target_user_id_fkey"
+            columns: ["target_user_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_discipline_summary"
+            referencedColumns: ["profile_id"]
           },
-        ];
-      };
+        ]
+      }
       task_submissions: {
         Row: {
-          created_at: string | null;
-          feedback: string | null;
-          grade: number | null;
-          graded_by: string | null;
-          id: string;
-          notes: string | null;
-          profile_id: string | null;
-          status: Database["public"]["Enums"]["task_status"] | null;
-          submission_url: string | null;
-          task_id: string | null;
-          updated_at: string | null;
-        };
+          created_at: string | null
+          feedback: string | null
+          grade: number | null
+          graded_by: string | null
+          id: string
+          notes: string | null
+          profile_id: string | null
+          status: Database["public"]["Enums"]["task_status"] | null
+          submission_url: string | null
+          task_id: string | null
+          updated_at: string | null
+        }
         Insert: {
-          created_at?: string | null;
-          feedback?: string | null;
-          grade?: number | null;
-          graded_by?: string | null;
-          id?: string;
-          notes?: string | null;
-          profile_id?: string | null;
-          status?: Database["public"]["Enums"]["task_status"] | null;
-          submission_url?: string | null;
-          task_id?: string | null;
-          updated_at?: string | null;
-        };
+          created_at?: string | null
+          feedback?: string | null
+          grade?: number | null
+          graded_by?: string | null
+          id?: string
+          notes?: string | null
+          profile_id?: string | null
+          status?: Database["public"]["Enums"]["task_status"] | null
+          submission_url?: string | null
+          task_id?: string | null
+          updated_at?: string | null
+        }
         Update: {
-          created_at?: string | null;
-          feedback?: string | null;
-          grade?: number | null;
-          graded_by?: string | null;
-          id?: string;
-          notes?: string | null;
-          profile_id?: string | null;
-          status?: Database["public"]["Enums"]["task_status"] | null;
-          submission_url?: string | null;
-          task_id?: string | null;
-          updated_at?: string | null;
-        };
+          created_at?: string | null
+          feedback?: string | null
+          grade?: number | null
+          graded_by?: string | null
+          id?: string
+          notes?: string | null
+          profile_id?: string | null
+          status?: Database["public"]["Enums"]["task_status"] | null
+          submission_url?: string | null
+          task_id?: string | null
+          updated_at?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "task_submissions_graded_by_fkey";
-            columns: ["graded_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "task_submissions_graded_by_fkey"
+            columns: ["graded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "task_submissions_graded_by_fkey";
-            columns: ["graded_by"];
-            isOneToOne: false;
-            referencedRelation: "v_user_discipline_summary";
-            referencedColumns: ["profile_id"];
+            foreignKeyName: "task_submissions_graded_by_fkey"
+            columns: ["graded_by"]
+            isOneToOne: false
+            referencedRelation: "v_user_discipline_summary"
+            referencedColumns: ["profile_id"]
           },
           {
-            foreignKeyName: "task_submissions_profile_id_fkey";
-            columns: ["profile_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "task_submissions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "task_submissions_profile_id_fkey";
-            columns: ["profile_id"];
-            isOneToOne: false;
-            referencedRelation: "v_user_discipline_summary";
-            referencedColumns: ["profile_id"];
+            foreignKeyName: "task_submissions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "v_user_discipline_summary"
+            referencedColumns: ["profile_id"]
           },
           {
-            foreignKeyName: "task_submissions_task_id_fkey";
-            columns: ["task_id"];
-            isOneToOne: false;
-            referencedRelation: "tasks";
-            referencedColumns: ["id"];
+            foreignKeyName: "task_submissions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
           },
-        ];
-      };
+        ]
+      }
       tasks: {
         Row: {
-          created_at: string | null;
-          created_by: string | null;
-          description: string;
-          due_date: string;
-          id: string;
-          title: string;
-        };
+          created_at: string | null
+          created_by: string | null
+          description: string
+          due_date: string
+          id: string
+          title: string
+        }
         Insert: {
-          created_at?: string | null;
-          created_by?: string | null;
-          description: string;
-          due_date: string;
-          id?: string;
-          title: string;
-        };
+          created_at?: string | null
+          created_by?: string | null
+          description: string
+          due_date: string
+          id?: string
+          title: string
+        }
         Update: {
-          created_at?: string | null;
-          created_by?: string | null;
-          description?: string;
-          due_date?: string;
-          id?: string;
-          title?: string;
-        };
+          created_at?: string | null
+          created_by?: string | null
+          description?: string
+          due_date?: string
+          id?: string
+          title?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "tasks_created_by_fkey";
-            columns: ["created_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "tasks_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "tasks_created_by_fkey";
-            columns: ["created_by"];
-            isOneToOne: false;
-            referencedRelation: "v_user_discipline_summary";
-            referencedColumns: ["profile_id"];
+            foreignKeyName: "tasks_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "v_user_discipline_summary"
+            referencedColumns: ["profile_id"]
           },
-        ];
-      };
-    };
+        ]
+      }
+    }
     Views: {
       v_user_discipline_summary: {
         Row: {
-          full_name: string | null;
-          net_points: number | null;
-          nim: string | null;
-          profile_id: string | null;
-          total_attendance_points: number | null;
-          total_log_points: number | null;
-        };
-        Relationships: [];
-      };
-    };
+          full_name: string | null
+          net_points: number | null
+          nim: string | null
+          profile_id: string | null
+          total_attendance_points: number | null
+          total_log_points: number | null
+        }
+        Relationships: []
+      }
+    }
     Functions: {
       check_legacy_member: {
-        Args: { input_nim: string };
+        Args: { input_nim: string }
         Returns: {
-          is_legacy: boolean;
-          member_data: Json;
-        }[];
-      };
+          is_legacy: boolean
+          member_data: Json
+        }[]
+      }
       get_my_role: {
-        Args: never;
-        Returns: Database["public"]["Enums"]["user_role"];
-      };
+        Args: never
+        Returns: Database["public"]["Enums"]["user_role"]
+      }
       get_next_unique_slug: {
-        Args: { v_current_nim: string; v_name: string };
-        Returns: string;
-      };
+        Args: { v_current_nim: string; v_name: string }
+        Returns: string
+      }
       promote_legacy_member_to_anggota: {
-        Args: { input_nim: string; user_id: string };
-        Returns: boolean;
-      };
-      slugify: { Args: { v_text: string }; Returns: string };
-    };
+        Args: { input_nim: string; user_id: string }
+        Returns: boolean
+      }
+      slugify: { Args: { v_text: string }; Returns: string }
+    }
     Enums: {
-      activity_target: "caang" | "anggota";
-      attendance_status: "hadir" | "izin" | "sakit" | "alfa" | "telat";
-      gender_type: "L" | "P";
+      activity_target: "caang" | "anggota"
+      attendance_status: "hadir" | "izin" | "sakit" | "alfa" | "telat"
+      gender_type: "L" | "P"
       piket_day:
         | "Senin"
         | "Selasa"
@@ -1486,9 +1486,9 @@ export type Database = {
         | "Kamis"
         | "Jumat"
         | "Sabtu"
-        | "Minggu";
-      reg_status: "process" | "pending" | "verified" | "rejected";
-      task_status: "belum_selesai" | "diperiksa" | "selesai" | "revisi";
+        | "Minggu"
+      reg_status: "process" | "pending" | "verified" | "rejected"
+      task_status: "belum_selesai" | "diperiksa" | "selesai" | "revisi"
       user_role:
         | "super-admin"
         | "admin-or"
@@ -1497,37 +1497,34 @@ export type Database = {
         | "caang"
         | "admin-kestari"
         | "admin-divisi"
-        | "alumni";
-    };
+        | "alumni"
+    }
     CompositeTypes: {
-      [_ in never]: never;
-    };
-  };
-};
+      [_ in never]: never
+    }
+  }
+}
 
-type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">;
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<
-  keyof Database,
-  "public"
->];
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
+    schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
+  schema: keyof DatabaseWithoutInternals
 }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
       DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
-      Row: infer R;
+      Row: infer R
     }
     ? R
     : never
@@ -1535,95 +1532,95 @@ export type Tables<
         DefaultSchema["Views"])
     ? (DefaultSchema["Tables"] &
         DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-        Row: infer R;
+        Row: infer R
       }
       ? R
       : never
-    : never;
+    : never
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
+    schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
+  schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Insert: infer I;
+      Insert: infer I
     }
     ? I
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
     ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Insert: infer I;
+        Insert: infer I
       }
       ? I
       : never
-    : never;
+    : never
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
+    schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
+  schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-      Update: infer U;
+      Update: infer U
     }
     ? U
     : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
     ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-        Update: infer U;
+        Update: infer U
       }
       ? U
       : never
-    : never;
+    : never
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
+    schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
+  schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never;
+    : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals;
+    schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
+  schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never;
+    : never
 
 export const Constants = {
   graphql_public: {
@@ -1657,4 +1654,4 @@ export const Constants = {
       ],
     },
   },
-} as const;
+} as const
