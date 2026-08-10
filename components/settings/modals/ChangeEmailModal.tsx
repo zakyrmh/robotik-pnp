@@ -38,6 +38,11 @@ export function ChangeEmailModal({
       return;
     }
 
+    if (newEmail.trim().toLowerCase() === currentEmail.trim().toLowerCase()) {
+      toast.error("Alamat email baru harus berbeda dengan email saat ini.");
+      return;
+    }
+
     setLoading(true);
     try {
       const res = await updateEmailAction({ newEmail, currentPassword });
@@ -67,7 +72,8 @@ export function ChangeEmailModal({
             </DialogTitle>
           </div>
           <DialogDescription className="text-xs text-slate-500 dark:text-slate-400">
-            Masukkan email baru dan konfirmasi kata sandi Anda saat ini. Link konfirmasi akan dikirimkan ke alamat email baru.
+            Masukkan email baru dan konfirmasi kata sandi Anda saat ini. Link
+            konfirmasi akan dikirimkan ke alamat email baru.
           </DialogDescription>
         </DialogHeader>
 

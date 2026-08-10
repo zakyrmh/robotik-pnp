@@ -173,6 +173,23 @@ describe("Settings Server Actions", () => {
     expect(res.message).toBe("Profil berhasil diperbarui.");
   });
 
+  it("updateEmailAction should fail if new email is identical to current email", async () => {
+    mockGetUser.mockResolvedValueOnce({
+      data: { user: { id: "user-123", email: "test@example.com" } },
+      error: null,
+    });
+
+    const res = await updateEmailAction({
+      currentPassword: "anypassword",
+      newEmail: "TEST@EXAMPLE.COM",
+    });
+
+    expect(res.success).toBe(false);
+    expect(res.message).toBe(
+      "Alamat email baru harus berbeda dengan email saat ini.",
+    );
+  });
+
   it("updateEmailAction should fail if current password is wrong", async () => {
     mockGetUser.mockResolvedValueOnce({
       data: { user: { id: "user-123", email: "test@example.com" } },

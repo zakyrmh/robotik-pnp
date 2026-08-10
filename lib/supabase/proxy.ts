@@ -137,6 +137,7 @@ export async function updateSession(request: NextRequest) {
     "/manajemen-kelompok",
     "/manajemen-caang",
     "/kegiatan-absensi-caang",
+    "/settings",
   ];
   const protectedRoutes = [
     ...internalProtectedRoutes,
@@ -232,6 +233,7 @@ export async function updateSession(request: NextRequest) {
         "/absensi",
         "/kegiatan",
         "/tugas",
+        "/settings",
       ];
       const isAllowed = allowedCaangRoutes.some((r) => matchRoute(pathname, r));
       if (!isAllowed && (isProtectedRoute || isAuthRoute)) {
@@ -244,6 +246,7 @@ export async function updateSession(request: NextRequest) {
         "/absensi",
         "/kegiatan",
         "/piket",
+        "/settings",
       ];
       const isAllowed = allowedAnggotaRoutes.some((r) =>
         matchRoute(pathname, r),

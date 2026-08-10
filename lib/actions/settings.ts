@@ -57,6 +57,15 @@ export async function getSettingsDataAction() {
     return { error: "Profil pengguna tidak ditemukan." };
   }
 
+  // Sinkronkan email profil jika berbeda dengan auth.users
+  if (user.email && profile.email !== user.email) {
+    await supabase
+      .from("profiles")
+      .update({ email: user.email })
+      .eq("id", user.id);
+    profile.email = user.email;
+  }
+
   // Fetch Registration detail
   const { data: registration } = await supabase
     .from("registrations")
@@ -238,6 +247,16 @@ export async function updateEmailAction(
     };
   }
 
+  if (
+    validation.data.newEmail.trim().toLowerCase() ===
+    user.email.trim().toLowerCase()
+  ) {
+    return {
+      success: false,
+      message: "Alamat email baru harus berbeda dengan email saat ini.",
+    };
+  }
+
   // 1. Verify current password
   const { error: signInErr } = await supabase.auth.signInWithPassword({
     email: user.email,
@@ -255,7 +274,11 @@ export async function updateEmailAction(
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
   const { error: updateErr } = await supabase.auth.updateUser(
     { email: validation.data.newEmail },
-    { emailRedirectTo: siteUrl ? `${siteUrl}/callback?next=/settings` : undefined },
+    {
+      emailRedirectTo: siteUrl
+        ? `${siteUrl}/callback?next=/settings`
+        : undefined,
+    },
   );
 
   if (updateErr) {

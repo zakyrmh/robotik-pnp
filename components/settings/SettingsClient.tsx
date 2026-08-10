@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { toast } from "sonner";
@@ -108,6 +108,44 @@ export function SettingsClient({ settingsData }: SettingsClientProps) {
   const [isDeleteAccountOpen, setIsDeleteAccountOpen] = useState(false);
   const [isMembershipDetailOpen, setIsMembershipDetailOpen] = useState(false);
   const [isExportDataOpen, setIsExportDataOpen] = useState(false);
+
+  // Tangkap pesan verifikasi dari URL query param / hash fragment
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const searchParams = new URLSearchParams(window.location.search);
+    const errorParam = searchParams.get("error");
+    const messageParam = searchParams.get("message");
+    const hash = window.location.hash;
+
+    let hasNotified = false;
+
+    if (errorParam) {
+      toast.error(decodeURIComponent(errorParam));
+      hasNotified = true;
+    } else if (messageParam) {
+      const decodedMsg = decodeURIComponent(messageParam);
+      const displayMsg = decodedMsg.includes("Confirmation link accepted")
+        ? "Tautan konfirmasi telah diterima. Silakan lanjutkan untuk mengonfirmasi tautan yang dikirim ke alamat email baru."
+        : decodedMsg;
+      toast.success(displayMsg);
+      hasNotified = true;
+    } else if (hash && hash.includes("message=")) {
+      const match = hash.match(/message=([^&]+)/);
+      if (match && match[1]) {
+        const decodedMsg = decodeURIComponent(match[1].replace(/\+/g, " "));
+        const displayMsg = decodedMsg.includes("Confirmation link accepted")
+          ? "Tautan konfirmasi telah diterima. Silakan lanjutkan untuk mengonfirmasi tautan yang dikirim ke alamat email baru."
+          : decodedMsg;
+        toast.info(displayMsg);
+        hasNotified = true;
+      }
+    }
+
+    if (hasNotified) {
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, []);
 
   // Notification Toggles
   const [notifications, setNotifications] = useState({
