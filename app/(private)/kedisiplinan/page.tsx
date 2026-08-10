@@ -35,16 +35,33 @@ export default async function KedisiplinanPage() {
     redirect("/dashboard");
   }
 
-  // Fetch summaries & active sanctions
-  const { data: summariesData } = await supabase
-    .from("v_user_discipline_summary")
-    .select("*")
-    .order("net_points", { ascending: false });
+  // Ambil ID profil anggota/pengurus aktif (exclude caang & alumni)
+  const { data: validProfiles } = await supabase
+    .from("profiles")
+    .select("id")
+    .neq("role", "caang")
+    .neq("role", "alumni");
 
-  const { data: sanctionsData } = await supabase
-    .from("sanctions")
-    .select("id, profile_id, sp_level, status")
-    .eq("status", "active");
+  const validProfileIds = (validProfiles || []).map((p) => p.id);
+
+  // Fetch summaries & active sanctions untuk profil valid
+  const { data: summariesData } =
+    validProfileIds.length > 0
+      ? await supabase
+          .from("v_user_discipline_summary")
+          .select("*")
+          .in("profile_id", validProfileIds)
+          .order("net_points", { ascending: false })
+      : { data: [] };
+
+  const { data: sanctionsData } =
+    validProfileIds.length > 0
+      ? await supabase
+          .from("sanctions")
+          .select("id, profile_id, sp_level, status")
+          .eq("status", "active")
+          .in("profile_id", validProfileIds)
+      : { data: [] };
 
   const summaries: UserDisciplineSummary[] = (summariesData || []).map((s) => ({
     profile_id: s.profile_id || "",
@@ -67,15 +84,19 @@ export default async function KedisiplinanPage() {
   return (
     <div className="space-y-6">
       {/* Tricolor Tech Header Line */}
-      <div className="h-1 w-full bg-linear-to-r from-cyber-blue via-tech-navy to-crimson-red" />
+      <div className="h-1 w-full bg-linear-to-r from-[#0066b1] via-[#1c69d4] to-[#e22718]" />
 
       <div className="flex flex-col gap-1">
-        <span className="font-mono text-xs text-cyber-blue uppercase tracking-widest">
+        <span className="font-mono text-xs font-semibold text-dongker-surface dark:text-blue-400 uppercase tracking-widest">
           MODUL MANAJEMEN KEDISIPLINAN ORGANISASI
         </span>
-        <h1 className="text-3xl font-bold uppercase tracking-tight text-white font-sans">
+        <h1 className="text-2xl sm:text-3xl font-display font-bold uppercase tracking-tight text-dongker-ink dark:text-slate-100">
           REKAPITULASI POIN KEDISIPLINAN ANGGOTA
         </h1>
+        <p className="text-xs font-mono text-slate-500 dark:text-slate-400">
+          Monitoring akumulasi poin sanksi, dispensasi, dan Surat Peringatan
+          (SP) untuk anggota aktif dan pengurus.
+        </p>
       </div>
 
       <DisciplineRecapTable

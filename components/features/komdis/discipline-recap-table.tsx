@@ -86,99 +86,91 @@ export function DisciplineRecapTable({
     <div className="space-y-6">
       {/* Metrics Bar */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-surface-card-dark border-hairline-dark rounded-none p-4 shadow-none">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-cyber-blue/10 text-cyber-blue border border-cyber-blue/30 rounded-none">
-              <HugeiconsIcon icon={UserGroupIcon} size={20} />
+        <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs p-4 flex items-center gap-3 border-l-4 border-l-dongker-surface dark:border-l-blue-500">
+          <div className="p-2.5 bg-blue-50 dark:bg-blue-950/60 text-dongker-surface dark:text-blue-400 rounded-lg shrink-0">
+            <HugeiconsIcon icon={UserGroupIcon} size={20} />
+          </div>
+          <div>
+            <div className="font-mono text-[10px] uppercase text-slate-400 dark:text-slate-500 tracking-wider">
+              TOTAL ANGGOTA
             </div>
-            <div>
-              <div className="font-mono text-[10px] uppercase text-gray-400 tracking-wider">
-                TOTAL ANGGOTA
-              </div>
-              <div className="font-mono text-2xl font-bold text-white">
-                {totalMembers}
-              </div>
+            <div className="font-display text-2xl font-bold text-dongker-ink dark:text-slate-100">
+              {totalMembers}
             </div>
           </div>
         </Card>
 
-        <Card className="bg-surface-card-dark border-hairline-dark rounded-none p-4 shadow-none">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-amber-500/10 text-amber-400 border border-amber-500/30 rounded-none">
-              <HugeiconsIcon icon={Alert01Icon} size={20} />
+        <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs p-4 flex items-center gap-3 border-l-4 border-l-amber-500">
+          <div className="p-2.5 bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 rounded-lg shrink-0">
+            <HugeiconsIcon icon={Alert01Icon} size={20} />
+          </div>
+          <div>
+            <div className="font-mono text-[10px] uppercase text-amber-600 dark:text-amber-400 tracking-wider">
+              ANGGOTA SP 1 (≥30 PTS)
             </div>
-            <div>
-              <div className="font-mono text-[10px] uppercase text-amber-400 tracking-wider">
-                ANGGOTA SP 1 (≥30 PTS)
-              </div>
-              <div className="font-mono text-2xl font-bold text-amber-400">
-                {sp1Count}
-              </div>
+            <div className="font-display text-2xl font-bold text-amber-600 dark:text-amber-400">
+              {sp1Count}
             </div>
           </div>
         </Card>
 
-        <Card className="bg-surface-card-dark border-hairline-dark rounded-none p-4 shadow-none">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-orange-500/10 text-orange-400 border border-orange-500/30 rounded-none">
-              <HugeiconsIcon icon={Alert01Icon} size={20} />
+        <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs p-4 flex items-center gap-3 border-l-4 border-l-orange-500">
+          <div className="p-2.5 bg-orange-50 dark:bg-orange-950/60 text-orange-deep dark:text-orange-300 rounded-lg shrink-0">
+            <HugeiconsIcon icon={Alert01Icon} size={20} />
+          </div>
+          <div>
+            <div className="font-mono text-[10px] uppercase text-orange-deep dark:text-orange-300 tracking-wider">
+              ANGGOTA SP 2 (≥50 PTS)
             </div>
-            <div>
-              <div className="font-mono text-[10px] uppercase text-orange-400 tracking-wider">
-                ANGGOTA SP 2 (≥50 PTS)
-              </div>
-              <div className="font-mono text-2xl font-bold text-orange-400">
-                {sp2Count}
-              </div>
+            <div className="font-display text-2xl font-bold text-orange-deep dark:text-orange-300">
+              {sp2Count}
             </div>
           </div>
         </Card>
 
-        <Card className="bg-surface-card-dark border-hairline-dark rounded-none p-4 shadow-none">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-crimson-red/10 text-crimson-red border border-crimson-red/30 rounded-none">
-              <HugeiconsIcon icon={Audit01Icon} size={20} />
+        <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs p-4 flex items-center gap-3 border-l-4 border-l-red-500">
+          <div className="p-2.5 bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 rounded-lg shrink-0">
+            <HugeiconsIcon icon={Audit01Icon} size={20} />
+          </div>
+          <div>
+            <div className="font-mono text-[10px] uppercase text-red-600 dark:text-red-400 tracking-wider">
+              ANGGOTA SP 3 (≥100 PTS)
             </div>
-            <div>
-              <div className="font-mono text-[10px] uppercase text-crimson-red tracking-wider">
-                ANGGOTA SP 3 (≥100 PTS)
-              </div>
-              <div className="font-mono text-2xl font-bold text-crimson-red">
-                {sp3Count}
-              </div>
+            <div className="font-display text-2xl font-bold text-red-600 dark:text-red-400">
+              {sp3Count}
             </div>
           </div>
         </Card>
       </div>
 
       {/* Control & Search Bar */}
-      <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between bg-surface-card-dark p-4 border border-hairline-dark">
+      <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between bg-white dark:bg-slate-900 p-4 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs">
         {/* Search Bar */}
         <div className="relative flex-1">
           <HugeiconsIcon
             icon={Search01Icon}
             size={18}
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500"
           />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="CARI ANGGOTA BERDASARKAN NAMA / NIM..."
-            className="w-full bg-canvas-dark border border-hairline-dark pl-10 pr-4 py-2 text-xs font-mono text-white placeholder-gray-500 focus:outline-hidden focus:border-cyber-blue rounded-none"
+            className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 pl-10 pr-4 py-2.5 text-xs font-mono text-dongker-ink dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-hidden focus:border-pnp-orange focus:ring-1 focus:ring-pnp-orange rounded-lg"
           />
         </div>
 
         {/* SP Filter Tabs */}
-        <div className="flex items-center gap-1 bg-canvas-dark p-1 border border-hairline-dark overflow-x-auto">
+        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 border border-slate-200 dark:border-slate-700/80 rounded-lg overflow-x-auto">
           {(["all", "aman", "sp1", "sp2", "sp3"] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setSpFilter(tab)}
-              className={`px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider transition-colors rounded-none whitespace-nowrap ${
+              className={`px-3 py-1.5 font-mono text-micro uppercase tracking-wider transition-all whitespace-nowrap ${
                 spFilter === tab
-                  ? "bg-cyber-blue text-white font-bold"
-                  : "text-gray-400 hover:text-white"
+                  ? "bg-dongker-surface dark:bg-blue-600 text-white font-bold rounded-md shadow-xs"
+                  : "text-slate-600 dark:text-slate-400 hover:text-dongker-ink dark:hover:text-slate-100 hover:bg-white/50 dark:hover:bg-slate-700/50 rounded-md"
               }`}
             >
               {tab === "all"
@@ -192,27 +184,25 @@ export function DisciplineRecapTable({
       </div>
 
       {/* Data Table */}
-      <div className="border border-hairline-dark bg-surface-card-dark overflow-x-auto">
+      <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl shadow-xs overflow-hidden overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="border-b border-hairline-dark bg-canvas-dark font-mono text-[11px] uppercase tracking-widest text-cyber-blue">
-              <th className="py-3 px-4">NIM</th>
-              <th className="py-3 px-4">NAMA ANGGOTA</th>
-              <th className="py-3 px-4 text-center">POIN PRESENSI</th>
-              <th className="py-3 px-4 text-center">PEMUTIHAN GORO</th>
-              <th className="py-3 px-4 text-center">
-                NET POIN ($P_{"{net}"}$)
-              </th>
-              <th className="py-3 px-4 text-center">STATUS SP</th>
-              <th className="py-3 px-4 text-right">AKSI</th>
+            <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 font-mono text-micro font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              <th className="py-3.5 px-4">NIM</th>
+              <th className="py-3.5 px-4">NAMA ANGGOTA</th>
+              <th className="py-3.5 px-4 text-center">POIN PRESENSI</th>
+              <th className="py-3.5 px-4 text-center">PEMUTIHAN GORO</th>
+              <th className="py-3.5 px-4 text-center">NET POIN</th>
+              <th className="py-3.5 px-4 text-center">STATUS SP</th>
+              <th className="py-3.5 px-4 text-right">AKSI</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-hairline-dark font-sans text-xs">
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
             {filteredSummaries.length === 0 ? (
               <tr>
                 <td
                   colSpan={7}
-                  className="text-center py-8 text-gray-500 font-mono"
+                  className="text-center py-8 text-slate-400 dark:text-slate-500 font-mono text-xs"
                 >
                   TIDAK ADA DATA ANGGOTA TERSEDIA
                 </td>
@@ -223,57 +213,57 @@ export function DisciplineRecapTable({
                 const activeSp = sanctionMap.get(item.profile_id || "") || 0;
 
                 let spBadgeClass =
-                  "bg-emerald-500/10 text-emerald-400 border-emerald-500/30";
+                  "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800";
                 let spText = "AMAN";
 
                 if (activeSp === 3 || net >= 100) {
                   spBadgeClass =
-                    "bg-crimson-red/20 text-crimson-red border-crimson-red/50 animate-pulse";
+                    "bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800 animate-pulse";
                   spText = "SP 3 (DO)";
                 } else if (activeSp === 2 || net >= 50) {
                   spBadgeClass =
-                    "bg-orange-500/10 text-orange-400 border-orange-500/30";
+                    "bg-orange-50 dark:bg-orange-950/60 text-orange-deep dark:text-orange-300 border-orange-200 dark:border-orange-800";
                   spText = "SP 2";
                 } else if (activeSp === 1 || net >= 30) {
                   spBadgeClass =
-                    "bg-amber-500/10 text-amber-400 border-amber-500/30";
+                    "bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800";
                   spText = "SP 1";
                 }
 
                 return (
                   <tr
                     key={item.profile_id}
-                    className="hover:bg-canvas-dark/50 transition-colors"
+                    className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
                   >
-                    <td className="py-3 px-4 font-mono text-gray-400">
+                    <td className="py-3.5 px-4 font-mono text-slate-500 dark:text-slate-400">
                       {item.nim || "-"}
                     </td>
-                    <td className="py-3 px-4 font-bold text-white uppercase font-sans">
+                    <td className="py-3.5 px-4 font-display font-medium text-dongker-ink dark:text-slate-100">
                       {item.full_name || "Anggota"}
                     </td>
-                    <td className="py-3 px-4 text-center font-mono text-amber-400 font-bold">
+                    <td className="py-3.5 px-4 text-center font-mono text-amber-600 dark:text-amber-400 font-bold">
                       +{item.total_attendance_points || 0}
                     </td>
-                    <td className="py-3 px-4 text-center font-mono text-emerald-400 font-bold">
+                    <td className="py-3.5 px-4 text-center font-mono text-emerald-600 dark:text-emerald-400 font-bold">
                       {item.total_log_points || 0}
                     </td>
-                    <td className="py-3 px-4 text-center font-mono text-sm font-bold text-white">
+                    <td className="py-3.5 px-4 text-center font-mono text-sm font-bold text-dongker-ink dark:text-slate-100">
                       {net} PTS
                     </td>
-                    <td className="py-3 px-4 text-center">
+                    <td className="py-3.5 px-4 text-center">
                       <span
-                        className={`inline-block px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-wider rounded-sm border ${spBadgeClass}`}
+                        className={`inline-block px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider rounded-full border ${spBadgeClass}`}
                       >
                         {spText}
                       </span>
                     </td>
-                    <td className="py-3 px-4 text-right">
+                    <td className="py-3.5 px-4 text-right">
                       <Link
                         href={`/kedisiplinan/${item.profile_id}`}
-                        className="inline-flex items-center gap-1 bg-cyber-blue/10 hover:bg-cyber-blue text-cyber-blue hover:text-white px-3 py-1 border border-cyber-blue/30 font-mono text-[10px] uppercase tracking-wider transition-colors rounded-none"
+                        className="inline-flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-dongker-surface dark:hover:bg-blue-600 text-dongker-ink dark:text-slate-200 hover:text-white dark:hover:text-white px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 font-mono text-micro font-semibold uppercase tracking-wider transition-all"
                       >
-                        <HugeiconsIcon icon={UserIcon} size={12} />[ DETAIL &
-                        SANKS ]
+                        <HugeiconsIcon icon={UserIcon} size={14} />
+                        Detail &amp; Sanksi
                       </Link>
                     </td>
                   </tr>
