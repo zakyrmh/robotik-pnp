@@ -55,7 +55,7 @@ export function ExportDataModal({ isOpen, onClose }: ExportDataModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
+      <DialogContent className="max-w-2xl md:max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
         <DialogHeader>
           <div className="flex items-center gap-2 text-blue-900 dark:text-blue-400">
             <FileJson className="w-5 h-5 text-orange-500" />

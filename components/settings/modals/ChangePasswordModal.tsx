@@ -73,7 +73,7 @@ export function ChangePasswordModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
+      <DialogContent className="max-w-2xl md:max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
         <DialogHeader>
           <div className="flex items-center gap-2 text-blue-900 dark:text-blue-400">
             <Lock className="w-5 h-5 text-orange-500" />
@@ -101,32 +101,34 @@ export function ChangePasswordModal({
             />
           </div>
 
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Kata Sandi Baru
-            </Label>
-            <Input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="Minimal 8 karakter"
-              className="h-9 text-xs bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"
-              required
-            />
-          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                Kata Sandi Baru
+              </Label>
+              <Input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Minimal 8 karakter"
+                className="h-9 text-xs bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"
+                required
+              />
+            </div>
 
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Konfirmasi Kata Sandi Baru
-            </Label>
-            <Input
-              type="password"
-              value={confirmNewPassword}
-              onChange={(e) => setConfirmNewPassword(e.target.value)}
-              placeholder="Ulangi kata sandi baru"
-              className="h-9 text-xs bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"
-              required
-            />
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                Konfirmasi Kata Sandi Baru
+              </Label>
+              <Input
+                type="password"
+                value={confirmNewPassword}
+                onChange={(e) => setConfirmNewPassword(e.target.value)}
+                placeholder="Ulangi kata sandi baru"
+                className="h-9 text-xs bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"
+                required
+              />
+            </div>
           </div>
 
           <DialogFooter className="pt-2 gap-2 sm:gap-0">

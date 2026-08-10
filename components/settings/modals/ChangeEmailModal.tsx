@@ -58,7 +58,7 @@ export function ChangeEmailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
+      <DialogContent className="max-w-2xl md:max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100">
         <DialogHeader>
           <div className="flex items-center gap-2 text-blue-900 dark:text-blue-400">
             <Mail className="w-5 h-5 text-orange-500" />
@@ -72,29 +72,31 @@ export function ChangeEmailModal({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Email Saat Ini
-            </Label>
-            <Input
-              value={currentEmail}
-              disabled
-              className="h-9 text-xs bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 cursor-not-allowed"
-            />
-          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                Email Saat Ini
+              </Label>
+              <Input
+                value={currentEmail}
+                disabled
+                className="h-9 text-xs bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 cursor-not-allowed"
+              />
+            </div>
 
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-              Alamat Email Baru
-            </Label>
-            <Input
-              type="email"
-              value={newEmail}
-              onChange={(e) => setNewEmail(e.target.value)}
-              placeholder="nama@domain.com"
-              className="h-9 text-xs bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"
-              required
-            />
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                Alamat Email Baru
+              </Label>
+              <Input
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder="nama@domain.com"
+                className="h-9 text-xs bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"
+                required
+              />
+            </div>
           </div>
 
           <div className="space-y-1.5">

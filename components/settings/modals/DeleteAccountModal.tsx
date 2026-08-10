@@ -66,7 +66,7 @@ export function DeleteAccountModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-md bg-white dark:bg-slate-900 border-red-200 dark:border-red-900/50 text-slate-900 dark:text-slate-100">
+      <DialogContent className="max-w-2xl md:max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 border-red-200 dark:border-red-900/50 text-slate-900 dark:text-slate-100">
         <DialogHeader>
           <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
             <AlertTriangle className="w-5 h-5 text-red-500" />
