@@ -115,14 +115,7 @@ const allMenuItems = {
 // Define which roles have access to which menu items
 const roleMenuKeys: Record<string, (keyof typeof allMenuItems)[]> = {
   caang: ["dashboard", "kegiatan", "presensi", "tugas", "magang"],
-  anggota: [
-    "dashboard",
-    "kegiatan",
-    "presensi",
-    "perizinan",
-    "kedisiplinan",
-    "piket",
-  ],
+  anggota: ["dashboard", "kegiatan", "presensi", "piket"],
   "admin-komdis": [
     "dashboard",
     "kegiatan",
@@ -140,8 +133,6 @@ const roleMenuKeys: Record<string, (keyof typeof allMenuItems)[]> = {
     "manajemenMagang",
     "kegiatan",
     "presensi",
-    "perizinan",
-    "kedisiplinan",
     "piket",
   ],
   "super-admin": [
@@ -201,6 +192,8 @@ export function Sidebar() {
         "dashboard",
         "kegiatan",
         "presensi",
+        "perizinan",
+        "kedisiplinan",
         "tugas",
         "magang",
         "piket",
