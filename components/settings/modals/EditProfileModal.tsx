@@ -124,7 +124,7 @@ export function EditProfileModal({
 
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
           {/* Identitas Diri */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 Nama Lengkap
@@ -151,7 +151,7 @@ export function EditProfileModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 Jenis Kelamin
@@ -183,7 +183,9 @@ export function EditProfileModal({
                 className="h-9 text-xs bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"
               />
             </div>
+          </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 Tanggal Lahir
@@ -195,9 +197,7 @@ export function EditProfileModal({
                 className="h-9 text-xs bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"
               />
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 No. WhatsApp / HP
@@ -209,7 +209,9 @@ export function EditProfileModal({
                 className="h-9 text-xs bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"
               />
             </div>
+          </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 Program Studi
@@ -233,9 +235,7 @@ export function EditProfileModal({
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 Tahun Masuk (Angkatan)
@@ -249,7 +249,9 @@ export function EditProfileModal({
                 className="h-9 text-xs bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-700"
               />
             </div>
+          </div>
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 Kelas Saat Ini
@@ -275,7 +277,7 @@ export function EditProfileModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-slate-700 dark:text-slate-300">
                 Alamat Asal
