@@ -73,7 +73,7 @@ export function MembershipDetailModal({
                   PNP
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold tracking-wide uppercase">
+                  <h4 className="text-white text-xs font-bold tracking-wide uppercase">
                     UKM Robotik PNP
                   </h4>
                   <p className="text-[10px] text-blue-200/80">

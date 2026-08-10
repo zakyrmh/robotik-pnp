@@ -255,7 +255,7 @@ export async function updateEmailAction(
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
   const { error: updateErr } = await supabase.auth.updateUser(
     { email: validation.data.newEmail },
-    { emailRedirectTo: siteUrl ? `${siteUrl}/callback` : undefined },
+    { emailRedirectTo: siteUrl ? `${siteUrl}/callback?next=/settings` : undefined },
   );
 
   if (updateErr) {

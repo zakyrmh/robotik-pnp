@@ -543,7 +543,7 @@ export function SettingsClient({ settingsData }: SettingsClientProps) {
                 </div>
 
                 {isAdminRole && (
-                  <Link href="/pengaturan-or">
+                  <Link href="/dashboard">
                     <Button
                       size="sm"
                       className="h-8 text-xs bg-orange-500 hover:bg-orange-600 text-white"

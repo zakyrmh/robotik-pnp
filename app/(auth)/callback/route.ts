@@ -33,8 +33,9 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      // Sign out untuk verifikasi email pendaftaran, tapi JANGAN sign out jika ini adalah sesi recovery reset password
-      if (next !== "/update-password" && !next.startsWith("/update-password")) {
+      // Sign out HANYA untuk verifikasi email pendaftaran akun baru (next === "/verified").
+      // JANGAN sign out untuk pembaruan email profil (/settings), reset password, atau navigasi terautentikasi lainnya.
+      if (next === "/verified") {
         await supabase.auth.signOut();
       }
       return response;
