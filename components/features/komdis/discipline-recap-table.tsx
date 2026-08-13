@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { UserDisciplineSummary } from "@/lib/types/komdis";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { MemberInternshipModal } from "./member-internship-modal";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Search01Icon,
@@ -11,6 +13,7 @@ import {
   Alert01Icon,
   Audit01Icon,
   UserIcon,
+  Briefcase01Icon,
 } from "@hugeicons/core-free-icons";
 
 export interface SanctionStatusItem {
@@ -20,8 +23,14 @@ export interface SanctionStatusItem {
   status: string;
 }
 
+export interface ExtendedUserDisciplineSummary extends UserDisciplineSummary {
+  is_on_internship?: boolean;
+  internship_start_date?: string | null;
+  internship_end_date?: string | null;
+}
+
 interface DisciplineRecapTableProps {
-  summaries: UserDisciplineSummary[];
+  summaries: ExtendedUserDisciplineSummary[];
   activeSanctions: SanctionStatusItem[];
 }
 
@@ -33,6 +42,14 @@ export function DisciplineRecapTable({
   const [spFilter, setSpFilter] = useState<
     "all" | "aman" | "sp1" | "sp2" | "sp3"
   >("all");
+  const [selectedMember, setSelectedMember] = useState<{
+    profileId: string;
+    fullName: string;
+    nim: string;
+    isOnInternship: boolean;
+    internshipStartDate: string | null;
+    internshipEndDate: string | null;
+  } | null>(null);
 
   // Map active sanctions by profile_id
   const sanctionMap = new Map<string, number>();
@@ -84,6 +101,13 @@ export function DisciplineRecapTable({
 
   return (
     <div className="space-y-6">
+      {/* Member Internship Management Modal */}
+      <MemberInternshipModal
+        isOpen={!!selectedMember}
+        onClose={() => setSelectedMember(null)}
+        member={selectedMember}
+      />
+
       {/* Metrics Bar */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs p-4 flex items-center gap-3 border-l-4 border-l-dongker-surface dark:border-l-blue-500">
@@ -238,8 +262,17 @@ export function DisciplineRecapTable({
                     <td className="py-3.5 px-4 font-mono text-slate-500 dark:text-slate-400">
                       {item.nim || "-"}
                     </td>
-                    <td className="py-3.5 px-4 font-display font-medium text-dongker-ink dark:text-slate-100">
-                      {item.full_name || "Anggota"}
+                    <td className="py-3.5 px-4">
+                      <div className="flex items-center gap-2">
+                        <span className="font-display font-medium text-dongker-ink dark:text-slate-100">
+                          {item.full_name || "Anggota"}
+                        </span>
+                        {item.is_on_internship && (
+                          <Badge className="bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/80 text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md uppercase shrink-0">
+                            💼 MAGANG / PKL
+                          </Badge>
+                        )}
+                      </div>
                     </td>
                     <td className="py-3.5 px-4 text-center font-mono text-amber-600 dark:text-amber-400 font-bold">
                       +{item.total_attendance_points || 0}
@@ -258,13 +291,36 @@ export function DisciplineRecapTable({
                       </span>
                     </td>
                     <td className="py-3.5 px-4 text-right">
-                      <Link
-                        href={`/kedisiplinan/${item.profile_id}`}
-                        className="inline-flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-dongker-surface dark:hover:bg-blue-600 text-dongker-ink dark:text-slate-200 hover:text-white dark:hover:text-white px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 font-mono text-micro font-semibold uppercase tracking-wider transition-all"
-                      >
-                        <HugeiconsIcon icon={UserIcon} size={14} />
-                        Detail &amp; Sanksi
-                      </Link>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSelectedMember({
+                              profileId: item.profile_id || "",
+                              fullName: item.full_name || "Anggota",
+                              nim: item.nim || "",
+                              isOnInternship: !!item.is_on_internship,
+                              internshipStartDate:
+                                item.internship_start_date || null,
+                              internshipEndDate:
+                                item.internship_end_date || null,
+                            })
+                          }
+                          className="inline-flex items-center gap-1 bg-slate-100 dark:bg-slate-800 hover:bg-purple-600 dark:hover:bg-purple-600 text-slate-700 dark:text-slate-300 hover:text-white dark:hover:text-white px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 font-mono text-micro font-semibold uppercase tracking-wider transition-all"
+                          title="Atur Status Magang / PKL"
+                        >
+                          <HugeiconsIcon icon={Briefcase01Icon} size={13} />
+                          Magang
+                        </button>
+
+                        <Link
+                          href={`/kedisiplinan/${item.profile_id}`}
+                          className="inline-flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-dongker-surface dark:hover:bg-blue-600 text-dongker-ink dark:text-slate-200 hover:text-white dark:hover:text-white px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 font-mono text-micro font-semibold uppercase tracking-wider transition-all"
+                        >
+                          <HugeiconsIcon icon={UserIcon} size={14} />
+                          Detail
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 );

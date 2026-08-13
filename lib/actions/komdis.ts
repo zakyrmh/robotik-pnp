@@ -13,12 +13,14 @@ import {
   LogPointReductionSchema,
   IssueSanctionSchema,
   ManualAttendanceSchema,
+  UpdateMemberInternshipSchema,
   type CreateKomdisActivityInput,
   type UpdateKomdisActivityInput,
   type ReviewLeaveInput,
   type LogPointReductionInput,
   type IssueSanctionInput,
   type ManualAttendanceInput,
+  type UpdateMemberInternshipInput,
 } from "@/lib/schemas/komdis";
 
 // ============================================================================
@@ -371,7 +373,18 @@ export async function reviewLeaveRequest(rawInput: ReviewLeaveInput) {
 export async function batchMarkAlfa(activityId: string) {
   const { supabase, user } = await verifyKomdisRole();
 
-  // Ambil daftar anggota aktif yang belum ada record di attendances
+  // 1. Ambil data kegiatan untuk cek tanggal kegiatan
+  const { data: activity } = await supabase
+    .from("activities")
+    .select("start_date, end_date")
+    .eq("id", activityId)
+    .single();
+
+  const activityDateStr = activity?.start_date
+    ? new Date(activity.start_date).toISOString().split("T")[0]
+    : null;
+
+  // 2. Ambil daftar anggota aktif yang belum ada record di attendances
   const { data: unrecordedMembers, error: fetchError } = await supabase.rpc(
     "get_unrecorded_activity_members",
     { p_activity_id: activityId },
@@ -384,15 +397,61 @@ export async function batchMarkAlfa(activityId: string) {
   const members = unrecordedMembers as Array<{ profile_id: string }> | null;
 
   if (members && members.length > 0) {
-    const payload = members.map((member) => ({
-      activity_id: activityId,
-      profile_id: member.profile_id,
-      status: "alfa" as const,
-      approval_status: "approved",
-      verified_by: user.id,
-      verified_at: new Date().toISOString(),
-      points_awarded: 15, // SOP Alfa tanpa kabar = 15 poin
-    }));
+    const memberIds = members.map((m) => m.profile_id);
+
+    // Fetch data profile untuk mengecek status magang
+    const { data: memberProfiles } = await supabase
+      .from("profiles")
+      .select(
+        "id, is_on_internship, internship_start_date, internship_end_date",
+      )
+      .in("id", memberIds);
+
+    const profileMap = new Map((memberProfiles ?? []).map((p) => [p.id, p]));
+
+    const payload = members.map((member) => {
+      const p = profileMap.get(member.profile_id);
+      let isInterning = false;
+
+      if (p?.is_on_internship) {
+        if (!p.internship_start_date && !p.internship_end_date) {
+          isInterning = true;
+        } else if (activityDateStr) {
+          const startOk =
+            !p.internship_start_date ||
+            p.internship_start_date <= activityDateStr;
+          const endOk =
+            !p.internship_end_date || p.internship_end_date >= activityDateStr;
+          isInterning = startOk && endOk;
+        } else {
+          isInterning = true;
+        }
+      }
+
+      if (isInterning) {
+        return {
+          activity_id: activityId,
+          profile_id: member.profile_id,
+          status: "izin" as const,
+          approval_status: "approved",
+          verified_by: user.id,
+          verified_at: new Date().toISOString(),
+          points_awarded: 0, // Dispensasi magang = 0 poin
+          notes: "Dispensasi Magang / PKL",
+        };
+      }
+
+      return {
+        activity_id: activityId,
+        profile_id: member.profile_id,
+        status: "alfa" as const,
+        approval_status: "approved",
+        verified_by: user.id,
+        verified_at: new Date().toISOString(),
+        points_awarded: 15, // SOP Alfa tanpa kabar = 15 poin
+        notes: null,
+      };
+    });
 
     const { error: insertError } = await supabase
       .from("attendances")
@@ -404,6 +463,40 @@ export async function batchMarkAlfa(activityId: string) {
 
   revalidatePath(`/kegiatan/${activityId}`);
   return { success: true, count: members?.length || 0 };
+}
+
+/**
+ * 4b. Memperbarui Status Magang Anggota Aktif (Super Admin & Admin Komdis Only)
+ */
+export async function updateMemberInternshipStatus(
+  rawInput: UpdateMemberInternshipInput,
+) {
+  const { supabase } = await verifyKomdisRole();
+  const validated = UpdateMemberInternshipSchema.parse(rawInput);
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      is_on_internship: validated.isOnInternship,
+      internship_start_date: validated.internshipStartDate || null,
+      internship_end_date: validated.internshipEndDate || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", validated.profileId);
+
+  if (error) {
+    throw new Error(
+      `Gagal memperbarui status magang anggota: ${error.message}`,
+    );
+  }
+
+  revalidatePath("/kedisiplinan");
+  revalidatePath("/admin/users");
+  revalidatePath("/presensi");
+  return {
+    success: true,
+    message: "Berhasil memperbarui status magang anggota.",
+  };
 }
 
 /**
@@ -493,6 +586,9 @@ export interface KomdisMemberAttendanceItem {
   role: string;
   studyProgramName: string;
   majorName: string;
+  isOnInternship: boolean;
+  internshipStartDate: string | null;
+  internshipEndDate: string | null;
   attendances: Record<
     string,
     "hadir" | "telat" | "izin" | "sakit" | "alfa" | null
@@ -569,7 +665,10 @@ export async function getKomdisMemberAttendanceSummary(): Promise<{
         id,
         nim,
         role,
-        is_onboarded
+        is_onboarded,
+        is_on_internship,
+        internship_start_date,
+        internship_end_date
       )
     `,
     )
@@ -636,12 +735,23 @@ export async function getKomdisMemberAttendanceSummary(): Promise<{
       majors: { name: string } | { name: string }[] | null;
     } | null;
     profiles:
-      | { id: string; nim: string | null; role: string; is_onboarded: boolean }
       | {
           id: string;
           nim: string | null;
           role: string;
           is_onboarded: boolean;
+          is_on_internship: boolean;
+          internship_start_date: string | null;
+          internship_end_date: string | null;
+        }
+      | {
+          id: string;
+          nim: string | null;
+          role: string;
+          is_onboarded: boolean;
+          is_on_internship: boolean;
+          internship_start_date: string | null;
+          internship_end_date: string | null;
         }[]
       | null;
   };
@@ -697,6 +807,9 @@ export async function getKomdisMemberAttendanceSummary(): Promise<{
       role: profile?.role || "anggota",
       studyProgramName: sp ? `${sp.degree} ${sp.name}` : "—",
       majorName: major?.name || "—",
+      isOnInternship: profile?.is_on_internship ?? false,
+      internshipStartDate: profile?.internship_start_date ?? null,
+      internshipEndDate: profile?.internship_end_date ?? null,
       attendances: userAttendances,
       totals,
       totalPoints,

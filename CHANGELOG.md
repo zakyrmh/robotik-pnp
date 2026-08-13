@@ -1,25 +1,47 @@
 # Changelog
 
-Semua perubahan penting pada proyek ini akan didokumentasikan di file ini. Lihat [standard-version](https://github.com/conventional-changelog/standard-version) untuk panduan penulisan commit.
+All notable changes to this project will be documented in this file.
 
-## [0.1.3] (2026-08-10)
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-### ✨ Features
+## [Unreleased]
 
-- **Sidebar Navigation**: Menambahkan item menu `Perizinan` (`/perizinan`) dan `Kedisiplinan` (`/kedisiplinan`) pada section `KEANGGOTAAN UKM`. Hak akses dibatasi via `roleMenuKeys` secara khusus hanya untuk `admin-komdis` dan `super-admin` ([aadeac0](https://github.com/zakyrmh/robotik-pnp/commit/aadeac0))
-- **Direktori Kedisiplinan**: Merevisi total tampilan UI/UX halaman `/kedisiplinan` dan komponen `DisciplineRecapTable` agar sesuai dengan `DESIGN.md` (Clean Technical Theme, HSL token, dan kontras Light/Dark mode) ([f32688a](https://github.com/zakyrmh/robotik-pnp/commit/f32688a))
+### Added
 
-### 🐛 Bug Fixes
+- Penanganan dispensasi magang/PKL untuk Anggota Aktif pada sistem presensi Komisi Disiplin (Komdis).
+- Kolom `is_on_internship`, `internship_start_date`, dan `internship_end_date` pada tabel `profiles` (`20260814000000_add_member_internship_status.sql`).
+- Server Action `updateMemberInternshipStatus` untuk mengelola status magang anggota aktif khusus role `super-admin` dan `admin-komdis`.
+- Skema validasi Zod `UpdateMemberInternshipSchema` di `lib/schemas/komdis.ts`.
+- Komponen dialog `MemberInternshipModal` untuk menetapkan status & tanggal magang anggota secara interaktif.
+- Indikator/badge `💼 MAGANG / PKL` dan tombol aksi pada `DisciplineRecapTable`.
 
-- **Perizinan Komdis**: Mengabaikan data perizinan dari user role `caang` dan `alumni` pada halaman `/perizinan` sehingga antrean Komdis hanya menampilkan anggota aktif dan pengurus ([de23d1a](https://github.com/zakyrmh/robotik-pnp/commit/de23d1a))
-- **Direktori Kedisiplinan**: Mengabaikan data poin dan sanksi dari role `caang` dan `alumni` pada halaman `/kedisiplinan` ([f32688a](https://github.com/zakyrmh/robotik-pnp/commit/f32688a))
+### Changed
 
-## [0.1.1](https://github.com/zakyrmh/robotik-pnp/compare/v0.1.0...v0.1.1) (2026-05-08)
+- Logika `batchMarkAlfa` pada kegiatan Komdis (`target_audience = 'anggota'`) agar anggota yang sedang magang otomatis diset berstatus `izin` dengan 0 poin sanksi dan catatan _"Dispensasi Magang / PKL"_.
+- Fungsi `getKomdisMemberAttendanceSummary` dan `getUsersAction` untuk mengembalikan data status magang anggota aktif.
 
-> Inisialisasi ulang proyek robotik-pnp dengan stack yang lebih terstandarisasi.
+## [0.1.3] - 2026-08-10
 
-### ✨ Features
+### Added
 
-- Inisialisasi Supabase lokal dengan Docker ([f63cb3c](https://github.com/zakyrmh/robotik-pnp/commit/f63cb3c26b5c7eac7f304aa41b0ebaf0d310332c))
-- Setup Husky pre-commit hook dan Commitlint ([139e7fc](https://github.com/zakyrmh/robotik-pnp/commit/139e7fc81b79b66f783cf48a3316ff28d52f91d0))
-- Setup Next.js dengan pnpm ([bf8c9ff](https://github.com/zakyrmh/robotik-pnp/commit/bf8c9ff74f6e83e1b798d044399d7dfb5fc5912e))
+- Sidebar Navigation: Item menu `Perizinan` (`/perizinan`) dan `Kedisiplinan` (`/kedisiplinan`) pada section `KEANGGOTAAN UKM` (akses khusus `admin-komdis` dan `super-admin`).
+- Direktori Kedisiplinan: Tampilan UI/UX baru pada halaman `/kedisiplinan` dan komponen `DisciplineRecapTable` (Clean Technical Theme, HSL token, kontras Light/Dark mode).
+
+### Fixed
+
+- Perizinan Komdis: Mengabaikan data perizinan dari user role `caang` dan `alumni` pada halaman `/perizinan` sehingga antrean Komdis hanya menampilkan anggota aktif dan pengurus.
+- Direktori Kedisiplinan: Mengabaikan data poin dan sanksi dari role `caang` dan `alumni` pada halaman `/kedisiplinan`.
+
+## [0.1.1] - 2026-05-08
+
+### Added
+
+- Inisialisasi ulang proyek robotik-pnp dengan stack terstandarisasi.
+- Inisialisasi Supabase lokal dengan Docker.
+- Setup Husky pre-commit hook dan Commitlint.
+- Setup Next.js dengan pnpm.
+
+[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/zakyrmh/robotik-pnp/compare/v0.1.1...v0.1.3
+[0.1.1]: https://github.com/zakyrmh/robotik-pnp/compare/v0.1.0...v0.1.1

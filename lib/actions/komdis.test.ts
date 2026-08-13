@@ -60,6 +60,23 @@ vi.mock("@/lib/supabase/server", () => {
                 error: null,
               })),
             })),
+            in: vi.fn(async () => ({
+              data: [
+                {
+                  id: VALID_UUID_1,
+                  is_on_internship: false,
+                  internship_start_date: null,
+                  internship_end_date: null,
+                },
+                {
+                  id: VALID_UUID_2,
+                  is_on_internship: true,
+                  internship_start_date: "2026-08-01",
+                  internship_end_date: "2026-12-31",
+                },
+              ],
+              error: null,
+            })),
             neq: vi.fn(() => ({
               eq: vi.fn(() => ({
                 is: vi.fn(() => ({
@@ -70,6 +87,9 @@ vi.mock("@/lib/supabase/server", () => {
                 })),
               })),
             })),
+          })),
+          update: vi.fn(() => ({
+            eq: vi.fn(async () => ({ error: mockUpdateError })),
           })),
         };
       }
@@ -145,6 +165,7 @@ import {
   logPointReduction,
   issueSanction,
   recordManualAttendance,
+  updateMemberInternshipStatus,
 } from "@/lib/actions/komdis";
 
 describe("Modul Server Actions Komdis Attendance", () => {
@@ -371,6 +392,21 @@ describe("Modul Server Actions Komdis Attendance", () => {
       });
 
       expect(res.success).toBe(true);
+    });
+  });
+
+  // --- Test 8: updateMemberInternshipStatus ---
+  describe("updateMemberInternshipStatus", () => {
+    it("harus sukses memperbarui status magang anggota oleh role admin-komdis", async () => {
+      const res = await updateMemberInternshipStatus({
+        profileId: VALID_UUID_1,
+        isOnInternship: true,
+        internshipStartDate: "2026-09-01",
+        internshipEndDate: "2026-12-31",
+      });
+
+      expect(res.success).toBe(true);
+      expect(res.message).toContain("Berhasil memperbarui status magang");
     });
   });
 });
