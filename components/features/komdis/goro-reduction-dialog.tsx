@@ -1,10 +1,22 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { logPointReduction } from "@/lib/actions/komdis";
+import { useRouter } from "next/navigation";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { logPointReduction } from "@/lib/actions/komdis";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Loading03Icon, RecycleIcon } from "@hugeicons/core-free-icons";
+import { RecycleIcon, Loading01Icon } from "@hugeicons/core-free-icons";
 
 interface GoroReductionDialogProps {
   profileId: string;
@@ -19,14 +31,23 @@ export function GoroReductionDialog({
   isOpen,
   onClose,
 }: GoroReductionDialogProps) {
+  const router = useRouter();
   const [category, setCategory] = useState<
     "goro_sp1" | "goro_sp2" | "penyesuaian_komdis"
   >("goro_sp1");
   const [points, setPoints] = useState<number>(-10);
   const [description, setDescription] = useState("");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  if (!isOpen) return null;
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      setErrorMsg(null);
+      setSuccessMsg(null);
+      onClose();
+    }
+  };
 
   const handleCategoryChange = (
     cat: "goro_sp1" | "goro_sp2" | "penyesuaian_komdis",
@@ -38,12 +59,17 @@ export function GoroReductionDialog({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg(null);
+    setSuccessMsg(null);
+
     if (points >= 0) {
-      alert("Poin pemutihan harus bernilai negatif (contoh: -10 atau -15).");
+      setErrorMsg(
+        "Poin pemutihan harus bernilai negatif (contoh: -10 atau -15).",
+      );
       return;
     }
     if (!description.trim()) {
-      alert("Deskripsi pemutihan wajib diisi.");
+      setErrorMsg("Deskripsi catatan pemutihan wajib diisi.");
       return;
     }
 
@@ -53,11 +79,15 @@ export function GoroReductionDialog({
           profileId,
           category,
           points,
-          description,
+          description: description.trim(),
         });
-        onClose();
+        setSuccessMsg("Poin pemutihan Goro berhasil dicatat.");
+        router.refresh();
+        setTimeout(() => {
+          onClose();
+        }, 1000);
       } catch (err: unknown) {
-        alert(
+        setErrorMsg(
           err instanceof Error ? err.message : "Gagal mencatat pemutihan poin",
         );
       }
@@ -65,31 +95,42 @@ export function GoroReductionDialog({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-xs p-4">
-      <div className="bg-surface-card-dark border border-hairline-dark p-6 max-w-md w-full space-y-4">
-        <div className="border-b border-hairline-dark pb-3 flex justify-between items-center">
-          <div>
-            <div className="flex items-center gap-2 font-mono text-xs text-emerald-400 uppercase tracking-widest">
-              <HugeiconsIcon icon={RecycleIcon} size={16} />
-              <span>PEMUTIHAN POIN SANKSI GORO</span>
-            </div>
-            <h3 className="text-lg font-bold text-white uppercase font-sans mt-0.5">
-              {profileName}
-            </h3>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent className="sm:max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl p-6">
+        <DialogHeader className="space-y-1">
+          <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+            <HugeiconsIcon icon={RecycleIcon} size={20} />
+            <DialogTitle className="font-display text-lg font-bold text-[#0a192f] dark:text-slate-100">
+              Pemutihan Poin Sanksi Goro
+            </DialogTitle>
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-white font-mono text-xs cursor-pointer"
-          >
-            [ TUTUP X ]
-          </button>
-        </div>
+          <DialogDescription className="text-xs font-mono text-slate-500 dark:text-slate-400">
+            Catat pengalihan / pengurangan poin sanksi untuk anggota{" "}
+            <span className="font-bold text-[#0a192f] dark:text-slate-200">
+              {profileName}
+            </span>
+            .
+          </DialogDescription>
+        </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-[10px] font-mono text-gray-400 uppercase tracking-widest mb-1">
-              KATEGORI PEMUTIHAN SANKSI:
-            </label>
+        <form onSubmit={handleSubmit} className="space-y-4 py-2">
+          {errorMsg && (
+            <div className="p-3 bg-red-50 dark:bg-red-950/60 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 font-mono text-xs rounded-lg">
+              {errorMsg}
+            </div>
+          )}
+
+          {successMsg && (
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 font-mono text-xs rounded-lg">
+              {successMsg}
+            </div>
+          )}
+
+          {/* Category Selector */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-mono uppercase tracking-wider font-semibold text-[#0a192f] dark:text-slate-100">
+              Kategori Pemutihan Sanksi
+            </Label>
             <select
               value={category}
               onChange={(e) =>
@@ -100,7 +141,7 @@ export function GoroReductionDialog({
                     | "penyesuaian_komdis",
                 )
               }
-              className="w-full bg-canvas-dark border border-hairline-dark p-2.5 text-xs font-mono text-white focus:outline-hidden focus:border-cyber-blue rounded-none"
+              className="w-full h-10 px-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 font-mono text-xs text-[#0a192f] dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f97316]/20 focus:border-[#f97316]"
             >
               <option value="goro_sp1">GORO SANKSI SP1 (-10 POIN)</option>
               <option value="goro_sp2">GORO SANKSI SP2 (-15 POIN)</option>
@@ -110,58 +151,64 @@ export function GoroReductionDialog({
             </select>
           </div>
 
-          <div>
-            <label className="block text-[10px] font-mono text-gray-400 uppercase tracking-widest mb-1">
-              NILAI POIN PEMUTIHAN (HARUS NEGATIF):
-            </label>
-            <input
+          {/* Points Input */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-mono uppercase tracking-wider font-semibold text-[#0a192f] dark:text-slate-100">
+              Nilai Poin Pemutihan (Negatif)
+            </Label>
+            <Input
               type="number"
               max={-1}
               value={points}
               onChange={(e) => setPoints(Number(e.target.value))}
-              className="w-full bg-canvas-dark border border-hairline-dark p-2.5 text-xs font-mono text-emerald-400 font-bold focus:outline-hidden focus:border-cyber-blue rounded-none"
+              className="bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400"
             />
           </div>
 
-          <div>
-            <label className="block text-[10px] font-mono text-gray-400 uppercase tracking-widest mb-1">
-              DESKRIPSI / CATATAN PELAKSANAAN GORO:
-            </label>
-            <textarea
+          {/* Description Textarea */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-mono uppercase tracking-wider font-semibold text-[#0a192f] dark:text-slate-100">
+              Deskripsi / Catatan Pelaksanaan Goro
+            </Label>
+            <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Contoh: Telah melaksanakan sanksi Goro laboratorium selama 4x pertemuan bulan Agustus..."
-              className="w-full bg-canvas-dark border border-hairline-dark p-3 text-xs font-sans text-white placeholder-gray-500 focus:outline-hidden focus:border-cyber-blue rounded-none h-24"
+              className="bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 font-mono text-xs text-[#0a192f] dark:text-slate-100 placeholder:text-slate-400 min-h-24 rounded-lg"
             />
           </div>
 
-          <div className="flex gap-2 pt-2 border-t border-hairline-dark">
+          <DialogFooter className="pt-2 gap-2 sm:gap-0">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
-              className="flex-1 bg-canvas-dark border-hairline-dark text-gray-400 font-mono text-xs rounded-none cursor-pointer"
+              disabled={isPending}
+              className="font-mono text-xs uppercase h-9 rounded-lg border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
             >
-              BATAL
+              Batal
             </Button>
             <Button
               type="submit"
               disabled={isPending}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-mono text-xs uppercase tracking-wider rounded-none cursor-pointer"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-mono text-xs uppercase h-9 rounded-lg"
             >
               {isPending ? (
-                <HugeiconsIcon
-                  icon={Loading03Icon}
-                  size={16}
-                  className="animate-spin"
-                />
+                <span className="flex items-center gap-1.5">
+                  <HugeiconsIcon
+                    icon={Loading01Icon}
+                    className="animate-spin"
+                    size={14}
+                  />
+                  Menyimpan...
+                </span>
               ) : (
-                "SIMPAN PEMUTIHAN"
+                "Simpan Pemutihan"
               )}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

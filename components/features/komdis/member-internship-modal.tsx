@@ -54,7 +54,6 @@ export function MemberInternshipModal({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // Sync state when member prop changes
   const handleOpenChange = (open: boolean) => {
     if (open && member) {
       setIsOnInternship(member.isOnInternship);
@@ -108,9 +107,9 @@ export function MemberInternshipModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl">
+      <DialogContent className="sm:max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl p-6">
         <DialogHeader className="space-y-1">
-          <div className="flex items-center gap-2 text-[#1e3a8a] dark:text-blue-400">
+          <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400">
             <HugeiconsIcon icon={Briefcase01Icon} size={20} />
             <DialogTitle className="font-display text-lg font-bold text-[#0a192f] dark:text-slate-100">
               Pengaturan Magang / PKL
@@ -138,7 +137,7 @@ export function MemberInternshipModal({
             </div>
           )}
 
-          {/* Toggle Switch */}
+          {/* Toggle Switch Panel */}
           <div className="flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl">
             <div className="space-y-0.5">
               <Label className="text-xs font-mono uppercase tracking-wider font-semibold text-[#0a192f] dark:text-slate-100 cursor-pointer">
@@ -167,7 +166,7 @@ export function MemberInternshipModal({
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
-                  className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 font-mono text-xs text-[#0a192f] dark:text-slate-100"
+                  className="bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 font-mono text-xs text-[#0a192f] dark:text-slate-100"
                 />
               </div>
 
@@ -180,26 +179,26 @@ export function MemberInternshipModal({
                   type="date"
                   value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
-                  className="bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 font-mono text-xs text-[#0a192f] dark:text-slate-100"
+                  className="bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 font-mono text-xs text-[#0a192f] dark:text-slate-100"
                 />
               </div>
             </div>
           )}
 
-          <DialogFooter className="pt-2">
+          <DialogFooter className="pt-2 gap-2 sm:gap-0">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
               disabled={isSubmitting}
-              className="font-mono text-xs uppercase"
+              className="font-mono text-xs uppercase h-9 rounded-lg border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
             >
               Batal
             </Button>
             <Button
               type="submit"
               disabled={isSubmitting}
-              className="bg-[#1e3a8a] dark:bg-blue-600 hover:bg-[#1e40af] dark:hover:bg-blue-500 text-white font-mono text-xs uppercase"
+              className="bg-purple-600 hover:bg-purple-700 text-white font-mono text-xs uppercase h-9 rounded-lg"
             >
               {isSubmitting ? (
                 <span className="flex items-center gap-1.5">
