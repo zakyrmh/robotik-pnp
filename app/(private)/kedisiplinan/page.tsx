@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
-  DisciplineRecapTable,
+  KedisiplinanClient,
+  ExtendedUserDisciplineSummary,
   SanctionStatusItem,
-} from "@/components/features/komdis/discipline-recap-table";
-import { UserDisciplineSummary } from "@/lib/types/komdis";
+} from "@/components/features/komdis/kedisiplinan-client";
 
 export const metadata: Metadata = {
   title: "Direktori Kedisiplinan | UKM Robotik PNP",
   description:
-    "Rekapitulasi poin kedisiplinan dan Surat Peringatan anggota UKM Robotik PNP",
+    "Rekapitulasi poin kedisiplinan, perizinan, dan Surat Peringatan anggota UKM Robotik PNP",
 };
 
 export default async function KedisiplinanPage() {
@@ -24,7 +24,7 @@ export default async function KedisiplinanPage() {
     redirect("/login");
   }
 
-  // Cek Hak Akses Role
+  // Cek Hak Akses Role (Hanya admin-komdis dan super-admin yang diizinkan)
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
@@ -35,13 +35,14 @@ export default async function KedisiplinanPage() {
     redirect("/dashboard");
   }
 
-  // Ambil ID profil anggota/pengurus aktif (exclude caang & alumni)
+  // Ambil data profil anggota/pengurus aktif (exclude caang & alumni) beserta status magang
   const { data: validProfiles } = await supabase
     .from("profiles")
-    .select("id")
+    .select("id, is_on_internship, internship_start_date, internship_end_date")
     .neq("role", "caang")
     .neq("role", "alumni");
 
+  const profileMap = new Map((validProfiles || []).map((p) => [p.id, p]));
   const validProfileIds = (validProfiles || []).map((p) => p.id);
 
   // Fetch summaries & active sanctions untuk profil valid
@@ -63,14 +64,22 @@ export default async function KedisiplinanPage() {
           .in("profile_id", validProfileIds)
       : { data: [] };
 
-  const summaries: UserDisciplineSummary[] = (summariesData || []).map((s) => ({
-    profile_id: s.profile_id || "",
-    full_name: s.full_name || null,
-    nim: s.nim || null,
-    total_attendance_points: s.total_attendance_points || 0,
-    total_log_points: s.total_log_points || 0,
-    net_points: s.net_points || 0,
-  }));
+  const summaries: ExtendedUserDisciplineSummary[] = (summariesData || []).map(
+    (s) => {
+      const prof = profileMap.get(s.profile_id || "");
+      return {
+        profile_id: s.profile_id || "",
+        full_name: s.full_name || null,
+        nim: s.nim || null,
+        total_attendance_points: s.total_attendance_points || 0,
+        total_log_points: s.total_log_points || 0,
+        net_points: s.net_points || 0,
+        is_on_internship: prof?.is_on_internship ?? false,
+        internship_start_date: prof?.internship_start_date ?? null,
+        internship_end_date: prof?.internship_end_date ?? null,
+      };
+    },
+  );
 
   const activeSanctions: SanctionStatusItem[] = (sanctionsData || []).map(
     (s) => ({
@@ -82,24 +91,8 @@ export default async function KedisiplinanPage() {
   );
 
   return (
-    <div className="space-y-6">
-      {/* Tricolor Tech Header Line */}
-      <div className="h-1 w-full bg-linear-to-r from-[#0066b1] via-[#1c69d4] to-[#e22718]" />
-
-      <div className="flex flex-col gap-1">
-        <span className="font-mono text-xs font-semibold text-dongker-surface dark:text-blue-400 uppercase tracking-widest">
-          MODUL MANAJEMEN KEDISIPLINAN ORGANISASI
-        </span>
-        <h1 className="text-2xl sm:text-3xl font-display font-bold uppercase tracking-tight text-dongker-ink dark:text-slate-100">
-          REKAPITULASI POIN KEDISIPLINAN ANGGOTA
-        </h1>
-        <p className="text-xs font-mono text-slate-500 dark:text-slate-400">
-          Monitoring akumulasi poin sanksi, dispensasi, dan Surat Peringatan
-          (SP) untuk anggota aktif dan pengurus.
-        </p>
-      </div>
-
-      <DisciplineRecapTable
+    <div className="w-full">
+      <KedisiplinanClient
         summaries={summaries}
         activeSanctions={activeSanctions}
       />

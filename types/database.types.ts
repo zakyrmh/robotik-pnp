@@ -1009,9 +1009,9 @@ export type Database = {
           email: string;
           full_name: string | null;
           id: string;
-          is_on_internship: boolean;
-          internship_start_date: string | null;
           internship_end_date: string | null;
+          internship_start_date: string | null;
+          is_on_internship: boolean;
           is_onboarded: boolean;
           nim: string | null;
           role: Database["public"]["Enums"]["user_role"];
@@ -1025,9 +1025,9 @@ export type Database = {
           email: string;
           full_name?: string | null;
           id: string;
-          is_on_internship?: boolean;
-          internship_start_date?: string | null;
           internship_end_date?: string | null;
+          internship_start_date?: string | null;
+          is_on_internship?: boolean;
           is_onboarded?: boolean;
           nim?: string | null;
           role?: Database["public"]["Enums"]["user_role"];
@@ -1041,9 +1041,9 @@ export type Database = {
           email?: string;
           full_name?: string | null;
           id?: string;
-          is_on_internship?: boolean;
-          internship_start_date?: string | null;
           internship_end_date?: string | null;
+          internship_start_date?: string | null;
+          is_on_internship?: boolean;
           is_onboarded?: boolean;
           nim?: string | null;
           role?: Database["public"]["Enums"]["user_role"];
