@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Dialog,
@@ -54,8 +54,10 @@ export function MemberInternshipModal({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  const handleOpenChange = (open: boolean) => {
-    if (open && member) {
+  // Sync state whenever member or isOpen prop changes
+  useEffect(() => {
+    if (isOpen && member) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsOnInternship(member.isOnInternship);
       setStartDate(
         member.internshipStartDate
@@ -67,7 +69,11 @@ export function MemberInternshipModal({
       );
       setErrorMsg(null);
       setSuccessMsg(null);
-    } else {
+    }
+  }, [member, isOpen]);
+
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
       onClose();
     }
   };

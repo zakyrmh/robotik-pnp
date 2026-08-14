@@ -155,6 +155,7 @@ export function KedisiplinanClient({
 
       {/* Member Internship Management Dialog */}
       <MemberInternshipModal
+        key={selectedMember?.profileId || "none"}
         isOpen={!!selectedMember}
         onClose={() => setSelectedMember(null)}
         member={selectedMember}
