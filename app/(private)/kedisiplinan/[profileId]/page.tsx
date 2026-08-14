@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
 import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { MemberDisciplineHeader } from "@/components/features/komdis/member-discipline-header";
 import {
-  DisciplineHistoryTabs,
+  MemberDisciplineDetailClient,
   AttendanceHistoryItem,
-} from "@/components/features/komdis/discipline-history-tabs";
+  MemberProfileDetailData,
+} from "@/components/features/komdis/member-discipline-detail-client";
 import { DisciplinePointLog, Sanction } from "@/lib/types/komdis";
 
 export const metadata: Metadata = {
-  title: "Detail Kedisiplinan Anggota | UKM Robotik PNP",
+  title: "Detail & Sanksi Kedisiplinan | UKM Robotik PNP",
   description:
-    "Rincian poin kedisiplinan, log pemutihan, dan Surat Peringatan anggota",
+    "Rincian poin kedisiplinan, log pemutihan Goro, dispensasi magang, dan Surat Peringatan anggota",
 };
 
 interface MemberDisciplineDetailPageProps {
@@ -34,7 +34,7 @@ export default async function MemberDisciplineDetailPage({
     redirect("/login");
   }
 
-  // Cek Hak Akses Role Pengakses
+  // Cek Hak Akses Role Pengakses (Hanya super-admin dan admin-komdis)
   const { data: viewerProfile } = await supabase
     .from("profiles")
     .select("role")
@@ -45,15 +45,16 @@ export default async function MemberDisciplineDetailPage({
     viewerProfile?.role || "",
   );
 
-  // Jika bukan komdis admin dan bukan profil milik sendiri -> forbidden
-  if (!isKomdisAdmin && user.id !== profileId) {
+  if (!isKomdisAdmin) {
     redirect("/dashboard");
   }
 
-  // Fetch Member Profile
+  // Fetch Target Member Profile (Termasuk data status magang)
   const { data: targetProfile } = await supabase
     .from("profiles")
-    .select("id, full_name, nim, role")
+    .select(
+      "id, full_name, nim, role, is_on_internship, internship_start_date, internship_end_date",
+    )
     .eq("id", profileId)
     .single();
 
@@ -64,7 +65,7 @@ export default async function MemberDisciplineDetailPage({
   // Fetch Net Points Summary
   const { data: summaryData } = await supabase
     .from("v_user_discipline_summary")
-    .select("net_points")
+    .select("net_points, total_attendance_points, total_log_points")
     .eq("profile_id", profileId)
     .single();
 
@@ -155,24 +156,24 @@ export default async function MemberDisciplineDetailPage({
     notes: s.notes,
   }));
 
+  const memberData: MemberProfileDetailData = {
+    id: targetProfile.id,
+    full_name: targetProfile.full_name,
+    nim: targetProfile.nim,
+    role: targetProfile.role,
+    is_on_internship: targetProfile.is_on_internship ?? false,
+    internship_start_date: targetProfile.internship_start_date ?? null,
+    internship_end_date: targetProfile.internship_end_date ?? null,
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Tricolor Tech Header Line */}
-      <div className="h-1 w-full bg-linear-to-r from-cyber-blue via-tech-navy to-crimson-red" />
-
-      {/* Header Info */}
-      <MemberDisciplineHeader
-        profileId={profileId}
-        fullName={targetProfile.full_name || "Anggota"}
-        nim={targetProfile.nim || "-"}
-        role={targetProfile.role}
+    <div className="w-full">
+      <MemberDisciplineDetailClient
+        member={memberData}
         netPoints={summaryData?.net_points || 0}
+        totalAttendancePoints={summaryData?.total_attendance_points || 0}
+        totalLogPoints={summaryData?.total_log_points || 0}
         activeSanctionLevel={activeSanctionLevel}
-        isKomdisAdmin={isKomdisAdmin}
-      />
-
-      {/* History Tabs */}
-      <DisciplineHistoryTabs
         attendances={attendances}
         pointLogs={pointLogs}
         sanctions={sanctions}

@@ -10,6 +10,9 @@ export interface UserManagementItem {
   nim: string | null;
   role: UserRole;
   isOnboarded: boolean;
+  isOnInternship: boolean;
+  internshipStartDate: string | null;
+  internshipEndDate: string | null;
   avatarUrl: string | null;
   phoneNumber: string | null;
   studyProgramId: string | null;

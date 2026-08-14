@@ -9,7 +9,7 @@ import {
 export const metadata: Metadata = {
   title: "Perizinan Komdis | UKM Robotik PNP",
   description:
-    "Antrean verifikasi surat izin/sakit Komisi Disiplin UKM Robotik PNP",
+    "Antrean verifikasi surat izin & sakit Komisi Disiplin UKM Robotik PNP",
 };
 
 export default async function PerizinanPage() {
@@ -23,7 +23,7 @@ export default async function PerizinanPage() {
     redirect("/login");
   }
 
-  // Cek Hak Akses Role
+  // Enforce RBAC: Hanya super-admin dan admin-komdis yang berhak mengakses
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
@@ -34,7 +34,7 @@ export default async function PerizinanPage() {
     redirect("/dashboard");
   }
 
-  // Fetch data perizinan (hanya untuk anggota dan admin, mengabaikan caang & alumni)
+  // Fetch data perizinan (hanya untuk anggota aktif dan pengurus, mengabaikan caang & alumni)
   const { data: rawRequests } = await supabase
     .from("attendances")
     .select(
@@ -95,10 +95,7 @@ export default async function PerizinanPage() {
   });
 
   return (
-    <div className="space-y-6">
-      {/* Tricolor Tech Header Line */}
-      <div className="h-1 w-full bg-linear-to-r from-cyber-blue via-tech-navy to-crimson-red" />
-
+    <div className="w-full">
       <LeaveApprovalDashboard initialRequests={requests} />
     </div>
   );

@@ -62,3 +62,14 @@ export const IssueSanctionSchema = z.object({
 });
 
 export type IssueSanctionInput = z.infer<typeof IssueSanctionSchema>;
+
+export const UpdateMemberInternshipSchema = z.object({
+  profileId: z.string().uuid("ID profil tidak valid"),
+  isOnInternship: z.boolean(),
+  internshipStartDate: z.string().nullable().optional(),
+  internshipEndDate: z.string().nullable().optional(),
+});
+
+export type UpdateMemberInternshipInput = z.infer<
+  typeof UpdateMemberInternshipSchema
+>;
