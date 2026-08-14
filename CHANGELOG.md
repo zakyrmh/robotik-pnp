@@ -19,6 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Server Action `changePasswordAction()` (`lib/actions/settings.ts`) — integrasi HIBP check sebelum `updateUser()` dengan strategi fail-open.
 - Zod schemas `registerSchema`, `updatePasswordSchema` (`lib/schemas/auth.ts`) dan `changePasswordSchema` (`lib/schemas/settings.ts`) — enforcing password complexity: huruf kecil + huruf besar + angka + simbol (sinkron dengan konfigurasi Supabase Dashboard).
 
+### Fixed
+
+- Perbaikan error _"captcha protection: request disallowed (no captcha_token found)"_ di production: token Turnstile kini dikirim langsung ke Supabase Auth (`captchaToken` di `options`) alih-alih diverifikasi server-side terlebih dahulu, karena token Turnstile bersifat one-time use dan tidak bisa di-consume dua kali (double-consume).
+
 ## [0.2.0] - 2026-08-14
 
 ### Added

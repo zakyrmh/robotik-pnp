@@ -104,14 +104,6 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 // -----------------------------------------------------------------------
-// Mock: @/lib/turnstile — verifikasi CAPTCHA dikontrol per-test
-// -----------------------------------------------------------------------
-let mockTurnstileValid = true;
-vi.mock("@/lib/turnstile", () => ({
-  verifyTurnstileToken: vi.fn(async () => mockTurnstileValid),
-}));
-
-// -----------------------------------------------------------------------
 // Mock: @/lib/password-security — HIBP check dikontrol per-test
 // -----------------------------------------------------------------------
 let mockPwnedResult: { isPwned: boolean; occurrences: number } = {
@@ -164,7 +156,6 @@ describe("A. Server Action: register()", () => {
     mockSignInResult = { error: null };
     mockRedirectCalled = false;
     mockRedirectTarget = "";
-    mockTurnstileValid = true;
     mockPwnedResult = { isPwned: false, occurrences: 0 };
     mockPwnedShouldThrow = false;
   });
@@ -279,23 +270,8 @@ describe("A. Server Action: register()", () => {
     expect(mockRedirectCalled).toBe(false);
   });
 
-  it("[TC-R8] CAPTCHA siteverify gagal → request ditolak", async () => {
-    mockTurnstileValid = false;
-    const fd = createFormData({
-      email: "zaky@robotik.org",
-      password: VALID_PASSWORD,
-      confirmPassword: VALID_PASSWORD,
-      captchaToken: VALID_CAPTCHA_TOKEN,
-    });
-
-    const result = await register(null, fd);
-
-    expect(result?.error).toContain("Verifikasi keamanan gagal");
-    expect(mockRedirectCalled).toBe(false);
-  });
-
   // --- Test Case: Password bocor (HIBP) ---
-  it("[TC-R9] Password bocor (pwned) → register ditolak sebelum Supabase signUp", async () => {
+  it("[TC-R8] Password bocor (pwned) → register ditolak sebelum Supabase signUp", async () => {
     mockPwnedResult = { isPwned: true, occurrences: 12345 };
 
     const fd = createFormData({
@@ -313,7 +289,7 @@ describe("A. Server Action: register()", () => {
   });
 
   // --- Test Case: HIBP API gagal → fail-open ---
-  it("[TC-R10] HIBP API gagal → fail-open, signup tetap lanjut", async () => {
+  it("[TC-R9] HIBP API gagal → fail-open, signup tetap lanjut", async () => {
     mockPwnedShouldThrow = true;
 
     const fd = createFormData({
@@ -332,7 +308,7 @@ describe("A. Server Action: register()", () => {
   });
 
   // --- Test Case: Password tanpa simbol → validasi Zod menolak ---
-  it("[TC-R11] Password tanpa simbol → validasi skema menolak", async () => {
+  it("[TC-R10] Password tanpa simbol → validasi skema menolak", async () => {
     const fd = createFormData({
       email: "zaky@robotik.org",
       password: "Rahasia123",
@@ -347,7 +323,7 @@ describe("A. Server Action: register()", () => {
   });
 
   // --- Test Case: Password tanpa huruf besar → validasi Zod menolak ---
-  it("[TC-R12] Password tanpa huruf besar → validasi skema menolak", async () => {
+  it("[TC-R11] Password tanpa huruf besar → validasi skema menolak", async () => {
     const fd = createFormData({
       email: "zaky@robotik.org",
       password: "rahasia123!",
@@ -372,7 +348,6 @@ describe("B. Server Action: login()", () => {
     mockSignInResult = { error: null };
     mockRedirectCalled = false;
     mockRedirectTarget = "";
-    mockTurnstileValid = true;
     mockPwnedResult = { isPwned: false, occurrences: 0 };
     mockPwnedShouldThrow = false;
   });
@@ -460,22 +435,8 @@ describe("B. Server Action: login()", () => {
     expect(mockRedirectCalled).toBe(false);
   });
 
-  it("[TC-L7] CAPTCHA siteverify gagal → login ditolak", async () => {
-    mockTurnstileValid = false;
-    const fd = createFormData({
-      email: "zaky@robotik.org",
-      password: VALID_PASSWORD,
-      captchaToken: VALID_CAPTCHA_TOKEN,
-    });
-
-    const result = await login(null, fd);
-
-    expect(result?.error).toContain("Verifikasi keamanan gagal");
-    expect(mockRedirectCalled).toBe(false);
-  });
-
   // --- Test Case: Login dengan password bocor (HIBP) ---
-  it("[TC-L8] Password bocor (pwned) → login ditolak, user diarahkan reset password", async () => {
+  it("[TC-L7] Password bocor (pwned) → login ditolak, user diarahkan reset password", async () => {
     mockPwnedResult = { isPwned: true, occurrences: 5678 };
 
     const fd = createFormData({
@@ -492,7 +453,7 @@ describe("B. Server Action: login()", () => {
   });
 
   // --- Test Case: HIBP API gagal saat login → fail-open ---
-  it("[TC-L9] HIBP API gagal saat login → fail-open, login tetap lanjut", async () => {
+  it("[TC-L8] HIBP API gagal saat login → fail-open, login tetap lanjut", async () => {
     mockPwnedShouldThrow = true;
 
     const fd = createFormData({
@@ -522,7 +483,6 @@ describe("C. Server Actions: forgotPassword() & updatePassword()", () => {
     mockGetUserResult = { data: { user: null }, error: null };
     mockResetPasswordResult = { error: null };
     mockUpdateUserResult = { error: null };
-    mockTurnstileValid = true;
     mockPwnedResult = { isPwned: false, occurrences: 0 };
     mockPwnedShouldThrow = false;
   });
@@ -584,17 +544,6 @@ describe("C. Server Actions: forgotPassword() & updatePassword()", () => {
     expect(res?.error).toBeUndefined();
     expect(mockRedirectCalled).toBe(true);
     expect(mockRedirectTarget).toBe("/forgot-password/waiting");
-  });
-
-  it("[TC-FP6] CAPTCHA kosong → forgotPassword ditolak", async () => {
-    const fd = createFormData({
-      nim: "2301091001",
-      email: "user@pnp.ac.id",
-      captchaToken: "",
-    });
-    const res = await forgotPassword(null, fd);
-    expect(res?.error).toContain("CAPTCHA");
-    expect(mockRedirectCalled).toBe(false);
   });
 
   it("[TC-UP1] Sesi tidak valid saat updatePassword → return error", async () => {
