@@ -7,13 +7,29 @@ const captchaTokenSchema = z
     "Verifikasi keamanan wajib dilengkapi. Centang CAPTCHA terlebih dahulu.",
   );
 
+/**
+ * Aturan kompleksitas password — sinkron dengan konfigurasi
+ * Supabase Dashboard → Authentication → Password Requirements:
+ *   min 8 chars + lowercase + uppercase + digits + symbols.
+ */
+const passwordComplexitySchema = z
+  .string()
+  .min(8, "Password minimal 8 karakter.")
+  .regex(/[a-z]/, "Password harus mengandung huruf kecil.")
+  .regex(/[A-Z]/, "Password harus mengandung huruf besar.")
+  .regex(/[0-9]/, "Password harus mengandung angka.")
+  .regex(
+    /[^a-zA-Z0-9]/,
+    "Password harus mengandung simbol (contoh: !@#$%^&*).",
+  );
+
 export const registerSchema = z
   .object({
     email: z
       .string()
       .min(1, "Semua field harus diisi.")
       .email("Format email tidak valid."),
-    password: z.string().min(8, "Password minimal 8 karakter."),
+    password: passwordComplexitySchema,
     confirmPassword: z.string().min(1, "Semua field harus diisi."),
     captchaToken: captchaTokenSchema,
   })
@@ -48,7 +64,7 @@ export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 
 export const updatePasswordSchema = z
   .object({
-    password: z.string().min(8, "Password minimal 8 karakter."),
+    password: passwordComplexitySchema,
     confirmPassword: z.string().min(1, "Semua field harus diisi."),
   })
   .refine((data) => data.password === data.confirmPassword, {

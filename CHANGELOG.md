@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-08-14
+
+### Added
+
+- Workaround Supabase Free Plan: `lib/password-security.ts` — Leaked Password Protection via HaveIBeenPwned Pwned Passwords API (k-anonymity, password asli tidak pernah terkirim ke pihak ketiga).
+
+### Changed
+
+- Server Actions `register()`, `login()`, dan `updatePassword()` (`lib/actions/auth.ts`) — integrasi HIBP check sebelum `signUp()`, `signInWithPassword()`, dan `updateUser()` dengan strategi fail-open.
+- Server Action `changePasswordAction()` (`lib/actions/settings.ts`) — integrasi HIBP check sebelum `updateUser()` dengan strategi fail-open.
+- Zod schemas `registerSchema`, `updatePasswordSchema` (`lib/schemas/auth.ts`) dan `changePasswordSchema` (`lib/schemas/settings.ts`) — enforcing password complexity: huruf kecil + huruf besar + angka + simbol (sinkron dengan konfigurasi Supabase Dashboard).
+
 ## [0.2.0] - 2026-08-14
 
 ### Added
@@ -62,7 +74,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Setup Husky pre-commit hook dan Commitlint.
 - Setup Next.js dengan pnpm.
 
-[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/zakyrmh/robotik-pnp/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/zakyrmh/robotik-pnp/compare/v0.1.1...v0.1.3
 [0.1.1]: https://github.com/zakyrmh/robotik-pnp/compare/v0.1.0...v0.1.1

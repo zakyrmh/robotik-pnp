@@ -11,6 +11,7 @@ import {
   forgotPasswordRateLimiter,
 } from "@/lib/redis";
 import { verifyTurnstileToken } from "@/lib/turnstile";
+import { checkPasswordPwned } from "@/lib/password-security";
 import type { RegisterState } from "@/lib/types/auth";
 import {
   registerSchema,
@@ -73,6 +74,24 @@ export async function register(prevState: RegisterState, formData: FormData) {
   );
   if (!isCaptchaValid) {
     return { error: CAPTCHA_FAILED_MESSAGE };
+  }
+
+  // Cek password bocor via HaveIBeenPwned (workaround Supabase Free Plan)
+  try {
+    const { isPwned, occurrences } = await checkPasswordPwned(
+      validation.data.password,
+    );
+    if (isPwned) {
+      return {
+        error: `Password ini pernah muncul di ${occurrences.toLocaleString(
+          "id-ID",
+        )} kebocoran data. Gunakan password lain yang lebih unik.`,
+      };
+    }
+  } catch (err) {
+    // Fail-open: kalau API HIBP tidak bisa diakses, jangan blokir user
+    // total, tapi catat di log server untuk dipantau.
+    console.error("[HIBP] Gagal mengecek password bocor:", err);
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
@@ -141,6 +160,23 @@ export async function login(prevState: RegisterState, formData: FormData) {
   );
   if (!isCaptchaValid) {
     return { error: CAPTCHA_FAILED_MESSAGE };
+  }
+
+  // Cek password bocor via HaveIBeenPwned sebelum login
+  try {
+    const { isPwned, occurrences } = await checkPasswordPwned(
+      validation.data.password,
+    );
+    if (isPwned) {
+      return {
+        error: `Password Anda terdeteksi dalam ${occurrences.toLocaleString(
+          "id-ID",
+        )} kebocoran data. Demi keamanan akun, silakan reset password Anda melalui menu "Lupa Password".`,
+      };
+    }
+  } catch (err) {
+    // Fail-open: kalau API HIBP tidak bisa diakses, tetap izinkan login
+    console.error("[HIBP] Gagal mengecek password bocor saat login:", err);
   }
 
   const supabase = await createClient();
@@ -365,6 +401,23 @@ export async function updatePassword(
       error:
         "Sesi reset password tidak valid atau telah kadaluwarsa. Silakan minta link reset password baru.",
     };
+  }
+
+  // Cek password baru bocor via HaveIBeenPwned
+  try {
+    const { isPwned, occurrences } = await checkPasswordPwned(
+      validation.data.password,
+    );
+    if (isPwned) {
+      return {
+        error: `Password baru ini pernah muncul di ${occurrences.toLocaleString(
+          "id-ID",
+        )} kebocoran data. Gunakan password lain yang lebih unik.`,
+      };
+    }
+  } catch (err) {
+    // Fail-open: kalau API HIBP tidak bisa diakses, tetap izinkan update
+    console.error("[HIBP] Gagal mengecek password bocor saat update:", err);
   }
 
   const { error } = await supabase.auth.updateUser({

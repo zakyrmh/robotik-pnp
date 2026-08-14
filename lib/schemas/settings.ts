@@ -16,27 +16,72 @@ export const updateProfileSchema = z.object({
     .optional()
     .nullable(),
   gender: z.enum(["L", "P"]).optional().nullable(),
-  pob: z.string().max(100, "Tempat lahir maksimal 100 karakter.").optional().nullable(),
+  pob: z
+    .string()
+    .max(100, "Tempat lahir maksimal 100 karakter.")
+    .optional()
+    .nullable(),
   dob: z.string().optional().nullable(),
   phone_number: z
     .string()
     .max(20, "Nomor telepon maksimal 20 karakter.")
     .optional()
     .nullable(),
-  study_program_id: z.string().uuid("ID Program Studi tidak valid.").optional().nullable().or(z.literal("")),
+  study_program_id: z
+    .string()
+    .uuid("ID Program Studi tidak valid.")
+    .optional()
+    .nullable()
+    .or(z.literal("")),
   entry_year: z
     .preprocess(
-      (val) => (val === "" || val === null || val === undefined ? undefined : Number(val)),
-      z.number().int().min(2000, "Tahun masuk tidak valid.").max(2100, "Tahun masuk tidak valid.").optional()
+      (val) =>
+        val === "" || val === null || val === undefined
+          ? undefined
+          : Number(val),
+      z
+        .number()
+        .int()
+        .min(2000, "Tahun masuk tidak valid.")
+        .max(2100, "Tahun masuk tidak valid.")
+        .optional(),
     )
     .nullable(),
-  current_class: z.string().max(50, "Kelas maksimal 50 karakter.").optional().nullable(),
-  high_school: z.string().max(100, "Asal sekolah maksimal 100 karakter.").optional().nullable(),
-  origin_address: z.string().max(500, "Alamat asal maksimal 500 karakter.").optional().nullable(),
-  domicile_address: z.string().max(500, "Alamat domisili maksimal 500 karakter.").optional().nullable(),
-  motivation: z.string().max(2000, "Motivasi maksimal 2000 karakter.").optional().nullable(),
-  org_experience: z.string().max(2000, "Pengalaman organisasi maksimal 2000 karakter.").optional().nullable(),
-  achievements: z.string().max(2000, "Prestasi maksimal 2000 karakter.").optional().nullable(),
+  current_class: z
+    .string()
+    .max(50, "Kelas maksimal 50 karakter.")
+    .optional()
+    .nullable(),
+  high_school: z
+    .string()
+    .max(100, "Asal sekolah maksimal 100 karakter.")
+    .optional()
+    .nullable(),
+  origin_address: z
+    .string()
+    .max(500, "Alamat asal maksimal 500 karakter.")
+    .optional()
+    .nullable(),
+  domicile_address: z
+    .string()
+    .max(500, "Alamat domisili maksimal 500 karakter.")
+    .optional()
+    .nullable(),
+  motivation: z
+    .string()
+    .max(2000, "Motivasi maksimal 2000 karakter.")
+    .optional()
+    .nullable(),
+  org_experience: z
+    .string()
+    .max(2000, "Pengalaman organisasi maksimal 2000 karakter.")
+    .optional()
+    .nullable(),
+  achievements: z
+    .string()
+    .max(2000, "Prestasi maksimal 2000 karakter.")
+    .optional()
+    .nullable(),
   avatar_url: z.string().optional().nullable(),
 });
 
@@ -61,8 +106,19 @@ export type UpdateEmailInput = z.infer<typeof updateEmailSchema>;
 export const changePasswordSchema = z
   .object({
     currentPassword: z.string().min(1, "Kata sandi saat ini wajib diisi."),
-    newPassword: z.string().min(8, "Kata sandi baru minimal 8 karakter."),
-    confirmNewPassword: z.string().min(1, "Konfirmasi kata sandi baru wajib diisi."),
+    newPassword: z
+      .string()
+      .min(8, "Kata sandi baru minimal 8 karakter.")
+      .regex(/[a-z]/, "Kata sandi baru harus mengandung huruf kecil.")
+      .regex(/[A-Z]/, "Kata sandi baru harus mengandung huruf besar.")
+      .regex(/[0-9]/, "Kata sandi baru harus mengandung angka.")
+      .regex(
+        /[^a-zA-Z0-9]/,
+        "Kata sandi baru harus mengandung simbol (contoh: !@#$%^&*).",
+      ),
+    confirmNewPassword: z
+      .string()
+      .min(1, "Konfirmasi kata sandi baru wajib diisi."),
   })
   .refine((data) => data.newPassword === data.confirmNewPassword, {
     message: "Konfirmasi kata sandi baru tidak cocok.",
