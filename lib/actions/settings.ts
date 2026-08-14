@@ -4,6 +4,7 @@ import "server-only";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { checkPasswordPwned } from "@/lib/password-security";
 import {
   updateProfileSchema,
   updateEmailSchema,
@@ -331,7 +332,25 @@ export async function changePasswordAction(
     };
   }
 
-  // 2. Update password
+  // 2. Cek password baru bocor via HaveIBeenPwned
+  try {
+    const { isPwned, occurrences } = await checkPasswordPwned(
+      validation.data.newPassword,
+    );
+    if (isPwned) {
+      return {
+        success: false,
+        message: `Kata sandi baru pernah muncul di ${occurrences.toLocaleString(
+          "id-ID",
+        )} kebocoran data. Gunakan kata sandi lain yang lebih unik.`,
+      };
+    }
+  } catch (err) {
+    // Fail-open: kalau API HIBP tidak bisa diakses, tetap izinkan update
+    console.error("[HIBP] Gagal mengecek password bocor saat change:", err);
+  }
+
+  // 3. Update password
   const { error: updateErr } = await supabase.auth.updateUser({
     password: validation.data.newPassword,
   });
