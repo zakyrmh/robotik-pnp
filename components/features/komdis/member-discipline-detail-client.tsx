@@ -6,13 +6,7 @@ import { DisciplinePointLog, Sanction } from "@/lib/types/komdis";
 import { GoroReductionDialog } from "./goro-reduction-dialog";
 import { IssueSanctionDialog } from "./issue-sanction-dialog";
 import { MemberInternshipModal } from "./member-internship-modal";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Table,
   TableHeader,
@@ -71,8 +65,6 @@ interface MemberDisciplineDetailClientProps {
 export function MemberDisciplineDetailClient({
   member,
   netPoints,
-  totalAttendancePoints,
-  totalLogPoints,
   activeSanctionLevel,
   attendances,
   pointLogs,
@@ -105,28 +97,28 @@ export function MemberDisciplineDetailClient({
   }
 
   return (
-    <div className="space-y-6 w-full">
+    <div className="space-y-4 sm:space-y-6 w-full max-w-full overflow-hidden">
       {/* Header Banner & Navigation */}
-      <div className="space-y-3">
+      <div className="space-y-2 sm:space-y-3">
         <div className="h-1.5 w-full bg-linear-to-r from-[#0066b1] via-[#1c69d4] to-[#e22718] rounded-full" />
 
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-3">
           <Button
             variant="ghost"
             asChild
-            className="w-fit -ml-2 font-mono text-xs text-slate-600 dark:text-slate-400 hover:text-[#0a192f] dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+            className="w-fit -ml-2 font-mono text-xs text-slate-600 dark:text-slate-400 hover:text-[#0a192f] dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg px-2.5 h-8"
           >
             <Link href="/kedisiplinan">
               <HugeiconsIcon
                 icon={ArrowLeft01Icon}
                 size={16}
-                className="mr-1.5"
+                className="mr-1.5 shrink-0"
               />
               KEMBALI KE DIREKTORI KEDISIPLINAN
             </Link>
           </Button>
 
-          <span className="font-mono text-[11px] font-semibold text-[#1e3a8a] dark:text-blue-400 uppercase tracking-widest">
+          <span className="font-mono text-[10px] sm:text-[11px] font-semibold text-[#1e3a8a] dark:text-blue-400 uppercase tracking-widest">
             DETAIL DISIPLIN & SANKSI ANGGOTA
           </span>
         </div>
@@ -134,9 +126,9 @@ export function MemberDisciplineDetailClient({
 
       {/* Active SP Warning Alert Banner */}
       {activeSanctionLevel && activeSanctionLevel > 0 ? (
-        <div className="bg-red-50 dark:bg-red-950/50 border-l-4 border-l-red-600 border border-red-200 dark:border-red-900/60 p-4 rounded-xl shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 rounded-lg shrink-0">
+        <div className="bg-red-50 dark:bg-red-950/50 border-l-4 border-l-red-600 border border-red-200 dark:border-red-900/60 p-3.5 sm:p-4 rounded-xl shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="p-2 bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 rounded-lg shrink-0 mt-0.5 sm:mt-0">
               <HugeiconsIcon
                 icon={Alert01Icon}
                 size={22}
@@ -147,7 +139,7 @@ export function MemberDisciplineDetailClient({
               <div className="font-mono font-bold text-xs uppercase text-red-700 dark:text-red-300">
                 STATUS PERINGATAN KEDISIPLINAN AKTIF!
               </div>
-              <div className="text-xs text-red-600/90 dark:text-red-400 font-sans mt-0.5">
+              <div className="text-xs text-red-600/90 dark:text-red-400 font-sans mt-0.5 leading-snug">
                 {activeSanctionLevel === 1
                   ? "Anggota wajib melaksanakan sanksi Goro minimal 4x/bulan untuk pemutihan -10 Poin."
                   : activeSanctionLevel === 2
@@ -156,43 +148,50 @@ export function MemberDisciplineDetailClient({
               </div>
             </div>
           </div>
-          <Badge className="bg-red-600 text-white font-mono font-bold text-xs px-3 py-1 uppercase rounded-md shrink-0">
+          <Badge className="bg-red-600 text-white font-mono font-bold text-xs px-3 py-1 uppercase rounded-md shrink-0 self-start sm:self-center">
             SP {activeSanctionLevel} AKTIF
           </Badge>
         </div>
       ) : null}
 
       {/* Main Profile Header Card */}
-      <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs p-5 border-l-4 border-l-[#1e3a8a] dark:border-l-blue-500">
-        <CardContent className="p-0 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+      <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs p-4 sm:p-5 border-l-4 border-l-[#1e3a8a] dark:border-l-blue-500 overflow-hidden">
+        <CardContent className="p-0 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-5 sm:gap-6">
           {/* Left Info: Avatar + Details */}
-          <div className="flex items-start sm:items-center gap-4">
-            <div className="h-14 w-14 sm:h-16 sm:w-16 bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800/80 text-[#1e3a8a] dark:text-blue-400 flex items-center justify-center rounded-xl shrink-0 font-mono text-xl font-bold">
-              <HugeiconsIcon icon={UserIcon} size={30} />
+          <div className="flex items-start gap-3 sm:gap-4 w-full min-w-0">
+            <div className="h-12 w-12 sm:h-16 sm:w-16 bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800/80 text-[#1e3a8a] dark:text-blue-400 flex items-center justify-center rounded-xl shrink-0 font-mono text-lg sm:text-xl font-bold">
+              <HugeiconsIcon icon={UserIcon} size={26} />
             </div>
-            <div className="space-y-1">
+
+            <div className="space-y-1.5 min-w-0 flex-1 overflow-hidden">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="font-mono text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <span className="font-mono text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider block truncate">
                   NIM: {member.nim || "—"} &bull; ROLE:{" "}
                   {member.role.toUpperCase()}
                 </span>
               </div>
 
-              <h1 className="text-xl sm:text-2xl font-display font-bold uppercase tracking-tight text-[#0a192f] dark:text-slate-100">
+              <h1 className="text-lg sm:text-2xl font-display font-bold uppercase tracking-tight text-[#0a192f] dark:text-slate-100 break-words leading-snug">
                 {member.full_name || "Anggota UKM"}
               </h1>
 
-              <div className="flex flex-wrap items-center gap-2 pt-0.5">
+              <div className="flex flex-wrap items-center gap-2 pt-1">
                 <span
-                  className={`inline-block px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider rounded-full border ${spBadgeClass}`}
+                  className={`inline-block px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider rounded-full border shrink-0 ${spBadgeClass}`}
                 >
                   {spStatusText}
                 </span>
 
                 {member.is_on_internship && (
-                  <Badge className="bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full uppercase">
-                    💼 MAGANG / PKL ({member.internship_start_date || "—"} s/d{" "}
-                    {member.internship_end_date || "—"})
+                  <Badge className="bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-[10px] font-mono font-semibold px-2.5 py-1 rounded-lg uppercase max-w-full whitespace-normal break-words leading-tight inline-flex items-center gap-1">
+                    <span>💼 MAGANG / PKL</span>
+                    {(member.internship_start_date ||
+                      member.internship_end_date) && (
+                      <span className="opacity-90 font-normal">
+                        ({member.internship_start_date || "—"} s/d{" "}
+                        {member.internship_end_date || "—"})
+                      </span>
+                    )}
                   </Badge>
                 )}
               </div>
@@ -201,7 +200,7 @@ export function MemberDisciplineDetailClient({
 
           {/* Right Info: Net Points Counter & Admin Actions */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto border-t lg:border-t-0 pt-4 lg:pt-0 border-slate-100 dark:border-slate-800">
-            <div className="bg-slate-50 dark:bg-slate-800/60 p-3.5 border border-slate-200 dark:border-slate-700 rounded-xl text-center min-w-36">
+            <div className="bg-slate-50 dark:bg-slate-800/60 p-3 sm:p-3.5 border border-slate-200 dark:border-slate-700 rounded-xl text-center min-w-36">
               <div className="font-mono text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest">
                 NETTO SAAT INI
               </div>
@@ -211,18 +210,18 @@ export function MemberDisciplineDetailClient({
               </div>
             </div>
 
-            <div className="flex flex-col gap-2">
-              <div className="flex gap-2">
+            <div className="flex flex-col gap-2 w-full">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <Button
                   type="button"
                   size="sm"
                   onClick={() => setIsGoroOpen(true)}
-                  className="flex-1 font-mono text-xs uppercase tracking-wider h-9 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white"
+                  className="font-mono text-[11px] sm:text-xs uppercase tracking-wider h-9 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white w-full justify-center"
                 >
                   <HugeiconsIcon
                     icon={RecycleIcon}
                     size={15}
-                    className="mr-1.5"
+                    className="mr-1.5 shrink-0"
                   />
                   + Pemutihan Goro
                 </Button>
@@ -231,12 +230,12 @@ export function MemberDisciplineDetailClient({
                   type="button"
                   size="sm"
                   onClick={() => setIsSpOpen(true)}
-                  className="flex-1 font-mono text-xs uppercase tracking-wider h-9 px-3 rounded-lg bg-red-600 hover:bg-red-700 text-white"
+                  className="font-mono text-[11px] sm:text-xs uppercase tracking-wider h-9 px-3 rounded-lg bg-red-600 hover:bg-red-700 text-white w-full justify-center"
                 >
                   <HugeiconsIcon
                     icon={Audit01Icon}
                     size={15}
-                    className="mr-1.5"
+                    className="mr-1.5 shrink-0"
                   />
                   + Terbitkan SP
                 </Button>
@@ -247,12 +246,12 @@ export function MemberDisciplineDetailClient({
                 size="sm"
                 variant="outline"
                 onClick={() => setIsInternshipModalOpen(true)}
-                className="font-mono text-xs uppercase tracking-wider h-9 w-full rounded-lg border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/50"
+                className="font-mono text-[11px] sm:text-xs uppercase tracking-wider h-9 w-full rounded-lg border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/50 justify-center"
               >
                 <HugeiconsIcon
                   icon={Briefcase01Icon}
                   size={15}
-                  className="mr-1.5"
+                  className="mr-1.5 shrink-0"
                 />
                 Atur Status Magang / PKL
               </Button>
@@ -264,41 +263,74 @@ export function MemberDisciplineDetailClient({
       {/* History Tabs Navigation */}
       <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs overflow-hidden">
         <CardContent className="p-0">
-          <div className="flex border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 font-mono text-xs uppercase tracking-wider overflow-x-auto">
+          <div className="flex border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 font-mono text-xs uppercase tracking-wider overflow-x-auto no-scrollbar scroll-smooth">
             <button
               onClick={() => setActiveTab("attendances")}
-              className={`flex items-center gap-2 px-5 py-3.5 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+              className={`flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-3.5 border-b-2 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                 activeTab === "attendances"
                   ? "border-[#1e3a8a] dark:border-blue-500 text-[#1e3a8a] dark:text-blue-400 font-bold bg-white dark:bg-slate-900"
                   : "border-transparent text-slate-500 dark:text-slate-400 hover:text-[#0a192f] dark:hover:text-slate-100"
               }`}
             >
-              <HugeiconsIcon icon={Calendar01Icon} size={16} />
-              <span>PRESENSI & SANKSI PRESENSI ({attendances.length})</span>
+              <HugeiconsIcon
+                icon={Calendar01Icon}
+                size={16}
+                className="shrink-0"
+              />
+              <span>
+                <span className="inline sm:hidden">
+                  PRESENSI ({attendances.length})
+                </span>
+                <span className="hidden sm:inline">
+                  PRESENSI & SANKSI PRESENSI ({attendances.length})
+                </span>
+              </span>
             </button>
 
             <button
               onClick={() => setActiveTab("goro")}
-              className={`flex items-center gap-2 px-5 py-3.5 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+              className={`flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-3.5 border-b-2 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                 activeTab === "goro"
                   ? "border-emerald-600 dark:border-emerald-500 text-emerald-600 dark:text-emerald-400 font-bold bg-white dark:bg-slate-900"
                   : "border-transparent text-slate-500 dark:text-slate-400 hover:text-[#0a192f] dark:hover:text-slate-100"
               }`}
             >
-              <HugeiconsIcon icon={RecycleIcon} size={16} />
-              <span>LOG PEMUTIHAN GORO ({pointLogs.length})</span>
+              <HugeiconsIcon
+                icon={RecycleIcon}
+                size={16}
+                className="shrink-0"
+              />
+              <span>
+                <span className="inline sm:hidden">
+                  PEMUTIHAN ({pointLogs.length})
+                </span>
+                <span className="hidden sm:inline">
+                  LOG PEMUTIHAN GORO ({pointLogs.length})
+                </span>
+              </span>
             </button>
 
             <button
               onClick={() => setActiveTab("sanctions")}
-              className={`flex items-center gap-2 px-5 py-3.5 border-b-2 transition-all cursor-pointer whitespace-nowrap ${
+              className={`flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-5 py-3.5 border-b-2 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                 activeTab === "sanctions"
                   ? "border-red-600 dark:border-red-500 text-red-600 dark:text-red-400 font-bold bg-white dark:bg-slate-900"
                   : "border-transparent text-slate-500 dark:text-slate-400 hover:text-[#0a192f] dark:hover:text-slate-100"
               }`}
             >
-              <HugeiconsIcon icon={Audit01Icon} size={16} />
-              <span>RIWAYAT SURAT PERINGATAN ({sanctions.length})</span>
+              <HugeiconsIcon
+                icon={Audit01Icon}
+                size={16}
+                className="shrink-0"
+              />
+              <span>
+                <span className="inline sm:hidden">
+                  SURAT PERINGATAN ({sanctions.length})
+                </span>
+                <span className="hidden sm:inline">
+                  RIWAYAT SURAT PERINGATAN ({sanctions.length})
+                </span>
+              </span>
             </button>
           </div>
 
@@ -330,7 +362,7 @@ export function MemberDisciplineDetailClient({
                             +{item.points_awarded || 0} PTS
                           </span>
                         </div>
-                        <div className="font-display font-medium text-xs text-[#0a192f] dark:text-slate-100">
+                        <div className="font-display font-medium text-xs text-[#0a192f] dark:text-slate-100 leading-snug">
                           {item.activity?.title || "Kegiatan Formal"}
                         </div>
                         <div className="flex items-center gap-1.5">
@@ -609,6 +641,7 @@ export function MemberDisciplineDetailClient({
       />
 
       <MemberInternshipModal
+        key={member.id}
         isOpen={isInternshipModalOpen}
         onClose={() => setIsInternshipModalOpen(false)}
         member={{
