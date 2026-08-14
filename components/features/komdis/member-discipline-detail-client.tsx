@@ -156,9 +156,9 @@ export function MemberDisciplineDetailClient({
 
       {/* Main Profile Header Card */}
       <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs p-4 sm:p-5 border-l-4 border-l-[#1e3a8a] dark:border-l-blue-500 overflow-hidden">
-        <CardContent className="p-0 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-5 sm:gap-6">
+        <CardContent className="p-0 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-5 sm:gap-6">
           {/* Left Info: Avatar + Details */}
-          <div className="flex items-start gap-3 sm:gap-4 w-full min-w-0">
+          <div className="flex items-start gap-3 sm:gap-4 w-full min-w-0 flex-1">
             <div className="h-12 w-12 sm:h-16 sm:w-16 bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800/80 text-[#1e3a8a] dark:text-blue-400 flex items-center justify-center rounded-xl shrink-0 font-mono text-lg sm:text-xl font-bold">
               <HugeiconsIcon icon={UserIcon} size={26} />
             </div>
@@ -201,8 +201,8 @@ export function MemberDisciplineDetailClient({
           </div>
 
           {/* Right Info: Net Points Counter & Admin Actions */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto border-t lg:border-t-0 pt-4 lg:pt-0 border-slate-100 dark:border-slate-800">
-            <div className="bg-slate-50 dark:bg-slate-800/60 p-3 sm:p-3.5 border border-slate-200 dark:border-slate-700 rounded-xl text-center min-w-36">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full xl:w-auto border-t xl:border-t-0 pt-4 xl:pt-0 border-slate-100 dark:border-slate-800">
+            <div className="bg-slate-50 dark:bg-slate-800/60 p-3 sm:p-3.5 border border-slate-200 dark:border-slate-700 rounded-xl text-center min-w-32 shrink-0">
               <div className="font-mono text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest">
                 NETTO SAAT INI
               </div>
@@ -212,13 +212,13 @@ export function MemberDisciplineDetailClient({
               </div>
             </div>
 
-            <div className="flex flex-col gap-2 w-full">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="flex flex-col gap-2 w-full sm:w-auto">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <Button
                   type="button"
                   size="sm"
                   onClick={() => setIsGoroOpen(true)}
-                  className="font-mono text-[11px] sm:text-xs uppercase tracking-wider h-9 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white w-full justify-center"
+                  className="font-mono text-[11px] uppercase tracking-wider h-9 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white justify-center whitespace-nowrap"
                 >
                   <HugeiconsIcon
                     icon={RecycleIcon}
@@ -232,7 +232,7 @@ export function MemberDisciplineDetailClient({
                   type="button"
                   size="sm"
                   onClick={() => setIsSpOpen(true)}
-                  className="font-mono text-[11px] sm:text-xs uppercase tracking-wider h-9 px-3 rounded-lg bg-red-600 hover:bg-red-700 text-white w-full justify-center"
+                  className="font-mono text-[11px] uppercase tracking-wider h-9 px-3 rounded-lg bg-red-600 hover:bg-red-700 text-white justify-center whitespace-nowrap"
                 >
                   <HugeiconsIcon
                     icon={Audit01Icon}
@@ -248,7 +248,7 @@ export function MemberDisciplineDetailClient({
                 size="sm"
                 variant="outline"
                 onClick={() => setIsInternshipModalOpen(true)}
-                className="font-mono text-[11px] sm:text-xs uppercase tracking-wider h-9 w-full rounded-lg border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/50 justify-center"
+                className="font-mono text-[11px] uppercase tracking-wider h-9 w-full rounded-lg border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/50 justify-center whitespace-nowrap"
               >
                 <HugeiconsIcon
                   icon={Briefcase01Icon}
