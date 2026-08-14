@@ -7,10 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-14
+
 ### Added
 
+- Halaman Pengaturan Akun (`/settings`) dengan 5 tab utama (Profil, Keamanan, Preferensi, Keanggotaan, Privasi) dan Server Actions backend.
 - Penanganan dispensasi magang/PKL untuk Anggota Aktif pada sistem presensi Komisi Disiplin (Komdis).
-- Kolom `is_on_internship`, `internship_start_date`, dan `internship_end_date` pada tabel `profiles` (`20260814000000_add_member_internship_status.sql`).
+- Migrasi database `20260814000000_add_member_internship_status.sql` (kolom `is_on_internship`, `internship_start_date`, `internship_end_date`).
 - Server Action `updateMemberInternshipStatus` untuk mengelola status magang anggota aktif khusus role `super-admin` dan `admin-komdis`.
 - Skema validasi Zod `UpdateMemberInternshipSchema` di `lib/schemas/komdis.ts`.
 - Komponen dialog `MemberInternshipModal` untuk menetapkan status & tanggal magang anggota secara interaktif.
@@ -30,6 +33,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Perbaikan verifikasi perubahan email pada Pengaturan Akun: sinkronisasi otomatis `auth.users` ke `public.profiles` via database trigger migration.
+- Penanganan preservasi sesi user (`session persistence`) saat callback verifikasi email perubahan akun.
+- Konfigurasi Supabase Auth (`double_confirm_changes = false`) agar konfirmasi email hanya dikirimkan 1x ke email baru.
 - Sinkronisasi state lokal `MemberInternshipModal` dengan prop `member` dan `isOpen` via `useEffect` agar status toggle dan rentang tanggal magang tampil akurat sesuai data anggota saat dialog dibuka.
 - Penataan ulang responsif layout mobile-first pada `MemberDisciplineDetailClient` untuk layar perangkat kecil (seperti iPhone ~684px) agar Badge magang/PKL tidak terpotong (overflow), tombol aksi admin tersusun rapi, dan navigasi tab presensi dapat di-scroll dengan nyaman.
 - Pembaruan kapsul label & rentang tanggal magang (`MemberDisciplineDetailClient`) menggunakan struktur pill terpisah ber-padding lega (`px-3 py-1 rounded-full`) yang selaras dengan panduan `DESIGN.md`.
@@ -56,6 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Setup Husky pre-commit hook dan Commitlint.
 - Setup Next.js dengan pnpm.
 
-[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.1.3...HEAD
+[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/zakyrmh/robotik-pnp/compare/v0.1.1...v0.1.3
 [0.1.1]: https://github.com/zakyrmh/robotik-pnp/compare/v0.1.0...v0.1.1
