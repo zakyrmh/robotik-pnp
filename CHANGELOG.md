@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-08-14
+
+### Fixed
+
+- Perbaikan error _"captcha protection: request disallowed (no captcha_token found)"_ di production: token Turnstile kini dikirim langsung ke Supabase Auth (`captchaToken` di `options`) alih-alih diverifikasi server-side terlebih dahulu, karena token Turnstile bersifat one-time use dan tidak bisa di-consume dua kali (double-consume).
+
 ## [0.2.1] - 2026-08-14
 
 ### Added
@@ -18,10 +24,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Server Actions `register()`, `login()`, dan `updatePassword()` (`lib/actions/auth.ts`) — integrasi HIBP check sebelum `signUp()`, `signInWithPassword()`, dan `updateUser()` dengan strategi fail-open.
 - Server Action `changePasswordAction()` (`lib/actions/settings.ts`) — integrasi HIBP check sebelum `updateUser()` dengan strategi fail-open.
 - Zod schemas `registerSchema`, `updatePasswordSchema` (`lib/schemas/auth.ts`) dan `changePasswordSchema` (`lib/schemas/settings.ts`) — enforcing password complexity: huruf kecil + huruf besar + angka + simbol (sinkron dengan konfigurasi Supabase Dashboard).
-
-### Fixed
-
-- Perbaikan error _"captcha protection: request disallowed (no captcha_token found)"_ di production: token Turnstile kini dikirim langsung ke Supabase Auth (`captchaToken` di `options`) alih-alih diverifikasi server-side terlebih dahulu, karena token Turnstile bersifat one-time use dan tidak bisa di-consume dua kali (double-consume).
 
 ## [0.2.0] - 2026-08-14
 
@@ -78,7 +80,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Setup Husky pre-commit hook dan Commitlint.
 - Setup Next.js dengan pnpm.
 
-[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/zakyrmh/robotik-pnp/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/zakyrmh/robotik-pnp/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.1.3...v0.2.0
 [0.1.3]: https://github.com/zakyrmh/robotik-pnp/compare/v0.1.1...v0.1.3
