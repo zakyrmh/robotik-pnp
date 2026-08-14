@@ -10,7 +10,6 @@ import {
   loginRateLimiter,
   forgotPasswordRateLimiter,
 } from "@/lib/redis";
-import { verifyTurnstileToken } from "@/lib/turnstile";
 import { checkPasswordPwned } from "@/lib/password-security";
 import type { RegisterState } from "@/lib/types/auth";
 import {
@@ -19,9 +18,6 @@ import {
   forgotPasswordSchema,
   updatePasswordSchema,
 } from "@/lib/schemas/auth";
-
-const CAPTCHA_FAILED_MESSAGE =
-  "Verifikasi keamanan gagal atau kedaluwarsa. Silakan centang CAPTCHA lagi.";
 
 async function getClientIp(): Promise<string> {
   const headerList = await headers();
@@ -68,14 +64,6 @@ export async function register(prevState: RegisterState, formData: FormData) {
     return { error: validation.error.issues[0].message };
   }
 
-  const isCaptchaValid = await verifyTurnstileToken(
-    validation.data.captchaToken,
-    clientIp,
-  );
-  if (!isCaptchaValid) {
-    return { error: CAPTCHA_FAILED_MESSAGE };
-  }
-
   // Cek password bocor via HaveIBeenPwned (workaround Supabase Free Plan)
   try {
     const { isPwned, occurrences } = await checkPasswordPwned(
@@ -102,13 +90,15 @@ export async function register(prevState: RegisterState, formData: FormData) {
 
   const supabase = await createClient();
 
-  // CAPTCHA sudah diverifikasi via Cloudflare siteverify (token one-time).
-  // Jangan kirim ulang ke Supabase Auth agar tidak double-consume token.
+  // Token Turnstile dikirim ke Supabase agar Supabase yang memverifikasi
+  // via Cloudflare siteverify. Token one-time use — JANGAN verifikasi
+  // server-side dulu karena akan double-consume token.
   const { error } = await supabase.auth.signUp({
     email: validation.data.email,
     password: validation.data.password,
     options: {
       emailRedirectTo: `${siteUrl}/callback`,
+      captchaToken: validation.data.captchaToken,
     },
   });
   if (error) {
@@ -154,14 +144,6 @@ export async function login(prevState: RegisterState, formData: FormData) {
     return { error: validation.error.issues[0].message };
   }
 
-  const isCaptchaValid = await verifyTurnstileToken(
-    validation.data.captchaToken,
-    clientIp,
-  );
-  if (!isCaptchaValid) {
-    return { error: CAPTCHA_FAILED_MESSAGE };
-  }
-
   // Cek password bocor via HaveIBeenPwned sebelum login
   try {
     const { isPwned, occurrences } = await checkPasswordPwned(
@@ -181,10 +163,11 @@ export async function login(prevState: RegisterState, formData: FormData) {
 
   const supabase = await createClient();
 
-  // CAPTCHA sudah diverifikasi via Cloudflare siteverify (token one-time).
+  // Token Turnstile dikirim ke Supabase — token one-time use.
   const { error } = await supabase.auth.signInWithPassword({
     email: validation.data.email,
     password: validation.data.password,
+    options: { captchaToken: validation.data.captchaToken },
   });
   if (error) {
     // Penanganan error spesifik untuk pengalaman pengguna yang lebih baik
@@ -321,14 +304,6 @@ export async function forgotPassword(
     return { error: validation.error.issues[0].message };
   }
 
-  const isCaptchaValid = await verifyTurnstileToken(
-    validation.data.captchaToken,
-    clientIp,
-  );
-  if (!isCaptchaValid) {
-    return { error: CAPTCHA_FAILED_MESSAGE };
-  }
-
   const supabaseAdmin = createAdminClient();
 
   const { data: profile, error: profileError } = await supabaseAdmin
@@ -353,11 +328,12 @@ export async function forgotPassword(
 
   const supabase = await createClient();
 
-  // CAPTCHA sudah diverifikasi via Cloudflare siteverify (token one-time).
+  // Token Turnstile dikirim ke Supabase — token one-time use.
   const { error } = await supabase.auth.resetPasswordForEmail(
     validation.data.email,
     {
       redirectTo: `${siteUrl}/callback?next=/update-password`,
+      captchaToken: validation.data.captchaToken,
     },
   );
   if (error) {
