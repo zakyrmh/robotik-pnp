@@ -177,22 +177,24 @@ export function MemberDisciplineDetailClient({
 
               <div className="flex flex-wrap items-center gap-2 pt-1">
                 <span
-                  className={`inline-block px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wider rounded-full border shrink-0 ${spBadgeClass}`}
+                  className={`inline-block px-3 py-1 font-mono text-[10px] font-semibold uppercase tracking-wider rounded-full border shrink-0 ${spBadgeClass}`}
                 >
                   {spStatusText}
                 </span>
 
                 {member.is_on_internship && (
-                  <Badge className="bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-[10px] font-mono font-semibold px-2.5 py-1 rounded-lg uppercase max-w-full whitespace-normal break-words leading-tight inline-flex items-center gap-1">
-                    <span>💼 MAGANG / PKL</span>
+                  <div className="inline-flex flex-wrap items-center gap-1.5">
+                    <span className="bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800 text-[10px] font-mono font-semibold px-3 py-1 rounded-full uppercase tracking-wider shrink-0">
+                      💼 MAGANG / PKL
+                    </span>
                     {(member.internship_start_date ||
                       member.internship_end_date) && (
-                      <span className="opacity-90 font-normal">
-                        ({member.internship_start_date || "—"} s/d{" "}
-                        {member.internship_end_date || "—"})
+                      <span className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-[10px] font-mono font-medium px-3 py-1 rounded-full uppercase tracking-wider shrink-0">
+                        {member.internship_start_date || "—"} S/D{" "}
+                        {member.internship_end_date || "—"}
                       </span>
                     )}
-                  </Badge>
+                  </div>
                 )}
               </div>
             </div>
