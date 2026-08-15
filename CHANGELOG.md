@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-15
+
 ### Added
 
 - Redesign keseluruhan design system ke tema **Minimalist Soft (Light)** pada `DESIGN.md`: prinsip warna 70% netral / 20% warna utama (Navy lembut `#3b5b84`) / 10% aksen (Oranye lembut `#f0975a`), skala font mobile-first berbasis `clamp()`, dan aturan radius (Card 10px, Button/Input 8px, Pill 9999px).
@@ -97,7 +99,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Setup Husky pre-commit hook dan Commitlint.
 - Setup Next.js dengan pnpm.
 
-[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/zakyrmh/robotik-pnp/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/zakyrmh/robotik-pnp/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.1.3...v0.2.0
