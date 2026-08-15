@@ -391,25 +391,30 @@ export function KegiatanClient({
   // Status Badge Helper
   const getStatusBadge = (activity: ActivityItem) => {
     const st = getActivityStatus(activity);
+    const base =
+      "font-semibold text-micro uppercase rounded-full px-3 py-0.5 border";
     if (st === "ongoing") {
       return (
-        <Badge className="bg-orange-wash dark:bg-orange-950/60 text-orange-deep dark:text-orange-300 border border-orange-200 dark:border-orange-900/60 font-mono text-micro font-semibold rounded-full px-3 py-0.5 uppercase animate-pulse">
-          ONGOING
+        <Badge
+          className={`${base} bg-accent text-accent-foreground border-accent/40 animate-pulse`}
+        >
+          Berlangsung
         </Badge>
       );
     } else if (st === "upcoming") {
       return (
-        <Badge className="bg-blue-50 dark:bg-blue-950/60 text-dongker-surface dark:text-blue-300 border border-blue-200 dark:border-blue-900/60 font-mono text-micro font-semibold rounded-full px-3 py-0.5 uppercase">
-          MENDATANG
-        </Badge>
-      );
-    } else {
-      return (
-        <Badge className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 font-mono text-micro font-semibold rounded-full px-3 py-0.5 uppercase">
-          SELESAI
+        <Badge
+          className={`${base} bg-primary-soft text-primary border-primary/15`}
+        >
+          Akan Datang
         </Badge>
       );
     }
+    return (
+      <Badge className={`${base} bg-muted text-muted-foreground border-border`}>
+        Selesai
+      </Badge>
+    );
   };
 
   // Open Form Handlers
@@ -564,30 +569,31 @@ export function KegiatanClient({
 
   return (
     <div className="space-y-6 w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
-      {/* ── Header Banner ────────────────────────────────────────────────── */}
-      <div className="relative border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-xl shadow-xs overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-0.75 bg-linear-to-r from-dongker-surface via-[#3b82f6] to-pnp-orange" />
-
+      {/* ── Header ──────────────────────────────────────────────────────── */}
+      <div className="border border-border bg-card rounded-lg p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-medium tracking-tight text-dongker-ink dark:text-slate-100 font-display flex items-center gap-2.5">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-md bg-primary-soft text-primary shrink-0">
               <HugeiconsIcon
                 icon={isRecruitmentMode ? CalendarAdd01Icon : Calendar03Icon}
-                size={24}
-                className="text-dongker-surface dark:text-blue-400 shrink-0"
+                size={20}
               />
-              {isRecruitmentMode
-                ? "Kegiatan & Absensi Caang"
-                : "Kegiatan UKM Robotik"}
-            </h1>
-            <p className="text-xs font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 mt-1">
-              {isRecruitmentMode
-                ? "Manajemen Kegiatan dan Rekap Absensi Calon Anggota UKM Robotik PNP"
-                : "Agenda Pelatihan, Rapat, dan Workshop Teknologi Robotik PNP"}
-            </p>
+            </div>
+            <div>
+              <h1 className="font-display font-semibold tracking-tight text-lg sm:text-xl text-foreground">
+                {isRecruitmentMode
+                  ? "Kegiatan & Absensi Caang"
+                  : "Kegiatan UKM Robotik"}
+              </h1>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                {isRecruitmentMode
+                  ? "Manajemen kegiatan dan rekap absensi Calon Anggota UKM Robotik PNP"
+                  : "Agenda pelatihan, rapat, dan workshop teknologi robotik PNP"}
+              </p>
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
             {isRecruitmentMode ? (
               <>
                 {(activeRole === "admin-or" ||
@@ -595,13 +601,9 @@ export function KegiatanClient({
                   <Button
                     variant="outline"
                     onClick={() => router.push("/kegiatan-absensi-caang/trash")}
-                    className="rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 shadow-xs font-mono text-micro uppercase tracking-wider px-3.5 h-9"
+                    className="rounded-md h-9 px-4 font-medium text-sm border-primary text-primary hover:bg-primary-soft"
                   >
-                    <HugeiconsIcon
-                      icon={Archive01Icon}
-                      size={15}
-                      className="mr-1.5 text-slate-500"
-                    />
+                    <HugeiconsIcon icon={Archive01Icon} size={15} />
                     Trash
                   </Button>
                 )}
@@ -610,13 +612,9 @@ export function KegiatanClient({
                   <Button
                     variant="outline"
                     onClick={() => router.push("/kegiatan-absensi-caang/scan")}
-                    className="rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 shadow-xs font-mono text-micro uppercase tracking-wider px-3.5 h-9"
+                    className="rounded-md h-9 px-4 font-medium text-sm border-primary text-primary hover:bg-primary-soft"
                   >
-                    <HugeiconsIcon
-                      icon={QrCode01Icon}
-                      size={15}
-                      className="mr-1.5 text-slate-500"
-                    />
+                    <HugeiconsIcon icon={QrCode01Icon} size={15} />
                     Scan QR
                   </Button>
                 )}
@@ -624,13 +622,9 @@ export function KegiatanClient({
                   activeRole === "super-admin") && (
                   <Button
                     onClick={openAddForm}
-                    className="bg-dongker-surface hover:bg-dongker-hover dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-mono text-micro uppercase tracking-wider rounded-lg px-4 h-9 shadow-xs"
+                    className="rounded-md h-9 px-4 font-medium text-sm bg-primary text-primary-foreground hover:bg-primary-hover"
                   >
-                    <HugeiconsIcon
-                      icon={Add01Icon}
-                      size={15}
-                      className="mr-1.5"
-                    />
+                    <HugeiconsIcon icon={Add01Icon} size={15} />
                     Tambah Kegiatan
                   </Button>
                 )}
@@ -642,13 +636,9 @@ export function KegiatanClient({
                   <Button
                     onClick={() => router.push("/kegiatan/sampah")}
                     variant="outline"
-                    className="w-full sm:w-auto rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 shadow-xs font-mono text-micro uppercase tracking-wider px-4 h-9"
+                    className="rounded-md h-9 px-4 font-medium text-sm border-primary text-primary hover:bg-primary-soft w-full sm:w-auto"
                   >
-                    <HugeiconsIcon
-                      icon={Delete01Icon}
-                      size={15}
-                      className="mr-1.5"
-                    />
+                    <HugeiconsIcon icon={Delete01Icon} size={15} />
                     Sampah
                   </Button>
                 )}
@@ -656,20 +646,16 @@ export function KegiatanClient({
                   activeRole === "super-admin") && (
                   <Button
                     onClick={() => setIsCreateModalOpen(true)}
-                    className="w-full sm:w-auto bg-dongker-surface hover:bg-dongker-hover dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-medium text-xs rounded-lg px-4 h-9 shadow-xs transition-colors"
+                    className="rounded-md h-9 px-4 font-medium text-sm bg-primary text-primary-foreground hover:bg-primary-hover w-full sm:w-auto"
                   >
-                    <HugeiconsIcon
-                      icon={CalendarAdd01Icon}
-                      size={15}
-                      className="mr-1.5"
-                    />
+                    <HugeiconsIcon icon={CalendarAdd01Icon} size={15} />
                     Buat Kegiatan Komdis
                   </Button>
                 )}
               </>
             )}
-            <Badge className="bg-slate-100 dark:bg-slate-800 text-dongker-ink dark:text-slate-200 border border-slate-200 dark:border-slate-700 px-3 py-1.5 rounded-full font-mono text-micro uppercase tracking-wider font-semibold">
-              TOTAL: {activities.length}
+            <Badge className="bg-accent text-accent-foreground border-accent/40 rounded-full px-3 py-1 text-micro font-semibold uppercase">
+              Total: {activities.length}
             </Badge>
           </div>
         </div>
@@ -677,7 +663,7 @@ export function KegiatanClient({
 
       {/* ── Recruitment Mode Tabs Switcher ──────────────────────────────── */}
       {isRecruitmentMode && (
-        <div className="flex border-b border-slate-200 dark:border-slate-800">
+        <div className="flex border-b border-border">
           {(
             [
               {
@@ -702,19 +688,19 @@ export function KegiatanClient({
                   setActiveTab(tab.id);
                   setSearch("");
                 }}
-                className={`relative flex items-center gap-2 px-5 py-3 font-mono text-xs uppercase tracking-wider transition-colors ${
+                className={`relative flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors ${
                   isActive
-                    ? "text-dongker-surface dark:text-blue-400 font-semibold"
-                    : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                    ? "text-primary"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 <HugeiconsIcon icon={tab.icon} size={16} />
                 {tab.label}
-                <Badge className="rounded-full font-mono text-[10px] px-2 py-0 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                <Badge className="rounded-full px-2 py-0 text-[10px] bg-muted text-muted-foreground border-border font-semibold">
                   {tab.count}
                 </Badge>
                 {isActive && (
-                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-dongker-surface dark:bg-blue-500" />
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
                 )}
               </button>
             );
@@ -722,41 +708,43 @@ export function KegiatanClient({
         </div>
       )}
 
-      {/* ── Stats Cards Grid ─────────────────────────────────────────────── */}
+      {/* ── Stats Cards Grid ────────────────────────────────────────────── */}
       {activeTab === "kegiatan" && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-          {/* Card 1: Telemetry */}
-          <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-xl border-l-4 border-l-dongker-surface dark:border-l-blue-500 flex flex-col justify-between min-h-37.5 shadow-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          {/* Card 1: Ringkasan Kegiatan */}
+          <div className="border border-border bg-card rounded-lg p-5 flex flex-col justify-between">
             <div>
-              <h3 className="font-mono text-micro font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400 flex items-center justify-between">
-                <span>ACTIVITY TELEMETRY</span>
-                <span className="bg-slate-100 dark:bg-slate-800 text-dongker-ink dark:text-slate-200 px-2 py-0.5 rounded-full font-bold text-[10px]">
-                  TOTAL: {stats.total}
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="text-sm font-semibold text-foreground">
+                  Ringkasan Kegiatan
+                </h3>
+                <span className="bg-primary-soft text-primary rounded-full px-2.5 py-0.5 text-micro font-semibold uppercase">
+                  Total {stats.total}
                 </span>
-              </h3>
+              </div>
 
               <div className="grid grid-cols-3 gap-2 mt-4 text-center">
                 <div className="space-y-1">
-                  <span className="font-mono text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
-                    ONGOING
+                  <span className="text-micro uppercase tracking-wide text-muted-foreground block">
+                    Berlangsung
                   </span>
-                  <span className="font-display text-2xl font-bold text-dongker-ink dark:text-slate-100">
+                  <span className="font-display text-2xl font-semibold text-accent-strong">
                     {stats.ongoing}
                   </span>
                 </div>
-                <div className="space-y-1 border-x border-slate-100 dark:border-slate-800">
-                  <span className="font-mono text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
-                    UPCOMING
+                <div className="space-y-1 border-x border-border">
+                  <span className="text-micro uppercase tracking-wide text-muted-foreground block">
+                    Akan Datang
                   </span>
-                  <span className="font-display text-2xl font-bold text-dongker-ink dark:text-slate-100">
+                  <span className="font-display text-2xl font-semibold text-primary">
                     {stats.upcoming}
                   </span>
                 </div>
                 <div className="space-y-1">
-                  <span className="font-mono text-[10px] uppercase tracking-wider text-slate-400 dark:text-slate-500 block">
-                    COMPLETED
+                  <span className="text-micro uppercase tracking-wide text-muted-foreground block">
+                    Selesai
                   </span>
-                  <span className="font-display text-2xl font-bold text-dongker-ink dark:text-slate-100">
+                  <span className="font-display text-2xl font-semibold text-foreground">
                     {stats.completed}
                   </span>
                 </div>
@@ -764,10 +752,10 @@ export function KegiatanClient({
             </div>
 
             <div className="space-y-2 mt-4">
-              <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden flex">
+              <div className="h-2 w-full bg-muted rounded-full overflow-hidden flex">
                 {stats.ongoing > 0 && (
                   <div
-                    className="h-full bg-pnp-orange"
+                    className="h-full bg-accent-strong"
                     style={{
                       width: `${stats.total > 0 ? (stats.ongoing / stats.total) * 100 : 0}%`,
                     }}
@@ -775,7 +763,7 @@ export function KegiatanClient({
                 )}
                 {stats.upcoming > 0 && (
                   <div
-                    className="h-full bg-dongker-surface dark:bg-blue-500"
+                    className="h-full bg-primary"
                     style={{
                       width: `${stats.total > 0 ? (stats.upcoming / stats.total) * 100 : 0}%`,
                     }}
@@ -783,112 +771,106 @@ export function KegiatanClient({
                 )}
                 {stats.completed > 0 && (
                   <div
-                    className="h-full bg-slate-300 dark:bg-slate-600"
+                    className="h-full bg-muted-foreground/30"
                     style={{
                       width: `${stats.total > 0 ? (stats.completed / stats.total) * 100 : 0}%`,
                     }}
                   />
                 )}
               </div>
-              <div className="flex justify-between text-[10px] font-mono text-slate-500 dark:text-slate-400 uppercase">
+              <div className="flex justify-between text-micro text-muted-foreground">
                 <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-pnp-orange" />{" "}
-                  ONGOING
+                  <span className="w-2 h-2 rounded-full bg-accent-strong" />
+                  Berlangsung
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-dongker-surface dark:bg-blue-500" />{" "}
-                  UPCOMING
+                  <span className="w-2 h-2 rounded-full bg-primary" />
+                  Akan Datang
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600" />{" "}
-                  DONE
+                  <span className="w-2 h-2 rounded-full bg-muted-foreground/30" />
+                  Selesai
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Card 2: Next Event Tracker */}
-          <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-xl border-l-4 border-l-pnp-orange flex flex-col justify-between min-h-37.5 shadow-xs">
+          {/* Card 2: Kegiatan Berikutnya */}
+          <div className="border border-border bg-card rounded-lg p-5 flex flex-col justify-between">
             <div>
-              <h3 className="font-mono text-micro font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3">
-                NEXT UPCOMING ACTIVITY
+              <h3 className="text-sm font-semibold text-foreground mb-3">
+                Kegiatan Berikutnya
               </h3>
               {stats.next ? (
-                <div className="space-y-1">
-                  <span className="font-display text-base font-medium text-dongker-ink dark:text-slate-100 block line-clamp-1">
+                <div className="space-y-1.5">
+                  <span className="font-display text-base font-medium text-foreground block line-clamp-1">
                     {stats.next.title}
                   </span>
-                  <span className="font-mono text-xs text-slate-500 dark:text-slate-400 block">
+                  <span className="text-sm text-muted-foreground block">
                     {formatIndoDate(stats.next.start_date)}
                   </span>
-                  <span className="font-mono text-micro text-pnp-orange dark:text-orange-400 font-semibold block uppercase tracking-wide">
-                    LOKASI: {stats.next.location || "TBA"}
+                  <span className="text-micro text-accent-strong font-semibold block uppercase tracking-wide">
+                    {stats.next.location || "TBA"}
                   </span>
                 </div>
               ) : (
-                <p className="text-xs font-mono text-slate-400 dark:text-slate-500 uppercase py-2">
-                  Tidak ada kegiatan mendatang
+                <p className="text-sm text-muted-foreground py-2">
+                  Tidak ada kegiatan mendatang.
                 </p>
               )}
             </div>
-            <div className="pt-3 border-t border-dashed border-slate-200 dark:border-slate-800 text-[10px] font-mono text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-              UPCOMING EVENT TRACKER
+            <div className="pt-3 mt-3 border-t border-dashed border-border text-micro text-muted-foreground uppercase tracking-wider">
+              Agenda Terdekat
             </div>
           </div>
 
-          {/* Card 3: Access & Location */}
-          <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-xl border-l-4 border-l-slate-blue dark:border-l-slate-400 sm:col-span-2 md:col-span-1 flex flex-col justify-between min-h-37.5 shadow-xs">
+          {/* Card 3: Akses & Informasi */}
+          <div className="border border-border bg-card rounded-lg p-5 sm:col-span-2 lg:col-span-1 flex flex-col justify-between">
             <div>
-              <h3 className="font-mono text-micro font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3">
-                SYSTEM TELEMETRY
+              <h3 className="text-sm font-semibold text-foreground mb-3">
+                Akses &amp; Informasi
               </h3>
-              <div className="space-y-2 text-xs font-mono">
-                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-1.5">
-                  <span className="text-slate-500 dark:text-slate-400">
-                    ROLE LEVEL:
-                  </span>
-                  <span className="font-bold text-dongker-ink dark:text-slate-100 uppercase">
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center justify-between border-b border-border pb-1.5">
+                  <span className="text-muted-foreground">Role</span>
+                  <span className="font-semibold text-foreground uppercase">
                     {activeRole || "GUEST"}
                   </span>
                 </div>
-                <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-1.5">
-                  <span className="text-slate-500 dark:text-slate-400">
-                    TARGET AUDIENCE:
-                  </span>
-                  <span className="font-bold text-dongker-surface dark:text-blue-400 uppercase">
+                <div className="flex items-center justify-between border-b border-border pb-1.5">
+                  <span className="text-muted-foreground">Target</span>
+                  <span className="font-semibold text-primary uppercase">
                     {isRecruitmentMode
-                      ? "KHUSUS CAANG"
+                      ? "Khusus Caang"
                       : user?.role === "caang"
-                        ? "KHUSUS CAANG"
-                        : "ANGGOTA"}
+                        ? "Khusus Caang"
+                        : "Anggota"}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-500 dark:text-slate-400">
-                    UNIQUE LOCATIONS:
-                  </span>
-                  <span className="font-bold text-dongker-ink dark:text-slate-100">
+                  <span className="text-muted-foreground">Lokasi Unik</span>
+                  <span className="font-semibold text-foreground">
                     {stats.uniqueLocations}
                   </span>
                 </div>
               </div>
             </div>
-            <div className="pt-3 border-t border-dashed border-slate-200 dark:border-slate-800 text-[10px] font-mono text-slate-400 dark:text-slate-500 uppercase tracking-widest flex justify-between">
-              <span>STATUS REPO</span>
-              <span className="text-emerald-600 dark:text-emerald-400 font-bold">
-                ONLINE
+            <div className="pt-3 mt-3 border-t border-dashed border-border text-micro text-muted-foreground uppercase tracking-wider flex justify-between">
+              <span>Status</span>
+              <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                Online
               </span>
             </div>
           </div>
         </div>
       )}
 
-      {/* ── Filter Controls Panel ─────────────────────────────────────────── */}
-      <div className="flex flex-col sm:flex-row gap-3 border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 sm:p-4 rounded-xl shadow-xs">
+      {/* ── Filter Controls ─────────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <HugeiconsIcon
             icon={Search01Icon}
-            className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500"
+            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
           />
           <Input
             placeholder={
@@ -898,7 +880,7 @@ export function KegiatanClient({
             }
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-10 w-full bg-slate-50 dark:bg-slate-800/60 pl-10 rounded-lg border border-slate-200 dark:border-slate-700 font-mono text-xs text-dongker-ink dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus-visible:ring-2 focus-visible:ring-pnp-orange/20 focus-visible:border-pnp-orange"
+            className="h-10 w-full bg-card pl-10 rounded-md border-border text-sm text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/20"
           />
         </div>
 
@@ -915,10 +897,10 @@ export function KegiatanClient({
                     | "completed",
                 )
               }
-              className="h-10 w-full bg-slate-50 dark:bg-slate-800/60 px-3 rounded-lg border border-slate-200 dark:border-slate-700 font-mono text-xs text-dongker-ink dark:text-slate-100 focus:outline-hidden focus:border-pnp-orange"
+              className="h-10 w-full bg-card px-3 rounded-md border border-border text-sm text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
             >
               <option value="all">Semua Status</option>
-              <option value="upcoming">Mendatang</option>
+              <option value="upcoming">Akan Datang</option>
               <option value="ongoing">Sedang Berlangsung</option>
               <option value="completed">Selesai</option>
             </select>
@@ -926,54 +908,52 @@ export function KegiatanClient({
         )}
       </div>
 
-      {/* ════════════════════════════════════════════════════════════════════════
+      {/* ════════════════════════════════════════════════════════════════════
           TAB: DAFTAR KEGIATAN
-          ════════════════════════════════════════════════════════════════════════ */}
+          ════════════════════════════════════════════════════════════════════ */}
       {activeTab === "kegiatan" && (
         <>
           {isLoading ? (
-            <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 sm:p-12 text-center rounded-xl animate-pulse space-y-4">
-              <div className="h-6 bg-slate-100 dark:bg-slate-800 w-1/4 mx-auto rounded-lg" />
-              <div className="h-4 bg-slate-100 dark:bg-slate-800 w-1/2 mx-auto rounded-lg" />
+            <div className="border border-border bg-card p-8 sm:p-12 text-center rounded-lg animate-pulse space-y-4">
+              <div className="h-6 bg-muted w-1/4 mx-auto rounded-md" />
+              <div className="h-4 bg-muted w-1/2 mx-auto rounded-md" />
               <div className="space-y-2 pt-6">
-                <div className="h-12 bg-slate-50 dark:bg-slate-800/50 w-full rounded-lg" />
-                <div className="h-12 bg-slate-50 dark:bg-slate-800/50 w-full rounded-lg" />
+                <div className="h-12 bg-muted/50 w-full rounded-md" />
+                <div className="h-12 bg-muted/50 w-full rounded-md" />
               </div>
             </div>
           ) : error ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center border border-red-200 dark:border-red-900/50 rounded-xl bg-red-50 dark:bg-red-950/30 p-6 sm:p-8 max-w-xl mx-auto">
-              <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center text-red-600 dark:text-red-400 mb-3 font-bold font-mono">
+            <div className="flex flex-col items-center justify-center py-12 text-center border border-destructive/30 rounded-lg bg-destructive/5 p-6 sm:p-8 max-w-xl mx-auto">
+              <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center text-destructive mb-3 font-bold">
                 !
               </div>
-              <p className="text-xs font-mono uppercase tracking-wider text-red-700 dark:text-red-300">
-                {error}
-              </p>
+              <p className="text-sm text-destructive">{error}</p>
             </div>
           ) : filteredActivities.length === 0 ? (
-            <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-8 sm:p-12 text-center rounded-xl">
+            <div className="border border-border bg-card p-8 sm:p-12 text-center rounded-lg">
               <HugeiconsIcon
                 icon={Calendar03Icon}
                 size={42}
-                className="mx-auto text-slate-400 dark:text-slate-600 mb-3"
+                className="mx-auto text-muted-foreground mb-3"
               />
-              <p className="font-mono text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400">
+              <p className="text-sm text-muted-foreground">
                 {search
                   ? "Tidak ada kegiatan yang cocok."
-                  : 'Belum ada kegiatan. Klik "+ Tambah Kegiatan" untuk memulai.'}
+                  : 'Belum ada kegiatan. Klik "Tambah Kegiatan" untuk memulai.'}
               </p>
             </div>
           ) : (
             <>
               {/* Mobile Cards View */}
-              <div className="block md:hidden space-y-3 sm:space-y-4">
+              <div className="block lg:hidden space-y-3 sm:space-y-4">
                 {filteredActivities.map((activity) => (
                   <div
                     key={activity.id}
-                    className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 rounded-xl space-y-3 shadow-xs"
+                    className="border border-border bg-card rounded-lg p-4 space-y-3"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="relative h-11 w-16 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 overflow-hidden flex items-center justify-center shrink-0">
+                        <div className="relative h-11 w-16 rounded-md border border-border bg-muted overflow-hidden flex items-center justify-center shrink-0">
                           {activity.banner_url ? (
                             <Image
                               src={activity.banner_url}
@@ -986,15 +966,15 @@ export function KegiatanClient({
                             <HugeiconsIcon
                               icon={Calendar03Icon}
                               size={18}
-                              className="text-slate-400 dark:text-slate-500"
+                              className="text-muted-foreground"
                             />
                           )}
                         </div>
                         <div className="min-w-0">
-                          <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 uppercase tracking-widest block">
-                            NAMA KEGIATAN
+                          <span className="text-micro text-muted-foreground block">
+                            Nama Kegiatan
                           </span>
-                          <span className="text-sm font-display font-medium text-dongker-ink dark:text-slate-100 truncate block">
+                          <span className="text-sm font-display font-medium text-foreground truncate block">
                             {activity.title}
                           </span>
                         </div>
@@ -1002,36 +982,36 @@ export function KegiatanClient({
                       <div className="shrink-0">{getStatusBadge(activity)}</div>
                     </div>
 
-                    <div className="space-y-2 pt-2 border-t border-dashed border-slate-200 dark:border-slate-800">
+                    <div className="space-y-2 pt-2 border-t border-dashed border-border">
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 uppercase tracking-widest block">
-                            TANGGAL
+                          <span className="text-micro text-muted-foreground block">
+                            Tanggal
                           </span>
-                          <span className="text-xs text-slate-700 dark:text-slate-300 font-medium">
+                          <span className="text-sm text-foreground font-medium">
                             {formatIndoDate(activity.start_date)}
                           </span>
                         </div>
                         <div>
-                          <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 uppercase tracking-widest block">
-                            WAKTU
+                          <span className="text-micro text-muted-foreground block">
+                            Waktu
                           </span>
-                          <span className="text-xs text-slate-700 dark:text-slate-300 font-mono">
+                          <span className="text-sm text-foreground font-mono">
                             {formatIndoTime(activity.start_date)}
                           </span>
                         </div>
                       </div>
                       <div>
-                        <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 uppercase tracking-widest block">
-                          LOKASI
+                        <span className="text-micro text-muted-foreground block">
+                          Lokasi
                         </span>
-                        <span className="text-xs text-slate-700 dark:text-slate-300">
+                        <span className="text-sm text-foreground">
                           {activity.location || "TBA"}
                         </span>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-end gap-2 border-t border-slate-100 dark:border-slate-800 pt-3">
+                    <div className="flex items-center justify-end gap-2 border-t border-border pt-3">
                       <Button
                         variant="outline"
                         size="sm"
@@ -1042,13 +1022,9 @@ export function KegiatanClient({
                               )
                             : setSelectedActivity(activity)
                         }
-                        className="rounded-lg border border-slate-200 dark:border-slate-700 text-dongker-ink dark:text-slate-200 font-mono text-micro uppercase tracking-wider px-3 h-8 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        className="rounded-md border-border text-foreground font-medium text-xs px-3 h-8 hover:bg-muted"
                       >
-                        <HugeiconsIcon
-                          icon={EyeIcon}
-                          size={14}
-                          className="mr-1"
-                        />
+                        <HugeiconsIcon icon={EyeIcon} size={14} />
                         Detail
                       </Button>
 
@@ -1065,26 +1041,18 @@ export function KegiatanClient({
                                 ? openEditForm(activity)
                                 : setEditingKomdisActivity(activity)
                             }
-                            className="rounded-lg border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 font-mono text-micro uppercase tracking-wider px-3 h-8 hover:bg-blue-50 dark:hover:bg-blue-950/40"
+                            className="rounded-md border-primary text-primary font-medium text-xs px-3 h-8 hover:bg-primary-soft"
                           >
-                            <HugeiconsIcon
-                              icon={Edit02Icon}
-                              size={14}
-                              className="mr-1"
-                            />
+                            <HugeiconsIcon icon={Edit02Icon} size={14} />
                             Edit
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => setDeletingActivity(activity)}
-                            className="rounded-lg border border-slate-200 dark:border-slate-700 text-red-600 dark:text-red-400 font-mono text-micro uppercase tracking-wider px-3 h-8 hover:bg-red-50 dark:hover:bg-red-950/40"
+                            className="rounded-md border-destructive/40 text-destructive font-medium text-xs px-3 h-8 hover:bg-destructive/10"
                           >
-                            <HugeiconsIcon
-                              icon={Delete01Icon}
-                              size={14}
-                              className="mr-1"
-                            />
+                            <HugeiconsIcon icon={Delete01Icon} size={14} />
                             Hapus
                           </Button>
                         </>
@@ -1100,7 +1068,7 @@ export function KegiatanClient({
                                 : `/kegiatan/${activity.id}/absensi`,
                             )
                           }
-                          className="rounded-lg bg-dongker-surface dark:bg-blue-600 text-white font-mono text-micro uppercase tracking-wider px-3 h-8 hover:bg-dongker-hover dark:hover:bg-blue-500"
+                          className="rounded-md bg-primary text-primary-foreground hover:bg-primary-hover font-medium text-xs px-3 h-8"
                         >
                           Absen
                         </Button>
@@ -1111,38 +1079,38 @@ export function KegiatanClient({
               </div>
 
               {/* Desktop Table View */}
-              <div className="hidden md:block overflow-x-auto border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl shadow-xs">
+              <div className="hidden lg:block overflow-x-auto border border-border bg-card rounded-lg">
                 <table className="w-full min-w-225 border-collapse text-left">
                   <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
-                      <th className="p-4 w-24 text-center font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
+                    <tr className="border-b border-border bg-surface">
+                      <th className="px-4 py-3 w-24 text-center text-micro font-semibold uppercase tracking-wide text-muted-foreground">
                         Banner
                       </th>
-                      <th className="p-4 font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
+                      <th className="px-4 py-3 text-micro font-semibold uppercase tracking-wide text-muted-foreground">
                         Nama Kegiatan
                       </th>
-                      <th className="p-4 font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
+                      <th className="px-4 py-3 text-micro font-semibold uppercase tracking-wide text-muted-foreground">
                         Tanggal &amp; Waktu
                       </th>
-                      <th className="p-4 font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
+                      <th className="px-4 py-3 text-micro font-semibold uppercase tracking-wide text-muted-foreground">
                         Lokasi
                       </th>
-                      <th className="p-4 w-32 font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
+                      <th className="px-4 py-3 w-32 text-micro font-semibold uppercase tracking-wide text-muted-foreground">
                         Status
                       </th>
-                      <th className="p-4 w-44 text-center font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
+                      <th className="px-4 py-3 w-44 text-center text-micro font-semibold uppercase tracking-wide text-muted-foreground">
                         Aksi
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                  <tbody className="divide-y divide-border">
                     {filteredActivities.map((activity) => (
                       <tr
                         key={activity.id}
-                        className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
+                        className="hover:bg-muted/50 transition-colors"
                       >
-                        <td className="p-4 align-middle text-center">
-                          <div className="relative h-11 w-16 mx-auto rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 overflow-hidden flex items-center justify-center">
+                        <td className="px-4 py-3 align-middle text-center">
+                          <div className="relative h-11 w-16 mx-auto rounded-md border border-border bg-muted overflow-hidden flex items-center justify-center">
                             {activity.banner_url ? (
                               <Image
                                 src={activity.banner_url}
@@ -1155,29 +1123,29 @@ export function KegiatanClient({
                               <HugeiconsIcon
                                 icon={Calendar03Icon}
                                 size={18}
-                                className="text-slate-400 dark:text-slate-500"
+                                className="text-muted-foreground"
                               />
                             )}
                           </div>
                         </td>
 
-                        <td className="p-4 align-middle">
+                        <td className="px-4 py-3 align-middle">
                           <div
-                            className="font-display font-medium text-dongker-ink dark:text-slate-100 text-sm truncate max-w-70"
+                            className="font-display font-medium text-foreground text-sm truncate max-w-70"
                             title={activity.title}
                           >
                             {activity.title}
                           </div>
-                          <div className="font-mono text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 tracking-wider uppercase">
-                            AUDIENCE: {activity.target_audience}
+                          <div className="text-micro text-muted-foreground mt-0.5 uppercase tracking-wide">
+                            Audience: {activity.target_audience}
                           </div>
                         </td>
 
-                        <td className="p-4 align-middle">
-                          <div className="text-dongker-ink dark:text-slate-200 text-xs font-medium">
+                        <td className="px-4 py-3 align-middle">
+                          <div className="text-foreground text-xs font-medium">
                             {formatIndoDate(activity.start_date)}
                           </div>
-                          <div className="font-mono text-micro text-slate-500 dark:text-slate-400 mt-0.5">
+                          <div className="text-micro text-muted-foreground mt-0.5 font-mono">
                             {formatTimeRange(
                               activity.start_date,
                               activity.end_date,
@@ -1185,20 +1153,20 @@ export function KegiatanClient({
                           </div>
                         </td>
 
-                        <td className="p-4 align-middle">
+                        <td className="px-4 py-3 align-middle">
                           <div
-                            className="text-slate-700 dark:text-slate-300 text-xs truncate max-w-55"
+                            className="text-foreground text-xs truncate max-w-55"
                             title={activity.location || "TBA"}
                           >
                             {activity.location || "TBA"}
                           </div>
                         </td>
 
-                        <td className="p-4 align-middle">
+                        <td className="px-4 py-3 align-middle">
                           {getStatusBadge(activity)}
                         </td>
 
-                        <td className="p-4 align-middle text-center">
+                        <td className="px-4 py-3 align-middle text-center">
                           <div className="flex items-center justify-center gap-1.5">
                             <Button
                               variant="outline"
@@ -1210,13 +1178,9 @@ export function KegiatanClient({
                                     )
                                   : setSelectedActivity(activity)
                               }
-                              className="rounded-lg border border-slate-200 dark:border-slate-700 text-dongker-ink dark:text-slate-200 font-mono text-micro uppercase tracking-wider h-8 px-2.5 hover:bg-slate-100 dark:hover:bg-slate-800"
+                              className="rounded-md border-border text-foreground font-medium text-xs h-8 px-2.5 hover:bg-muted"
                             >
-                              <HugeiconsIcon
-                                icon={EyeIcon}
-                                size={14}
-                                className="mr-1"
-                              />
+                              <HugeiconsIcon icon={EyeIcon} size={14} />
                               Detail
                             </Button>
 
@@ -1234,7 +1198,7 @@ export function KegiatanClient({
                                       ? openEditForm(activity)
                                       : setEditingKomdisActivity(activity)
                                   }
-                                  className="h-8 w-8 rounded-lg border border-slate-200 dark:border-slate-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40"
+                                  className="h-8 w-8 rounded-md border-primary text-primary hover:bg-primary-soft"
                                   title="Edit"
                                 >
                                   <HugeiconsIcon icon={Edit02Icon} size={14} />
@@ -1243,7 +1207,7 @@ export function KegiatanClient({
                                   variant="outline"
                                   size="icon"
                                   onClick={() => setDeletingActivity(activity)}
-                                  className="h-8 w-8 rounded-lg border border-slate-200 dark:border-slate-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40"
+                                  className="h-8 w-8 rounded-md border-destructive/40 text-destructive hover:bg-destructive/10"
                                   title="Hapus"
                                 >
                                   <HugeiconsIcon
@@ -1264,7 +1228,7 @@ export function KegiatanClient({
                                       : `/kegiatan/${activity.id}/absensi`,
                                   )
                                 }
-                                className="rounded-lg bg-dongker-surface dark:bg-blue-600 text-white font-mono text-micro uppercase tracking-wider h-8 px-2.5 hover:bg-dongker-hover dark:hover:bg-blue-500"
+                                className="rounded-md bg-primary text-primary-foreground hover:bg-primary-hover font-medium text-xs h-8 px-2.5"
                               >
                                 Absen
                               </Button>
@@ -1281,19 +1245,19 @@ export function KegiatanClient({
         </>
       )}
 
-      {/* ════════════════════════════════════════════════════════════════════════
+      {/* ════════════════════════════════════════════════════════════════════
           TAB: REKAP ABSENSI CAANG (Oprec / Caang Mode)
-          ════════════════════════════════════════════════════════════════════════ */}
+          ════════════════════════════════════════════════════════════════════ */}
       {activeTab === "absensi" && isRecruitmentMode && (
         <>
           {filteredSummary.length === 0 ? (
-            <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-12 text-center rounded-xl">
+            <div className="border border-border bg-card p-12 text-center rounded-lg">
               <HugeiconsIcon
                 icon={UserGroupIcon}
                 size={40}
-                className="mx-auto text-slate-400 dark:text-slate-600 mb-3"
+                className="mx-auto text-muted-foreground mb-3"
               />
-              <p className="font-mono text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400">
+              <p className="text-sm text-muted-foreground">
                 {search
                   ? "Tidak ada Caang yang cocok dengan pencarian."
                   : "Belum ada Caang terverifikasi yang terdaftar."}
@@ -1302,56 +1266,54 @@ export function KegiatanClient({
           ) : (
             <>
               {/* Desktop Attendance Matrix Table */}
-              <div className="hidden md:block overflow-x-auto border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl shadow-xs">
+              <div className="hidden lg:block overflow-x-auto border border-border bg-card rounded-lg">
                 <table className="w-full border-collapse text-left">
                   <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
-                      <th className="p-3 font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 min-w-[220px] sticky left-0 bg-slate-50 dark:bg-slate-800 z-10 border-r border-slate-200 dark:border-slate-800">
+                    <tr className="border-b border-border bg-surface">
+                      <th className="px-3 py-3 text-micro font-semibold uppercase tracking-wide text-muted-foreground min-w-55 sticky left-0 bg-surface z-10 border-r border-border">
                         Caang
                       </th>
                       {initialActivitiesForSummary.map((act) => (
                         <th
                           key={act.id}
-                          className="p-3 font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 min-w-[110px] text-center border-r border-slate-200 dark:border-slate-800"
+                          className="px-3 py-3 text-micro font-semibold uppercase tracking-wide text-muted-foreground min-w-27.5 text-center border-r border-border"
                         >
-                          <div className="max-w-[100px] mx-auto">
+                          <div className="max-w-25 mx-auto">
                             <span className="line-clamp-2 text-[10px] leading-tight block">
                               {act.title}
                             </span>
-                            <span className="text-slate-400 text-[9px] mt-0.5 block font-mono">
+                            <span className="text-muted-foreground text-[9px] mt-0.5 block">
                               {formatDate(act.start_date)}
                             </span>
                           </div>
                         </th>
                       ))}
-                      <th className="p-3 font-mono text-micro uppercase tracking-wider text-center text-emerald-600 dark:text-emerald-400 min-w-[60px]">
+                      <th className="px-3 py-3 text-micro font-semibold uppercase tracking-wide text-center text-emerald-600 dark:text-emerald-400 min-w-15">
                         Hadir
                       </th>
-                      <th className="p-3 font-mono text-micro uppercase tracking-wider text-center text-amber-600 dark:text-amber-400 min-w-[60px]">
+                      <th className="px-3 py-3 text-micro font-semibold uppercase tracking-wide text-center text-amber-600 dark:text-amber-400 min-w-15">
                         Izin
                       </th>
-                      <th className="p-3 font-mono text-micro uppercase tracking-wider text-center text-blue-600 dark:text-blue-400 min-w-[60px]">
+                      <th className="px-3 py-3 text-micro font-semibold uppercase tracking-wide text-center text-blue-600 dark:text-blue-400 min-w-15">
                         Sakit
                       </th>
-                      <th className="p-3 font-mono text-micro uppercase tracking-wider text-center text-red-600 dark:text-red-400 min-w-[60px]">
+                      <th className="px-3 py-3 text-micro font-semibold uppercase tracking-wide text-center text-red-600 dark:text-red-400 min-w-15">
                         Alfa
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                  <tbody className="divide-y divide-border">
                     {filteredSummary.map((item, idx) => (
                       <tr
                         key={item.profileId}
-                        className={`hover:bg-slate-50/60 dark:hover:bg-slate-800/30 ${
-                          idx % 2 === 1
-                            ? "bg-slate-50/30 dark:bg-slate-900/30"
-                            : ""
+                        className={`hover:bg-muted/50 transition-colors ${
+                          idx % 2 === 1 ? "bg-surface/50" : ""
                         }`}
                       >
                         {/* Caang Info */}
-                        <td className="p-3 sticky left-0 z-10 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
-                          <div className="flex items-center gap-3 min-w-[200px]">
-                            <div className="relative w-9 h-9 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 bg-slate-100 dark:bg-slate-800">
+                        <td className="px-3 py-3 sticky left-0 z-10 border-r border-border bg-card">
+                          <div className="flex items-center gap-3 min-w-50">
+                            <div className="relative w-9 h-9 rounded-full overflow-hidden border border-border shrink-0 bg-muted">
                               {item.photoUrl ? (
                                 <Image
                                   src={item.photoUrl}
@@ -1361,19 +1323,19 @@ export function KegiatanClient({
                                   className="object-cover"
                                 />
                               ) : (
-                                <div className="w-full h-full flex items-center justify-center text-slate-500 font-bold text-xs font-mono">
+                                <div className="w-full h-full flex items-center justify-center text-muted-foreground font-bold text-xs">
                                   {item.fullName[0]?.toUpperCase()}
                                 </div>
                               )}
                             </div>
                             <div className="min-w-0">
-                              <p className="font-semibold text-xs text-dongker-ink dark:text-slate-100 truncate max-w-37.5">
+                              <p className="font-semibold text-xs text-foreground truncate max-w-37.5">
                                 {item.fullName}
                               </p>
-                              <p className="font-mono text-[9px] text-slate-500 dark:text-slate-400 uppercase">
+                              <p className="text-micro text-muted-foreground">
                                 {item.nim}
                               </p>
-                              <p className="text-[9px] text-slate-400 dark:text-slate-500 truncate max-w-37.5">
+                              <p className="text-[9px] text-muted-foreground truncate max-w-37.5">
                                 {item.studyProgramName}
                               </p>
                             </div>
@@ -1395,7 +1357,7 @@ export function KegiatanClient({
                           return (
                             <td
                               key={act.id}
-                              className="p-2 text-center border-r border-slate-200 dark:border-slate-800 relative"
+                              className="px-2 py-2 text-center border-r border-border relative"
                             >
                               <button
                                 onClick={() =>
@@ -1408,19 +1370,19 @@ export function KegiatanClient({
                                         },
                                   )
                                 }
-                                className={`font-mono text-[10px] uppercase tracking-wider px-2 py-1 rounded-md border transition-all w-full ${
+                                className={`text-[10px] uppercase tracking-wide px-2 py-1 rounded-md border transition-all w-full ${
                                   cfg
                                     ? `${cfg.bg} ${cfg.color} ${cfg.border}`
-                                    : "bg-slate-100 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700"
+                                    : "bg-muted text-muted-foreground border-border"
                                 } hover:opacity-80`}
-                                title="Klik untuk mengoperasikan status absensi"
+                                title="Klik untuk mengubah status absensi"
                               >
                                 {cfg ? cfg.label : "Alfa"}
                               </button>
 
                               {/* Dropdown Menu Override */}
                               {isOpen && (
-                                <div className="absolute z-50 top-full left-1/2 -translate-x-1/2 mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-lg rounded-lg overflow-hidden min-w-[95px]">
+                                <div className="absolute z-50 top-full left-1/2 -translate-x-1/2 mt-1 bg-card border border-border shadow-soft rounded-md overflow-hidden min-w-23.75">
                                   {(
                                     [
                                       "hadir",
@@ -1438,7 +1400,7 @@ export function KegiatanClient({
                                           s,
                                         )
                                       }
-                                      className={`w-full text-left px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider hover:opacity-80 transition-colors ${STATUS_CONFIG[s].color} ${STATUS_CONFIG[s].bg}`}
+                                      className={`w-full text-left px-3 py-1.5 text-[10px] uppercase tracking-wide hover:opacity-80 transition-colors ${STATUS_CONFIG[s].color} ${STATUS_CONFIG[s].bg}`}
                                     >
                                       {STATUS_CONFIG[s].label}
                                     </button>
@@ -1450,16 +1412,16 @@ export function KegiatanClient({
                         })}
 
                         {/* Summary Totals */}
-                        <td className="p-3 text-center font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                        <td className="px-3 py-3 text-center text-xs font-semibold text-emerald-600 dark:text-emerald-400">
                           {item.totals.hadir}
                         </td>
-                        <td className="p-3 text-center font-mono text-xs font-bold text-amber-600 dark:text-amber-400">
+                        <td className="px-3 py-3 text-center text-xs font-semibold text-amber-600 dark:text-amber-400">
                           {item.totals.izin}
                         </td>
-                        <td className="p-3 text-center font-mono text-xs font-bold text-blue-600 dark:text-blue-400">
+                        <td className="px-3 py-3 text-center text-xs font-semibold text-blue-600 dark:text-blue-400">
                           {item.totals.sakit}
                         </td>
-                        <td className="p-3 text-center font-mono text-xs font-bold text-red-600 dark:text-red-400">
+                        <td className="px-3 py-3 text-center text-xs font-semibold text-red-600 dark:text-red-400">
                           {item.totals.alfa}
                         </td>
                       </tr>
@@ -1469,14 +1431,14 @@ export function KegiatanClient({
               </div>
 
               {/* Mobile Attendance Cards */}
-              <div className="flex flex-col gap-3 md:hidden">
+              <div className="flex flex-col gap-3 lg:hidden">
                 {filteredSummary.map((item) => (
                   <div
                     key={item.profileId}
-                    className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl overflow-hidden shadow-xs"
+                    className="border border-border bg-card rounded-lg overflow-hidden"
                   >
-                    <div className="flex items-center gap-3 p-4 border-b border-slate-100 dark:border-slate-800">
-                      <div className="relative w-10 h-10 rounded-full border border-slate-200 dark:border-slate-700 shrink-0 bg-slate-100 dark:bg-slate-800 overflow-hidden">
+                    <div className="flex items-center gap-3 p-4 border-b border-border">
+                      <div className="relative w-10 h-10 rounded-full border border-border shrink-0 bg-muted overflow-hidden">
                         {item.photoUrl ? (
                           <Image
                             src={item.photoUrl}
@@ -1486,22 +1448,22 @@ export function KegiatanClient({
                             className="object-cover"
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center font-bold text-sm text-slate-500 font-mono">
+                          <div className="w-full h-full flex items-center justify-center font-bold text-sm text-muted-foreground">
                             {item.fullName[0]?.toUpperCase()}
                           </div>
                         )}
                       </div>
                       <div>
-                        <p className="font-semibold text-sm text-dongker-ink dark:text-slate-100">
+                        <p className="font-semibold text-sm text-foreground">
                           {item.fullName}
                         </p>
-                        <p className="font-mono text-[10px] text-slate-500 dark:text-slate-400 uppercase">
+                        <p className="text-micro text-muted-foreground">
                           {item.nim} · {item.studyProgramName}
                         </p>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-4 divide-x divide-slate-100 dark:divide-slate-800 text-center py-2">
+                    <div className="grid grid-cols-4 divide-x divide-border text-center py-2">
                       {(
                         ["hadir", "izin", "sakit", "alfa"] as StatusAbsensi[]
                       ).map((s) => (
@@ -1511,7 +1473,7 @@ export function KegiatanClient({
                           >
                             {item.totals[s]}
                           </p>
-                          <p className="font-mono text-[9px] uppercase tracking-wider text-slate-500 dark:text-slate-400 mt-0.5">
+                          <p className="text-micro text-muted-foreground mt-0.5">
                             {STATUS_CONFIG[s].label}
                           </p>
                         </div>
@@ -1519,7 +1481,7 @@ export function KegiatanClient({
                     </div>
 
                     {initialActivitiesForSummary.length > 0 && (
-                      <div className="border-t border-slate-100 dark:border-slate-800 p-3 space-y-2">
+                      <div className="border-t border-border p-3 space-y-2">
                         {initialActivitiesForSummary.map((act) => {
                           const status = item.attendances[
                             act.id
@@ -1533,11 +1495,11 @@ export function KegiatanClient({
                               key={act.id}
                               className="flex items-center justify-between gap-2"
                             >
-                              <span className="text-xs text-slate-700 dark:text-slate-300 line-clamp-1 flex-1">
+                              <span className="text-xs text-foreground line-clamp-1 flex-1">
                                 {act.title}
                               </span>
                               <span
-                                className={`font-mono text-[9px] uppercase px-2 py-0.5 rounded-md border ${cfg.bg} ${cfg.color} ${cfg.border}`}
+                                className={`text-[9px] uppercase px-2 py-0.5 rounded-md border ${cfg.bg} ${cfg.color} ${cfg.border}`}
                               >
                                 {cfg.label}
                               </span>
@@ -1554,26 +1516,25 @@ export function KegiatanClient({
         </>
       )}
 
-      {/* ════════════════════════════════════════════════════════════════════════
+      {/* ════════════════════════════════════════════════════════════════════
           MODAL: DETAIL KEGIATAN (View Only)
-          ════════════════════════════════════════════════════════════════════════ */}
+          ════════════════════════════════════════════════════════════════════ */}
       <Dialog
         open={!!selectedActivity}
         onOpenChange={() => setSelectedActivity(null)}
       >
-        <DialogContent className="max-w-lg rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-0 overflow-hidden shadow-lg">
-          <div className="h-1 bg-linear-to-r from-dongker-surface via-[#3b82f6] to-pnp-orange" />
+        <DialogContent className="max-w-lg rounded-lg border border-border bg-card p-0 overflow-hidden shadow-soft">
           <DialogHeader className="p-6 pb-2">
-            <DialogTitle className="text-lg font-display font-semibold text-dongker-ink dark:text-slate-100">
+            <DialogTitle className="text-lg font-display font-semibold text-foreground">
               {selectedActivity?.title}
             </DialogTitle>
-            <DialogDescription className="font-mono text-micro uppercase tracking-wider text-slate-500">
+            <DialogDescription className="text-sm text-muted-foreground">
               Audience: {selectedActivity?.target_audience}
             </DialogDescription>
           </DialogHeader>
-          <div className="p-6 pt-2 space-y-4">
+          <div className="px-6 pt-2 space-y-4">
             {selectedActivity?.banner_url && (
-              <div className="relative w-full h-44 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800">
+              <div className="relative w-full h-44 rounded-md overflow-hidden border border-border bg-muted">
                 <Image
                   src={selectedActivity.banner_url}
                   alt={selectedActivity.title}
@@ -1582,21 +1543,21 @@ export function KegiatanClient({
                 />
               </div>
             )}
-            <div className="space-y-2 text-xs">
+            <div className="space-y-2 text-sm">
               <div>
-                <span className="font-mono text-[10px] uppercase text-slate-400 block">
+                <span className="text-micro text-muted-foreground uppercase tracking-wide block">
                   Deskripsi
                 </span>
-                <p className="text-slate-700 dark:text-slate-300 mt-1 whitespace-pre-line">
+                <p className="text-foreground mt-1 whitespace-pre-line">
                   {selectedActivity?.description || "Tidak ada deskripsi."}
                 </p>
               </div>
               <div className="grid grid-cols-2 gap-3 pt-2">
                 <div>
-                  <span className="font-mono text-[10px] uppercase text-slate-400 block">
+                  <span className="text-micro text-muted-foreground uppercase tracking-wide block">
                     Waktu
                   </span>
-                  <p className="text-slate-700 dark:text-slate-300 font-mono mt-0.5">
+                  <p className="text-foreground mt-0.5">
                     {selectedActivity &&
                       formatIndoDate(selectedActivity.start_date)}
                     <br />
@@ -1608,21 +1569,21 @@ export function KegiatanClient({
                   </p>
                 </div>
                 <div>
-                  <span className="font-mono text-[10px] uppercase text-slate-400 block">
+                  <span className="text-micro text-muted-foreground uppercase tracking-wide block">
                     Lokasi
                   </span>
-                  <p className="text-slate-700 dark:text-slate-300 mt-0.5">
+                  <p className="text-foreground mt-0.5">
                     {selectedActivity?.location || "TBA"}
                   </p>
                 </div>
               </div>
             </div>
           </div>
-          <DialogFooter className="p-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800">
+          <DialogFooter className="p-4 bg-surface border-t border-border">
             <Button
               variant="outline"
               onClick={() => setSelectedActivity(null)}
-              className="rounded-lg font-mono text-xs uppercase"
+              className="rounded-md font-medium text-sm border-border text-foreground hover:bg-muted"
             >
               Tutup
             </Button>
@@ -1630,29 +1591,28 @@ export function KegiatanClient({
         </DialogContent>
       </Dialog>
 
-      {/* ════════════════════════════════════════════════════════════════════════
+      {/* ════════════════════════════════════════════════════════════════════
           MODAL: FORM TAMBAH / EDIT KEGIATAN
-          ════════════════════════════════════════════════════════════════════════ */}
+          ════════════════════════════════════════════════════════════════════ */}
       <Dialog
         open={isFormOpen}
         onOpenChange={(open) => {
           if (!open && !isSubmitting) setIsFormOpen(false);
         }}
       >
-        <DialogContent className="max-w-xl rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-0 overflow-hidden shadow-xl">
-          <div className="h-1 bg-linear-to-r from-dongker-surface via-[#3b82f6] to-pnp-orange" />
-          <DialogHeader className="px-6 pt-6 pb-4 border-b border-slate-100 dark:border-slate-800">
-            <DialogTitle className="font-mono text-sm uppercase tracking-wider text-dongker-ink dark:text-slate-100 flex items-center gap-2">
+        <DialogContent className="max-w-xl rounded-lg border border-border bg-card p-0 overflow-hidden shadow-soft">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
+            <DialogTitle className="text-lg font-display font-semibold text-foreground flex items-center gap-2">
               <HugeiconsIcon
                 icon={editingActivity ? Edit02Icon : Add01Icon}
                 size={18}
-                className="text-dongker-surface dark:text-blue-400"
+                className="text-primary"
               />
               {editingActivity ? "Edit Kegiatan" : "Tambah Kegiatan Baru"}
             </DialogTitle>
-            <DialogDescription className="font-mono text-[10px] uppercase tracking-wider text-slate-400">
+            <DialogDescription className="text-sm text-muted-foreground">
               {isRecruitmentMode
-                ? "Target audiens: CAANG (otomatis)"
+                ? "Target audiens: Caang (otomatis)"
                 : "Form pengelolaan kegiatan UKM Robotik"}
             </DialogDescription>
           </DialogHeader>
@@ -1660,8 +1620,8 @@ export function KegiatanClient({
           <form onSubmit={handleFormSubmit}>
             <div className="px-6 py-5 space-y-4 max-h-[60vh] overflow-y-auto">
               <div className="space-y-1.5">
-                <Label className="font-mono text-[10px] uppercase tracking-wider text-slate-500">
-                  Judul <span className="text-red-500">*</span>
+                <Label className="text-sm font-medium text-foreground">
+                  Judul <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   value={form.title}
@@ -1669,13 +1629,13 @@ export function KegiatanClient({
                     setForm((f) => ({ ...f, title: e.target.value }))
                   }
                   placeholder="Nama kegiatan..."
-                  className="rounded-lg h-9 font-mono text-xs border-slate-200 dark:border-slate-700 focus-visible:ring-2 focus-visible:ring-pnp-orange/20"
+                  className="rounded-md h-9 bg-card border-border text-sm focus-visible:border-primary focus-visible:ring-primary/20"
                   required
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label className="font-mono text-[10px] uppercase tracking-wider text-slate-500">
+                <Label className="text-sm font-medium text-foreground">
                   Deskripsi
                 </Label>
                 <textarea
@@ -1685,14 +1645,14 @@ export function KegiatanClient({
                   }
                   placeholder="Deskripsi kegiatan (opsional)..."
                   rows={3}
-                  className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-transparent px-3 py-2 text-sm text-dongker-ink dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:border-pnp-orange font-sans"
+                  className="w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <Label className="font-mono text-[10px] uppercase tracking-wider text-slate-500">
-                    Waktu Mulai <span className="text-red-500">*</span>
+                  <Label className="text-sm font-medium text-foreground">
+                    Waktu Mulai <span className="text-destructive">*</span>
                   </Label>
                   <input
                     type="datetime-local"
@@ -1700,13 +1660,13 @@ export function KegiatanClient({
                     onChange={(e) =>
                       setForm((f) => ({ ...f, start_date: e.target.value }))
                     }
-                    className="w-full h-9 rounded-lg border border-slate-200 dark:border-slate-700 bg-transparent px-3 text-xs font-mono text-dongker-ink dark:text-slate-100 focus:outline-none focus:border-pnp-orange dark:scheme-dark"
+                    className="w-full h-9 rounded-md border border-border bg-card px-3 text-sm font-mono text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                     required
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label className="font-mono text-[10px] uppercase tracking-wider text-slate-500">
-                    Waktu Berakhir <span className="text-red-500">*</span>
+                  <Label className="text-sm font-medium text-foreground">
+                    Waktu Berakhir <span className="text-destructive">*</span>
                   </Label>
                   <input
                     type="datetime-local"
@@ -1714,14 +1674,14 @@ export function KegiatanClient({
                     onChange={(e) =>
                       setForm((f) => ({ ...f, end_date: e.target.value }))
                     }
-                    className="w-full h-9 rounded-lg border border-slate-200 dark:border-slate-700 bg-transparent px-3 text-xs font-mono text-dongker-ink dark:text-slate-100 focus:outline-none focus:border-pnp-orange dark:scheme-dark"
+                    className="w-full h-9 rounded-md border border-border bg-card px-3 text-sm font-mono text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
                     required
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <Label className="font-mono text-[10px] uppercase tracking-wider text-slate-500">
+                <Label className="text-sm font-medium text-foreground">
                   Lokasi
                 </Label>
                 <Input
@@ -1730,16 +1690,16 @@ export function KegiatanClient({
                     setForm((f) => ({ ...f, location: e.target.value }))
                   }
                   placeholder="Gedung / ruangan / link online..."
-                  className="rounded-lg h-9 font-mono text-xs border-slate-200 dark:border-slate-700 focus-visible:ring-2 focus-visible:ring-pnp-orange/20"
+                  className="rounded-md h-9 bg-card border-border text-sm focus-visible:border-primary focus-visible:ring-primary/20"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label className="font-mono text-[10px] uppercase tracking-wider text-slate-500">
+                <Label className="text-sm font-medium text-foreground">
                   Banner Kegiatan
                 </Label>
                 {bannerPreview && (
-                  <div className="relative w-full h-36 border border-slate-200 dark:border-slate-700 overflow-hidden rounded-lg mb-2">
+                  <div className="relative w-full h-36 border border-border overflow-hidden rounded-md mb-2">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={bannerPreview}
@@ -1752,7 +1712,7 @@ export function KegiatanClient({
                         setBannerPreview(null);
                         setBannerFile(null);
                       }}
-                      className="absolute top-2 right-2 w-6 h-6 bg-slate-900/70 text-white rounded-full flex items-center justify-center hover:bg-slate-900"
+                      className="absolute top-2 right-2 w-6 h-6 bg-foreground/80 text-background rounded-full flex items-center justify-center hover:bg-foreground"
                     >
                       <HugeiconsIcon icon={Cancel01Icon} size={12} />
                     </button>
@@ -1768,7 +1728,7 @@ export function KegiatanClient({
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full h-9 border border-dashed border-slate-300 dark:border-slate-700 text-slate-500 font-mono text-[10px] uppercase tracking-wider flex items-center justify-center gap-2 hover:border-pnp-orange hover:text-pnp-orange transition-colors rounded-lg"
+                  className="w-full h-9 border border-dashed border-border text-muted-foreground text-sm font-medium flex items-center justify-center gap-2 hover:border-primary hover:text-primary transition-colors rounded-md"
                 >
                   <HugeiconsIcon icon={Upload01Icon} size={14} />
                   {bannerPreview ? "Ganti Banner" : "Upload Banner (Maks. 5MB)"}
@@ -1776,20 +1736,20 @@ export function KegiatanClient({
               </div>
             </div>
 
-            <DialogFooter className="px-6 py-4 border-t border-slate-100 dark:border-slate-800">
+            <DialogFooter className="px-6 py-4 border-t border-border">
               <Button
                 type="button"
                 variant="ghost"
                 onClick={() => setIsFormOpen(false)}
                 disabled={isSubmitting}
-                className="rounded-lg font-mono text-xs uppercase h-9 px-4"
+                className="rounded-md font-medium text-sm h-9 px-4 text-muted-foreground hover:text-foreground hover:bg-muted"
               >
                 Batal
               </Button>
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="rounded-lg bg-dongker-surface hover:bg-dongker-hover dark:bg-blue-600 text-white font-mono text-xs uppercase tracking-wider h-9 px-6 disabled:opacity-50"
+                className="rounded-md bg-primary hover:bg-primary-hover text-primary-foreground font-medium text-sm h-9 px-6 disabled:opacity-50"
               >
                 {isSubmitting
                   ? "Menyimpan..."
@@ -1802,55 +1762,54 @@ export function KegiatanClient({
         </DialogContent>
       </Dialog>
 
-      {/* ════════════════════════════════════════════════════════════════════════
+      {/* ════════════════════════════════════════════════════════════════════
           MODAL: KONFIRMASI HAPUS (SOFT DELETE)
-          ════════════════════════════════════════════════════════════════════════ */}
+          ════════════════════════════════════════════════════════════════════ */}
       <Dialog
         open={!!deletingActivity}
         onOpenChange={(open) => {
           if (!open && !isDeleting) setDeletingActivity(null);
         }}
       >
-        <DialogContent className="max-w-sm rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-0 overflow-hidden shadow-xl">
-          <div className="h-1 bg-red-600" />
-          <DialogHeader className="px-6 pt-6 pb-4 border-b border-slate-100 dark:border-slate-800">
-            <DialogTitle className="font-mono text-sm uppercase tracking-wider text-dongker-ink dark:text-slate-100 flex items-center gap-2">
+        <DialogContent className="max-w-sm rounded-lg border border-border bg-card p-0 overflow-hidden shadow-soft">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
+            <DialogTitle className="text-lg font-display font-semibold text-foreground flex items-center gap-2">
               <HugeiconsIcon
                 icon={Delete01Icon}
                 size={16}
-                className="text-red-600"
+                className="text-destructive"
               />
               Hapus Kegiatan
             </DialogTitle>
-            <DialogDescription className="font-mono text-[10px] uppercase tracking-wider text-slate-400">
+            <DialogDescription className="text-sm text-muted-foreground">
               Kegiatan akan dipindahkan ke Trash
             </DialogDescription>
           </DialogHeader>
           <div className="px-6 py-5">
-            <p className="text-sm text-slate-600 dark:text-slate-300">
+            <p className="text-sm text-foreground">
               Apakah Anda yakin ingin menghapus kegiatan{" "}
-              <span className="font-semibold text-dongker-ink dark:text-slate-100">
+              <span className="font-semibold text-foreground">
                 &quot;{deletingActivity?.title}&quot;
               </span>
               ?
             </p>
-            <p className="text-xs text-slate-400 mt-2 font-mono">
+            <p className="text-sm text-muted-foreground mt-2">
               Kegiatan dapat dipulihkan kembali dari halaman Trash.
             </p>
           </div>
-          <DialogFooter className="px-6 py-4 border-t border-slate-100 dark:border-slate-800">
+          <DialogFooter className="px-6 py-4 border-t border-border">
             <Button
               variant="ghost"
               onClick={() => setDeletingActivity(null)}
               disabled={isDeleting}
-              className="rounded-lg font-mono text-xs uppercase h-9 px-4"
+              className="rounded-md font-medium text-sm h-9 px-4 text-muted-foreground hover:text-foreground hover:bg-muted"
             >
               Batal
             </Button>
             <Button
               onClick={handleSoftDelete}
               disabled={isDeleting}
-              className="rounded-lg bg-red-600 hover:bg-red-700 text-white font-mono text-xs uppercase tracking-wider h-9 px-4 disabled:opacity-50"
+              className="rounded-md bg-destructive hover:bg-destructive/90 text-white font-medium text-sm h-9 px-4 disabled:opacity-50"
             >
               {isDeleting ? "Menghapus..." : "Pindahkan ke Trash"}
             </Button>
@@ -1885,7 +1844,7 @@ export function KegiatanClient({
       )}
 
       {isPending && (
-        <div className="fixed bottom-4 right-4 z-50 bg-slate-900 text-white font-mono text-xs px-3 py-2 rounded-lg border border-slate-700 shadow-lg">
+        <div className="fixed bottom-4 right-4 z-50 bg-foreground text-background text-xs font-medium px-3 py-2 rounded-md shadow-soft">
           Memperbarui...
         </div>
       )}

@@ -37,14 +37,13 @@ interface EditKomdisActivityDialogProps {
   onSuccess: () => void;
 }
 
-const fieldLabelClass =
-  "font-sans text-micro font-semibold uppercase tracking-wider text-slate-blue";
+const fieldLabelClass = "text-sm font-medium text-foreground";
 
 const fieldControlClass =
-  "h-9 rounded-md border-blueprint-border bg-canvas-white text-dongker-ink font-sans text-sm placeholder:text-steel-gray/60 focus-visible:border-pnp-orange focus-visible:ring-2 focus-visible:ring-pnp-orange/20 dark:bg-card dark:border-border dark:text-foreground";
+  "h-9 rounded-md border-border bg-background text-sm text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/20";
 
 const datetimeControlClass =
-  "h-9 rounded-md border-blueprint-border bg-canvas-white text-dongker-ink font-mono text-sm focus-visible:border-pnp-orange focus-visible:ring-2 focus-visible:ring-pnp-orange/20 dark:bg-card dark:border-border dark:text-foreground";
+  "h-9 rounded-md border-border bg-background text-sm font-mono text-foreground focus-visible:border-primary focus-visible:ring-primary/20";
 
 function toLocalDatetimeInput(dateStr?: string | null) {
   if (!dateStr) return "";
@@ -144,21 +143,16 @@ export function EditKomdisActivityDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="gap-0 overflow-hidden rounded-xl border border-blueprint-border bg-canvas-white p-0 font-sans shadow-blueprint sm:max-w-lg dark:border-border dark:bg-card">
-        <div
-          aria-hidden
-          className="h-1 bg-linear-to-r from-dongker-surface via-dongker-hover to-pnp-orange"
-        />
-
-        <DialogHeader className="gap-2 border-b border-blueprint-border px-6 pt-5 pb-4 dark:border-border">
-          <div className="inline-flex w-fit items-center gap-1.5 rounded-full border border-pnp-orange/30 bg-orange-wash px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-widest text-orange-deep dark:bg-pnp-orange/15 dark:text-pnp-orange">
+      <DialogContent className="gap-0 overflow-hidden rounded-lg border border-border bg-card p-0 font-sans shadow-soft sm:max-w-lg">
+        <DialogHeader className="gap-2 border-b border-border px-6 pt-5 pb-4">
+          <div className="inline-flex w-fit items-center gap-1.5 rounded-full bg-accent px-2.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-accent-foreground">
             <HugeiconsIcon icon={Edit02Icon} />
             <span>Edit Kegiatan Komdis</span>
           </div>
-          <DialogTitle className="font-display text-lg font-medium tracking-tight text-dongker-ink dark:text-foreground">
+          <DialogTitle className="font-display text-lg font-semibold tracking-tight text-foreground">
             Ubah Detail Kegiatan
           </DialogTitle>
-          <DialogDescription className="text-sm text-steel-gray dark:text-muted-foreground">
+          <DialogDescription className="text-sm text-muted-foreground">
             Perbarui parameter kegiatan formal Komisi Disiplin.
           </DialogDescription>
         </DialogHeader>
@@ -191,7 +185,7 @@ export function EditKomdisActivityDialog({
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Rincian mengenai agenda..."
-                className="min-h-17.5 rounded-md border-blueprint-border bg-canvas-white text-dongker-ink font-sans text-sm placeholder:text-steel-gray/60 focus-visible:border-pnp-orange focus-visible:ring-2 focus-visible:ring-pnp-orange/20 dark:bg-card dark:border-border dark:text-foreground"
+                className="min-h-17.5 rounded-md border-border bg-background text-sm text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/20"
               />
             </div>
 
@@ -296,20 +290,20 @@ export function EditKomdisActivityDialog({
             </div>
           </div>
 
-          <DialogFooter className="gap-2 border-t border-dashed border-blueprint-border bg-mist-gray/60 px-6 py-4 dark:border-border dark:bg-muted/30 sm:justify-end">
+          <DialogFooter className="gap-2 border-t border-border bg-surface px-6 py-4 sm:justify-end">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
               disabled={isPending}
-              className="h-9 rounded-md border-dongker-surface px-4 font-sans text-sm font-medium text-dongker-surface hover:bg-mist-gray dark:border-pnp-orange dark:text-pnp-orange dark:hover:bg-pnp-orange/10"
+              className="h-9 rounded-md border-primary px-4 text-sm font-medium text-primary hover:bg-primary-soft"
             >
               Batal
             </Button>
             <Button
               type="submit"
               disabled={isPending}
-              className="h-9 rounded-md bg-dongker-surface px-4 font-sans text-sm font-medium text-white hover:bg-dongker-hover dark:bg-pnp-orange dark:hover:bg-orange-deep"
+              className="h-9 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary-hover"
             >
               {isPending ? (
                 <>
