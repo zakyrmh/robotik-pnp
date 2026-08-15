@@ -2,13 +2,13 @@
 
 import { useState, useTransition } from "react";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,7 +16,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { createKomdisActivity } from "@/lib/actions/komdis";
 import { toast } from "sonner";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { CalendarAdd01Icon, Loading03Icon } from "@hugeicons/core-free-icons";
+import {
+  CalendarAdd01Icon,
+  Cancel01Icon,
+  Loading03Icon,
+} from "@hugeicons/core-free-icons";
 
 interface CreateKomdisActivityDialogProps {
   isOpen: boolean;
@@ -24,14 +28,13 @@ interface CreateKomdisActivityDialogProps {
   onSuccess: () => void;
 }
 
-const fieldLabelClass =
-  "font-sans text-micro font-semibold uppercase tracking-wider text-slate-blue";
+const fieldLabelClass = "text-sm font-medium text-foreground";
 
 const fieldControlClass =
-  "h-9 rounded-md border-blueprint-border bg-canvas-white text-dongker-ink font-sans text-sm placeholder:text-steel-gray/60 focus-visible:border-pnp-orange focus-visible:ring-2 focus-visible:ring-pnp-orange/20 dark:bg-card dark:border-border dark:text-foreground";
+  "h-9 rounded-md border-border bg-background text-sm text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/20";
 
 const datetimeControlClass =
-  "h-9 rounded-md border-blueprint-border bg-canvas-white text-dongker-ink font-mono text-sm focus-visible:border-pnp-orange focus-visible:ring-2 focus-visible:ring-pnp-orange/20 dark:bg-card dark:border-border dark:text-foreground";
+  "h-9 rounded-md border-border bg-background text-sm font-mono text-foreground focus-visible:border-primary focus-visible:ring-primary/20";
 
 export function CreateKomdisActivityDialog({
   isOpen,
@@ -103,188 +106,204 @@ export function CreateKomdisActivityDialog({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="gap-0 overflow-hidden rounded-xl border border-blueprint-border bg-canvas-white p-0 font-sans shadow-blueprint sm:max-w-lg dark:border-border dark:bg-card">
-        <div
-          aria-hidden
-          className="h-1 bg-linear-to-r from-dongker-surface via-dongker-hover to-pnp-orange"
-        />
-
-        <DialogHeader className="gap-2 border-b border-blueprint-border px-6 pt-5 pb-4 dark:border-border">
-          <div className="inline-flex w-fit items-center gap-1.5 rounded-full border border-pnp-orange/30 bg-orange-wash px-2.5 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-widest text-orange-deep dark:bg-pnp-orange/15 dark:text-pnp-orange">
-            <HugeiconsIcon icon={CalendarAdd01Icon} />
-            <span>Aksi Admin Komisi Disiplin</span>
+    <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DrawerContent className="flex flex-col overflow-hidden border-t border-border bg-card font-sans shadow-soft data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-[calc(100dvh-1rem)] sm:mx-auto sm:max-w-lg sm:rounded-lg sm:border">
+        <DrawerHeader className="flex shrink-0 flex-row items-start justify-between gap-3 border-b border-border px-5 py-4 text-left sm:px-6 sm:pt-5 sm:pb-4">
+          <div className="flex flex-col gap-1.5">
+            <div className="inline-flex w-fit items-center gap-1.5 rounded-full bg-accent px-2.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-accent-foreground">
+              <HugeiconsIcon icon={CalendarAdd01Icon} />
+              <span>Aksi Admin Komisi Disiplin</span>
+            </div>
+            <DrawerTitle className="font-display text-lg font-semibold tracking-tight text-foreground">
+              Buat Kegiatan Formal Komdis
+            </DrawerTitle>
+            <DrawerDescription className="text-sm text-muted-foreground">
+              Target audience otomatis diset ke &apos;anggota&apos; sesuai SOP
+              Komdis.
+            </DrawerDescription>
           </div>
-          <DialogTitle className="font-display text-lg font-medium tracking-tight text-dongker-ink dark:text-foreground">
-            Buat Kegiatan Formal Komdis
-          </DialogTitle>
-          <DialogDescription className="text-sm text-steel-gray dark:text-muted-foreground">
-            Target audience otomatis diset ke &apos;anggota&apos; sesuai SOP
-            Komdis.
-          </DialogDescription>
-        </DialogHeader>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            onClick={onClose}
+            disabled={isPending}
+            className="shrink-0 text-muted-foreground hover:bg-muted hover:text-foreground"
+            aria-label="Tutup"
+          >
+            <HugeiconsIcon icon={Cancel01Icon} />
+          </Button>
+        </DrawerHeader>
 
-        <form onSubmit={handleSubmit} className="flex flex-col">
-          <div className="flex flex-col gap-4 px-6 py-5">
-            <div className="flex flex-col gap-1.5">
-              <Label htmlFor="create-komdis-title" className={fieldLabelClass}>
-                Judul Kegiatan <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="create-komdis-title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="Contoh: Evaluasi Rutin / Workshop Robotik..."
-                className={fieldControlClass}
-                required
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <Label
-                htmlFor="create-komdis-description"
-                className={fieldLabelClass}
-              >
-                Deskripsi Kegiatan (Opsional)
-              </Label>
-              <Textarea
-                id="create-komdis-description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Rincian mengenai agenda dan peralatan yang wajib dibawa..."
-                className="min-h-17.5 rounded-md border-blueprint-border bg-canvas-white text-dongker-ink font-sans text-sm placeholder:text-steel-gray/60 focus-visible:border-pnp-orange focus-visible:ring-2 focus-visible:ring-pnp-orange/20 dark:bg-card dark:border-border dark:text-foreground"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 sm:px-6">
+            <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-1.5">
                 <Label
-                  htmlFor="create-komdis-start"
+                  htmlFor="create-komdis-title"
                   className={fieldLabelClass}
                 >
-                  Tanggal &amp; Waktu Mulai{" "}
-                  <span className="text-destructive">*</span>
+                  Judul Kegiatan <span className="text-destructive">*</span>
                 </Label>
                 <Input
-                  id="create-komdis-start"
-                  type="datetime-local"
-                  value={startDate}
-                  onChange={(e) => {
-                    setStartDate(e.target.value);
-                    if (!checkinOpenAt) setCheckinOpenAt(e.target.value);
-                  }}
-                  className={datetimeControlClass}
+                  id="create-komdis-title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Contoh: Evaluasi Rutin / Workshop Robotik..."
+                  className={fieldControlClass}
                   required
                 />
               </div>
-              <div className="flex flex-col gap-1.5">
-                <Label htmlFor="create-komdis-end" className={fieldLabelClass}>
-                  Tanggal &amp; Waktu Selesai{" "}
-                  <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="create-komdis-end"
-                  type="datetime-local"
-                  value={endDate}
-                  onChange={(e) => {
-                    setEndDate(e.target.value);
-                    if (!checkinCloseAt) setCheckinCloseAt(e.target.value);
-                  }}
-                  className={datetimeControlClass}
-                  required
-                />
-              </div>
-            </div>
 
-            <div className="flex flex-col gap-1.5">
-              <Label
-                htmlFor="create-komdis-location"
-                className={fieldLabelClass}
-              >
-                Lokasi Pelaksanaan <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="create-komdis-location"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                placeholder="Contoh: Gedung PKM Lantai 2 / Lab Robotik..."
-                className={fieldControlClass}
-                required
-              />
-            </div>
-
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="flex flex-col gap-1.5">
                 <Label
-                  htmlFor="create-komdis-checkin-open"
+                  htmlFor="create-komdis-description"
                   className={fieldLabelClass}
                 >
-                  Buka Absensi <span className="text-destructive">*</span>
+                  Deskripsi Kegiatan (Opsional)
                 </Label>
-                <Input
-                  id="create-komdis-checkin-open"
-                  type="datetime-local"
-                  value={checkinOpenAt}
-                  onChange={(e) => setCheckinOpenAt(e.target.value)}
-                  className={datetimeControlClass}
-                  required
+                <Textarea
+                  id="create-komdis-description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Rincian mengenai agenda dan peralatan yang wajib dibawa..."
+                  className="min-h-17.5 rounded-md border-border bg-background text-sm text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/20"
                 />
               </div>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="flex flex-col gap-1.5">
+                  <Label
+                    htmlFor="create-komdis-start"
+                    className={fieldLabelClass}
+                  >
+                    Tanggal &amp; Waktu Mulai{" "}
+                    <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="create-komdis-start"
+                    type="datetime-local"
+                    value={startDate}
+                    onChange={(e) => {
+                      setStartDate(e.target.value);
+                      if (!checkinOpenAt) setCheckinOpenAt(e.target.value);
+                    }}
+                    className={datetimeControlClass}
+                    required
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label
+                    htmlFor="create-komdis-end"
+                    className={fieldLabelClass}
+                  >
+                    Tanggal &amp; Waktu Selesai{" "}
+                    <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="create-komdis-end"
+                    type="datetime-local"
+                    value={endDate}
+                    onChange={(e) => {
+                      setEndDate(e.target.value);
+                      if (!checkinCloseAt) setCheckinCloseAt(e.target.value);
+                    }}
+                    className={datetimeControlClass}
+                    required
+                  />
+                </div>
+              </div>
+
               <div className="flex flex-col gap-1.5">
                 <Label
-                  htmlFor="create-komdis-checkin-close"
+                  htmlFor="create-komdis-location"
                   className={fieldLabelClass}
                 >
-                  Tutup Absensi <span className="text-destructive">*</span>
+                  Lokasi Pelaksanaan <span className="text-destructive">*</span>
                 </Label>
                 <Input
-                  id="create-komdis-checkin-close"
-                  type="datetime-local"
-                  value={checkinCloseAt}
-                  onChange={(e) => setCheckinCloseAt(e.target.value)}
-                  className={datetimeControlClass}
+                  id="create-komdis-location"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="Contoh: Gedung PKM Lantai 2 / Lab Robotik..."
+                  className={fieldControlClass}
                   required
                 />
               </div>
-            </div>
 
-            <div className="flex flex-col gap-1.5">
-              <Label
-                htmlFor="create-komdis-tolerance"
-                className={fieldLabelClass}
-              >
-                Toleransi Keterlambatan (Menit)
-              </Label>
-              <Input
-                id="create-komdis-tolerance"
-                type="number"
-                min={0}
-                max={60}
-                value={lateTolerance}
-                onChange={(e) => setLateTolerance(Number(e.target.value))}
-                className={datetimeControlClass}
-              />
-              <p className="font-mono text-micro text-steel-gray dark:text-muted-foreground">
-                Standar Komdis: 15 menit. Scan QR setelah batas ini dianggap
-                telat.
-              </p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="flex flex-col gap-1.5">
+                  <Label
+                    htmlFor="create-komdis-checkin-open"
+                    className={fieldLabelClass}
+                  >
+                    Buka Absensi <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="create-komdis-checkin-open"
+                    type="datetime-local"
+                    value={checkinOpenAt}
+                    onChange={(e) => setCheckinOpenAt(e.target.value)}
+                    className={datetimeControlClass}
+                    required
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <Label
+                    htmlFor="create-komdis-checkin-close"
+                    className={fieldLabelClass}
+                  >
+                    Tutup Absensi <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="create-komdis-checkin-close"
+                    type="datetime-local"
+                    value={checkinCloseAt}
+                    onChange={(e) => setCheckinCloseAt(e.target.value)}
+                    className={datetimeControlClass}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <Label
+                  htmlFor="create-komdis-tolerance"
+                  className={fieldLabelClass}
+                >
+                  Toleransi Keterlambatan (Menit)
+                </Label>
+                <Input
+                  id="create-komdis-tolerance"
+                  type="number"
+                  min={0}
+                  max={60}
+                  value={lateTolerance}
+                  onChange={(e) => setLateTolerance(Number(e.target.value))}
+                  className={datetimeControlClass}
+                />
+                <p className="text-sm text-muted-foreground">
+                  Standar Komdis: 15 menit. Scan QR setelah batas ini dianggap
+                  telat.
+                </p>
+              </div>
             </div>
           </div>
 
-          <DialogFooter className="gap-2 border-t border-dashed border-blueprint-border bg-mist-gray/60 px-6 py-4 dark:border-border dark:bg-muted/30 sm:justify-end">
+          <DrawerFooter className="shrink-0 gap-2 border-t border-border bg-surface px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
               disabled={isPending}
-              className="h-9 rounded-md border-dongker-surface px-4 font-sans text-sm font-medium text-dongker-surface hover:bg-mist-gray dark:border-pnp-orange dark:text-pnp-orange dark:hover:bg-pnp-orange/10"
+              className="h-9 rounded-md border-primary px-4 text-sm font-medium text-primary hover:bg-primary-soft"
             >
               Batal
             </Button>
             <Button
               type="submit"
               disabled={isPending}
-              className="h-9 rounded-md bg-dongker-surface px-4 font-sans text-sm font-medium text-white hover:bg-dongker-hover dark:bg-pnp-orange dark:hover:bg-orange-deep"
+              className="h-9 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary-hover"
             >
               {isPending ? (
                 <>
@@ -299,9 +318,9 @@ export function CreateKomdisActivityDialog({
                 "Simpan Kegiatan"
               )}
             </Button>
-          </DialogFooter>
+          </DrawerFooter>
         </form>
-      </DialogContent>
-    </Dialog>
+      </DrawerContent>
+    </Drawer>
   );
 }

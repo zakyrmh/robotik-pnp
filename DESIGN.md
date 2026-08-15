@@ -1,190 +1,208 @@
 # UKM Robotik PNP — Design System Reference
 
-> Precision blueprint dashboard on a crisp canvas
+> Sederhana, lembut, mudah dibaca di semua ukuran layar.
 
-**Theme:** Clean Technical (Light & High-Contrast)
-**Codename:** Precision Blueprint
+**Theme:** Minimalist Soft (Light)
 
-Sistem Informasi Manajemen UKM Robotik PNP renders technical data and dashboard interfaces with engineering precision. The visual system merges editorial cleanliness with SaaS density. It treats the page canvas as a technical blueprint: generous negative space, hairline borders holding the structure together, and typography doing the heavy lifting.
+Sistem Informasi Manajemen UKM Robotik PNP mengutamakan keterbacaan dan kenyamanan pengguna. Desain dibuat sesederhana mungkin: warna lembut, tipografi yang jelas, dan komponen yang tidak berlebihan. Prioritas utama adalah data dan konten — bukan dekorasi.
 
-Following professional DKV (Desain Komunikasi Visual) color theory, the system relies on a **60-30-10 rule**:
+Prinsip warna: **70% netral — 20% warna utama — 10% aksen**
 
-- **60% (Canvas & Structure):** Crisp whites and mist grays for spacious, breathable interfaces.
-- **30% (Anchor & Typography):** Biru Dongker (Deep Navy) for text, primary filled surfaces, and structural dominance.
-- **10% (Accent):** Oranye PNP (Vibrant Orange) strictly rationed for active states, vital CTAs, and status highlights.
+- **70% (Netral):** Putih dan abu-abu sangat muda untuk latar dan struktur.
+- **20% (Warna Utama):** Biru Dongker versi lembut, dipakai untuk teks penting, tombol utama, dan elemen identitas.
+- **10% (Aksen):** Oranye PNP versi lembut, dipakai secukupnya untuk status, highlight, dan elemen yang butuh perhatian.
 
-## Tokens — Colors
+## Tokens — Warna
 
-| Name             | Value     | Token                      | Role                                                                                                  |
-| ---------------- | --------- | -------------------------- | ----------------------------------------------------------------------------------------------------- |
-| Canvas White     | `#ffffff` | `--color-canvas-white`     | Base page background and default card surfaces.                                                       |
-| Mist Gray        | `#f1f5f9` | `--color-mist-gray`        | Subtle secondary backgrounds, nested panels, and table row zebra-striping.                            |
-| Blueprint Border | `#e2e8f0` | `--color-blueprint-border` | Hairline borders (1px) used universally to define containers instead of heavy shadows.                |
-| Steel Gray       | `#64748b` | `--color-steel-gray`       | Muted secondary text, disabled states, and placeholder text.                                          |
-| Slate Blue       | `#334155` | `--color-slate-blue`       | Subheadings and secondary interactive text.                                                           |
-| Dongker Ink      | `#0a192f` | `--color-dongker-ink`      | Primary text, heading color, and near-black contrast elements. The anchor of readability.             |
-| Dongker Surface  | `#1e3a8a` | `--color-dongker-surface`  | Primary action button backgrounds and solid header bars. Represents the UKM's core identity.          |
-| PNP Orange       | `#f97316` | `--color-pnp-orange`       | The vibrant accent. Used for text links, 'active' indicators, pill tags, and key data visualizations. |
-| Orange Wash      | `#ffedd5` | `--color-orange-wash`      | Soft tinted background for orange feature tags or pending status badges.                              |
+| Name           | Value     | Token                    | Role                                                 |
+| -------------- | --------- | ------------------------ | ---------------------------------------------------- |
+| Canvas White   | `#ffffff` | `--color-canvas`         | Latar utama halaman dan kartu.                       |
+| Surface Muted  | `#f8fafc` | `--color-surface`        | Latar sekunder, panel bersarang, zebra-stripe tabel. |
+| Border         | `#e5e7eb` | `--color-border`         | Border tipis (1px) untuk semua container.            |
+| Text Muted     | `#6b7280` | `--color-text-muted`     | Teks sekunder, placeholder, teks nonaktif.           |
+| Text Secondary | `#374151` | `--color-text-secondary` | Subheading dan teks interaktif sekunder.             |
+| Text Primary   | `#1f2937` | `--color-text-primary`   | Warna teks utama dan heading.                        |
+| Navy (Soft)    | `#3b5b84` | `--color-primary`        | Tombol utama, link, elemen identitas UKM.            |
+| Navy Hover     | `#2f4a6d` | `--color-primary-hover`  | State hover/active untuk elemen Navy.                |
+| Navy Tint      | `#eaf1f8` | `--color-primary-soft`   | Latar lembut untuk badge/section bernuansa navy.     |
+| Orange (Soft)  | `#f0975a` | `--color-accent`         | Aksen: indikator aktif, tag, highlight data penting. |
+| Orange Tint    | `#fdeee1` | `--color-accent-soft`    | Latar lembut untuk badge status/pending.             |
 
-## Tokens — Typography
+> Catatan: warna Navy dan Orange di atas sengaja dibuat lebih lembut (less saturated) dibanding versi sebelumnya agar tidak terlalu tajam di mata, terutama untuk pemakaian jangka panjang di dashboard.
 
-### Satoshi (or Clash Display) — Display and Headings
+## Tokens — Tipografi
 
-Used exclusively for H1/H2 (24px to 48px). Weight stays at 500 (Medium) to communicate modern, confident engineering without shouting in bold.
+Cukup **2 font** agar konsisten dan ringan:
 
-- **Role:** Hero headlines, module titles, and primary metric numbers.
+### Heading Font — Plus Jakarta Sans (fallback: Inter)
 
-### Inter — Body, UI, and Navigation
+Dipakai untuk semua heading (H1–H4). Weight 600 (Semibold) — cukup tegas tanpa terasa berat.
 
-The workhorse sans-serif for everything from 11px micro-labels to 20px subheadings. Weight 400 for body text, 500 for button labels, and 600 for table headers.
+### Body Font — Inter
 
-- **Role:** High-density data tables, form inputs, and descriptive text.
+Dipakai untuk body text, UI, navigasi, form, dan tabel. Weight 400 untuk teks biasa, 500 untuk label/tombol, 600 untuk header tabel.
 
-### JetBrains Mono (or Geist Mono) — Technical & Code
+> Untuk data teknis (ID, kode, angka presisi seperti skor pertandingan), cukup gunakan `font-mono` bawaan sistem (`ui-monospace`) — tidak perlu font pihak ketiga tambahan.
 
-Used at 12–14px for technical metadata, ID numbers, API keys, and code snippets.
+### Skala Ukuran Font (Mobile-first)
 
-- **Role:** Adds a developer/robotics tool aesthetic to specific technical outputs.
+Skala dibuat **lebih kecil dan responsif** dibanding versi sebelumnya, supaya heading tidak raksasa di layar HP.
 
-## Tokens — Spacing, Radii & Structure
+| Token          | Mobile | Desktop | Penggunaan                       |
+| -------------- | ------ | ------- | -------------------------------- |
+| `--text-micro` | 11px   | 11px    | Label super kecil, uppercase tag |
+| `--text-sm`    | 13px   | 13px    | Caption, teks bantu              |
+| `--text-base`  | 14px   | 15px    | Body text, form, tabel           |
+| `--text-md`    | 16px   | 18px    | Subheading kecil (H4)            |
+| `--text-lg`    | 18px   | 22px    | H3                               |
+| `--text-xl`    | 22px   | 28px    | H2                               |
+| `--text-2xl`   | 26px   | 34px    | H1                               |
 
-**Density:** Compact & Structured (Base unit: 4px)
+Gunakan `clamp()` di CSS supaya transisi ukuran antar breakpoint halus, bukan lompatan tiba-tiba (lihat contoh konfigurasi di bawah).
+
+## Tokens — Spacing, Radius & Struktur
+
+**Base unit:** 4px. Padding umum di dalam card: 16px–24px.
 
 ### Border Radius
 
-- **Cards & Panels (12px):** Smooth but structured containers.
-- **Buttons & Inputs (8px):** Standard interactive elements.
-- **Pills & Tags (9999px):** Status badges, feature tags, and floating UI controls.
+- **Card & Panel:** 10px
+- **Button & Input:** 8px
+- **Pill / Badge:** 9999px (full round)
 
-### Elevation & Structure (Border-First Philosophy)
+### Elevasi
 
-- **Flat Containers:** Use 1px `--color-blueprint-border` for all standard cards and dashboard panels. No shadows.
-- **Floating Artifacts:** For hover states or elevated modal cards, use a subtle shadow: `rgba(10, 25, 47, 0.08) 0px 8px 24px`.
-- **Section Dividers:** Use a 1px dashed line (`dashed #cbd5e1`) for dividing major sections, inspired by engineering schematics.
+- Default: border 1px `--color-border`, tanpa shadow.
+- Hover/elevated state (modal, dropdown): shadow lembut `rgba(15, 23, 42, 0.06) 0px 4px 16px`.
+- Tidak perlu aturan ketat "no shadow ever" — pakai secukupnya, yang penting tidak berlebihan di semua card sekaligus.
 
-## Core Components
+## Komponen Inti
 
-### 1. Pill Button (Primary Action)
+### 1. Button Primary
 
-- **Style:** Background `#1e3a8a` (Dongker), Text `#ffffff`, Radius 8px, padding 8px 16px.
-- **Usage:** The committed action (e.g., "Simpan Data", "Daftar Turnamen").
+Background `--color-primary`, teks putih, radius 8px, padding 8px 16px, weight 500. Untuk aksi utama (mis. "Simpan", "Daftar").
 
-### 2. Outlined Ghost Button (Secondary Action)
+### 2. Button Secondary / Ghost
 
-- **Style:** Transparent background, 1px solid `#1e3a8a`, Text `#1e3a8a`, Radius 8px.
-- **Usage:** Secondary actions like "Batal" or "Lihat Detail".
+Border 1px `--color-primary`, teks `--color-primary`, background transparan. Untuk aksi sekunder (mis. "Batal", "Lihat Detail").
 
-### 3. Feature / Status Badge
+### 3. Badge / Status Tag
 
-- **Style:** Background `#ffedd5` (Orange Wash), Text `#c2410c` (Darker Orange), Radius 9999px. Uppercase, weight 600, 11px font.
-- **Usage:** Small markers for status (e.g., "AKTIF", "PROSES") or categories.
+Background `--color-accent-soft`, teks warna oranye lebih gelap (`#9a5b30`), radius full, uppercase, weight 600, ukuran 11px. Untuk status singkat ("AKTIF", "PROSES").
 
-### 4. Input Fields
+### 4. Input Field
 
-- **Style:** Background `#ffffff`, border 1px solid `#e2e8f0`, radius 8px. On focus, border changes to `#f97316` (PNP Orange) with a subtle shadow ring.
+Background putih, border 1px `--color-border`, radius 8px. Saat focus: border berubah ke `--color-primary` dengan shadow ring lembut.
 
-### 5. Floating Data Card
+### 5. Card
 
-- **Style:** Background `#ffffff`, radius 12px, 1px border. Left edge features a 4px thick vertical accent line in `#1e3a8a` or `#f97316` to denote status or category.
+Background putih, radius 10px, border 1px. Tidak wajib pakai aksen garis tebal di sisi kiri — cukup opsional kalau memang perlu menandai kategori/status.
 
-## Specific Layout Rules
+## Catatan Layout
 
-### Authentication / Login Page
+### Halaman Login
 
-The login layout utilizes a split-panel design for optimal UX and context delivery.
+Form login cukup sederhana, satu kolom, center pada layar kecil. Untuk layar besar boleh pakai split-panel (form di kiri, info singkat/greeting di kanan) — tapi ini opsional, bukan keharusan.
 
-- **Left Panel:** Contains the core authentication form (clean white background, Dongker inputs).
-- **Right Panel:** Specifically reserved for welcoming returning users. Do not use this space for generic marketing or attracting new sign-ups. Instead, display dynamic greetings, recent system activity, or personalized dashboards tailored to existing members.
+### Halaman Turnamen / Live Broadcast
 
-### Tournament & Live Broadcast Views
+Untuk tabel bracket, skor, dan data live:
 
-For views managing KRSBI-B or other division fixtures (e.g., round-robin brackets, OBS overlay data syncing):
+- Gunakan zebra-stripe (`--color-surface`) agar tabel mudah dibaca.
+- Angka/skor boleh pakai `font-mono` supaya rapi sejajar, tapi tidak wajib.
 
-- Prioritize tabular density and high-contrast monospaced numerals (`JetBrains Mono`).
-- Use alternating `#f1f5f9` (Mist Gray) background rows for scannability.
+## Panduan Singkat
 
-## Do's and Don'ts
+**Lakukan:**
 
-### Do
+- Utamakan keterbacaan — kontras cukup, ukuran font tidak terlalu kecil di mobile.
+- Pakai warna Oranye secukupnya untuk aksen, bukan elemen besar.
+- Beri jarak (padding/margin) yang cukup supaya tidak terasa sesak.
 
-- **Do** anchor the UI in Biru Dongker. It is the core identity.
-- **Do** use Oranye PNP sparingly. Think of it as a laser pointer — it draws the eye to what's important (active tabs, primary links, warnings).
-- **Do** use uppercase text (Weight 600, 11px-12px) for table headers and micro-labels to create an editorial, blueprint feel.
-- **Do** rely on generous padding (16px, 24px) inside cards to let data breathe.
+**Hindari:**
 
-### Don't
-
-- **Don't** use large blocks or full backgrounds of Oranye PNP. It will overpower the interface and look unrefined.
-- **Don't** use heavy drop shadows on every card. Rely on the 1px border for structure.
-- **Don't** use center alignment for long body copy. Keep descriptions and forms strictly left-aligned for technical precision.
+- Ukuran heading terlalu besar di layar mobile (gunakan skala responsif di atas).
+- Terlalu banyak warna aksen dalam satu tampilan.
+- Shadow tebal di semua card sekaligus.
 
 ---
 
-## Tailwind CSS v4 Base Configuration
+## Konfigurasi Dasar Tailwind CSS v4
 
-_(Copy this into the global CSS or agent theme context)_
+_(Salin ke global CSS / context tema agent)_
 
 ```css
 @theme {
-  /* Colors - UKM Robotik PNP Identity */
-  --color-canvas-white: #ffffff;
-  --color-mist-gray: #f1f5f9;
-  --color-blueprint-border: #e2e8f0;
+  /* Warna — Netral */
+  --color-canvas: #ffffff;
+  --color-surface: #f8fafc;
+  --color-border: #e5e7eb;
 
-  /* Grays */
-  --color-steel-gray: #64748b;
-  --color-slate-blue: #334155;
+  /* Warna — Teks */
+  --color-text-muted: #6b7280;
+  --color-text-secondary: #374151;
+  --color-text-primary: #1f2937;
 
-  /* Biru Dongker */
-  --color-dongker-ink: #0a192f;
-  --color-dongker-surface: #1e3a8a;
-  --color-dongker-hover: #1e40af;
+  /* Warna — Navy (Soft) */
+  --color-primary: #3b5b84;
+  --color-primary-hover: #2f4a6d;
+  --color-primary-soft: #eaf1f8;
 
-  /* Oranye PNP */
-  --color-pnp-orange: #f97316;
-  --color-orange-wash: #ffedd5;
-  --color-orange-deep: #c2410c;
+  /* Warna — Orange (Soft) */
+  --color-accent: #f0975a;
+  --color-accent-soft: #fdeee1;
+  --color-accent-deep: #9a5b30;
 
-  /* Typography */
+  /* Tipografi */
   --font-display:
-    "Satoshi", "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+    "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", "Geist Mono", ui-monospace, monospace;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, monospace;
 
-  /* Typography Scale */
-  --text-micro: 11px;
-  --text-sm: 13px;
-  --text-base: 15px;
-  --text-md: 18px;
-  --text-lg: 24px;
-  --text-xl: 32px;
-  --text-2xl: 48px;
+  /* Skala Font — Mobile-first, disesuaikan via clamp() */
+  --text-micro: 0.6875rem; /* 11px */
+  --text-sm: 0.8125rem; /* 13px */
+  --text-base: clamp(0.875rem, 0.8rem + 0.2vw, 0.9375rem); /* 14–15px */
+  --text-md: clamp(1rem, 0.9rem + 0.4vw, 1.125rem); /* 16–18px */
+  --text-lg: clamp(1.125rem, 1rem + 0.6vw, 1.375rem); /* 18–22px */
+  --text-xl: clamp(1.375rem, 1.1rem + 1vw, 1.75rem); /* 22–28px */
+  --text-2xl: clamp(1.625rem, 1.2rem + 1.6vw, 2.125rem); /* 26–34px */
 
   /* Border Radius */
   --radius-sm: 4px;
   --radius-md: 8px;
-  --radius-lg: 12px;
+  --radius-lg: 10px;
   --radius-pill: 9999px;
 
-  /* Shadows */
-  --shadow-blueprint: rgba(10, 25, 47, 0.08) 0px 8px 24px;
-  --shadow-ring-orange: 0 0 0 3px rgba(249, 115, 22, 0.2);
+  /* Shadow */
+  --shadow-soft: rgba(15, 23, 42, 0.06) 0px 4px 16px;
+  --shadow-ring: 0 0 0 3px rgba(59, 91, 132, 0.15);
 }
 
-/* Base Layout Injections */
+/* Base Layout */
 @layer base {
   body {
-    @apply bg-[var(--color-canvas-white)] text-[var(--color-dongker-ink)] font-body antialiased;
+    @apply bg-[var(--color-canvas)] text-[var(--color-text-primary)] font-body antialiased;
+    font-size: var(--text-base);
   }
-  h1,
-  h2,
-  h3,
+  h1 {
+    @apply font-display font-semibold tracking-tight text-[var(--color-text-primary)];
+    font-size: var(--text-2xl);
+  }
+  h2 {
+    @apply font-display font-semibold tracking-tight text-[var(--color-text-primary)];
+    font-size: var(--text-xl);
+  }
+  h3 {
+    @apply font-display font-semibold text-[var(--color-text-primary)];
+    font-size: var(--text-lg);
+  }
   h4 {
-    @apply font-display tracking-tight text-[var(--color-dongker-ink)];
+    @apply font-display font-medium text-[var(--color-text-primary)];
+    font-size: var(--text-md);
   }
-  .dashed-divider {
-    @apply border-t border-dashed border-[var(--color-blueprint-border)] w-full;
+  .divider {
+    @apply border-t border-[var(--color-border)] w-full;
   }
 }
 ```

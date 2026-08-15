@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { AnimatePresence, motion } from "framer-motion";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Notification01Icon,
@@ -8,15 +11,41 @@ import {
   Menu01Icon,
   Sun01Icon,
   Moon01Icon,
+  Logout01Icon,
 } from "@hugeicons/core-free-icons";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
-import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Empty,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import {
+  Popover,
+  PopoverContent,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   getUnreadNotificationCount,
   getNotifications,
@@ -26,50 +55,15 @@ import {
   type InAppNotification,
 } from "@/lib/actions/notifications";
 
-// Custom SVG Icon for Logout
-const LogoutIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    fill="none"
-    viewBox="0 0 24 24"
-    strokeWidth={1.5}
-    stroke="currentColor"
-    className="w-4 h-4"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75"
-    />
-  </svg>
-);
-
 export function Header() {
   const router = useRouter();
   const { user, logout } = useAuth();
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [mounted, setMounted] = useState(false);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState<InAppNotification[]>([]);
   const [notifLoading, setNotifLoading] = useState(false);
-
-  // Close dropdown on outside click
-  useEffect(() => {
-    if (!isDropdownOpen && !isNotifOpen) return;
-    const handleOutsideClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (isDropdownOpen && !target.closest("#avatar-dropdown-container")) {
-        setIsDropdownOpen(false);
-      }
-      if (isNotifOpen && !target.closest("#notif-dropdown-container")) {
-        setIsNotifOpen(false);
-      }
-    };
-    window.addEventListener("click", handleOutsideClick);
-    return () => window.removeEventListener("click", handleOutsideClick);
-  }, [isDropdownOpen, isNotifOpen]);
 
   // Fetch unread notification count on mount & periodically
   useEffect(() => {
@@ -110,11 +104,9 @@ export function Header() {
     }
   }, [user]);
 
-  const handleNotifToggle = () => {
-    const next = !isNotifOpen;
-    setIsNotifOpen(next);
-    if (next) {
-      setIsDropdownOpen(false);
+  const handleNotifToggle = (open: boolean) => {
+    setIsNotifOpen(open);
+    if (open) {
       loadNotifications();
     }
   };
@@ -173,246 +165,228 @@ export function Header() {
     }
   };
 
+  const handleLogout = async () => {
+    await logout();
+  };
+
   return (
-    <header className="sticky top-0 z-40 flex h-16 w-full items-center border-b border-zinc-200/50 dark:border-zinc-800/50 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md px-4 lg:px-8 shadow-sm">
+    <header className="sticky top-0 z-40 flex h-14 w-full items-center gap-2 border-b border-border bg-background/80 px-3 backdrop-blur-md sm:h-16 sm:px-4 lg:px-6">
       {/* Mobile Menu Toggle */}
-      <motion.div
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        className="mr-2 lg:hidden"
+      <Button
+        variant="ghost"
+        size="icon-lg"
+        onClick={() => window.dispatchEvent(new CustomEvent("toggle-sidebar"))}
+        className="lg:hidden"
+        aria-label="Buka menu navigasi"
       >
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() =>
-            window.dispatchEvent(new CustomEvent("toggle-sidebar"))
-          }
-          className="rounded-none border border-zinc-200 dark:border-zinc-800 hover:bg-zinc-100 dark:hover:bg-zinc-900 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 hover:dark:text-zinc-50 transition-colors"
-        >
-          <HugeiconsIcon icon={Menu01Icon} size={20} />
-        </Button>
-      </motion.div>
+        <HugeiconsIcon icon={Menu01Icon} />
+      </Button>
 
       {/* Quick Search */}
-      <div className="relative hidden w-full max-w-sm lg:flex">
-        <HugeiconsIcon
-          icon={Search01Icon}
-          className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500 dark:text-zinc-400"
-        />
-        <Input
-          placeholder="CARI SESUATU..."
-          className="h-9 w-full bg-zinc-50/50 dark:bg-zinc-900/30 pl-10 focus:bg-background transition-all rounded-none border border-zinc-200 dark:border-zinc-800 font-mono text-xs uppercase tracking-wider text-zinc-900 dark:text-zinc-50 focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600 focus-visible:border-zinc-300 dark:focus-visible:border-zinc-700"
-        />
-      </div>
+      <InputGroup className="hidden h-9 w-full max-w-xs lg:flex xl:max-w-sm">
+        <InputGroupAddon align="inline-start">
+          <HugeiconsIcon icon={Search01Icon} />
+        </InputGroupAddon>
+        <InputGroupInput placeholder="Cari sesuatu..." />
+      </InputGroup>
 
       {/* Right Side Controls */}
-      <div className="ml-auto flex items-center gap-2 lg:gap-4">
+      <div className="ml-auto flex items-center gap-1.5 lg:gap-2">
         {/* Tombol Ganti Tema */}
-        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleTheme}
-            className="rounded-none border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 hover:dark:text-zinc-50 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-all"
-            aria-label="Toggle Theme"
-          >
-            {mounted ? (
+        <Button
+          variant="ghost"
+          size="icon-lg"
+          onClick={toggleTheme}
+          aria-label="Ganti tema"
+        >
+          {mounted ? (
+            <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={theme}
                 initial={{ rotate: -90, opacity: 0, scale: 0.8 }}
                 animate={{ rotate: 0, opacity: 1, scale: 1 }}
+                exit={{ rotate: 90, opacity: 0, scale: 0.8 }}
                 transition={{ duration: 0.15 }}
               >
                 <HugeiconsIcon
                   icon={theme === "light" ? Moon01Icon : Sun01Icon}
-                  size={20}
                 />
               </motion.div>
-            ) : (
-              <div className="h-5 w-5" />
-            )}
-          </Button>
-        </motion.div>
+            </AnimatePresence>
+          ) : (
+            <div className="size-5" />
+          )}
+        </Button>
 
-        <div id="notif-dropdown-container" className="relative">
-          <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            {/* Tombol Notifikasi */}
+        {/* Notifikasi */}
+        <Popover open={isNotifOpen} onOpenChange={handleNotifToggle}>
+          <PopoverTrigger asChild>
             <Button
               variant="ghost"
-              size="icon"
-              onClick={handleNotifToggle}
-              className="relative rounded-none border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 hover:dark:text-zinc-50 hover:bg-zinc-100 dark:hover:bg-zinc-900 transition-all"
+              size="icon-lg"
+              aria-label="Notifikasi"
+              className="relative"
             >
-              <HugeiconsIcon icon={Notification01Icon} size={20} />
+              <HugeiconsIcon icon={Notification01Icon} />
               {unreadCount > 0 && (
-                <Badge className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center p-0 text-[9px] font-mono font-bold bg-[#e22718] text-white border border-[#e22718] rounded-none shadow-[0_0_8px_rgba(226,39,24,0.4)]">
+                <Badge className="absolute -right-1 -top-1 h-4 min-w-4 items-center justify-center rounded-full px-1 font-mono text-[9px] font-bold">
                   {unreadCount > 9 ? "9+" : unreadCount}
                 </Badge>
               )}
             </Button>
-          </motion.div>
+          </PopoverTrigger>
 
-          {/* Notification Dropdown Panel */}
-          <AnimatePresence>
-            {isNotifOpen && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                transition={{ duration: 0.15 }}
-                className="absolute right-0 top-full mt-2 w-80 sm:w-96 rounded-none border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-lg z-50 overflow-hidden"
-              >
-                {/* Header */}
-                <div className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-100 dark:border-zinc-900">
-                  <span className="text-xs font-mono font-bold uppercase tracking-widest text-zinc-900 dark:text-zinc-50">
-                    NOTIFIKASI
-                  </span>
-                  {unreadCount > 0 && (
-                    <button
-                      onClick={handleMarkAllRead}
-                      className="text-[10px] font-mono uppercase tracking-wider text-[#1c69d4] hover:text-[#0066b1] dark:text-[#1c69d4] dark:hover:text-[#4d9cf7] transition-colors cursor-pointer border-none bg-transparent"
-                    >
-                      TANDAI SEMUA DIBACA
-                    </button>
-                  )}
-                </div>
-
-                {/* Notification List */}
-                <div className="max-h-80 overflow-y-auto">
-                  {notifLoading ? (
-                    <div className="px-4 py-6 text-center">
-                      <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
-                        MEMUAT...
-                      </span>
-                    </div>
-                  ) : notifications.length === 0 ? (
-                    <div className="px-4 py-6 text-center">
-                      <span className="text-[10px] font-mono uppercase tracking-widest text-zinc-400 dark:text-zinc-500">
-                        TIDAK ADA NOTIFIKASI
-                      </span>
-                    </div>
-                  ) : (
-                    notifications.map((notif) => (
-                      <button
-                        key={notif.id}
-                        onClick={() => handleNotificationClick(notif)}
-                        className={`w-full text-left px-4 py-3 border-b border-zinc-50 dark:border-zinc-900/50 transition-colors cursor-pointer border-x-0 border-t-0 ${
-                          notif.is_read
-                            ? "bg-transparent"
-                            : "bg-blue-50/50 dark:bg-blue-950/20"
-                        } hover:bg-zinc-50 dark:hover:bg-zinc-900/50`}
-                      >
-                        <div className="flex items-start gap-2.5">
-                          {!notif.is_read && (
-                            <span className="mt-1.5 h-2 w-2 rounded-full bg-[#1c69d4] shrink-0" />
-                          )}
-                          <div
-                            className={`min-w-0 flex-1 ${notif.is_read ? "pl-4.5" : ""}`}
-                          >
-                            <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate">
-                              {notif.title}
-                            </p>
-                            <p className="text-micro text-zinc-500 dark:text-zinc-400 mt-0.5 line-clamp-2 leading-relaxed">
-                              {notif.message}
-                            </p>
-                            <span className="text-[9px] font-mono uppercase tracking-wider text-zinc-400 dark:text-zinc-600 mt-1 block">
-                              {new Date(notif.created_at).toLocaleDateString(
-                                "id-ID",
-                                {
-                                  day: "numeric",
-                                  month: "short",
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                },
-                              )}
-                            </span>
-                          </div>
-                        </div>
-                      </button>
-                    ))
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        <div className="h-8 w-px bg-zinc-200 dark:bg-zinc-800 mx-1 hidden lg:block" />
-
-        {/* User Profile Info */}
-        <div
-          id="avatar-dropdown-container"
-          className="relative flex items-center gap-3 pl-2"
-        >
-          <div className="hidden flex-col items-end lg:flex select-none">
-            <span className="text-sm font-bold tracking-tight text-zinc-900 dark:text-zinc-50 uppercase">
-              {user?.name || "GUEST USER"}
-            </span>
-            <span className="mt-0.5 text-[9px] font-bold font-mono tracking-widest text-[#1c69d4] dark:text-[#0066b1] uppercase">
-              {user?.role || "USER"}
-            </span>
-          </div>
-
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="h-9 w-9 rounded-none border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-[1.5px] cursor-pointer hover:border-zinc-400 dark:hover:border-zinc-600 transition-colors relative"
+          <PopoverContent
+            align="end"
+            sideOffset={10}
+            className="w-80 max-w-[calc(100vw-2rem)] gap-0 rounded-lg p-0 sm:w-96"
           >
-            <div className="flex h-full w-full items-center justify-center rounded-none bg-zinc-50 dark:bg-zinc-950 overflow-hidden text-xs font-mono font-bold text-zinc-900 dark:text-zinc-50">
-              {user?.avatar_url ? (
-                <Image
-                  src={user.avatar_url}
-                  alt={user.name || "User Avatar"}
-                  width={36}
-                  height={36}
-                  className="h-full w-full object-cover"
-                  unoptimized
-                />
-              ) : user?.name ? (
-                user.name.charAt(0).toUpperCase()
+            <PopoverHeader className="flex-row items-center justify-between gap-2 border-b border-border px-3 py-2.5">
+              <PopoverTitle className="text-micro font-semibold uppercase tracking-wide text-muted-foreground">
+                Notifikasi
+              </PopoverTitle>
+              {unreadCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleMarkAllRead}
+                  className="rounded-md px-2 text-xs font-medium text-primary hover:bg-primary-soft"
+                >
+                  Tandai dibaca
+                </Button>
+              )}
+            </PopoverHeader>
+
+            <div className="max-h-80 overflow-y-auto">
+              {notifLoading ? (
+                <div className="flex flex-col gap-3 p-3">
+                  {Array.from({ length: 4 }).map((_, index) => (
+                    <div key={index} className="flex flex-col gap-1.5">
+                      <Skeleton className="h-3 w-2/3" />
+                      <Skeleton className="h-3 w-full" />
+                    </div>
+                  ))}
+                </div>
+              ) : notifications.length === 0 ? (
+                <Empty className="gap-2 border-0 py-6">
+                  <EmptyHeader className="gap-1">
+                    <EmptyMedia variant="icon">
+                      <HugeiconsIcon icon={Notification01Icon} />
+                    </EmptyMedia>
+                    <EmptyTitle className="text-xs font-medium text-foreground">
+                      Tidak ada notifikasi
+                    </EmptyTitle>
+                  </EmptyHeader>
+                </Empty>
               ) : (
-                "G"
+                notifications.map((notif) => (
+                  <button
+                    key={notif.id}
+                    onClick={() => handleNotificationClick(notif)}
+                    className={
+                      "w-full border-b border-border text-left transition-colors last:border-b-0 " +
+                      (notif.is_read
+                        ? "bg-background hover:bg-muted"
+                        : "bg-accent hover:bg-accent/70")
+                    }
+                  >
+                    <span className="flex items-start gap-2.5 px-3 py-3">
+                      {!notif.is_read && (
+                        <span className="mt-1.5 size-2 shrink-0 rounded-full bg-primary" />
+                      )}
+                      <span
+                        className={
+                          "min-w-0 flex-1 " + (notif.is_read ? "pl-3.5" : "")
+                        }
+                      >
+                        <span className="block truncate text-xs font-semibold text-foreground">
+                          {notif.title}
+                        </span>
+                        <span className="mt-0.5 line-clamp-2 block text-sm leading-relaxed text-muted-foreground">
+                          {notif.message}
+                        </span>
+                        <span className="mt-1 block font-mono text-micro tracking-wide text-muted-foreground">
+                          {new Date(notif.created_at).toLocaleDateString(
+                            "id-ID",
+                            {
+                              day: "numeric",
+                              month: "short",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            },
+                          )}
+                        </span>
+                      </span>
+                    </span>
+                  </button>
+                ))
               )}
             </div>
-          </motion.div>
+          </PopoverContent>
+        </Popover>
 
-          <AnimatePresence>
-            {isDropdownOpen && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 10 }}
-                transition={{ duration: 0.15 }}
-                className="absolute right-0 top-full mt-2 w-48 rounded-none border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 shadow-lg z-50 overflow-hidden"
+        <Separator
+          orientation="vertical"
+          className="mx-1 hidden h-6 lg:block"
+        />
+
+        {/* User Profile Info */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon-lg"
+              className="size-9 rounded-full p-0.5 lg:size-10"
+              aria-label="Menu akun"
+            >
+              <Avatar className="size-full">
+                {user?.avatar_url ? (
+                  <AvatarImage
+                    src={user.avatar_url}
+                    alt={user.name || "Avatar pengguna"}
+                  />
+                ) : null}
+                <AvatarFallback className="bg-primary-soft font-mono text-xs font-bold text-primary">
+                  {user?.name ? user.name.charAt(0).toUpperCase() : "G"}
+                </AvatarFallback>
+              </Avatar>
+            </Button>
+          </DropdownMenuTrigger>
+
+          <DropdownMenuContent align="end" sideOffset={10} className="w-52">
+            <DropdownMenuLabel className="flex flex-col gap-0.5 lg:hidden">
+              <span className="truncate text-sm font-semibold text-foreground">
+                {user?.name || "GUEST USER"}
+              </span>
+              <span className="text-micro font-medium uppercase tracking-wide text-muted-foreground">
+                {user?.role || "USER"}
+              </span>
+            </DropdownMenuLabel>
+
+            <div className="hidden flex-col items-end gap-0.5 px-2 py-1.5 lg:flex">
+              <span className="truncate text-sm font-semibold text-foreground">
+                {user?.name || "GUEST USER"}
+              </span>
+              <span className="text-micro font-medium uppercase tracking-wide text-primary">
+                {user?.role || "USER"}
+              </span>
+            </div>
+
+            <DropdownMenuSeparator />
+
+            <DropdownMenuGroup>
+              <DropdownMenuItem
+                variant="destructive"
+                onSelect={handleLogout}
+                className="cursor-pointer"
               >
-                {/* User info for mobile screen inside dropdown */}
-                <div className="px-4 py-2 border-b border-zinc-100 dark:border-zinc-900 lg:hidden block">
-                  <p className="text-xs font-bold text-zinc-900 dark:text-zinc-50 uppercase truncate">
-                    {user?.name || "GUEST USER"}
-                  </p>
-                  <p className="text-[8px] font-mono font-bold tracking-wider text-[#1c69d4] dark:text-[#0066b1] uppercase mt-0.5">
-                    {user?.role || "USER"}
-                  </p>
-                </div>
-
-                <button
-                  onClick={async () => {
-                    setIsDropdownOpen(false);
-                    await logout();
-                  }}
-                  className="flex w-full items-center gap-2.5 px-4 py-2.5 font-mono text-xs uppercase tracking-wider text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 hover:text-[#e22718] dark:hover:text-[#e22718] transition-colors rounded-none text-left cursor-pointer border-none"
-                >
-                  <LogoutIcon />
-                  LOGOUT
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+                <HugeiconsIcon icon={Logout01Icon} />
+                Logout
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
-
-      {/* Tricolor Tech Stripe bottom border */}
-      <div className="absolute bottom-0 left-0 right-0 h-0.75 bg-linear-to-r from-[#0066b1] via-[#1c69d4] to-[#e22718]" />
     </header>
   );
 }

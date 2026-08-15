@@ -17,13 +17,38 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogDescription,
-} from "@/components/ui/dialog";
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   hardDeleteActivity,
   restoreActivity,
@@ -111,90 +136,81 @@ export function TrashActivitiesClient({
     targetAudience === "anggota" ? "Kegiatan Anggota" : "Kegiatan Caang";
 
   return (
-    <div className="space-y-6 w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
-      {/* ── Header Banner — Precision Blueprint Style ─────────────────────── */}
-      <div className="relative border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-xl shadow-xs overflow-hidden">
-        {/* Top Accent Gradient Line */}
-        <div className="absolute top-0 left-0 right-0 h-[3px] bg-linear-to-r from-[#1e3a8a] via-[#3b82f6] to-[#f97316]" />
-
+    <div className="flex w-full max-w-7xl mx-auto flex-col gap-6 px-2 sm:px-4 lg:px-6">
+      {/* ── Header ──────────────────────────────────────────────────────── */}
+      <div className="border border-border bg-card rounded-lg p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-medium tracking-tight text-[#0a192f] dark:text-slate-100 font-display flex items-center gap-2.5">
-              <HugeiconsIcon
-                icon={Archive01Icon}
-                size={24}
-                className="text-[#1e3a8a] dark:text-blue-400 shrink-0"
-              />
-              Tempat Sampah — {audienceLabel}
-            </h1>
-            <p className="text-xs font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 mt-1">
-              {deletedActivities.length} Kegiatan Terhapus · Pulihkan atau Hapus
-              Permanen
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-md bg-primary-soft text-primary shrink-0">
+              <HugeiconsIcon icon={Archive01Icon} size={20} />
+            </div>
+            <div>
+              <h1 className="font-display font-semibold tracking-tight text-lg sm:text-xl text-foreground">
+                Tempat Sampah — {audienceLabel}
+              </h1>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                {deletedActivities.length} kegiatan terhapus · pulihkan atau
+                hapus permanen
+              </p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2.5 w-full sm:w-auto">
-            <Button
-              variant="outline"
-              onClick={() => router.push(backPath)}
-              className="w-full sm:w-auto rounded-lg border border-slate-200 dark:border-slate-700 text-[#0a192f] dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-mono text-[11px] uppercase tracking-wider px-4 py-2.5 h-10 shadow-xs"
-            >
-              <HugeiconsIcon
-                icon={ArrowLeft02Icon}
-                size={16}
-                className="mr-2"
-              />
-              Kembali ke Agenda
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            onClick={() => router.push(backPath)}
+            className="w-full sm:w-auto rounded-md h-9 px-4 font-medium text-sm border-primary text-primary hover:bg-primary-soft"
+          >
+            <HugeiconsIcon icon={ArrowLeft02Icon} data-icon="inline-start" />
+            Kembali ke Agenda
+          </Button>
         </div>
       </div>
 
-      {/* ── Content Area ─────────────────────────────────────────────────── */}
+      {/* ── Content Area ───────────────────────────────────────────────── */}
       {deletedActivities.length === 0 ? (
-        <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-12 text-center rounded-xl shadow-xs">
-          <HugeiconsIcon
-            icon={Archive01Icon}
-            size={42}
-            className="mx-auto text-slate-300 dark:text-slate-700 mb-3"
-          />
-          <p className="font-mono text-xs uppercase tracking-widest text-slate-500 dark:text-slate-400">
-            Tempat sampah kosong. Tidak ada agenda {audienceLabel.toLowerCase()}{" "}
-            yang dihapus.
-          </p>
-        </div>
+        <Empty className="border-border bg-card rounded-lg py-12">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <HugeiconsIcon icon={Archive01Icon} />
+            </EmptyMedia>
+            <EmptyTitle>Tempat sampah kosong</EmptyTitle>
+            <EmptyDescription>
+              Tidak ada agenda {audienceLabel.toLowerCase()} yang dihapus.
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       ) : (
         <>
           {/* Desktop Table View */}
-          <div className="hidden md:block overflow-x-auto border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl shadow-xs">
-            <table className="w-full min-w-[800px] border-collapse text-left">
-              <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
-                  <th className="p-4 w-24 text-center font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
+          <div className="hidden lg:block overflow-hidden border border-border bg-card rounded-lg">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-border bg-surface hover:bg-surface">
+                  <TableHead className="w-24 text-center text-micro font-semibold uppercase tracking-wide text-muted-foreground">
                     Banner
-                  </th>
-                  <th className="p-4 font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
+                  </TableHead>
+                  <TableHead className="text-micro font-semibold uppercase tracking-wide text-muted-foreground">
                     Nama Kegiatan
-                  </th>
-                  <th className="p-4 font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
+                  </TableHead>
+                  <TableHead className="text-micro font-semibold uppercase tracking-wide text-muted-foreground">
                     Tanggal &amp; Waktu
-                  </th>
-                  <th className="p-4 font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
+                  </TableHead>
+                  <TableHead className="text-micro font-semibold uppercase tracking-wide text-muted-foreground">
                     Dihapus Pada
-                  </th>
-                  <th className="p-4 w-52 text-center font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
+                  </TableHead>
+                  <TableHead className="w-56 text-center text-micro font-semibold uppercase tracking-wide text-muted-foreground">
                     Aksi
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="divide-y divide-border">
                 {deletedActivities.map((activity) => (
-                  <tr
+                  <TableRow
                     key={activity.id}
-                    className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
+                    className="border-border hover:bg-muted/50"
                   >
-                    <td className="p-4 align-middle text-center">
-                      <div className="relative h-11 w-16 mx-auto rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-800 overflow-hidden flex items-center justify-center opacity-60">
+                    <TableCell className="text-center">
+                      <div className="relative h-11 w-16 mx-auto rounded-md border border-border bg-muted overflow-hidden flex items-center justify-center opacity-60">
                         {activity.banner_url ? (
                           <Image
                             src={activity.banner_url}
@@ -207,31 +223,31 @@ export function TrashActivitiesClient({
                           <HugeiconsIcon
                             icon={Calendar03Icon}
                             size={18}
-                            className="text-slate-400 dark:text-slate-500"
+                            className="text-muted-foreground"
                           />
                         )}
                       </div>
-                    </td>
+                    </TableCell>
 
-                    <td className="p-4 align-middle">
+                    <TableCell>
                       <div
-                        className="font-display font-medium text-[#0a192f] dark:text-slate-100 text-sm truncate max-w-[260px]"
+                        className="font-display font-medium text-foreground text-sm truncate max-w-[260px]"
                         title={activity.title}
                       >
                         {activity.title}
                       </div>
-                      <Badge className="mt-1 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 font-mono text-[10px] uppercase font-semibold">
-                        AUDIENCE: {activity.target_audience}
+                      <Badge className="mt-1 bg-muted text-muted-foreground border-border text-micro font-semibold uppercase">
+                        Audience: {activity.target_audience}
                       </Badge>
-                    </td>
+                    </TableCell>
 
-                    <td className="p-4 align-middle">
-                      <div className="space-y-0.5">
-                        <div className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
+                    <TableCell>
+                      <div className="flex flex-col gap-0.5">
+                        <div className="flex items-center gap-1.5 text-xs text-foreground font-medium">
                           <HugeiconsIcon
                             icon={Calendar03Icon}
                             size={13}
-                            className="text-slate-400 shrink-0"
+                            className="text-muted-foreground shrink-0"
                           />
                           <span>
                             {new Date(activity.start_date).toLocaleDateString(
@@ -245,11 +261,11 @@ export function TrashActivitiesClient({
                             )}
                           </span>
                         </div>
-                        <div className="flex items-center gap-1.5 text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                        <div className="flex items-center gap-1.5 text-micro font-mono text-muted-foreground">
                           <HugeiconsIcon
                             icon={Clock01Icon}
                             size={13}
-                            className="text-slate-400 shrink-0"
+                            className="text-muted-foreground shrink-0"
                           />
                           <span>
                             {new Date(activity.start_date).toLocaleTimeString(
@@ -263,11 +279,11 @@ export function TrashActivitiesClient({
                           </span>
                         </div>
                         {activity.location && (
-                          <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <HugeiconsIcon
                               icon={Location01Icon}
                               size={13}
-                              className="text-slate-400 shrink-0"
+                              className="text-muted-foreground shrink-0"
                             />
                             <span className="truncate max-w-[150px]">
                               {activity.location}
@@ -275,27 +291,26 @@ export function TrashActivitiesClient({
                           </div>
                         )}
                       </div>
-                    </td>
+                    </TableCell>
 
-                    <td className="p-4 align-middle font-mono text-xs text-slate-500 dark:text-slate-400">
+                    <TableCell className="font-mono text-xs text-muted-foreground">
                       {activity.deleted_at
                         ? formatIndoDateTime(activity.deleted_at)
                         : "—"}
-                    </td>
+                    </TableCell>
 
-                    <td className="p-4 align-middle text-center">
+                    <TableCell className="text-center">
                       <div className="flex justify-center items-center gap-2">
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => handleRestore(activity.id)}
                           disabled={restoringId === activity.id}
-                          className="rounded-lg border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 h-8 px-3 font-mono text-[11px] uppercase tracking-wider"
+                          className="rounded-md border-primary text-primary hover:bg-primary-soft h-8 px-3 font-medium text-xs"
                         >
                           <HugeiconsIcon
                             icon={ArrowReloadHorizontalIcon}
-                            size={14}
-                            className="mr-1.5"
+                            data-icon="inline-start"
                           />
                           {restoringId === activity.id ? "..." : "Pulihkan"}
                         </Button>
@@ -303,50 +318,44 @@ export function TrashActivitiesClient({
                           size="sm"
                           variant="outline"
                           onClick={() => setHardDeleting(activity)}
-                          className="rounded-lg border border-red-200 dark:border-red-900/60 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 h-8 px-3 font-mono text-[11px] uppercase tracking-wider"
+                          className="rounded-md border-destructive/40 text-destructive hover:bg-destructive/10 h-8 px-3 font-medium text-xs"
                         >
                           <HugeiconsIcon
                             icon={Delete01Icon}
-                            size={14}
-                            className="mr-1.5"
+                            data-icon="inline-start"
                           />
                           Hapus Permanen
                         </Button>
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
 
           {/* Mobile Layout Cards */}
-          <div className="block md:hidden space-y-3">
+          <div className="flex flex-col gap-3 lg:hidden">
             {deletedActivities.map((activity) => (
-              <div
-                key={activity.id}
-                className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 rounded-xl space-y-3 shadow-xs opacity-90"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 uppercase tracking-widest block">
-                      DIHAPUS PADA:{" "}
-                      {activity.deleted_at
-                        ? formatIndoDateTime(activity.deleted_at)
-                        : "—"}
-                    </span>
-                    <span className="text-sm font-display font-medium text-[#0a192f] dark:text-slate-100 truncate block">
-                      {activity.title}
-                    </span>
-                  </div>
-                </div>
+              <Card key={activity.id} className="gap-3 opacity-90">
+                <CardHeader className="gap-1">
+                  <span className="text-micro text-muted-foreground">
+                    Dihapus pada:{" "}
+                    {activity.deleted_at
+                      ? formatIndoDateTime(activity.deleted_at)
+                      : "—"}
+                  </span>
+                  <CardTitle className="font-display font-medium text-sm text-foreground truncate">
+                    {activity.title}
+                  </CardTitle>
+                </CardHeader>
 
-                <div className="space-y-1.5 text-xs text-slate-600 dark:text-slate-300 pt-2 border-t border-dashed border-slate-200 dark:border-slate-800">
-                  <div className="flex items-center gap-2 font-mono text-[11px]">
+                <CardContent className="flex flex-col gap-1.5 text-sm text-foreground">
+                  <div className="flex items-center gap-2 text-xs text-foreground">
                     <HugeiconsIcon
                       icon={Calendar03Icon}
                       size={13}
-                      className="text-slate-400 shrink-0"
+                      className="text-muted-foreground shrink-0"
                     />
                     <span>
                       {new Date(activity.start_date).toLocaleDateString(
@@ -361,29 +370,28 @@ export function TrashActivitiesClient({
                     </span>
                   </div>
                   {activity.location && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
                       <HugeiconsIcon
                         icon={Location01Icon}
                         size={13}
-                        className="text-slate-400 shrink-0"
+                        className="text-muted-foreground shrink-0"
                       />
                       <span>{activity.location}</span>
                     </div>
                   )}
-                </div>
+                </CardContent>
 
-                <div className="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <CardFooter className="flex gap-2">
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => handleRestore(activity.id)}
                     disabled={restoringId === activity.id}
-                    className="flex-1 rounded-lg border border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 h-9 font-mono text-[11px] uppercase tracking-wider"
+                    className="flex-1 rounded-md border-primary text-primary hover:bg-primary-soft h-9 font-medium text-xs"
                   >
                     <HugeiconsIcon
                       icon={ArrowReloadHorizontalIcon}
-                      size={14}
-                      className="mr-1.5"
+                      data-icon="inline-start"
                     />
                     {restoringId === activity.id ? "Memulihkan..." : "Pulihkan"}
                   </Button>
@@ -391,81 +399,64 @@ export function TrashActivitiesClient({
                     size="sm"
                     variant="outline"
                     onClick={() => setHardDeleting(activity)}
-                    className="flex-1 rounded-lg border border-red-200 dark:border-red-900/60 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 h-9 font-mono text-[11px] uppercase tracking-wider"
+                    className="flex-1 rounded-md border-destructive/40 text-destructive hover:bg-destructive/10 h-9 font-medium text-xs"
                   >
                     <HugeiconsIcon
                       icon={Delete01Icon}
-                      size={14}
-                      className="mr-1.5"
+                      data-icon="inline-start"
                     />
                     Hapus Permanen
                   </Button>
-                </div>
-              </div>
+                </CardFooter>
+              </Card>
             ))}
           </div>
         </>
       )}
 
-      {/* ── Modal Dialog: Konfirmasi Hard Delete ─────────────────────────── */}
-      <Dialog
+      {/* ── Alert Dialog: Konfirmasi Hard Delete ───────────────────────── */}
+      <AlertDialog
         open={!!hardDeleting}
         onOpenChange={(open) => {
           if (!open && !isHardDeleting) setHardDeleting(null);
         }}
       >
-        <DialogContent className="max-w-md rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-0 overflow-hidden shadow-blueprint">
-          <div className="h-[3px] bg-red-600" />
-          <DialogHeader className="px-6 pt-5 pb-3 border-b border-slate-100 dark:border-slate-800">
-            <DialogTitle className="font-display text-base font-medium text-[#0a192f] dark:text-slate-100 flex items-center gap-2">
-              <HugeiconsIcon
-                icon={Delete01Icon}
-                size={18}
-                className="text-red-600 shrink-0"
-              />
+        <AlertDialogContent className="rounded-lg">
+          <AlertDialogHeader>
+            <AlertDialogMedia className="bg-destructive/10 text-destructive">
+              <HugeiconsIcon icon={Delete01Icon} />
+            </AlertDialogMedia>
+            <AlertDialogTitle className="font-display font-semibold">
               Hapus Kegiatan Permanen
-            </DialogTitle>
-            <DialogDescription className="font-mono text-[11px] uppercase tracking-wider text-red-600 font-semibold">
-              ⚠ Peringatan: Tindakan ini tidak dapat dibatalkan
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="px-6 py-4 space-y-2">
-            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-              Apakah Anda yakin ingin menghapus kegiatan{" "}
-              <span className="font-bold text-[#0a192f] dark:text-slate-100">
-                &quot;{hardDeleting?.title}&quot;
-              </span>{" "}
-              secara permanen?
-            </p>
-            <p className="text-[11px] font-mono text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
-              Seluruh data kegiatan dan riwayat presensi terkait akan dihapus
-              secara permanen dari database.
-            </p>
-          </div>
-
-          <DialogFooter className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex justify-end gap-2">
-            <Button
-              variant="outline"
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Peringatan: tindakan ini tidak dapat dibatalkan. Seluruh data
+              kegiatan dan riwayat presensi terkait akan dihapus secara permanen
+              dari database.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
               onClick={() => setHardDeleting(null)}
               disabled={isHardDeleting}
-              className="rounded-lg border border-slate-200 dark:border-slate-700 font-mono text-xs uppercase tracking-wider h-9 px-4"
+              className="rounded-md"
             >
               Batal
-            </Button>
-            <Button
+            </AlertDialogCancel>
+            <AlertDialogAction
               onClick={handleHardDelete}
               disabled={isHardDeleting}
-              className="rounded-lg bg-red-600 hover:bg-red-700 text-white font-mono text-xs uppercase tracking-wider h-9 px-4 disabled:opacity-50"
+              variant="destructive"
+              className="rounded-md"
             >
               {isHardDeleting ? "Menghapus..." : "Hapus Permanen"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {isPending && (
-        <div className="fixed bottom-4 right-4 z-50 bg-[#0a192f] text-white font-mono text-xs px-4 py-2 rounded-lg border border-slate-700 shadow-lg">
+        <div className="fixed bottom-4 right-4 z-50 bg-foreground text-background text-xs font-medium px-3 py-2 rounded-md shadow-soft">
           Memperbarui data...
         </div>
       )}
