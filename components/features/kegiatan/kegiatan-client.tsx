@@ -1080,7 +1080,7 @@ export function KegiatanClient({
 
               {/* Desktop Table View */}
               <div className="hidden lg:block overflow-x-auto border border-border bg-card rounded-lg">
-                <table className="w-full min-w-[900px] border-collapse text-left">
+                <table className="w-full min-w-225 border-collapse text-left">
                   <thead>
                     <tr className="border-b border-border bg-surface">
                       <th className="px-4 py-3 w-24 text-center text-micro font-semibold uppercase tracking-wide text-muted-foreground">
@@ -1131,7 +1131,7 @@ export function KegiatanClient({
 
                         <td className="px-4 py-3 align-middle">
                           <div
-                            className="font-display font-medium text-foreground text-sm truncate max-w-[280px]"
+                            className="font-display font-medium text-foreground text-sm truncate max-w-70"
                             title={activity.title}
                           >
                             {activity.title}
@@ -1155,7 +1155,7 @@ export function KegiatanClient({
 
                         <td className="px-4 py-3 align-middle">
                           <div
-                            className="text-foreground text-xs truncate max-w-[220px]"
+                            className="text-foreground text-xs truncate max-w-55"
                             title={activity.location || "TBA"}
                           >
                             {activity.location || "TBA"}
@@ -1270,15 +1270,15 @@ export function KegiatanClient({
                 <table className="w-full border-collapse text-left">
                   <thead>
                     <tr className="border-b border-border bg-surface">
-                      <th className="px-3 py-3 text-micro font-semibold uppercase tracking-wide text-muted-foreground min-w-[220px] sticky left-0 bg-surface z-10 border-r border-border">
+                      <th className="px-3 py-3 text-micro font-semibold uppercase tracking-wide text-muted-foreground min-w-55 sticky left-0 bg-surface z-10 border-r border-border">
                         Caang
                       </th>
                       {initialActivitiesForSummary.map((act) => (
                         <th
                           key={act.id}
-                          className="px-3 py-3 text-micro font-semibold uppercase tracking-wide text-muted-foreground min-w-[110px] text-center border-r border-border"
+                          className="px-3 py-3 text-micro font-semibold uppercase tracking-wide text-muted-foreground min-w-27.5 text-center border-r border-border"
                         >
-                          <div className="max-w-[100px] mx-auto">
+                          <div className="max-w-25 mx-auto">
                             <span className="line-clamp-2 text-[10px] leading-tight block">
                               {act.title}
                             </span>
@@ -1288,16 +1288,16 @@ export function KegiatanClient({
                           </div>
                         </th>
                       ))}
-                      <th className="px-3 py-3 text-micro font-semibold uppercase tracking-wide text-center text-emerald-600 dark:text-emerald-400 min-w-[60px]">
+                      <th className="px-3 py-3 text-micro font-semibold uppercase tracking-wide text-center text-emerald-600 dark:text-emerald-400 min-w-15">
                         Hadir
                       </th>
-                      <th className="px-3 py-3 text-micro font-semibold uppercase tracking-wide text-center text-amber-600 dark:text-amber-400 min-w-[60px]">
+                      <th className="px-3 py-3 text-micro font-semibold uppercase tracking-wide text-center text-amber-600 dark:text-amber-400 min-w-15">
                         Izin
                       </th>
-                      <th className="px-3 py-3 text-micro font-semibold uppercase tracking-wide text-center text-blue-600 dark:text-blue-400 min-w-[60px]">
+                      <th className="px-3 py-3 text-micro font-semibold uppercase tracking-wide text-center text-blue-600 dark:text-blue-400 min-w-15">
                         Sakit
                       </th>
-                      <th className="px-3 py-3 text-micro font-semibold uppercase tracking-wide text-center text-red-600 dark:text-red-400 min-w-[60px]">
+                      <th className="px-3 py-3 text-micro font-semibold uppercase tracking-wide text-center text-red-600 dark:text-red-400 min-w-15">
                         Alfa
                       </th>
                     </tr>
@@ -1312,7 +1312,7 @@ export function KegiatanClient({
                       >
                         {/* Caang Info */}
                         <td className="px-3 py-3 sticky left-0 z-10 border-r border-border bg-card">
-                          <div className="flex items-center gap-3 min-w-[200px]">
+                          <div className="flex items-center gap-3 min-w-50">
                             <div className="relative w-9 h-9 rounded-full overflow-hidden border border-border shrink-0 bg-muted">
                               {item.photoUrl ? (
                                 <Image
@@ -1329,13 +1329,13 @@ export function KegiatanClient({
                               )}
                             </div>
                             <div className="min-w-0">
-                              <p className="font-semibold text-xs text-foreground truncate max-w-[150px]">
+                              <p className="font-semibold text-xs text-foreground truncate max-w-37.5">
                                 {item.fullName}
                               </p>
                               <p className="text-micro text-muted-foreground">
                                 {item.nim}
                               </p>
-                              <p className="text-[9px] text-muted-foreground truncate max-w-[150px]">
+                              <p className="text-[9px] text-muted-foreground truncate max-w-37.5">
                                 {item.studyProgramName}
                               </p>
                             </div>
@@ -1382,7 +1382,7 @@ export function KegiatanClient({
 
                               {/* Dropdown Menu Override */}
                               {isOpen && (
-                                <div className="absolute z-50 top-full left-1/2 -translate-x-1/2 mt-1 bg-card border border-border shadow-soft rounded-md overflow-hidden min-w-[95px]">
+                                <div className="absolute z-50 top-full left-1/2 -translate-x-1/2 mt-1 bg-card border border-border shadow-soft rounded-md overflow-hidden min-w-23.75">
                                   {(
                                     [
                                       "hadir",

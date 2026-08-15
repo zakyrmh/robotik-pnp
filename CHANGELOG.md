@@ -11,13 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Redesign keseluruhan design system ke tema **Minimalist Soft (Light)** pada `DESIGN.md`: prinsip warna 70% netral / 20% warna utama (Navy lembut `#3b5b84`) / 10% aksen (Oranye lembut `#f0975a`), skala font mobile-first berbasis `clamp()`, dan aturan radius (Card 10px, Button/Input 8px, Pill 9999px).
 - Token desain baru di `app/globals.css` (Tailwind v4 `@theme inline`): `--color-canvas`, `--color-surface`, `--color-text-primary/secondary/muted`, `--color-primary-hover`, `--color-primary-soft`, `--color-accent-strong`, `--shadow-soft`, `--shadow-ring`, skala `--text-micro` hingga `--text-2xl`, dan `--radius-md/lg/pill`. Dark mode kini ditangani otomatis via CSS variables (tanpa override manual `dark:`), dengan Oranye menjadi warna utama di tema gelap agar tetap kontras.
-- Komponen Shadcn UI baru via CLI: `AlertDialog`, `Drawer`, `Empty`, `Separator`, dan `Sheet` (menambahkan dependensi `vaul` di `package.json`).
+- Halaman publik baru Kebijakan Privasi (`/privacy`) dan Syarat & Ketentuan Layanan (`/terms`) dengan layout publik ber-pola Minimalist Soft.
+- Komponen Shadcn UI baru: `AlertDialog`, `Drawer`, `Empty`, `Separator`, `Sheet`, `Field`, dan `Spinner`.
 - Redesign `components/shared/header.tsx` berbasis Shadcn UI primitives (`Popover`, `DropdownMenu`, `Avatar`, `Badge`, `InputGroup`, `Separator`, `Skeleton`, `Empty`) dengan pendekatan mobile-first: panel notifikasi `Popover` (width responsif `max-w-[calc(100vw-2rem)]`), menu akun `DropdownMenu`, avatar fallback dengan `AvatarFallback`, tombol ikon `size="icon-lg"`, dan pemisah vertikal `Separator`.
 - Redesign `components/shared/sidebar.tsx` berbasis Shadcn UI: drawer mobile memakai `Sheet` (side `left`, `w-72`) menggantikan drawer framer-motion custom, skeleton loading memakai `Skeleton`, aktif state memakai `bg-primary-soft` + indikator batang kiri `bg-primary`, serta pembagian komponen reusable `BrandLink`, `NavLink`, `SidebarNav`, dan `SettingsLink`.
+- Redesign `components/shared/page-loader.tsx` dengan motion animasi halus dan penyesuaian font `font-display`.
 
 ### Changed
 
 - Redesign `app/globals.css`: penggantian seluruh token lama (`dongker-*`, `pnp-orange`, `orange-wash`, `blueprint-*`, `mist-gray`, `steel-gray`, `canvas-white`, `shadow-blueprint`) dengan token semantik yang otomatis menyesuaikan light/dark mode.
+- Redesign modul Autentikasi (`app/(auth)/layout.tsx` & `components/features/auth/`): layout split-screen dengan hero header _"Portal UKM Robotik PNP"_, penyesuaian hirarki tipografi, serta redesign `LoginForm`, `RegisterForm`, `ForgotPasswordForm`, `ForgotPasswordWaitingCard`, `UpdatePasswordForm`, `VerifiedCard`, dan `VerifyEmailCard` sesuai standar `DESIGN.md`.
 - Redesign `components/features/kegiatan/kegiatan-client.tsx`, `components/features/komdis/create-komdis-activity-dialog.tsx`, dan `components/features/komdis/edit-komdis-activity-dialog.tsx` sesuai standar visual `DESIGN.md` (Card `bg-card`, `border-border`, `rounded-lg`, Badge pill `bg-accent text-accent-foreground`, tombol sekunder `border-primary text-primary`).
 - Redesign `components/features/kegiatan/trash-activities-client.tsx` berbasis Shadcn UI (`Card` untuk mobile, `Table` + zebra-stripe `bg-surface` untuk desktop, `Empty` untuk state kosong, `AlertDialog` untuk konfirmasi hapus permanen) dengan token desain baru.
 

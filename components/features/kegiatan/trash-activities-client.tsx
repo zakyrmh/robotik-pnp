@@ -231,7 +231,7 @@ export function TrashActivitiesClient({
 
                     <TableCell>
                       <div
-                        className="font-display font-medium text-foreground text-sm truncate max-w-[260px]"
+                        className="font-display font-medium text-foreground text-sm truncate max-w-65"
                         title={activity.title}
                       >
                         {activity.title}
@@ -285,7 +285,7 @@ export function TrashActivitiesClient({
                               size={13}
                               className="text-muted-foreground shrink-0"
                             />
-                            <span className="truncate max-w-[150px]">
+                            <span className="truncate max-w-37.5">
                               {activity.location}
                             </span>
                           </div>
