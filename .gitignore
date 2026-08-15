@@ -45,3 +45,24 @@ data*.sql
 
 # Sentry wizard error logs
 sentry-wizard-installation-error-*.log
+
+# ===== AI agent tools (local config) =====
+/.claude/
+/.hermes/
+/.impeccable/
+
+# ===== Editor / IDE =====
+.idea/
+.vscode/*.local.json
+
+# ===== Cache =====
+.eslintcache
+
+# ===== Test artifacts (Playwright/Vitest) =====
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
+# ===== Generic logs =====
+*.log
