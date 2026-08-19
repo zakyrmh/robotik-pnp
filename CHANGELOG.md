@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Halaman Detail Kegiatan (`/kegiatan/[id]`)**: Menambahkan rute halaman detail kegiatan responsif untuk menangani navigasi notifikasi dan link kegiatan, mencegah error 404 ketika pengguna mengklik notifikasi kegiatan.
+- **Halaman 404 Kustom (`app/not-found.tsx`)**: Menambahkan halaman error 404 dengan desain Minimalist Soft yang responsif dan ramah seluler.
+
+### Changed
+
+- **Restriksi Jendela Waktu Presensi (`checkin_open_at` s/d `checkin_close_at`)**:
+  - Memperbarui antarmuka `ActivityItem` (`lib/actions/activities.ts`) dan query `getActivities` untuk menyertakan `checkin_open_at`, `checkin_close_at`, dan `late_tolerance_minutes`.
+  - Mengubah fungsi `isAttendanceWindowActive` pada `kegiatan-client.tsx` dan `app/(private)/kegiatan/[id]/page.tsx` agar tombol **Absen** hanya dapat diakses dalam rentang waktu dari `checkin_open_at` hingga `checkin_close_at`.
+- **Modul QR Code Presensi Real-Time Ramah Supabase Free Plan**:
+  - Mengimplementasikan Smart Short Polling berbasis database Supabase biasa pada `AnggotaQrView` (`components/features/komdis/anggota-qr-view.tsx`).
+  - Mengoptimalkan kueri dengan jeda adaptif (interval 4 detik, maksimal 30x percobaan / 2 menit per sesi aktif).
+  - Menghentikan pemanggilan API secara otomatis saat peramban/tab disembunyikan (`visibilityState === 'hidden'`) atau setelah status presensi terdeteksi (`hadir`/`telat`/`izin`/`sakit`).
+  - Menambahkan _listener_ `visibilitychange` untuk mengecek ulang status presensi secara instan saat tab peramban diaktifkan kembali oleh pengguna.
+
+### Fixed
+
+- **Soft Delete Filtering pada Kegiatan**: Memastikan seluruh kueri kegiatan di server (`getActivities`) dan client menggunakan filter `.is("deleted_at", null)` agar kegiatan yang masuk ke tempat sampah tidak tampil di halaman kegiatan role mana pun (`super-admin`, `admin-komdis`, `admin-or`, `anggota`, `caang`).
+- **Form Pembuatan Kegiatan Komdis (`create-komdis-activity-dialog.tsx`)**:
+  - Memperbaiki perataan UI teks label kegiatan formal Komdis agar sejajar rata kiri dengan petunjuk target audience.
+  - Memperbaiki fungsionalitas pemilih tanggal/waktu (popover kalender) dan input teks manual pada input datetime agar dapat digunakan secara fleksibel.
+
 ## [0.3.0] - 2026-08-15
 
 ### Added

@@ -89,6 +89,7 @@ export async function createKomdisActivity(
   if (error) throw new Error(`Gagal membuat kegiatan: ${error.message}`);
 
   revalidatePath("/kegiatan");
+  revalidatePath("/dashboard");
   return { success: true, data };
 }
 
@@ -122,6 +123,7 @@ export async function updateKomdisActivity(
 
   revalidatePath("/kegiatan");
   revalidatePath(`/kegiatan/${validated.activityId}`);
+  revalidatePath("/dashboard");
   return { success: true, data };
 }
 
@@ -146,6 +148,8 @@ export async function softDeleteKomdisActivity(activityId: string) {
     );
 
   revalidatePath("/kegiatan");
+  revalidatePath("/kegiatan/sampah");
+  revalidatePath("/dashboard");
   return { success: true };
 }
 
@@ -168,6 +172,7 @@ export async function restoreKomdisActivity(activityId: string) {
 
   revalidatePath("/kegiatan");
   revalidatePath("/kegiatan/sampah");
+  revalidatePath("/dashboard");
   return { success: true };
 }
 
@@ -193,6 +198,7 @@ export async function deleteKomdisActivity(activityId: string) {
 
   revalidatePath("/kegiatan");
   revalidatePath("/kegiatan/sampah");
+  revalidatePath("/dashboard");
   return { success: true };
 }
 

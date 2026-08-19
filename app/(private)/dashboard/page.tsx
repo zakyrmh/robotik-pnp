@@ -203,6 +203,7 @@ export default async function DashboardPage() {
     const { data: upcomingActs } = await supabase
       .from("activities")
       .select("id, title, start_date, location")
+      .is("deleted_at", null)
       .gte("end_date", nowIso)
       .order("start_date", { ascending: true })
       .limit(3);
@@ -273,6 +274,7 @@ export default async function DashboardPage() {
     const { data: todayActivities } = await supabase
       .from("activities")
       .select("id")
+      .is("deleted_at", null)
       .lte("start_date", endOfToday.toISOString())
       .gte("end_date", startOfToday.toISOString());
     const todayActivitiesCount = todayActivities?.length || 0;
@@ -326,6 +328,7 @@ export default async function DashboardPage() {
     const { data: upcomingActs } = await supabase
       .from("activities")
       .select("id, title, start_date, location")
+      .is("deleted_at", null)
       .gte("end_date", nowIso)
       .order("start_date", { ascending: true })
       .limit(3);

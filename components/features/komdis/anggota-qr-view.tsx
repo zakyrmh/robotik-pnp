@@ -2,14 +2,19 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
+import { createClient } from "@/lib/supabase/client";
 import { encryptToken } from "@/lib/utils/crypto";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   QrCodeIcon,
   RefreshIcon,
   File01Icon,
+  CheckmarkCircle01Icon,
+  Clock01Icon,
+  Cancel01Icon,
 } from "@hugeicons/core-free-icons";
 
 interface AnggotaQrViewProps {
@@ -17,9 +22,37 @@ interface AnggotaQrViewProps {
   activityTitle: string;
   startDate?: string;
   endDate?: string;
+  checkinOpenAt?: string | null;
+  checkinCloseAt?: string | null;
   profileId: string;
   profileName: string;
   nim: string;
+}
+
+interface AttendanceRecord {
+  status: string;
+  check_in_at: string | null;
+  verified_at: string | null;
+  notes: string | null;
+  approval_status: string | null;
+}
+
+function formatCheckInTime(dateStr: string | null) {
+  if (!dateStr) return "-";
+  const d = new Date(dateStr);
+  return (
+    d.toLocaleTimeString("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    }) +
+    " WIB, " +
+    d.toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    })
+  );
 }
 
 export function AnggotaQrView({
@@ -27,6 +60,8 @@ export function AnggotaQrView({
   activityTitle,
   startDate,
   endDate,
+  checkinOpenAt,
+  checkinCloseAt,
   profileId,
   profileName,
   nim,
@@ -40,21 +75,100 @@ export function AnggotaQrView({
   );
   const [countdown, setCountdown] = useState(300); // 5 menit TTL
   const [isLeaveFormOpen, setIsLeaveFormOpen] = useState(false);
+  const [attendanceRecord, setAttendanceRecord] =
+    useState<AttendanceRecord | null>(null);
+  const [fetchingAttendance, setFetchingAttendance] = useState(true);
 
   const now = new Date();
-  const start = startDate ? new Date(startDate) : null;
-  const end = endDate ? new Date(endDate) : null;
 
-  // Window QR: 2 jam sebelum start s/d tepat waktu selesai (end_date)
+  // Window QR: checkinOpenAt s/d checkinCloseAt (fallback: 2 jam sebelum start s/d end)
+  const openTime = checkinOpenAt
+    ? new Date(checkinOpenAt)
+    : startDate
+      ? new Date(new Date(startDate).getTime() - 2 * 60 * 60 * 1000)
+      : null;
+  const closeTime = checkinCloseAt
+    ? new Date(checkinCloseAt)
+    : endDate
+      ? new Date(endDate)
+      : null;
+
   const isQrWindowActive =
-    !start || !end
-      ? true
-      : now >= new Date(start.getTime() - 2 * 60 * 60 * 1000) && now <= end;
+    !openTime || !closeTime ? true : now >= openTime && now <= closeTime;
 
-  // Grace Period Izin/Sakit: 24 jam setelah end
-  const isLeaveGracePeriodActive = !end
+  // Grace Period Izin/Sakit: 24 jam setelah closeTime
+  const isLeaveGracePeriodActive = !closeTime
     ? true
-    : now <= new Date(end.getTime() + 24 * 60 * 60 * 1000);
+    : now <= new Date(closeTime.getTime() + 24 * 60 * 60 * 1000);
+
+  // Optimasi Supabase Free Plan: Polling hemat kuota (Adaptive Polling)
+  // - Hanya polling saat tab/layar aktif (document.visibilityState === "visible")
+  // - Interval 4 detik, maksimal 30x percobaan (2 menit), lalu jeda otomatis
+  useEffect(() => {
+    if (attendanceRecord) return; // Jika sudah presensi, tidak perlu query lagi
+
+    const supabase = createClient();
+    let isMounted = true;
+    let pollTimeout: NodeJS.Timeout | null = null;
+    let attemptsCount = 0;
+    const MAX_POLL_ATTEMPTS = 30; // Max 2 menit polling per sesi aktif
+
+    async function checkAttendance() {
+      if (!isMounted || document.visibilityState !== "visible") return;
+
+      try {
+        const { data } = await supabase
+          .from("attendances")
+          .select("status, check_in_at, verified_at, notes, approval_status")
+          .eq("activity_id", activityId)
+          .eq("profile_id", profileId)
+          .maybeSingle();
+
+        if (!isMounted) return;
+
+        if (data) {
+          setAttendanceRecord(data);
+          setFetchingAttendance(false);
+          return;
+        }
+
+        setFetchingAttendance(false);
+        attemptsCount++;
+
+        // Lanjutkan polling jika belum melebihi batas percobaan dan tab masih aktif
+        if (
+          attemptsCount < MAX_POLL_ATTEMPTS &&
+          document.visibilityState === "visible"
+        ) {
+          pollTimeout = setTimeout(checkAttendance, 4000);
+        }
+      } catch (err) {
+        console.error("Gagal memeriksa presensi:", err);
+        if (isMounted) setFetchingAttendance(false);
+      }
+    }
+
+    checkAttendance();
+
+    // Re-check & reset polling saat tab/layar smartphone diaktifkan kembali oleh user
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && !attendanceRecord) {
+        attemptsCount = 0; // Reset hitungan saat user kembali aktif di tab ini
+        if (pollTimeout) clearTimeout(pollTimeout);
+        checkAttendance();
+      } else if (document.visibilityState === "hidden" && pollTimeout) {
+        clearTimeout(pollTimeout); // Hentikan query saat tab tidak dilihat
+      }
+    };
+
+    window.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      isMounted = false;
+      if (pollTimeout) clearTimeout(pollTimeout);
+      window.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [activityId, profileId, attendanceRecord]);
 
   const generateNewQR = useCallback(() => {
     const token = encryptToken({
@@ -67,7 +181,7 @@ export function AnggotaQrView({
   }, [activityId, profileId]);
 
   useEffect(() => {
-    if (!isQrWindowActive) return;
+    if (!isQrWindowActive || attendanceRecord) return;
     const interval = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
@@ -79,11 +193,72 @@ export function AnggotaQrView({
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [generateNewQR, isQrWindowActive]);
+  }, [generateNewQR, isQrWindowActive, attendanceRecord]);
 
   const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(
     qrToken,
   )}`;
+
+  // Configuration for Attendance Status UI Card
+  const getStatusCardConfig = (st: string) => {
+    switch (st) {
+      case "hadir":
+        return {
+          label: "HADIR TEPAT WAKTU",
+          badgeBg: "bg-emerald-500 text-white dark:bg-emerald-600",
+          cardBg:
+            "bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-900/50",
+          textColor: "text-emerald-700 dark:text-emerald-300",
+          icon: CheckmarkCircle01Icon,
+          iconBg:
+            "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/60 dark:text-emerald-400",
+        };
+      case "telat":
+        return {
+          label: "HADIR (TERLAMBAT)",
+          badgeBg: "bg-amber-500 text-white dark:bg-amber-600",
+          cardBg:
+            "bg-amber-50/70 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900/50",
+          textColor: "text-amber-700 dark:text-amber-300",
+          icon: Clock01Icon,
+          iconBg:
+            "bg-amber-100 text-amber-600 dark:bg-amber-900/60 dark:text-amber-400",
+        };
+      case "izin":
+        return {
+          label: "IZIN (DISPENSASI)",
+          badgeBg: "bg-blue-500 text-white dark:bg-blue-600",
+          cardBg:
+            "bg-blue-50/70 dark:bg-blue-950/30 border-blue-200 dark:border-blue-900/50",
+          textColor: "text-blue-700 dark:text-blue-300",
+          icon: File01Icon,
+          iconBg:
+            "bg-blue-100 text-blue-600 dark:bg-blue-900/60 dark:text-blue-400",
+        };
+      case "sakit":
+        return {
+          label: "SAKIT",
+          badgeBg: "bg-indigo-500 text-white dark:bg-indigo-600",
+          cardBg:
+            "bg-indigo-50/70 dark:bg-indigo-950/30 border-indigo-200 dark:border-indigo-900/50",
+          textColor: "text-indigo-700 dark:text-indigo-300",
+          icon: File01Icon,
+          iconBg:
+            "bg-indigo-100 text-indigo-600 dark:bg-indigo-900/60 dark:text-indigo-400",
+        };
+      default:
+        return {
+          label: "ALFA (TIDAK HADIR)",
+          badgeBg: "bg-red-500 text-white dark:bg-red-600",
+          cardBg:
+            "bg-red-50/70 dark:bg-red-950/30 border-red-200 dark:border-red-900/50",
+          textColor: "text-red-700 dark:text-red-300",
+          icon: Cancel01Icon,
+          iconBg:
+            "bg-red-100 text-red-600 dark:bg-red-900/60 dark:text-red-400",
+        };
+    }
+  };
 
   return (
     <div className="space-y-4 sm:space-y-6 max-w-md mx-auto w-full">
@@ -92,7 +267,11 @@ export function AnggotaQrView({
         <CardHeader className="p-0 space-y-1">
           <div className="flex items-center justify-center gap-2 font-mono text-xs text-[#1e3a8a] dark:text-blue-400 uppercase tracking-widest font-semibold">
             <HugeiconsIcon icon={QrCodeIcon} size={18} />
-            <span>DYNAMIC QR CODE PRESENSI</span>
+            <span>
+              {attendanceRecord
+                ? "STATUS PRESENSI TERVERIFIKASI"
+                : "DYNAMIC QR CODE PRESENSI"}
+            </span>
           </div>
           <CardTitle className="text-lg sm:text-xl font-display font-medium text-[#0a192f] dark:text-slate-100">
             {activityTitle}
@@ -106,11 +285,77 @@ export function AnggotaQrView({
         </CardHeader>
       </Card>
 
-      {/* QR Code Container or Closed Alert */}
-      {isQrWindowActive ? (
+      {/* JIKA SUDAH DISCAN / DATA PRESENSI TERSEDIA -> TAMPILKAN STATUS CARD */}
+      {attendanceRecord ? (
+        (() => {
+          const cfg = getStatusCardConfig(attendanceRecord.status);
+          const Icon = cfg.icon;
+          return (
+            <Card
+              className={`border rounded-xl p-6 text-center shadow-soft space-y-4 ${cfg.cardBg}`}
+            >
+              <div
+                className={`w-14 h-14 rounded-full mx-auto flex items-center justify-center ${cfg.iconBg}`}
+              >
+                <HugeiconsIcon icon={Icon} size={28} />
+              </div>
+
+              <div className="space-y-1">
+                <Badge
+                  className={`font-mono text-xs uppercase tracking-wider px-3.5 py-1 rounded-full font-bold ${cfg.badgeBg}`}
+                >
+                  {cfg.label}
+                </Badge>
+                <h3 className={`text-sm font-semibold mt-2 ${cfg.textColor}`}>
+                  Presensi Berhasil Dicatat
+                </h3>
+              </div>
+
+              <div className="border-t border-b border-border/60 py-3 space-y-2 text-xs font-mono text-slate-600 dark:text-slate-300">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground uppercase text-[10px]">
+                    Waktu Check-In:
+                  </span>
+                  <span className="font-semibold text-foreground">
+                    {formatCheckInTime(
+                      attendanceRecord.check_in_at ||
+                        attendanceRecord.verified_at,
+                    )}
+                  </span>
+                </div>
+                {attendanceRecord.notes && (
+                  <div className="flex items-start justify-between gap-2 text-left pt-1">
+                    <span className="text-muted-foreground uppercase text-[10px] shrink-0">
+                      Catatan:
+                    </span>
+                    <span className="text-foreground italic">
+                      {attendanceRecord.notes}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <p className="text-micro font-mono uppercase tracking-wider text-muted-foreground leading-relaxed">
+                Data presensi Anda telah tersimpan secara otomatis &amp;
+                terverifikasi oleh Panitia / Komdis.
+              </p>
+            </Card>
+          );
+        })()
+      ) : isQrWindowActive ? (
+        /* JIKA BELUM DISCAN & QR WINDOW AKTIF -> TAMPILKAN QR CODE */
         <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-6 text-center shadow-xs space-y-4">
           <div className="relative w-56 h-56 sm:w-64 sm:h-64 mx-auto bg-white p-3 border-2 border-[#1e3a8a] dark:border-blue-500 rounded-lg shadow-sm">
-            {qrToken ? (
+            {fetchingAttendance ? (
+              <div className="h-full flex flex-col items-center justify-center font-mono text-xs text-slate-400 gap-2">
+                <HugeiconsIcon
+                  icon={RefreshIcon}
+                  size={20}
+                  className="animate-spin"
+                />
+                <span>MEMERIKSA STATUS...</span>
+              </div>
+            ) : qrToken ? (
               <Image
                 src={qrImageUrl}
                 alt="Dynamic QR Code"
@@ -150,6 +395,7 @@ export function AnggotaQrView({
           </Button>
         </Card>
       ) : (
+        /* JIKA QR WINDOW DITUTUP & BELUM PRESENSI */
         <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 text-center shadow-xs space-y-3">
           <div className="w-12 h-12 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 mx-auto flex items-center justify-center font-mono font-bold text-lg">
             !
@@ -160,15 +406,15 @@ export function AnggotaQrView({
           <p className="text-xs text-slate-600 dark:text-slate-400 font-sans leading-relaxed">
             Sesi pemindaian QR Code untuk kegiatan ini telah berakhir pada{" "}
             <strong className="font-mono">
-              {end ? end.toLocaleString("id-ID") : "kegiatan usai"}
+              {closeTime ? closeTime.toLocaleString("id-ID") : "kegiatan usai"}
             </strong>
             .
           </p>
         </Card>
       )}
 
-      {/* Leave Request Alternative */}
-      {isLeaveGracePeriodActive ? (
+      {/* Leave Request Alternative (Hanya tampil jika belum presensi) */}
+      {!attendanceRecord && isLeaveGracePeriodActive && (
         <div className="text-center pt-2 space-y-1">
           <button
             onClick={() => setIsLeaveFormOpen(!isLeaveFormOpen)}
@@ -180,15 +426,17 @@ export function AnggotaQrView({
             Tenggat izin/sakit: Maksimal 24 jam setelah kegiatan selesai
           </p>
         </div>
-      ) : (
-        <div className="text-center pt-2 font-mono text-[11px] uppercase tracking-wider text-slate-400 dark:text-slate-500">
+      )}
+
+      {!attendanceRecord && !isLeaveGracePeriodActive && (
+        <div className="text-center pt-2 font-mono text-micro uppercase tracking-wider text-slate-400 dark:text-slate-500">
           Batas pengajuan izin/sakit (24 jam setelah kegiatan selesai) telah
           berakhir.
         </div>
       )}
 
       {/* Form Pengajuan Surat Izin / Sakit */}
-      {isLeaveGracePeriodActive && isLeaveFormOpen && (
+      {!attendanceRecord && isLeaveGracePeriodActive && isLeaveFormOpen && (
         <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-6 shadow-xs space-y-4">
           <div className="border-b border-slate-200 dark:border-slate-800 pb-2 font-mono text-xs text-[#f97316] dark:text-orange-400 uppercase tracking-widest font-semibold flex items-center gap-2">
             <HugeiconsIcon icon={File01Icon} size={16} />

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect, useRef, useTransition } from "react";
 import {
   Dialog,
   DialogContent,
@@ -16,7 +16,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { updateKomdisActivity } from "@/lib/actions/komdis";
 import { toast } from "sonner";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Edit02Icon, Loading03Icon } from "@hugeicons/core-free-icons";
+import {
+  Edit02Icon,
+  Calendar01Icon,
+  Loading03Icon,
+} from "@hugeicons/core-free-icons";
 
 interface ActivityItemData {
   id: string;
@@ -43,7 +47,7 @@ const fieldControlClass =
   "h-9 rounded-md border-border bg-background text-sm text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/20";
 
 const datetimeControlClass =
-  "h-9 rounded-md border-border bg-background text-sm font-mono text-foreground focus-visible:border-primary focus-visible:ring-primary/20";
+  "h-9 rounded-md border-border bg-background text-sm font-mono text-foreground focus-visible:border-primary focus-visible:ring-primary/20 [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none";
 
 function toLocalDatetimeInput(dateStr?: string | null) {
   if (!dateStr) return "";
@@ -64,6 +68,11 @@ export function EditKomdisActivityDialog({
   onSuccess,
 }: EditKomdisActivityDialogProps) {
   const [isPending, startTransition] = useTransition();
+
+  const startInputRef = useRef<HTMLInputElement>(null);
+  const endInputRef = useRef<HTMLInputElement>(null);
+  const checkinOpenInputRef = useRef<HTMLInputElement>(null);
+  const checkinCloseInputRef = useRef<HTMLInputElement>(null);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -194,33 +203,71 @@ export function EditKomdisActivityDialog({
                 <Label htmlFor="edit-komdis-start" className={fieldLabelClass}>
                   Waktu Mulai <span className="text-destructive">*</span>
                 </Label>
-                <Input
-                  id="edit-komdis-start"
-                  type="datetime-local"
-                  value={startDate}
-                  onChange={(e) => {
-                    setStartDate(e.target.value);
-                    if (!checkinOpenAt) setCheckinOpenAt(e.target.value);
-                  }}
-                  className={datetimeControlClass}
-                  required
-                />
+                <div className="relative flex items-center w-full">
+                  <Input
+                    ref={startInputRef}
+                    id="edit-komdis-start"
+                    type="datetime-local"
+                    value={startDate}
+                    onChange={(e) => {
+                      setStartDate(e.target.value);
+                      if (!checkinOpenAt) setCheckinOpenAt(e.target.value);
+                    }}
+                    className={`${datetimeControlClass} pr-9`}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      try {
+                        startInputRef.current?.showPicker();
+                      } catch {
+                        startInputRef.current?.focus();
+                      }
+                    }}
+                    className="absolute right-2 text-muted-foreground hover:text-foreground p-1 rounded-md transition-colors cursor-pointer"
+                    tabIndex={-1}
+                    title="Buka Kalender"
+                    aria-label="Buka Kalender"
+                  >
+                    <HugeiconsIcon icon={Calendar01Icon} size={16} />
+                  </button>
+                </div>
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label htmlFor="edit-komdis-end" className={fieldLabelClass}>
                   Waktu Selesai <span className="text-destructive">*</span>
                 </Label>
-                <Input
-                  id="edit-komdis-end"
-                  type="datetime-local"
-                  value={endDate}
-                  onChange={(e) => {
-                    setEndDate(e.target.value);
-                    if (!checkinCloseAt) setCheckinCloseAt(e.target.value);
-                  }}
-                  className={datetimeControlClass}
-                  required
-                />
+                <div className="relative flex items-center w-full">
+                  <Input
+                    ref={endInputRef}
+                    id="edit-komdis-end"
+                    type="datetime-local"
+                    value={endDate}
+                    onChange={(e) => {
+                      setEndDate(e.target.value);
+                      if (!checkinCloseAt) setCheckinCloseAt(e.target.value);
+                    }}
+                    className={`${datetimeControlClass} pr-9`}
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      try {
+                        endInputRef.current?.showPicker();
+                      } catch {
+                        endInputRef.current?.focus();
+                      }
+                    }}
+                    className="absolute right-2 text-muted-foreground hover:text-foreground p-1 rounded-md transition-colors cursor-pointer"
+                    tabIndex={-1}
+                    title="Buka Kalender"
+                    aria-label="Buka Kalender"
+                  >
+                    <HugeiconsIcon icon={Calendar01Icon} size={16} />
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -246,13 +293,32 @@ export function EditKomdisActivityDialog({
                 >
                   Buka Absensi
                 </Label>
-                <Input
-                  id="edit-komdis-checkin-open"
-                  type="datetime-local"
-                  value={checkinOpenAt}
-                  onChange={(e) => setCheckinOpenAt(e.target.value)}
-                  className={datetimeControlClass}
-                />
+                <div className="relative flex items-center w-full">
+                  <Input
+                    ref={checkinOpenInputRef}
+                    id="edit-komdis-checkin-open"
+                    type="datetime-local"
+                    value={checkinOpenAt}
+                    onChange={(e) => setCheckinOpenAt(e.target.value)}
+                    className={`${datetimeControlClass} pr-9`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      try {
+                        checkinOpenInputRef.current?.showPicker();
+                      } catch {
+                        checkinOpenInputRef.current?.focus();
+                      }
+                    }}
+                    className="absolute right-2 text-muted-foreground hover:text-foreground p-1 rounded-md transition-colors cursor-pointer"
+                    tabIndex={-1}
+                    title="Buka Kalender"
+                    aria-label="Buka Kalender"
+                  >
+                    <HugeiconsIcon icon={Calendar01Icon} size={16} />
+                  </button>
+                </div>
               </div>
               <div className="flex flex-col gap-1.5">
                 <Label
@@ -261,13 +327,32 @@ export function EditKomdisActivityDialog({
                 >
                   Tutup Absensi
                 </Label>
-                <Input
-                  id="edit-komdis-checkin-close"
-                  type="datetime-local"
-                  value={checkinCloseAt}
-                  onChange={(e) => setCheckinCloseAt(e.target.value)}
-                  className={datetimeControlClass}
-                />
+                <div className="relative flex items-center w-full">
+                  <Input
+                    ref={checkinCloseInputRef}
+                    id="edit-komdis-checkin-close"
+                    type="datetime-local"
+                    value={checkinCloseAt}
+                    onChange={(e) => setCheckinCloseAt(e.target.value)}
+                    className={`${datetimeControlClass} pr-9`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      try {
+                        checkinCloseInputRef.current?.showPicker();
+                      } catch {
+                        checkinCloseInputRef.current?.focus();
+                      }
+                    }}
+                    className="absolute right-2 text-muted-foreground hover:text-foreground p-1 rounded-md transition-colors cursor-pointer"
+                    tabIndex={-1}
+                    title="Buka Kalender"
+                    aria-label="Buka Kalender"
+                  >
+                    <HugeiconsIcon icon={Calendar01Icon} size={16} />
+                  </button>
+                </div>
               </div>
             </div>
 
