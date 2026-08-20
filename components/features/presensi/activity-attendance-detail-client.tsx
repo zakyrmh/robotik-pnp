@@ -15,10 +15,19 @@ import {
   Location01Icon,
   UserGroupIcon,
   Edit01Icon,
+  Cancel01Icon,
 } from "@hugeicons/core-free-icons";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import {
   Dialog,
   DialogContent,
@@ -249,7 +258,7 @@ export function ActivityAttendanceDetailClient({
                 variant="outline"
                 size="sm"
                 onClick={() => router.push("/presensi")}
-                className="h-8 rounded-lg border border-slate-200 dark:border-slate-700 text-[#0a192f] dark:text-slate-200 font-mono text-[11px] uppercase tracking-wider px-3"
+                className="h-8 rounded-lg border border-slate-200 dark:border-slate-700 text-[#0a192f] dark:text-slate-200 font-mono text-micro uppercase tracking-wider px-3"
               >
                 <HugeiconsIcon
                   icon={ArrowLeft02Icon}
@@ -467,7 +476,7 @@ export function ActivityAttendanceDetailClient({
                       </h4>
                       {getRoleBadge(m.role)}
                     </div>
-                    <span className="font-mono text-[11px] text-slate-500 dark:text-slate-400 block">
+                    <span className="font-mono text-micro text-slate-500 dark:text-slate-400 block">
                       NIM: {m.nim} · {m.studyProgramName}
                     </span>
                   </div>
@@ -519,7 +528,7 @@ export function ActivityAttendanceDetailClient({
                       setManualNotes(m.notes || "");
                       setManualPoints(m.pointsAwarded);
                     }}
-                    className="rounded-lg border border-slate-200 dark:border-slate-700 text-[#0a192f] dark:text-slate-200 font-mono text-[11px] uppercase"
+                    className="rounded-lg border border-slate-200 dark:border-slate-700 text-[#0a192f] dark:text-slate-200 font-mono text-micro uppercase"
                   >
                     <HugeiconsIcon
                       icon={Edit01Icon}
@@ -535,28 +544,28 @@ export function ActivityAttendanceDetailClient({
 
           {/* Desktop Table View */}
           <div className="hidden lg:block overflow-x-auto border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-xl shadow-xs">
-            <table className="w-full min-w-[950px] border-collapse text-left">
+            <table className="w-full min-w-237.5 border-collapse text-left">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
-                  <th className="p-4 w-12 text-center font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
+                  <th className="p-4 w-12 text-center font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
                     #
                   </th>
-                  <th className="p-4 font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
+                  <th className="p-4 font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
                     Anggota
                   </th>
-                  <th className="p-4 font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
+                  <th className="p-4 font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
                     Prodi / Jurusan
                   </th>
-                  <th className="p-4 font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
+                  <th className="p-4 font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
                     Waktu Check-In
                   </th>
-                  <th className="p-4 text-center font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
+                  <th className="p-4 text-center font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
                     Status Presensi
                   </th>
-                  <th className="p-4 text-center font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
+                  <th className="p-4 text-center font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
                     Sanksi Poin
                   </th>
-                  <th className="p-4 text-center font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
+                  <th className="p-4 text-center font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400">
                     Aksi
                   </th>
                 </tr>
@@ -597,7 +606,7 @@ export function ActivityAttendanceDetailClient({
                             </span>
                             {getRoleBadge(m.role)}
                           </div>
-                          <div className="font-mono text-[11px] text-slate-500 dark:text-slate-400">
+                          <div className="font-mono text-micro text-slate-500 dark:text-slate-400">
                             NIM: {m.nim}
                           </div>
                         </div>
@@ -665,7 +674,7 @@ export function ActivityAttendanceDetailClient({
                           setManualNotes(m.notes || "");
                           setManualPoints(m.pointsAwarded);
                         }}
-                        className="rounded-lg border border-slate-200 dark:border-slate-700 text-[#0a192f] dark:text-slate-200 h-8 px-2.5 font-mono text-[11px] uppercase tracking-wider"
+                        className="rounded-lg border border-slate-200 dark:border-slate-700 text-[#0a192f] dark:text-slate-200 h-8 px-2.5 font-mono text-micro uppercase tracking-wider"
                       >
                         <HugeiconsIcon
                           icon={Edit01Icon}
@@ -683,99 +692,124 @@ export function ActivityAttendanceDetailClient({
         </>
       )}
 
-      {/* ── Dialog Presensi Manual / Edit Status ─────────────────────────── */}
-      <Dialog
+      {/* ── Drawer Presensi Manual / Edit Status ─────────────────────────── */}
+      <Drawer
         open={!!editingMember}
         onOpenChange={(open) => {
           if (!open) setEditingMember(null);
         }}
       >
-        <DialogContent className="max-w-md rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-0 overflow-hidden shadow-blueprint">
-          <div className="h-1 bg-linear-to-r from-[#1e3a8a] via-[#3b82f6] to-[#f97316]" />
-
-          <DialogHeader className="px-6 pt-5 pb-3 border-b border-slate-100 dark:border-slate-800">
-            <DialogTitle className="font-display text-base font-bold text-[#0a192f] dark:text-slate-100 flex items-center gap-2">
-              <HugeiconsIcon
-                icon={Edit01Icon}
-                size={18}
-                className="text-[#1e3a8a] dark:text-blue-400"
-              />
-              Presensi Manual — {editingMember?.fullName}
-            </DialogTitle>
-            <DialogDescription className="font-mono text-[11px] text-slate-500">
-              NIM: {editingMember?.nim} · {editingMember?.studyProgramName}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="px-6 py-4 space-y-4 font-mono text-xs">
-            <div className="space-y-1.5">
-              <label className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold uppercase tracking-wider block">
-                Status Presensi
-              </label>
-              <select
-                value={manualStatus}
-                onChange={(e) =>
-                  setManualStatus(
-                    e.target.value as
-                      | "hadir"
-                      | "telat"
-                      | "izin"
-                      | "sakit"
-                      | "alfa",
-                  )
-                }
-                className="h-10 w-full bg-slate-50 dark:bg-slate-800/60 px-3 rounded-lg border border-slate-200 dark:border-slate-700 text-[#0a192f] dark:text-slate-100 focus:outline-hidden focus:border-[#f97316]"
-              >
-                <option value="hadir">Hadir (Tepat Waktu)</option>
-                <option value="telat">Telat</option>
-                <option value="izin">Izin</option>
-                <option value="sakit">Sakit</option>
-                <option value="alfa">Alfa</option>
-              </select>
+        <DrawerContent className="flex flex-col overflow-hidden border-t border-border bg-card font-sans shadow-soft data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-[calc(100dvh-1rem)] sm:mx-auto sm:max-w-md sm:rounded-lg sm:border">
+          <DrawerHeader className="flex shrink-0 flex-row items-start justify-between gap-3 border-b border-border px-5 py-4 text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left sm:px-6 sm:pt-5 sm:pb-4">
+            <div className="flex flex-col items-start text-left gap-1.5 group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
+              <div className="inline-flex w-fit items-center gap-1.5 rounded-full bg-accent px-2.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-accent-foreground">
+                <HugeiconsIcon icon={Edit01Icon} />
+                <span>Presensi Manual</span>
+              </div>
+              <DrawerTitle className="font-display text-base font-bold text-foreground text-left">
+                Presensi Manual — {editingMember?.fullName}
+              </DrawerTitle>
+              <DrawerDescription className="text-xs text-muted-foreground text-left font-mono">
+                NIM: {editingMember?.nim} · {editingMember?.studyProgramName}
+              </DrawerDescription>
             </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => setEditingMember(null)}
+              className="shrink-0 text-muted-foreground hover:bg-muted hover:text-foreground"
+              aria-label="Tutup"
+            >
+              <HugeiconsIcon icon={Cancel01Icon} />
+            </Button>
+          </DrawerHeader>
 
-            <div className="space-y-1.5">
-              <label className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold uppercase tracking-wider block">
-                Poin Sanksi / Pelanggaran
-              </label>
-              <Input
-                type="number"
-                value={manualPoints}
-                onChange={(e) => setManualPoints(Number(e.target.value))}
-                className="h-10 bg-slate-50 dark:bg-slate-800/60 font-mono text-xs"
-              />
-            </div>
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 sm:px-6">
+            <div className="flex flex-col gap-4 text-xs font-mono">
+              <div className="flex flex-col gap-1.5">
+                <label
+                  htmlFor="manual-status-select"
+                  className="text-xs font-semibold text-foreground uppercase tracking-wider block"
+                >
+                  Status Presensi <span className="text-destructive">*</span>
+                </label>
+                <select
+                  id="manual-status-select"
+                  value={manualStatus}
+                  onChange={(e) =>
+                    setManualStatus(
+                      e.target.value as
+                        | "hadir"
+                        | "telat"
+                        | "izin"
+                        | "sakit"
+                        | "alfa",
+                    )
+                  }
+                  className="h-10 w-full bg-background px-3 rounded-lg border border-border text-foreground focus:outline-hidden focus:border-primary"
+                >
+                  <option value="hadir">Hadir (Tepat Waktu)</option>
+                  <option value="telat">Telat</option>
+                  <option value="izin">Izin</option>
+                  <option value="sakit">Sakit</option>
+                  <option value="alfa">Alfa</option>
+                </select>
+              </div>
 
-            <div className="space-y-1.5">
-              <label className="text-[11px] text-slate-600 dark:text-slate-300 font-semibold uppercase tracking-wider block">
-                Catatan / Keterangan
-              </label>
-              <Input
-                placeholder="Misal: Izin keperluan akademik kampus..."
-                value={manualNotes}
-                onChange={(e) => setManualNotes(e.target.value)}
-                className="h-10 bg-slate-50 dark:bg-slate-800/60 font-mono text-xs"
-              />
+              <div className="flex flex-col gap-1.5">
+                <label
+                  htmlFor="manual-points-input"
+                  className="text-xs font-semibold text-foreground uppercase tracking-wider block"
+                >
+                  Poin Sanksi / Pelanggaran
+                </label>
+                <Input
+                  id="manual-points-input"
+                  type="number"
+                  value={manualPoints}
+                  onChange={(e) => setManualPoints(Number(e.target.value))}
+                  className="h-10 bg-background font-mono text-xs border-border"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label
+                  htmlFor="manual-notes-input"
+                  className="text-xs font-semibold text-foreground uppercase tracking-wider block"
+                >
+                  Catatan / Keterangan (Opsional)
+                </label>
+                <Input
+                  id="manual-notes-input"
+                  placeholder="Misal: Izin keperluan akademik kampus..."
+                  value={manualNotes}
+                  onChange={(e) => setManualNotes(e.target.value)}
+                  className="h-10 bg-background font-mono text-xs border-border placeholder:text-muted-foreground"
+                />
+              </div>
             </div>
           </div>
 
-          <DialogFooter className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex justify-end gap-2">
+          <DrawerFooter className="shrink-0 gap-2 border-t border-border bg-surface px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
             <Button
+              type="button"
               variant="outline"
               onClick={() => setEditingMember(null)}
-              className="rounded-lg border border-slate-200 dark:border-slate-700 font-mono text-xs uppercase h-9 px-4"
+              className="h-9 rounded-md border-primary px-4 text-xs font-medium text-primary hover:bg-primary-soft font-mono uppercase"
             >
               Batal
             </Button>
             <Button
+              type="button"
               onClick={handleManualSave}
-              className="rounded-lg bg-[#1e3a8a] dark:bg-blue-600 hover:bg-[#1e40af] text-white font-mono text-xs uppercase h-9 px-4"
+              className="h-9 rounded-md bg-primary px-4 text-xs font-medium text-primary-foreground hover:bg-primary-hover font-mono uppercase"
             >
               Simpan Presensi
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
 
       {/* ── Dialog Konfirmasi Alfa Massal ─────────────────────────────────── */}
       <Dialog open={showBatchAlfaDialog} onOpenChange={setShowBatchAlfaDialog}>
@@ -791,7 +825,7 @@ export function ActivityAttendanceDetailClient({
               />
               Tandai Alfa Massal
             </DialogTitle>
-            <DialogDescription className="font-mono text-[11px] text-red-600 font-semibold uppercase">
+            <DialogDescription className="font-mono text-micro text-red-600 font-semibold uppercase">
               ⚠ Konfirmasi Penutupan Sesi Presensi
             </DialogDescription>
           </DialogHeader>
@@ -804,7 +838,7 @@ export function ActivityAttendanceDetailClient({
               </span>{" "}
               sebagai <span className="font-bold">Alfa</span>?
             </p>
-            <p className="text-[11px] font-mono text-slate-500 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
+            <p className="text-micro font-mono text-slate-500 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-lg border border-slate-200 dark:border-slate-700">
               Tindakan ini akan secara otomatis memberikan status Alfa dan poin
               pelanggaran pada anggota yang belum hadir.
             </p>

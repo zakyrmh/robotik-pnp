@@ -1077,7 +1077,7 @@ export function KegiatanClient({
                           }
                           className="rounded-md bg-primary text-primary-foreground hover:bg-primary-hover font-medium text-xs px-3 h-8"
                         >
-                          Absen
+                          Presensi
                         </Button>
                       )}
                     </div>
@@ -1237,7 +1237,7 @@ export function KegiatanClient({
                                 }
                                 className="rounded-md bg-primary text-primary-foreground hover:bg-primary-hover font-medium text-xs h-8 px-2.5"
                               >
-                                Absen
+                                Presensi
                               </Button>
                             )}
                           </div>

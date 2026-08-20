@@ -1,8 +1,10 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { encryptToken, decryptToken } from "@/lib/utils/crypto";
 import { ServerActionResponse } from "@/lib/types/action";
+import { uploadToR2 } from "@/lib/storage/r2";
 
 interface DecryptedPayload {
   profile_id: string;
@@ -474,39 +476,33 @@ export async function submitLeaveRequest(
       };
     }
 
-    let proofUrl = "";
+    let proofUrl: string | null = null;
     if (file && file.size > 0) {
       // Create path: leaves/[userId]/[activityId]/[filename]
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${Date.now()}.${fileExt}`;
-      const filePath = `leaves/${user.id}/${activityId}/${fileName}`;
+      const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+      const r2Key = `leaves/${user.id}/${activityId}/${Date.now()}-${cleanFileName}`;
 
       // Convert file to Buffer
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);
 
-      const { error: uploadError } = await supabase.storage
-        .from("registrations")
-        .upload(filePath, buffer, {
-          contentType: file.type,
-          upsert: true,
+      try {
+        proofUrl = await uploadToR2({
+          fileBuffer: buffer,
+          key: r2Key,
+          contentType: file.type || "image/webp",
         });
-
-      if (uploadError) {
+      } catch (uploadError: unknown) {
+        const errMsg =
+          uploadError instanceof Error
+            ? uploadError.message
+            : String(uploadError);
         return {
           success: false,
-          message: "Gagal mengunggah file bukti.",
-          error: { code: "STORAGE_ERROR", details: uploadError.message },
+          message: "Gagal mengunggah file bukti ke Cloudflare R2.",
+          error: { code: "R2_STORAGE_ERROR", details: errMsg },
         };
       }
-
-      proofUrl = filePath;
-    } else {
-      return {
-        success: false,
-        message: "File bukti izin atau sakit wajib diunggah.",
-        error: { code: "BAD_REQUEST", details: "File is missing" },
-      };
     }
 
     // 2. Record attendance in database
@@ -518,6 +514,8 @@ export async function submitLeaveRequest(
         status,
         notes,
         proof_url: proofUrl,
+        approval_status: "pending",
+        points_awarded: 0,
         verified_by: null, // waiting for admin intervention
       },
       {
@@ -532,6 +530,11 @@ export async function submitLeaveRequest(
         error: { code: "DATABASE_ERROR", details: upsertError.message },
       };
     }
+
+    revalidatePath("/perizinan");
+    revalidatePath(`/kegiatan/${activityId}`);
+    revalidatePath(`/kegiatan/${activityId}/absensi`);
+    revalidatePath("/presensi");
 
     return {
       success: true,

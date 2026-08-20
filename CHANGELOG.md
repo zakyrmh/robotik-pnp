@@ -9,11 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Integrasi Storage Cloudflare R2 untuk Dokumen Perizinan**:
+  - Menambahkan modul koneksi S3-compatible Cloudflare R2 (`lib/storage/r2.ts`) untuk pengunggahan file dokumen bukti surat izin / sakit ke bucket `ukm-robotik-pnp`.
+  - Integrasi fitur client-side image compression & konversi otomatis ke format **WebP** (`lib/utils/image-compressor.ts`) sebelum pengiriman form perizinan (`components/features/komdis/anggota-qr-view.tsx`).
+  - Pembuatan API Proxy Route internal (`app/api/r2/[...key]/route.ts`) untuk menyajikan foto bukti R2 secara aman dan bebas dari pemblokiran ISP / Connection Time Out pada domain `*.r2.dev`.
+- **Panduan Dokumentasi Komdis Kedisiplinan (`docs/PANDUAN_KOMDIS_KEDISIPLINAN.md`)**: Panduan operasional komprehensif bagi Admin Komdis untuk pengelolaan kegiatan, presensi QR / manual, verifikasi perizinan, alfa massal, hingga sanksi & pemutihan poin.
 - **Halaman Detail Kegiatan (`/kegiatan/[id]`)**: Menambahkan rute halaman detail kegiatan responsif untuk menangani navigasi notifikasi dan link kegiatan, mencegah error 404 ketika pengguna mengklik notifikasi kegiatan.
 - **Halaman 404 Kustom (`app/not-found.tsx`)**: Menambahkan halaman error 404 dengan desain Minimalist Soft yang responsif dan ramah seluler.
 
 ### Changed
 
+- **UI Drawer Pratinjau Bukti Perizinan (`components/features/komdis/leave-approval-dashboard.tsx`)**:
+  - Mengubah modal pop-up pratinjau foto bukti perizinan menjadi `Drawer` responsif mobile-first selaras dengan panduan `DESIGN.md`.
+  - Menambahkan **Loading Skeleton** dan UI fallback _error handling_ jika gambar mengalami kendala jaringan/timeout.
 - **Restriksi Jendela Waktu Presensi (`checkin_open_at` s/d `checkin_close_at`)**:
   - Memperbarui antarmuka `ActivityItem` (`lib/actions/activities.ts`) dan query `getActivities` untuk menyertakan `checkin_open_at`, `checkin_close_at`, dan `late_tolerance_minutes`.
   - Mengubah fungsi `isAttendanceWindowActive` pada `kegiatan-client.tsx` dan `app/(private)/kegiatan/[id]/page.tsx` agar tombol **Absen** hanya dapat diakses dalam rentang waktu dari `checkin_open_at` hingga `checkin_close_at`.
@@ -25,6 +33,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **Resolusi Query RBAC/RLS Halaman Perizinan Komdis (`app/(private)/perizinan/page.tsx`)**:
+  - Menggunakan `createAdminClient()` untuk membaca data antrean perizinan Komdis tanpa terhalang RLS policy `target_audience`.
+  - Menentukan spesifikasi foreign key eksplisit `profiles:profile_id!inner` untuk menyelesaikan error ambiguitas relasi PostgREST (_"more than one relationship was found for 'attendances' and 'profiles'"_).
+  - Memperbaiki resolver URL proxy `/api/r2/[key]` agar penayangan foto bukti perizinan di browser anggota dan admin berjalan 100% lancar.
 - **Soft Delete Filtering pada Kegiatan**: Memastikan seluruh kueri kegiatan di server (`getActivities`) dan client menggunakan filter `.is("deleted_at", null)` agar kegiatan yang masuk ke tempat sampah tidak tampil di halaman kegiatan role mana pun (`super-admin`, `admin-komdis`, `admin-or`, `anggota`, `caang`).
 - **Form Pembuatan Kegiatan Komdis (`create-komdis-activity-dialog.tsx`)**:
   - Memperbaiki perataan UI teks label kegiatan formal Komdis agar sejajar rata kiri dengan petunjuk target audience.

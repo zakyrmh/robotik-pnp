@@ -16,6 +16,9 @@ import {
   Clock01Icon,
   Cancel01Icon,
 } from "@hugeicons/core-free-icons";
+import { toast } from "sonner";
+import { submitLeaveRequest } from "@/lib/actions/attendance";
+import { compressAndConvertToWebp } from "@/lib/utils/image-compressor";
 
 interface AnggotaQrViewProps {
   activityId: string;
@@ -75,6 +78,10 @@ export function AnggotaQrView({
   );
   const [countdown, setCountdown] = useState(300); // 5 menit TTL
   const [isLeaveFormOpen, setIsLeaveFormOpen] = useState(false);
+  const [leaveStatus, setLeaveStatus] = useState<"izin" | "sakit">("izin");
+  const [leaveNotes, setLeaveNotes] = useState("");
+  const [leaveFile, setLeaveFile] = useState<File | null>(null);
+  const [isSubmittingLeave, setIsSubmittingLeave] = useState(false);
   const [attendanceRecord, setAttendanceRecord] =
     useState<AttendanceRecord | null>(null);
   const [fetchingAttendance, setFetchingAttendance] = useState(true);
@@ -179,6 +186,53 @@ export function AnggotaQrView({
     setQrToken(token);
     setCountdown(300);
   }, [activityId, profileId]);
+
+  const handleSubmitLeave = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!leaveNotes.trim()) {
+      toast.error("Alasan perizinan wajib diisi.");
+      return;
+    }
+    setIsSubmittingLeave(true);
+    try {
+      const formData = new FormData();
+      formData.append("activity_id", activityId);
+      formData.append("status", leaveStatus);
+      formData.append("notes", leaveNotes.trim());
+
+      if (leaveFile) {
+        // Konversi ke format WebP & kompres ukuran gambar secara client-side
+        const processedFile = await compressAndConvertToWebp(leaveFile);
+        formData.append("file", processedFile);
+      }
+
+      const res = await submitLeaveRequest(formData);
+      if (res.success) {
+        toast.success(
+          res.message || "Pengajuan izin berhasil dikirim ke Komdis.",
+        );
+        setIsLeaveFormOpen(false);
+        setLeaveNotes("");
+        setLeaveFile(null);
+
+        // Fetch status presensi/perizinan terbaru
+        const supabase = createClient();
+        const { data } = await supabase
+          .from("attendances")
+          .select("status, check_in_at, verified_at, notes, approval_status")
+          .eq("activity_id", activityId)
+          .eq("profile_id", profileId)
+          .single();
+        if (data) setAttendanceRecord(data);
+      } else {
+        toast.error(res.message || "Gagal mengirim pengajuan izin.");
+      }
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Terjadi kesalahan.");
+    } finally {
+      setIsSubmittingLeave(false);
+    }
+  };
 
   useEffect(() => {
     if (!isQrWindowActive || attendanceRecord) return;
@@ -450,29 +504,71 @@ export function AnggotaQrView({
           </p>
 
           <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              alert("Pengajuan perizinan berhasil dikirim ke Komdis.");
-              setIsLeaveFormOpen(false);
-            }}
+            onSubmit={handleSubmitLeave}
             className="space-y-3 font-mono text-xs"
           >
+            <div>
+              <label className="block text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 font-semibold">
+                JENIS PERIZINAN:
+              </label>
+              <select
+                value={leaveStatus}
+                onChange={(e) =>
+                  setLeaveStatus(e.target.value as "izin" | "sakit")
+                }
+                className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 p-2.5 text-xs font-mono text-[#0a192f] dark:text-slate-100 focus:outline-hidden focus:border-[#f97316] rounded-lg"
+              >
+                <option value="izin">
+                  Izin (Ada Kepentingan Resmi / Akademik)
+                </option>
+                <option value="sakit">
+                  Sakit (Kondisi Kesehatan / Rekomendasi Dokter)
+                </option>
+              </select>
+            </div>
+
             <div>
               <label className="block text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 font-semibold">
                 ALASAN PERIZINAN:
               </label>
               <textarea
                 required
+                value={leaveNotes}
+                onChange={(e) => setLeaveNotes(e.target.value)}
                 placeholder="Contoh: Sakit demam tinggi dengan rekomendasi istirahat dokter..."
                 className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 p-3 text-xs font-body text-[#0a192f] dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:border-[#f97316] rounded-lg h-20"
               />
             </div>
 
+            <div>
+              <label className="block text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 font-semibold">
+                FOTO BUKTI / SURAT (OPSIONAL):
+              </label>
+              <input
+                type="file"
+                accept="image/*,.pdf"
+                onChange={(e) => setLeaveFile(e.target.files?.[0] || null)}
+                className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 p-2 text-xs font-mono text-[#0a192f] dark:text-slate-100 focus:outline-hidden rounded-lg file:mr-3 file:py-1 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-[#1e3a8a] file:text-white dark:file:bg-blue-600"
+              />
+            </div>
+
             <Button
               type="submit"
-              className="w-full bg-[#f97316] hover:bg-[#ea580c] dark:bg-orange-600 dark:hover:bg-orange-500 text-white font-mono text-xs uppercase tracking-wider rounded-lg font-semibold cursor-pointer py-2.5 shadow-xs"
+              disabled={isSubmittingLeave}
+              className="w-full bg-[#f97316] hover:bg-[#ea580c] dark:bg-orange-600 dark:hover:bg-orange-500 text-white font-mono text-xs uppercase tracking-wider rounded-lg font-semibold cursor-pointer py-2.5 shadow-xs flex items-center justify-center gap-2"
             >
-              KIRIM PERIZINAN KE KOMDIS
+              {isSubmittingLeave ? (
+                <>
+                  <HugeiconsIcon
+                    icon={RefreshIcon}
+                    className="animate-spin"
+                    size={14}
+                  />
+                  <span>MENGIRIM PERIZINAN...</span>
+                </>
+              ) : (
+                <span>KIRIM PERIZINAN KE KOMDIS</span>
+              )}
             </Button>
           </form>
         </Card>
