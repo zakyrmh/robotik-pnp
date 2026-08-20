@@ -377,15 +377,20 @@ export function KegiatanClient({
     );
   }, [initialSummary, search]);
 
-  // Attendance window helper
+  // Attendance window helper: hanya aktif pada rentang waktu checkin_open_at s/d checkin_close_at
   const isAttendanceWindowActive = (activity: ActivityItem | null) => {
     if (!activity) return false;
     const now = new Date();
-    const startWindow = new Date(
-      new Date(activity.start_date).getTime() - 2 * 60 * 60 * 1000,
-    );
-    const endWindow = new Date(activity.end_date);
-    return now >= startWindow && now <= endWindow;
+
+    const openWindow = activity.checkin_open_at
+      ? new Date(activity.checkin_open_at)
+      : new Date(new Date(activity.start_date).getTime() - 2 * 60 * 60 * 1000);
+
+    const closeWindow = activity.checkin_close_at
+      ? new Date(activity.checkin_close_at)
+      : new Date(activity.end_date);
+
+    return now >= openWindow && now <= closeWindow;
   };
 
   // Status Badge Helper
@@ -524,7 +529,9 @@ export function KegiatanClient({
       toast.dismiss(toastId);
       if (res.success) {
         toast.success(res.message);
+        const deletedId = deletingActivity.id;
         setDeletingActivity(null);
+        setActivities((prev) => prev.filter((item) => item.id !== deletedId));
         startTransition(() => {
           router.refresh();
           fetchActivities();
@@ -1070,7 +1077,7 @@ export function KegiatanClient({
                           }
                           className="rounded-md bg-primary text-primary-foreground hover:bg-primary-hover font-medium text-xs px-3 h-8"
                         >
-                          Absen
+                          Presensi
                         </Button>
                       )}
                     </div>
@@ -1230,7 +1237,7 @@ export function KegiatanClient({
                                 }
                                 className="rounded-md bg-primary text-primary-foreground hover:bg-primary-hover font-medium text-xs h-8 px-2.5"
                               >
-                                Absen
+                                Presensi
                               </Button>
                             )}
                           </div>

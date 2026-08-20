@@ -3,6 +3,7 @@
 import { useState, useMemo, useTransition } from "react";
 import Image from "next/image";
 import { reviewLeaveRequest } from "@/lib/actions/komdis";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Card,
   CardHeader,
@@ -15,6 +16,14 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from "@/components/ui/drawer";
 import {
   Dialog,
   DialogContent,
@@ -72,6 +81,15 @@ export function LeaveApprovalDashboard({
   >("pending");
 
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [imageLoading, setImageLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
+
+  const handleOpenImagePreview = (url: string) => {
+    setSelectedImage(url);
+    setImageLoading(true);
+    setImageError(false);
+  };
+
   const [rejectingItem, setRejectingItem] = useState<LeaveRequestItem | null>(
     null,
   );
@@ -172,7 +190,7 @@ export function LeaveApprovalDashboard({
         <div className="h-1.5 w-full bg-linear-to-r from-[#0066b1] via-[#1c69d4] to-[#e22718] rounded-full" />
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pt-2">
           <div>
-            <span className="font-mono text-[11px] font-semibold text-[#1e3a8a] dark:text-blue-400 uppercase tracking-widest block">
+            <span className="font-mono text-micro font-semibold text-[#1e3a8a] dark:text-blue-400 uppercase tracking-widest block">
               MODUL VERIFIKASI PERIZINAN KOMDIS
             </span>
             <h1 className="text-2xl sm:text-3xl font-display font-bold uppercase tracking-tight text-[#0a192f] dark:text-slate-100">
@@ -308,7 +326,7 @@ export function LeaveApprovalDashboard({
               <button
                 key={tab.id}
                 onClick={() => setFilter(tab.id)}
-                className={`px-3 py-1.5 font-mono text-[11px] uppercase tracking-wider transition-all whitespace-nowrap rounded-md ${
+                className={`px-3 py-1.5 font-mono text-micro uppercase tracking-wider transition-all whitespace-nowrap rounded-md ${
                   filter === tab.id
                     ? "bg-[#1e3a8a] dark:bg-blue-600 text-white font-bold shadow-xs"
                     : "text-slate-600 dark:text-slate-400 hover:text-[#0a192f] dark:hover:text-slate-100 hover:bg-white/60 dark:hover:bg-slate-700/50"
@@ -423,7 +441,7 @@ export function LeaveApprovalDashboard({
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => setSelectedImage(item.proof_url)}
+                      onClick={() => handleOpenImagePreview(item.proof_url!)}
                       className="w-full font-mono text-xs uppercase tracking-wider h-9 rounded-lg border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 justify-center"
                     >
                       <HugeiconsIcon
@@ -485,49 +503,128 @@ export function LeaveApprovalDashboard({
         </div>
       )}
 
-      {/* Modal Pratinjau Foto Bukti */}
-      <Dialog
+      {/* ── Drawer Pratinjau Foto Bukti Perizinan ─────────────────────────── */}
+      <Drawer
         open={!!selectedImage}
         onOpenChange={(open) => !open && setSelectedImage(null)}
       >
-        <DialogContent className="sm:max-w-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl p-6">
-          <DialogHeader className="space-y-1">
-            <div className="flex items-center gap-2 text-[#1e3a8a] dark:text-blue-400">
-              <HugeiconsIcon icon={Image01Icon} size={20} />
-              <DialogTitle className="font-display text-lg font-bold text-[#0a192f] dark:text-slate-100">
+        <DrawerContent className="flex flex-col overflow-hidden border-t border-border bg-card font-sans shadow-soft data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-[calc(100dvh-1rem)] sm:mx-auto sm:max-w-2xl sm:rounded-lg sm:border">
+          <DrawerHeader className="flex shrink-0 flex-row items-start justify-between gap-3 border-b border-border px-5 py-4 text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left sm:px-6 sm:pt-5 sm:pb-4">
+            <div className="flex flex-col items-start text-left gap-1.5 group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
+              <div className="inline-flex w-fit items-center gap-1.5 rounded-full bg-accent px-2.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-accent-foreground">
+                <HugeiconsIcon icon={Image01Icon} />
+                <span>Dokumen Bukti</span>
+              </div>
+              <DrawerTitle className="font-display text-base font-bold text-foreground text-left">
                 Lampiran Foto Bukti Perizinan
-              </DialogTitle>
+              </DrawerTitle>
+              <DrawerDescription className="text-xs text-muted-foreground text-left font-mono">
+                Pratinjau dokumen surat izin / sakit yang dilampirkan oleh
+                anggota.
+              </DrawerDescription>
             </div>
-            <DialogDescription className="text-xs font-mono text-slate-500 dark:text-slate-400">
-              Pratinjau dokumen surat izin / sakit yang dilampirkan oleh
-              anggota.
-            </DialogDescription>
-          </DialogHeader>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => setSelectedImage(null)}
+              className="shrink-0 text-muted-foreground hover:bg-muted hover:text-foreground"
+              aria-label="Tutup"
+            >
+              <HugeiconsIcon icon={Cancel01Icon} />
+            </Button>
+          </DrawerHeader>
 
-          {selectedImage && (
-            <div className="relative aspect-4/3 w-full bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden my-2">
-              <Image
-                src={selectedImage}
-                alt="Foto Bukti Surat Izin"
-                fill
-                sizes="(max-width: 768px) 100vw, 600px"
-                className="object-contain"
-              />
-            </div>
-          )}
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5 sm:px-6">
+            {selectedImage && (
+              <div className="relative aspect-4/3 w-full bg-background border border-border rounded-xl overflow-hidden my-1 flex items-center justify-center">
+                {/* ── Skeleton Loading ───────────────────────────────── */}
+                {imageLoading && !imageError && (
+                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-muted/70 p-4">
+                    <Skeleton className="absolute inset-0 h-full w-full rounded-xl" />
+                    <div className="relative z-20 flex flex-col items-center gap-2 text-muted-foreground font-mono text-xs">
+                      <HugeiconsIcon
+                        icon={Loading01Icon}
+                        className="animate-spin text-primary"
+                        size={28}
+                      />
+                      <span>Memuat dokumen bukti dari Cloudflare R2...</span>
+                    </div>
+                  </div>
+                )}
 
-          <DialogFooter>
+                {/* ── Error Fallback UI (ERR_CONNECTION_TIMED_OUT) ──── */}
+                {imageError && (
+                  <div className="flex flex-col items-center justify-center p-6 text-center gap-3 font-mono text-xs z-20">
+                    <div className="p-3 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                      <HugeiconsIcon icon={Alert01Icon} size={32} />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="font-bold text-foreground text-sm">
+                        Gagal Memuat Gambar (Connection Timed Out)
+                      </p>
+                      <p className="text-muted-foreground text-micro max-w-md">
+                        Domain R2 (`.r2.dev`) mengalami time-out atau diblokir
+                        oleh provider internet (ISP).
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setImageError(false);
+                          setImageLoading(true);
+                        }}
+                        className="font-mono text-xs uppercase h-8"
+                      >
+                        Coba Muat Ulang
+                      </Button>
+                      <a
+                        href={selectedImage}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-primary text-primary-foreground hover:bg-primary-hover font-mono text-xs uppercase font-medium"
+                      >
+                        Buka Foto di Tab Baru ↗
+                      </a>
+                    </div>
+                  </div>
+                )}
+
+                {/* ── Gambar Utama ───────────────────────────────────── */}
+                <Image
+                  src={selectedImage}
+                  alt="Foto Bukti Surat Izin"
+                  fill
+                  unoptimized
+                  onLoad={() => setImageLoading(false)}
+                  onError={() => {
+                    setImageLoading(false);
+                    setImageError(true);
+                  }}
+                  sizes="(max-width: 768px) 100vw, 700px"
+                  className={`object-contain transition-opacity duration-300 ${
+                    imageLoading || imageError ? "opacity-0" : "opacity-100"
+                  }`}
+                />
+              </div>
+            )}
+          </div>
+
+          <DrawerFooter className="shrink-0 gap-2 border-t border-border bg-surface px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
             <Button
               type="button"
               variant="outline"
               onClick={() => setSelectedImage(null)}
-              className="font-mono text-xs uppercase h-9 rounded-lg border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+              className="h-9 rounded-md border-primary px-4 text-xs font-medium text-primary hover:bg-primary-soft font-mono uppercase"
             >
               Tutup Pratinjau
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
 
       {/* Modal Konfirmasi Penolakan */}
       <Dialog
@@ -556,7 +653,7 @@ export function LeaveApprovalDashboard({
               <div className="font-bold uppercase">
                 SANKSI OTOMATIS: +10 POIN KEDISIPLINAN
               </div>
-              <div className="text-[11px] text-red-600/90 dark:text-red-400 font-sans">
+              <div className="text-micro text-red-600/90 dark:text-red-400 font-sans">
                 Penolakan izin akan memicu penerbitan sanksi ketidakhadiran
                 sesuai SOP Komisi Disiplin.
               </div>

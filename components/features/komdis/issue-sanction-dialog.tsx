@@ -135,7 +135,7 @@ export function IssueSanctionDialog({
                 {currentNetPoints} PTS
               </span>
             </div>
-            <div className="text-[11px] text-red-600 dark:text-red-400 font-semibold">
+            <div className="text-micro text-red-600 dark:text-red-400 font-semibold">
               SANKSI:{" "}
               {spLevel === 1
                 ? "Goro minimal 4x/bulan & Pemutihan -10 Poin."

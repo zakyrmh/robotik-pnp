@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useRef, useTransition } from "react";
 import {
   Drawer,
   DrawerContent,
@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
   CalendarAdd01Icon,
+  Calendar01Icon,
   Cancel01Icon,
   Loading03Icon,
 } from "@hugeicons/core-free-icons";
@@ -34,7 +35,7 @@ const fieldControlClass =
   "h-9 rounded-md border-border bg-background text-sm text-foreground placeholder:text-muted-foreground focus-visible:border-primary focus-visible:ring-primary/20";
 
 const datetimeControlClass =
-  "h-9 rounded-md border-border bg-background text-sm font-mono text-foreground focus-visible:border-primary focus-visible:ring-primary/20";
+  "h-9 rounded-md border-border bg-background text-sm font-mono text-foreground focus-visible:border-primary focus-visible:ring-primary/20 [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none";
 
 export function CreateKomdisActivityDialog({
   isOpen,
@@ -42,6 +43,11 @@ export function CreateKomdisActivityDialog({
   onSuccess,
 }: CreateKomdisActivityDialogProps) {
   const [isPending, startTransition] = useTransition();
+
+  const startInputRef = useRef<HTMLInputElement>(null);
+  const endInputRef = useRef<HTMLInputElement>(null);
+  const checkinOpenInputRef = useRef<HTMLInputElement>(null);
+  const checkinCloseInputRef = useRef<HTMLInputElement>(null);
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -108,16 +114,16 @@ export function CreateKomdisActivityDialog({
   return (
     <Drawer open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DrawerContent className="flex flex-col overflow-hidden border-t border-border bg-card font-sans shadow-soft data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-[calc(100dvh-1rem)] sm:mx-auto sm:max-w-lg sm:rounded-lg sm:border">
-        <DrawerHeader className="flex shrink-0 flex-row items-start justify-between gap-3 border-b border-border px-5 py-4 text-left sm:px-6 sm:pt-5 sm:pb-4">
-          <div className="flex flex-col gap-1.5">
+        <DrawerHeader className="flex shrink-0 flex-row items-start justify-between gap-3 border-b border-border px-5 py-4 text-left group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left sm:px-6 sm:pt-5 sm:pb-4">
+          <div className="flex flex-col items-start text-left gap-1.5 group-data-[vaul-drawer-direction=bottom]/drawer-content:text-left">
             <div className="inline-flex w-fit items-center gap-1.5 rounded-full bg-accent px-2.5 py-0.5 text-micro font-semibold uppercase tracking-wide text-accent-foreground">
               <HugeiconsIcon icon={CalendarAdd01Icon} />
               <span>Aksi Admin Komisi Disiplin</span>
             </div>
-            <DrawerTitle className="font-display text-lg font-semibold tracking-tight text-foreground">
+            <DrawerTitle className="font-display text-lg font-semibold tracking-tight text-foreground text-left">
               Buat Kegiatan Formal Komdis
             </DrawerTitle>
-            <DrawerDescription className="text-sm text-muted-foreground">
+            <DrawerDescription className="text-sm text-muted-foreground text-left">
               Target audience otomatis diset ke &apos;anggota&apos; sesuai SOP
               Komdis.
             </DrawerDescription>
@@ -180,17 +186,36 @@ export function CreateKomdisActivityDialog({
                     Tanggal &amp; Waktu Mulai{" "}
                     <span className="text-destructive">*</span>
                   </Label>
-                  <Input
-                    id="create-komdis-start"
-                    type="datetime-local"
-                    value={startDate}
-                    onChange={(e) => {
-                      setStartDate(e.target.value);
-                      if (!checkinOpenAt) setCheckinOpenAt(e.target.value);
-                    }}
-                    className={datetimeControlClass}
-                    required
-                  />
+                  <div className="relative flex items-center w-full">
+                    <Input
+                      ref={startInputRef}
+                      id="create-komdis-start"
+                      type="datetime-local"
+                      value={startDate}
+                      onChange={(e) => {
+                        setStartDate(e.target.value);
+                        if (!checkinOpenAt) setCheckinOpenAt(e.target.value);
+                      }}
+                      className={`${datetimeControlClass} pr-9`}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        try {
+                          startInputRef.current?.showPicker();
+                        } catch {
+                          startInputRef.current?.focus();
+                        }
+                      }}
+                      className="absolute right-2 text-muted-foreground hover:text-foreground p-1 rounded-md transition-colors cursor-pointer"
+                      tabIndex={-1}
+                      title="Buka Kalender"
+                      aria-label="Buka Kalender"
+                    >
+                      <HugeiconsIcon icon={Calendar01Icon} size={16} />
+                    </button>
+                  </div>
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <Label
@@ -200,17 +225,36 @@ export function CreateKomdisActivityDialog({
                     Tanggal &amp; Waktu Selesai{" "}
                     <span className="text-destructive">*</span>
                   </Label>
-                  <Input
-                    id="create-komdis-end"
-                    type="datetime-local"
-                    value={endDate}
-                    onChange={(e) => {
-                      setEndDate(e.target.value);
-                      if (!checkinCloseAt) setCheckinCloseAt(e.target.value);
-                    }}
-                    className={datetimeControlClass}
-                    required
-                  />
+                  <div className="relative flex items-center w-full">
+                    <Input
+                      ref={endInputRef}
+                      id="create-komdis-end"
+                      type="datetime-local"
+                      value={endDate}
+                      onChange={(e) => {
+                        setEndDate(e.target.value);
+                        if (!checkinCloseAt) setCheckinCloseAt(e.target.value);
+                      }}
+                      className={`${datetimeControlClass} pr-9`}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        try {
+                          endInputRef.current?.showPicker();
+                        } catch {
+                          endInputRef.current?.focus();
+                        }
+                      }}
+                      className="absolute right-2 text-muted-foreground hover:text-foreground p-1 rounded-md transition-colors cursor-pointer"
+                      tabIndex={-1}
+                      title="Buka Kalender"
+                      aria-label="Buka Kalender"
+                    >
+                      <HugeiconsIcon icon={Calendar01Icon} size={16} />
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -239,14 +283,33 @@ export function CreateKomdisActivityDialog({
                   >
                     Buka Absensi <span className="text-destructive">*</span>
                   </Label>
-                  <Input
-                    id="create-komdis-checkin-open"
-                    type="datetime-local"
-                    value={checkinOpenAt}
-                    onChange={(e) => setCheckinOpenAt(e.target.value)}
-                    className={datetimeControlClass}
-                    required
-                  />
+                  <div className="relative flex items-center w-full">
+                    <Input
+                      ref={checkinOpenInputRef}
+                      id="create-komdis-checkin-open"
+                      type="datetime-local"
+                      value={checkinOpenAt}
+                      onChange={(e) => setCheckinOpenAt(e.target.value)}
+                      className={`${datetimeControlClass} pr-9`}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        try {
+                          checkinOpenInputRef.current?.showPicker();
+                        } catch {
+                          checkinOpenInputRef.current?.focus();
+                        }
+                      }}
+                      className="absolute right-2 text-muted-foreground hover:text-foreground p-1 rounded-md transition-colors cursor-pointer"
+                      tabIndex={-1}
+                      title="Buka Kalender"
+                      aria-label="Buka Kalender"
+                    >
+                      <HugeiconsIcon icon={Calendar01Icon} size={16} />
+                    </button>
+                  </div>
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <Label
@@ -255,14 +318,33 @@ export function CreateKomdisActivityDialog({
                   >
                     Tutup Absensi <span className="text-destructive">*</span>
                   </Label>
-                  <Input
-                    id="create-komdis-checkin-close"
-                    type="datetime-local"
-                    value={checkinCloseAt}
-                    onChange={(e) => setCheckinCloseAt(e.target.value)}
-                    className={datetimeControlClass}
-                    required
-                  />
+                  <div className="relative flex items-center w-full">
+                    <Input
+                      ref={checkinCloseInputRef}
+                      id="create-komdis-checkin-close"
+                      type="datetime-local"
+                      value={checkinCloseAt}
+                      onChange={(e) => setCheckinCloseAt(e.target.value)}
+                      className={`${datetimeControlClass} pr-9`}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        try {
+                          checkinCloseInputRef.current?.showPicker();
+                        } catch {
+                          checkinCloseInputRef.current?.focus();
+                        }
+                      }}
+                      className="absolute right-2 text-muted-foreground hover:text-foreground p-1 rounded-md transition-colors cursor-pointer"
+                      tabIndex={-1}
+                      title="Buka Kalender"
+                      aria-label="Buka Kalender"
+                    >
+                      <HugeiconsIcon icon={Calendar01Icon} size={16} />
+                    </button>
+                  </div>
                 </div>
               </div>
 

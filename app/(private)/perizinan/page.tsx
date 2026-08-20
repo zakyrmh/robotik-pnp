@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import {
   LeaveApprovalDashboard,
   LeaveRequestItem,
 } from "@/components/features/komdis/leave-approval-dashboard";
+import { getPublicR2Url } from "@/lib/storage/r2";
 
 export const metadata: Metadata = {
   title: "Perizinan Komdis | UKM Robotik PNP",
@@ -34,8 +35,10 @@ export default async function PerizinanPage() {
     redirect("/dashboard");
   }
 
-  // Fetch data perizinan (hanya untuk anggota aktif dan pengurus, mengabaikan caang & alumni)
-  const { data: rawRequests } = await supabase
+  // Gunakan admin client untuk melepaskan batasan RLS dan mengambil data presensi perizinan
+  const supabaseAdmin = createAdminClient();
+
+  const { data: rawRequests, error: fetchError } = await supabaseAdmin
     .from("attendances")
     .select(
       `
@@ -49,7 +52,7 @@ export default async function PerizinanPage() {
       points_awarded,
       rejection_reason,
       created_at,
-      profiles!inner (
+      profiles:profile_id!inner (
         full_name,
         nim,
         role
@@ -61,18 +64,44 @@ export default async function PerizinanPage() {
     `,
     )
     .in("status", ["izin", "sakit"])
-    .neq("profiles.role", "caang")
-    .neq("profiles.role", "alumni")
     .order("created_at", { ascending: false });
 
+  if (fetchError) {
+    console.error("Gagal mengambil data perizinan:", fetchError.message);
+  }
+
+  // Filter anggota aktif & pengurus (abaikan caang & alumni)
+  const validRequests = (rawRequests || []).filter((item) => {
+    const prof = Array.isArray(item.profiles)
+      ? item.profiles[0]
+      : item.profiles;
+    return prof && prof.role !== "caang" && prof.role !== "alumni";
+  });
+
   // Map to strongly typed LeaveRequestItem array
-  const requests: LeaveRequestItem[] = (rawRequests || []).map((item) => {
+  const requests: LeaveRequestItem[] = validRequests.map((item) => {
     const profileData = Array.isArray(item.profiles)
       ? item.profiles[0]
       : item.profiles;
     const activityData = Array.isArray(item.activities)
       ? item.activities[0]
       : item.activities;
+
+    let proofUrlResolved = item.proof_url;
+    if (proofUrlResolved) {
+      const resolved = getPublicR2Url(proofUrlResolved);
+      if (
+        resolved &&
+        (resolved.startsWith("/") || resolved.startsWith("http"))
+      ) {
+        proofUrlResolved = resolved;
+      } else {
+        const { data: publicUrlData } = supabase.storage
+          .from("registrations")
+          .getPublicUrl(proofUrlResolved);
+        proofUrlResolved = publicUrlData.publicUrl;
+      }
+    }
 
     return {
       id: item.id,
@@ -81,7 +110,7 @@ export default async function PerizinanPage() {
       status: item.status,
       approval_status: item.approval_status,
       notes: item.notes,
-      proof_url: item.proof_url,
+      proof_url: proofUrlResolved,
       points_awarded: item.points_awarded,
       rejection_reason: item.rejection_reason,
       created_at: item.created_at,

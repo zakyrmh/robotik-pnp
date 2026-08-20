@@ -16,6 +16,9 @@ export interface ActivityItem {
   location: string | null;
   banner_url: string | null;
   target_audience: "caang" | "anggota";
+  checkin_open_at?: string | null;
+  checkin_close_at?: string | null;
+  late_tolerance_minutes?: number | null;
   created_at: string;
   updated_at: string;
   deleted_at: string | null;
@@ -124,7 +127,8 @@ export async function getActivities(
       .select(
         `
         id, title, description, start_date, end_date, location,
-        banner_url, target_audience, created_at, updated_at, deleted_at,
+        banner_url, target_audience, checkin_open_at, checkin_close_at, late_tolerance_minutes,
+        created_at, updated_at, deleted_at,
         creator:profiles!activities_created_by_fkey(full_name:id)
       `,
       )
@@ -149,6 +153,9 @@ export async function getActivities(
       location: row.location,
       banner_url: row.banner_url,
       target_audience: row.target_audience,
+      checkin_open_at: row.checkin_open_at,
+      checkin_close_at: row.checkin_close_at,
+      late_tolerance_minutes: row.late_tolerance_minutes,
       created_at: row.created_at,
       updated_at: row.updated_at,
       deleted_at: row.deleted_at,
@@ -517,6 +524,7 @@ export async function softDeleteActivity(
     revalidatePath("/kegiatan/sampah");
     revalidatePath("/kegiatan-absensi-caang");
     revalidatePath("/kegiatan-absensi-caang/trash");
+    revalidatePath("/dashboard");
     return {
       success: true,
       message: "Kegiatan berhasil dipindahkan ke tempat sampah.",
@@ -582,6 +590,7 @@ export async function restoreActivity(
     revalidatePath("/kegiatan/sampah");
     revalidatePath("/kegiatan-absensi-caang");
     revalidatePath("/kegiatan-absensi-caang/trash");
+    revalidatePath("/dashboard");
     return { success: true, message: "Kegiatan berhasil dipulihkan." };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -656,6 +665,7 @@ export async function hardDeleteActivity(
     revalidatePath("/kegiatan/sampah");
     revalidatePath("/kegiatan-absensi-caang");
     revalidatePath("/kegiatan-absensi-caang/trash");
+    revalidatePath("/dashboard");
     return {
       success: true,
       message: "Kegiatan berhasil dihapus secara permanen.",

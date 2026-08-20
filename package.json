@@ -1,6 +1,6 @@
 {
   "name": "sistem-informasi-manajemen-ukm-robotik-pnp",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -17,6 +17,7 @@
     "gen:types": "supabase gen types typescript --project-id qtblwlzbxfopcvyvplfh > types/database.types.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1113.0",
     "@hugeicons/core-free-icons": "^4.1.1",
     "@hugeicons/react": "^1.1.6",
     "@marsidev/react-turnstile": "^1.5.3",
@@ -68,7 +69,7 @@
     "lint-staged": "^17.0.2",
     "prettier": "^3.8.4",
     "standard-version": "^9.5.0",
-    "supabase": "^2.107.0",
+    "supabase": "^2.115.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.6"

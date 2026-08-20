@@ -89,6 +89,7 @@ export async function createKomdisActivity(
   if (error) throw new Error(`Gagal membuat kegiatan: ${error.message}`);
 
   revalidatePath("/kegiatan");
+  revalidatePath("/dashboard");
   return { success: true, data };
 }
 
@@ -122,6 +123,7 @@ export async function updateKomdisActivity(
 
   revalidatePath("/kegiatan");
   revalidatePath(`/kegiatan/${validated.activityId}`);
+  revalidatePath("/dashboard");
   return { success: true, data };
 }
 
@@ -146,6 +148,8 @@ export async function softDeleteKomdisActivity(activityId: string) {
     );
 
   revalidatePath("/kegiatan");
+  revalidatePath("/kegiatan/sampah");
+  revalidatePath("/dashboard");
   return { success: true };
 }
 
@@ -168,6 +172,7 @@ export async function restoreKomdisActivity(activityId: string) {
 
   revalidatePath("/kegiatan");
   revalidatePath("/kegiatan/sampah");
+  revalidatePath("/dashboard");
   return { success: true };
 }
 
@@ -193,6 +198,7 @@ export async function deleteKomdisActivity(activityId: string) {
 
   revalidatePath("/kegiatan");
   revalidatePath("/kegiatan/sampah");
+  revalidatePath("/dashboard");
   return { success: true };
 }
 
@@ -385,16 +391,46 @@ export async function batchMarkAlfa(activityId: string) {
     : null;
 
   // 2. Ambil daftar anggota aktif yang belum ada record di attendances
+  let members: Array<{ profile_id: string }> = [];
+
   const { data: unrecordedMembers, error: fetchError } = await supabase.rpc(
     "get_unrecorded_activity_members",
     { p_activity_id: activityId },
   );
 
   if (fetchError) {
-    throw new Error(`Gagal mengambil data peserta: ${fetchError.message}`);
-  }
+    // Fallback jika RPC belum ter-deploy di Supabase Cloud: Query langsung via JS Client
+    const { data: existingAttendances } = await supabase
+      .from("attendances")
+      .select("profile_id")
+      .eq("activity_id", activityId);
 
-  const members = unrecordedMembers as Array<{ profile_id: string }> | null;
+    const existingProfileIds = new Set(
+      (existingAttendances || []).map((a) => a.profile_id),
+    );
+
+    const { data: activeProfiles, error: profError } = await supabase
+      .from("profiles")
+      .select("id")
+      .in("role", [
+        "super-admin",
+        "admin-komdis",
+        "admin-or",
+        "admin-kestari",
+        "admin-divisi",
+        "anggota",
+      ]);
+
+    if (profError) {
+      throw new Error(`Gagal mengambil data peserta: ${profError.message}`);
+    }
+
+    members = (activeProfiles || [])
+      .filter((p) => !existingProfileIds.has(p.id))
+      .map((p) => ({ profile_id: p.id }));
+  } else {
+    members = (unrecordedMembers as Array<{ profile_id: string }>) || [];
+  }
 
   if (members && members.length > 0) {
     const memberIds = members.map((m) => m.profile_id);
@@ -648,31 +684,35 @@ export async function getKomdisMemberAttendanceSummary(): Promise<{
     throw new Error(`Gagal memuat kegiatan komdis: ${actError.message}`);
   }
 
-  // 2. Ambil data anggota aktif (anggota dan role admin) beserta informasi profil/registrasi
-  const { data: registrationsData, error: regError } = await supabaseAdmin
-    .from("registrations")
+  // 2. Ambil data anggota aktif (anggota dan role admin) dari profiles
+  const { data: profilesData, error: profError } = await supabaseAdmin
+    .from("profiles")
     .select(
       `
+      id,
+      email,
       full_name,
-      photo_url,
+      nim,
+      role,
+      avatar_url,
+      is_onboarded,
+      is_on_internship,
+      internship_start_date,
+      internship_end_date,
       deleted_at,
-      study_programs (
-        name,
-        degree,
-        majors ( name )
-      ),
-      profiles!inner (
-        id,
-        nim,
-        role,
-        is_onboarded,
-        is_on_internship,
-        internship_start_date,
-        internship_end_date
+      registrations (
+        full_name,
+        photo_url,
+        deleted_at,
+        study_programs (
+          name,
+          degree,
+          majors ( name )
+        )
       )
     `,
     )
-    .in("profiles.role", [
+    .in("role", [
       "anggota",
       "admin-komdis",
       "admin-or",
@@ -683,8 +723,8 @@ export async function getKomdisMemberAttendanceSummary(): Promise<{
     .is("deleted_at", null)
     .order("full_name", { ascending: true });
 
-  if (regError) {
-    throw new Error(`Gagal memuat data anggota: ${regError.message}`);
+  if (profError) {
+    throw new Error(`Gagal memuat data anggota: ${profError.message}`);
   }
 
   const activityIds = (activities ?? []).map((a) => a.id);
@@ -725,52 +765,59 @@ export async function getKomdisMemberAttendanceSummary(): Promise<{
     };
   }
 
-  type RawRegistration = {
+  type RawProfile = {
+    id: string;
+    email: string;
     full_name: string | null;
-    photo_url: string | null;
+    nim: string | null;
+    role: string;
+    avatar_url: string | null;
+    is_onboarded: boolean;
+    is_on_internship?: boolean;
+    internship_start_date?: string | null;
+    internship_end_date?: string | null;
     deleted_at: string | null;
-    study_programs: {
-      name: string;
-      degree: string;
-      majors: { name: string } | { name: string }[] | null;
-    } | null;
-    profiles:
+    registrations:
       | {
-          id: string;
-          nim: string | null;
-          role: string;
-          is_onboarded: boolean;
-          is_on_internship: boolean;
-          internship_start_date: string | null;
-          internship_end_date: string | null;
+          full_name: string | null;
+          photo_url: string | null;
+          deleted_at: string | null;
+          study_programs: {
+            name: string;
+            degree: string;
+            majors: { name: string } | { name: string }[] | null;
+          } | null;
         }
       | {
-          id: string;
-          nim: string | null;
-          role: string;
-          is_onboarded: boolean;
-          is_on_internship: boolean;
-          internship_start_date: string | null;
-          internship_end_date: string | null;
+          full_name: string | null;
+          photo_url: string | null;
+          deleted_at: string | null;
+          study_programs: {
+            name: string;
+            degree: string;
+            majors: { name: string } | { name: string }[] | null;
+          } | null;
         }[]
       | null;
   };
 
   const members: KomdisMemberAttendanceItem[] = (
-    (registrationsData as unknown as RawRegistration[]) ?? []
-  ).map((reg) => {
-    const profile = Array.isArray(reg.profiles)
-      ? reg.profiles[0]
-      : reg.profiles;
-    const sp = Array.isArray(reg.study_programs)
-      ? reg.study_programs[0]
-      : reg.study_programs;
+    (profilesData as unknown as RawProfile[]) ?? []
+  ).map((prof) => {
+    const reg = Array.isArray(prof.registrations)
+      ? prof.registrations[0]
+      : prof.registrations;
+    const sp = reg?.study_programs
+      ? Array.isArray(reg.study_programs)
+        ? reg.study_programs[0]
+        : reg.study_programs
+      : null;
     const major = sp?.majors
       ? Array.isArray(sp.majors)
         ? sp.majors[0]
         : sp.majors
       : null;
-    const profileId = profile?.id ?? "";
+    const profileId = prof.id;
 
     const userAttendances: Record<
       string,
@@ -801,15 +848,15 @@ export async function getKomdisMemberAttendanceSummary(): Promise<{
 
     return {
       profileId,
-      fullName: reg.full_name || "—",
-      nim: profile?.nim || "—",
-      photoUrl: reg.photo_url || null,
-      role: profile?.role || "anggota",
+      fullName: prof.full_name || reg?.full_name || "—",
+      nim: prof.nim || "—",
+      photoUrl: prof.avatar_url || reg?.photo_url || null,
+      role: prof.role || "anggota",
       studyProgramName: sp ? `${sp.degree} ${sp.name}` : "—",
       majorName: major?.name || "—",
-      isOnInternship: profile?.is_on_internship ?? false,
-      internshipStartDate: profile?.internship_start_date ?? null,
-      internshipEndDate: profile?.internship_end_date ?? null,
+      isOnInternship: prof.is_on_internship ?? false,
+      internshipStartDate: prof.internship_start_date ?? null,
+      internshipEndDate: prof.internship_end_date ?? null,
       attendances: userAttendances,
       totals,
       totalPoints,
@@ -990,28 +1037,32 @@ export async function getActivityAttendanceDetail(
     throw new Error("Kegiatan tidak ditemukan atau telah dihapus.");
   }
 
-  // 2. Ambil seluruh anggota aktif (role admin & anggota)
-  const { data: registrationsData, error: regError } = await supabaseAdmin
-    .from("registrations")
+  // 2. Ambil seluruh anggota aktif (role admin & anggota) dari profiles
+  const { data: profilesData, error: profError } = await supabaseAdmin
+    .from("profiles")
     .select(
       `
+      id,
+      email,
       full_name,
-      photo_url,
+      nim,
+      role,
+      avatar_url,
+      is_onboarded,
       deleted_at,
-      study_programs (
-        name,
-        degree,
-        majors ( name )
-      ),
-      profiles!inner (
-        id,
-        nim,
-        role,
-        is_onboarded
+      registrations (
+        full_name,
+        photo_url,
+        deleted_at,
+        study_programs (
+          name,
+          degree,
+          majors ( name )
+        )
       )
     `,
     )
-    .in("profiles.role", [
+    .in("role", [
       "super-admin",
       "admin-komdis",
       "admin-or",
@@ -1022,8 +1073,8 @@ export async function getActivityAttendanceDetail(
     .is("deleted_at", null)
     .order("full_name", { ascending: true });
 
-  if (regError) {
-    throw new Error(`Gagal memuat daftar anggota: ${regError.message}`);
+  if (profError) {
+    throw new Error(`Gagal memuat daftar anggota: ${profError.message}`);
   }
 
   // 3. Ambil data presensi kegiatan ini
@@ -1059,22 +1110,35 @@ export async function getActivityAttendanceDetail(
     };
   }
 
-  type RawRegistration = {
+  type RawProfile = {
+    id: string;
+    email: string;
     full_name: string | null;
-    photo_url: string | null;
+    nim: string | null;
+    role: string;
+    avatar_url: string | null;
+    is_onboarded: boolean;
     deleted_at: string | null;
-    study_programs: {
-      name: string;
-      degree: string;
-      majors: { name: string } | { name: string }[] | null;
-    } | null;
-    profiles:
-      | { id: string; nim: string | null; role: string; is_onboarded: boolean }
+    registrations:
       | {
-          id: string;
-          nim: string | null;
-          role: string;
-          is_onboarded: boolean;
+          full_name: string | null;
+          photo_url: string | null;
+          deleted_at: string | null;
+          study_programs: {
+            name: string;
+            degree: string;
+            majors: { name: string } | { name: string }[] | null;
+          } | null;
+        }
+      | {
+          full_name: string | null;
+          photo_url: string | null;
+          deleted_at: string | null;
+          study_programs: {
+            name: string;
+            degree: string;
+            majors: { name: string } | { name: string }[] | null;
+          } | null;
         }[]
       | null;
   };
@@ -1090,20 +1154,22 @@ export async function getActivityAttendanceDetail(
   let totalPenaltyPoints = 0;
 
   const members: ActivityAttendanceMemberDetail[] = (
-    (registrationsData as unknown as RawRegistration[]) ?? []
-  ).map((reg) => {
-    const profile = Array.isArray(reg.profiles)
-      ? reg.profiles[0]
-      : reg.profiles;
-    const sp = Array.isArray(reg.study_programs)
-      ? reg.study_programs[0]
-      : reg.study_programs;
+    (profilesData as unknown as RawProfile[]) ?? []
+  ).map((prof) => {
+    const reg = Array.isArray(prof.registrations)
+      ? prof.registrations[0]
+      : prof.registrations;
+    const sp = reg?.study_programs
+      ? Array.isArray(reg.study_programs)
+        ? reg.study_programs[0]
+        : reg.study_programs
+      : null;
     const major = sp?.majors
       ? Array.isArray(sp.majors)
         ? sp.majors[0]
         : sp.majors
       : null;
-    const profileId = profile?.id ?? "";
+    const profileId = prof.id;
 
     const att = attendanceMap[profileId];
     const status = (att?.status ??
@@ -1117,10 +1183,10 @@ export async function getActivityAttendanceDetail(
 
     return {
       profileId,
-      fullName: reg.full_name || "—",
-      nim: profile?.nim || "—",
-      photoUrl: reg.photo_url || null,
-      role: profile?.role || "anggota",
+      fullName: prof.full_name || reg?.full_name || "—",
+      nim: prof.nim || "—",
+      photoUrl: prof.avatar_url || reg?.photo_url || null,
+      role: prof.role || "anggota",
       studyProgramName: sp ? `${sp.degree} ${sp.name}` : "—",
       majorName: major?.name || "—",
       status,

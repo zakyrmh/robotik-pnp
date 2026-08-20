@@ -18,6 +18,8 @@ interface ActivityInfo {
   target_audience: "caang" | "anggota";
   start_date: string;
   end_date: string;
+  checkin_open_at?: string | null;
+  checkin_close_at?: string | null;
 }
 
 interface ProfileInfo {
@@ -63,8 +65,11 @@ export function AbsensiKegiatanClient({
             .single(),
           supabase
             .from("activities")
-            .select("id, title, target_audience, start_date, end_date")
+            .select(
+              "id, title, target_audience, start_date, end_date, checkin_open_at, checkin_close_at",
+            )
             .eq("id", activityId)
+            .is("deleted_at", null)
             .single(),
         ]);
 
@@ -165,6 +170,8 @@ export function AbsensiKegiatanClient({
             activityTitle={activity.title}
             startDate={activity.start_date}
             endDate={activity.end_date}
+            checkinOpenAt={activity.checkin_open_at}
+            checkinCloseAt={activity.checkin_close_at}
             profileId={profile.id}
             profileName={profile.full_name || "Admin Komdis"}
             nim={profile.nim || "-"}
@@ -176,6 +183,8 @@ export function AbsensiKegiatanClient({
           activityTitle={activity.title}
           startDate={activity.start_date}
           endDate={activity.end_date}
+          checkinOpenAt={activity.checkin_open_at}
+          checkinCloseAt={activity.checkin_close_at}
           profileId={profile.id}
           profileName={profile.full_name || "Anggota"}
           nim={profile.nim || "-"}

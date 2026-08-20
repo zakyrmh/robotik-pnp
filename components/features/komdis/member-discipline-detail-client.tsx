@@ -118,7 +118,7 @@ export function MemberDisciplineDetailClient({
             </Link>
           </Button>
 
-          <span className="font-mono text-[10px] sm:text-[11px] font-semibold text-[#1e3a8a] dark:text-blue-400 uppercase tracking-widest">
+          <span className="font-mono text-[10px] sm:text-micro font-semibold text-[#1e3a8a] dark:text-blue-400 uppercase tracking-widest">
             DETAIL DISIPLIN & SANKSI ANGGOTA
           </span>
         </div>
@@ -165,13 +165,13 @@ export function MemberDisciplineDetailClient({
 
             <div className="space-y-1.5 min-w-0 flex-1 overflow-hidden">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="font-mono text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider block truncate">
+                <span className="font-mono text-micro sm:text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider block truncate">
                   NIM: {member.nim || "—"} &bull; ROLE:{" "}
                   {member.role.toUpperCase()}
                 </span>
               </div>
 
-              <h1 className="text-lg sm:text-2xl font-display font-bold uppercase tracking-tight text-[#0a192f] dark:text-slate-100 break-words leading-snug">
+              <h1 className="text-lg sm:text-2xl font-display font-bold uppercase tracking-tight text-[#0a192f] dark:text-slate-100 wrap-break-word leading-snug">
                 {member.full_name || "Anggota UKM"}
               </h1>
 
@@ -218,7 +218,7 @@ export function MemberDisciplineDetailClient({
                   type="button"
                   size="sm"
                   onClick={() => setIsGoroOpen(true)}
-                  className="font-mono text-[11px] uppercase tracking-wider h-9 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white justify-center whitespace-nowrap"
+                  className="font-mono text-micro uppercase tracking-wider h-9 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white justify-center whitespace-nowrap"
                 >
                   <HugeiconsIcon
                     icon={RecycleIcon}
@@ -232,7 +232,7 @@ export function MemberDisciplineDetailClient({
                   type="button"
                   size="sm"
                   onClick={() => setIsSpOpen(true)}
-                  className="font-mono text-[11px] uppercase tracking-wider h-9 px-3 rounded-lg bg-red-600 hover:bg-red-700 text-white justify-center whitespace-nowrap"
+                  className="font-mono text-micro uppercase tracking-wider h-9 px-3 rounded-lg bg-red-600 hover:bg-red-700 text-white justify-center whitespace-nowrap"
                 >
                   <HugeiconsIcon
                     icon={Audit01Icon}
@@ -248,7 +248,7 @@ export function MemberDisciplineDetailClient({
                 size="sm"
                 variant="outline"
                 onClick={() => setIsInternshipModalOpen(true)}
-                className="font-mono text-[11px] uppercase tracking-wider h-9 w-full rounded-lg border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/50 justify-center whitespace-nowrap"
+                className="font-mono text-micro uppercase tracking-wider h-9 w-full rounded-lg border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-purple-50 dark:hover:bg-purple-950/50 justify-center whitespace-nowrap"
               >
                 <HugeiconsIcon
                   icon={Briefcase01Icon}
@@ -381,16 +381,16 @@ export function MemberDisciplineDetailClient({
                     <Table>
                       <TableHeader className="bg-slate-50 dark:bg-slate-800/40 border-b border-slate-200 dark:border-slate-800">
                         <TableRow>
-                          <TableHead className="font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 py-3 px-4">
+                          <TableHead className="font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 py-3 px-4">
                             TANGGAL
                           </TableHead>
-                          <TableHead className="font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 py-3 px-4">
+                          <TableHead className="font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 py-3 px-4">
                             KEGIATAN
                           </TableHead>
-                          <TableHead className="text-center font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 py-3 px-4">
+                          <TableHead className="text-center font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 py-3 px-4">
                             STATUS PRESENSI
                           </TableHead>
-                          <TableHead className="text-center font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 py-3 px-4">
+                          <TableHead className="text-center font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 py-3 px-4">
                             POIN SANKSI
                           </TableHead>
                         </TableRow>
@@ -480,16 +480,16 @@ export function MemberDisciplineDetailClient({
                     <Table>
                       <TableHeader className="bg-slate-50 dark:bg-slate-800/40 border-b border-slate-200 dark:border-slate-800">
                         <TableRow>
-                          <TableHead className="font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 py-3 px-4">
+                          <TableHead className="font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 py-3 px-4">
                             TANGGAL
                           </TableHead>
-                          <TableHead className="font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 py-3 px-4">
+                          <TableHead className="font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 py-3 px-4">
                             KATEGORI PEMUTIHAN
                           </TableHead>
-                          <TableHead className="font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 py-3 px-4">
+                          <TableHead className="font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 py-3 px-4">
                             DESKRIPSI CATATAN
                           </TableHead>
-                          <TableHead className="text-center font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 py-3 px-4">
+                          <TableHead className="text-center font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 py-3 px-4">
                             NILAI PEMUTIHAN
                           </TableHead>
                         </TableRow>
@@ -570,19 +570,19 @@ export function MemberDisciplineDetailClient({
                     <Table>
                       <TableHeader className="bg-slate-50 dark:bg-slate-800/40 border-b border-slate-200 dark:border-slate-800">
                         <TableRow>
-                          <TableHead className="font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 py-3 px-4">
+                          <TableHead className="font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 py-3 px-4">
                             TANGGAL DITERBITKAN
                           </TableHead>
-                          <TableHead className="font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 py-3 px-4">
+                          <TableHead className="font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 py-3 px-4">
                             TINGKAT SP
                           </TableHead>
-                          <TableHead className="text-center font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 py-3 px-4">
+                          <TableHead className="text-center font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 py-3 px-4">
                             POIN SAAT SP DITERBITKAN
                           </TableHead>
-                          <TableHead className="font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 py-3 px-4">
+                          <TableHead className="font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 py-3 px-4">
                             CATATAN KOMDIS
                           </TableHead>
-                          <TableHead className="text-center font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 py-3 px-4">
+                          <TableHead className="text-center font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 py-3 px-4">
                             STATUS
                           </TableHead>
                         </TableRow>

@@ -47,6 +47,7 @@ data*.sql
 sentry-wizard-installation-error-*.log
 
 # ===== AI agent tools (local config) =====
+/.agents/
 /.claude/
 /.hermes/
 /.impeccable/

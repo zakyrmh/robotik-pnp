@@ -1478,6 +1478,12 @@ export type Database = {
         Args: { v_current_nim: string; v_name: string };
         Returns: string;
       };
+      get_unrecorded_activity_members: {
+        Args: { p_activity_id: string };
+        Returns: {
+          profile_id: string;
+        }[];
+      };
       promote_legacy_member_to_anggota: {
         Args: { input_nim: string; user_id: string };
         Returns: boolean;

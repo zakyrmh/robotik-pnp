@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-08-20
+
+### Added
+
+- **Instant Skeleton Loading Navigasi Sidebar (`app/(private)/loading.tsx` & `app/(private)/kegiatan/loading.tsx`)**:
+  - Menambahkan Skeleton UI responsif yang langsung dirender secara seketika saat pengguna mengklik menu sidebar (mencegah UI terasa beku/freeze saat server component melakukan fetching data).
+  - Penutupan otomatis drawer mobile sidebar (`SheetContent`) seketika saat menu navigasi diklik (`components/shared/sidebar.tsx`).
+- **Dokumentasi Terpadu Root `README.md`**:
+  - Menambahkan file `README.md` lengkap di root proyek yang mencakup deskripsi sistem, panduan instalasi local dev, variabel lingkungan (`.env.local`), struktur repositori, dan matriks RBAC.
+- **Pembaruan Peranan Pengguna RBAC (7 Roles)**:
+  - Menambahkan rincian peranan `admin-kestari` (pengelola piket kesekretariatan & workshop) dan `admin-divisi` (pengelola magang divisi caang).
+  - Mengklarifikasi cakupan modul `admin-komdis` (fokus kedisiplinan, perizinan, dan poin sanksi, tidak mengurus piket workshop).
+- **Integrasi Storage Cloudflare R2 untuk Dokumen Perizinan**:
+  - Menambahkan modul koneksi S3-compatible Cloudflare R2 (`lib/storage/r2.ts`) untuk pengunggahan file dokumen bukti surat izin / sakit ke bucket `ukm-robotik-pnp`.
+  - Integrasi fitur client-side image compression & konversi otomatis ke format **WebP** (`lib/utils/image-compressor.ts`) sebelum pengiriman form perizinan (`components/features/komdis/anggota-qr-view.tsx`).
+  - Pembuatan API Proxy Route internal (`app/api/r2/[...key]/route.ts`) untuk menyajikan foto bukti R2 secara aman dan bebas dari pemblokiran ISP / Connection Time Out pada domain `*.r2.dev`.
+- **Panduan Dokumentasi Komdis Kedisiplinan (`docs/PANDUAN_KOMDIS_KEDISIPLINAN.md`)**: Panduan operasional komprehensif bagi Admin Komdis untuk pengelolaan kegiatan, presensi QR / manual, verifikasi perizinan, alfa massal, hingga sanksi & pemutihan poin.
+- **Halaman Detail Kegiatan (`/kegiatan/[id]`)**: Menambahkan rute halaman detail kegiatan responsif untuk menangani navigasi notifikasi dan link kegiatan, mencegah error 404 ketika pengguna mengklik notifikasi kegiatan.
+- **Halaman 404 Kustom (`app/not-found.tsx`)**: Menambahkan halaman error 404 dengan desain Minimalist Soft yang responsif dan ramah seluler.
+
+### Changed
+
+- **UI Drawer Pratinjau Bukti Perizinan (`components/features/komdis/leave-approval-dashboard.tsx`)**:
+  - Mengubah modal pop-up pratinjau foto bukti perizinan menjadi `Drawer` responsif mobile-first selaras dengan panduan `DESIGN.md`.
+  - Menambahkan **Loading Skeleton** dan UI fallback _error handling_ jika gambar mengalami kendala jaringan/timeout.
+- **Restriksi Jendela Waktu Presensi (`checkin_open_at` s/d `checkin_close_at`)**:
+  - Memperbarui antarmuka `ActivityItem` (`lib/actions/activities.ts`) dan query `getActivities` untuk menyertakan `checkin_open_at`, `checkin_close_at`, dan `late_tolerance_minutes`.
+  - Mengubah fungsi `isAttendanceWindowActive` pada `kegiatan-client.tsx` dan `app/(private)/kegiatan/[id]/page.tsx` agar tombol **Absen** hanya dapat diakses dalam rentang waktu dari `checkin_open_at` hingga `checkin_close_at`.
+- **Modul QR Code Presensi Real-Time Ramah Supabase Free Plan**:
+  - Mengimplementasikan Smart Short Polling berbasis database Supabase biasa pada `AnggotaQrView` (`components/features/komdis/anggota-qr-view.tsx`).
+  - Mengoptimalkan kueri dengan jeda adaptif (interval 4 detik, maksimal 30x percobaan / 2 menit per sesi aktif).
+  - Menghentikan pemanggilan API secara otomatis saat peramban/tab disembunyikan (`visibilityState === 'hidden'`) atau setelah status presensi terdeteksi (`hadir`/`telat`/`izin`/`sakit`).
+  - Menambahkan _listener_ `visibilitychange` untuk mengecek ulang status presensi secara instan saat tab peramban diaktifkan kembali oleh pengguna.
+
+### Fixed
+
+- **Resolusi Query RBAC/RLS Halaman Perizinan Komdis (`app/(private)/perizinan/page.tsx`)**:
+  - Menggunakan `createAdminClient()` untuk membaca data antrean perizinan Komdis tanpa terhalang RLS policy `target_audience`.
+  - Menentukan spesifikasi foreign key eksplisit `profiles:profile_id!inner` untuk menyelesaikan error ambiguitas relasi PostgREST (_"more than one relationship was found for 'attendances' and 'profiles'"_).
+  - Memperbaiki resolver URL proxy `/api/r2/[key]` agar penayangan foto bukti perizinan di browser anggota dan admin berjalan 100% lancar.
+- **Soft Delete Filtering pada Kegiatan**: Memastikan seluruh kueri kegiatan di server (`getActivities`) dan client menggunakan filter `.is("deleted_at", null)` agar kegiatan yang masuk ke tempat sampah tidak tampil di halaman kegiatan role mana pun (`super-admin`, `admin-komdis`, `admin-or`, `anggota`, `caang`).
+- **Form Pembuatan Kegiatan Komdis (`create-komdis-activity-dialog.tsx`)**:
+  - Memperbaiki perataan UI teks label kegiatan formal Komdis agar sejajar rata kiri dengan petunjuk target audience.
+  - Memperbaiki fungsionalitas pemilih tanggal/waktu (popover kalender) dan input teks manual pada input datetime agar dapat digunakan secara fleksibel.
+
 ## [0.3.0] - 2026-08-15
 
 ### Added
@@ -99,7 +144,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Setup Husky pre-commit hook dan Commitlint.
 - Setup Next.js dengan pnpm.
 
-[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/zakyrmh/robotik-pnp/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/zakyrmh/robotik-pnp/compare/v0.2.0...v0.2.1
