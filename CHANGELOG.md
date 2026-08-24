@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- **Peningkatan Dashboard Super Admin Terpadu & Real-Time Telemetry (`app/(private)/dashboard/page.tsx` & `components/features/dashboard/dashboard-client.tsx`)**:
+  - Menyajikan telemetri operasional cepat: Total Pengguna Aktif & Terarsip, Dispensasi Pending Komdis, Tugas Caang Menunggu Penilaian OR, dan Sanksi SP Aktif.
+  - Menampilkan panel status kepatuhan keamanan dan immutability trigger UU PDP No. 27/2022.
+  - Menambahkan pusat kendali & pintasan cepat (Quick Access Hub) ke 6 modul utama (Akun, Struktur, Audit Log, Kegiatan, Disiplin, Piket).
+  - Menampilkan live feed 5 log mutasi audit terbaru lengkap dengan nama aktor, role, tipe aksi, target, timestamp, dan IP address.
+  - Menampilkan agenda kegiatan organisasi terdekat lengkap dengan waktu dan lokasi.
+
 ## [0.5.0] - 2026-08-24
 
 ### Added

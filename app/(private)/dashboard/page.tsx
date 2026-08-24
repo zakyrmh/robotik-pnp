@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import {
   DashboardClient,
   DashboardData,
+  SuperAdminDashboardStats,
 } from "@/components/features/dashboard/dashboard-client";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -97,6 +98,8 @@ export default async function DashboardPage() {
       activeSpLevel,
     },
   };
+
+  const nowIso = new Date().toISOString();
 
   if (profile.role === "caang") {
     // 1. Group info
@@ -199,7 +202,6 @@ export default async function DashboardPage() {
     });
 
     // 4. Upcoming Activities (limit 3)
-    const nowIso = new Date().toISOString();
     const { data: upcomingActs } = await supabase
       .from("activities")
       .select("id, title, start_date, location")
@@ -324,7 +326,6 @@ export default async function DashboardPage() {
       .eq("reported_by", user.id);
 
     // 7. Upcoming Activities for active members (limit 3)
-    const nowIso = new Date().toISOString();
     const { data: upcomingActs } = await supabase
       .from("activities")
       .select("id, title, start_date, location")
@@ -344,39 +345,132 @@ export default async function DashboardPage() {
       upcomingActivities: upcomingActs || [],
     };
   } else if (profile.role === "super-admin") {
-    // 1. Users list by role
-    const { data: roleCounts } = await supabase.from("profiles").select("role");
+    // Admin client bypass to ensure accurate system-wide aggregation
+    let adminDb = supabase;
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      try {
+        adminDb = createAdminClient();
+      } catch {
+        adminDb = supabase;
+      }
+    }
 
-    const superAdminStats = {
+    // Parallel fetch for high-speed Super Admin telemetry
+    const [
+      profilesRes,
+      upcomingActivitiesRes,
+      pendingLeavesRes,
+      pendingSubmissionsRes,
+      activeSanctionsRes,
+      piketLogsRes,
+      attendancesRes,
+      auditLogsRes,
+      activitiesCountRes,
+    ] = await Promise.all([
+      adminDb.from("profiles").select("role, deleted_at"),
+      adminDb
+        .from("activities")
+        .select("id, title, start_date, location")
+        .is("deleted_at", null)
+        .gte("end_date", nowIso)
+        .order("start_date", { ascending: true })
+        .limit(4),
+      adminDb
+        .from("attendances")
+        .select("id", { count: "exact", head: true })
+        .in("status", ["sakit", "izin"])
+        .is("verified_by", null),
+      adminDb
+        .from("task_submissions")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "diperiksa"),
+      adminDb
+        .from("sanctions")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "active"),
+      adminDb.from("piket_logs").select("id", { count: "exact", head: true }),
+      adminDb.from("attendances").select("id", { count: "exact", head: true }),
+      adminDb
+        .from("system_audit_logs")
+        .select(
+          `
+          id,
+          action_type,
+          details,
+          ip_address,
+          created_at,
+          actor:profiles!system_audit_logs_actor_id_fkey(full_name, role),
+          target_user:profiles!system_audit_logs_target_user_id_fkey(full_name)
+        `,
+        )
+        .order("created_at", { ascending: false })
+        .limit(5),
+      adminDb
+        .from("activities")
+        .select("id", { count: "exact", head: true })
+        .is("deleted_at", null),
+    ]);
+
+    const userBreakdown = {
       superAdmin: 0,
       adminOr: 0,
       adminKomdis: 0,
       anggota: 0,
       caang: 0,
-      totalPiketLogs: 0,
-      totalAttendances: 0,
+      totalActive: 0,
+      totalArchived: 0,
     };
 
-    roleCounts?.forEach((p) => {
-      if (p.role === "super-admin") superAdminStats.superAdmin++;
-      else if (p.role === "admin-or") superAdminStats.adminOr++;
-      else if (p.role === "admin-komdis") superAdminStats.adminKomdis++;
-      else if (p.role === "anggota") superAdminStats.anggota++;
-      else if (p.role === "caang") superAdminStats.caang++;
+    (profilesRes.data || []).forEach((p) => {
+      if (p.deleted_at) {
+        userBreakdown.totalArchived++;
+      } else {
+        userBreakdown.totalActive++;
+      }
+
+      if (p.role === "super-admin") userBreakdown.superAdmin++;
+      else if (p.role === "admin-or") userBreakdown.adminOr++;
+      else if (p.role === "admin-komdis") userBreakdown.adminKomdis++;
+      else if (p.role === "anggota") userBreakdown.anggota++;
+      else if (p.role === "caang") userBreakdown.caang++;
     });
 
-    // 2. Piket logs
-    const { count: totalPiketLogs } = await supabase
-      .from("piket_logs")
-      .select("*", { count: "exact", head: true });
+    // Parse recent audit logs
+    const recentAuditLogs = (auditLogsRes.data || []).map((r) => {
+      const row = r as Record<string, unknown>;
+      const actor = (
+        Array.isArray(row.actor) ? row.actor[0] : row.actor
+      ) as Record<string, unknown> | null;
+      const target = (
+        Array.isArray(row.target_user) ? row.target_user[0] : row.target_user
+      ) as Record<string, unknown> | null;
 
-    // 3. Attendances count
-    const { count: totalAttendances } = await supabase
-      .from("attendances")
-      .select("*", { count: "exact", head: true });
+      return {
+        id: String(row.id),
+        actionType: String(row.action_type),
+        actorName: (actor?.full_name as string) || null,
+        actorRole: (actor?.role as string) || null,
+        targetUserName: (target?.full_name as string) || null,
+        details: (row.details as string) || null,
+        ipAddress: (row.ip_address as string) || null,
+        createdAt: String(row.created_at),
+      };
+    });
 
-    superAdminStats.totalPiketLogs = totalPiketLogs || 0;
-    superAdminStats.totalAttendances = totalAttendances || 0;
+    const superAdminStats: SuperAdminDashboardStats = {
+      userBreakdown,
+      operational: {
+        totalActivities: activitiesCountRes.count || 0,
+        upcomingActivitiesCount: upcomingActivitiesRes.data?.length || 0,
+        pendingLeavesCount: pendingLeavesRes.count || 0,
+        pendingSubmissionsCount: pendingSubmissionsRes.count || 0,
+        activeSanctionsCount: activeSanctionsRes.count || 0,
+        totalPiketLogs: piketLogsRes.count || 0,
+        totalAttendances: attendancesRes.count || 0,
+      },
+      upcomingActivities: upcomingActivitiesRes.data || [],
+      recentAuditLogs,
+    };
 
     dataPayload.superAdminStats = superAdminStats;
   }
