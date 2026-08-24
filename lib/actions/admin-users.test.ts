@@ -27,135 +27,144 @@ vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
 }));
 
-vi.mock("@/lib/supabase/server", () => ({
-  createClient: vi.fn(async () => ({
-    auth: {
-      getUser: vi.fn(async () => ({
-        data: { user: mockUser },
-        error: mockUser ? null : { message: "No session" },
-      })),
-    },
-    from: vi.fn((table: string) => {
-      if (table === "profiles") {
-        const queryChain: Record<string, unknown> = {
-          select: vi.fn(
-            (_cols?: string, opts?: { count?: string; head?: boolean }) => {
-              if (opts?.head) {
-                return {
-                  eq: vi.fn(() => ({
-                    is: vi.fn(async () => ({
-                      count: mockSuperAdminCount,
-                      error: null,
-                    })),
+vi.mock("@/lib/audit", () => ({
+  recordAuditLog: vi.fn(async () => {}),
+}));
+
+const createMockSupabase = () => ({
+  auth: {
+    getUser: vi.fn(async () => ({
+      data: { user: mockUser },
+      error: mockUser ? null : { message: "No session" },
+    })),
+  },
+  from: vi.fn((table: string) => {
+    if (table === "profiles") {
+      const queryChain: Record<string, unknown> = {
+        select: vi.fn(
+          (_cols?: string, opts?: { count?: string; head?: boolean }) => {
+            if (opts?.head) {
+              return {
+                eq: vi.fn(() => ({
+                  is: vi.fn(async () => ({
+                    count: mockSuperAdminCount,
+                    error: null,
                   })),
-                };
-              }
-              return queryChain;
-            },
-          ),
-          eq: vi.fn((_col: string, val: string) => ({
-            single: vi.fn(async () => {
-              if (val === SUPER_ADMIN_ID) {
-                return {
-                  data: {
-                    id: SUPER_ADMIN_ID,
-                    role: mockRole,
-                    full_name: "Super Admin User",
-                    nim: "11111",
-                    is_onboarded: true,
-                    deleted_at: null,
-                  },
-                  error: null,
-                };
-              }
+                })),
+              };
+            }
+            return queryChain;
+          },
+        ),
+        eq: vi.fn((_col: string, val: string) => ({
+          single: vi.fn(async () => {
+            if (val === SUPER_ADMIN_ID) {
               return {
                 data: {
-                  id: TARGET_USER_ID,
-                  role: mockTargetProfileRole,
-                  full_name: "Target Member User",
-                  nim: "22222",
+                  id: SUPER_ADMIN_ID,
+                  role: mockRole,
+                  full_name: "Super Admin User",
+                  nim: "11111",
                   is_onboarded: true,
                   deleted_at: null,
                 },
                 error: null,
               };
-            }),
-          })),
-          is: vi.fn(() => queryChain),
-          not: vi.fn(() => queryChain),
-          or: vi.fn(() => queryChain),
-          order: vi.fn(() => queryChain),
-          range: vi.fn(async () => ({
-            data: [
-              {
+            }
+            return {
+              data: {
                 id: TARGET_USER_ID,
-                email: "target@test.com",
+                role: mockTargetProfileRole,
                 full_name: "Target Member User",
                 nim: "22222",
-                role: "anggota",
                 is_onboarded: true,
-                avatar_url: null,
                 deleted_at: null,
-                created_at: new Date().toISOString(),
-                registrations: {
-                  phone_number: "081234567890",
-                  study_program_id: STUDY_PROG_ID,
-                  status: "verified",
-                  study_programs: { name: "Teknik Komputer" },
-                },
               },
-            ],
-            count: 1,
-            error: null,
-          })),
-          update: vi.fn(() => ({
-            eq: vi.fn(async () => ({ error: null })),
-          })),
-        };
-        return queryChain;
-      }
-
-      if (table === "registrations") {
-        return {
-          select: vi.fn(() => ({
-            eq: vi.fn(() => ({
-              maybeSingle: vi.fn(async () => ({
-                data: {
-                  phone_number: "081234567890",
-                  study_program_id: STUDY_PROG_ID,
-                },
-                error: null,
-              })),
-            })),
-          })),
-          update: vi.fn(() => ({
-            eq: vi.fn(async () => ({ error: null })),
-          })),
-        };
-      }
-
-      if (table === "system_audit_logs") {
-        return {
-          insert: vi.fn(async () => ({ error: null })),
-          select: vi.fn(() => ({
-            order: vi.fn(() => ({
-              range: vi.fn(async () => ({
-                data: [],
-                count: 0,
-                error: null,
-              })),
-            })),
-          })),
-        };
-      }
-
-      return {
-        select: vi.fn(() => ({
-          order: vi.fn(async () => ({ data: [], error: null })),
+              error: null,
+            };
+          }),
+        })),
+        is: vi.fn(() => queryChain),
+        not: vi.fn(() => queryChain),
+        or: vi.fn(() => queryChain),
+        order: vi.fn(() => queryChain),
+        range: vi.fn(async () => ({
+          data: [
+            {
+              id: TARGET_USER_ID,
+              email: "target@test.com",
+              full_name: "Target Member User",
+              nim: "22222",
+              role: "anggota",
+              is_onboarded: true,
+              avatar_url: null,
+              deleted_at: null,
+              created_at: new Date().toISOString(),
+              registrations: {
+                phone_number: "081234567890",
+                study_program_id: STUDY_PROG_ID,
+                status: "verified",
+                study_programs: { name: "Teknik Komputer" },
+              },
+            },
+          ],
+          count: 1,
+          error: null,
+        })),
+        update: vi.fn(() => ({
+          eq: vi.fn(async () => ({ error: null })),
         })),
       };
-    }),
-  })),
+      return queryChain;
+    }
+
+    if (table === "registrations") {
+      return {
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            maybeSingle: vi.fn(async () => ({
+              data: {
+                id: "reg-123",
+                phone_number: "081234567890",
+                study_program_id: STUDY_PROG_ID,
+              },
+              error: null,
+            })),
+          })),
+        })),
+        update: vi.fn(() => ({
+          eq: vi.fn(async () => ({ error: null })),
+        })),
+        insert: vi.fn(async () => ({ error: null })),
+      };
+    }
+
+    if (table === "system_audit_logs") {
+      return {
+        insert: vi.fn(async () => ({ error: null })),
+        select: vi.fn(() => ({
+          order: vi.fn(() => ({
+            range: vi.fn(async () => ({
+              data: [],
+              count: 0,
+              error: null,
+            })),
+          })),
+        })),
+      };
+    }
+
+    return {
+      select: vi.fn(() => ({
+        order: vi.fn(async () => ({ data: [], error: null })),
+      })),
+    };
+  }),
+});
+
+vi.mock("@/lib/supabase/server", () => ({
+  createClient: vi.fn(async () => createMockSupabase()),
+  createAdminClient: vi.fn(() => createMockSupabase()),
 }));
 
 describe("Admin User Management Server Actions", () => {

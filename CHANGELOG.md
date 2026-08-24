@@ -7,7 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.4.0] - 2026-08-20
+## [0.5.0] - 2026-08-24
+
+### Added
+
+- **Penguatan Sistem Audit Log Sistem (100% Immutable, Resilient, & Compliant UU PDP 27/2022)**:
+  - **Database Immutability Trigger (`supabase/migrations/20260824150000_audit_log_immutability_and_triggers.sql`)**: Menambahkan trigger PL/pgSQL `prevent_audit_log_tampering()` pada tabel `public.system_audit_logs` untuk mencegah segala bentuk `UPDATE` dan `DELETE` di level database engine.
+  - **Index Performa Database**: Menambahkan indeks komposit pada `actor_id`, `target_user_id`, `action_type`, dan `created_at DESC`.
+  - **Utilitas Audit Terpusat (`lib/audit.ts`)**: Modul audit logger terpusat dengan penangkapan alamat IP request (`x-forwarded-for`/`x-real-ip`) dan sanitasi penyamaran data pribadi PII (Nomor Telepon `0812-****-5678`, NIM `240104****`, Email `u***r@domain.com`, dan `[REDACTED_SECRET]`).
+  - **Integrasi Audit Lintas Modul**: Menghubungkan pencatatan audit log otomatis ke modul Manajemen Pengguna (`admin-users.ts`), Pengaturan Akun (`settings.ts`), Komisi Disiplin & Sanksi SP (`komdis.ts`), dan Struktur Organisasi (`structure.ts`).
+  - **UI Viewer Audit Log Modern (`components/admin/audit-log/audit-log-viewer.tsx` & `app/(private)/audit-log/page.tsx`)**: Menampilkan relasi nama aktor, role badge, nama target, badge IP address, dan inspeksi diff data JSON interaktif.
+- **Relokasi & Redesign Komponen Struktur Organisasi (`components/structure/structure-client.tsx`)**:
+  - Memindahkan komponen client dari `app/(private)/manajemen-struktur/StructureClient.tsx` ke direktori `components/structure/`.
+  - Desain ulang seluruh UI Manajemen Struktur sesuai `DESIGN.md` (Minimalist Soft Light, 70-20-10 color rule, touch target $\ge 44\text{px}$, scrollable tabs, dan adaptasi dark mode).
+- **Pembaruan Konfigurasi AI Engineering `AGENTS.md`**:
+  - Memperbarui sistem panduan AI native dengan stack Next.js 16.2.5, React 19.2.4, Tailwind CSS v4 `@theme`, Supabase SSR, Upstash, Turnstile, RBAC matrix, dan aturan anti-pattern.
+
+### Changed
+
+- **Redesign Halaman Manajemen Akun (`app/(private)/manajemen-akun/page.tsx` & `components/admin/users/`)**:
+  - Mengubah hero banner menjadi soft minimalist card berbingkai tipis (`border-border bg-card text-card-foreground`).
+  - Menyelaraskan seluruh toolbar pencarian, filter role/status, tabel pengguna, badge role pastel semantik, pagination, dan 4 modal dialog (Detail PII, Edit User, Soft Delete, Restore) dengan token `app/globals.css` dan Hugeicons.
+  - Menstandarisasi area sentuh tombol dan elemen interaktif minimal $44\text{px}$ (`min-h-[44px]`).
+
+### Fixed
+
+- **Perbaikan Update Program Studi & Kontak Pengguna pada Manajemen Akun (`lib/actions/admin-users.ts`)**:
+  - Menambahkan migrasi RLS `20260824140000_allow_admin_manage_registrations.sql` agar Super Admin dan Admin OR memiliki izin penuh mutasi (INSERT, UPDATE, DELETE) pada tabel `public.registrations`.
+  - Mengimplementasikan mekanisme _upsert / fallback insert_ otomatis di `updateUserIdentityAction` jika record registrasi pengguna target belum ada.
+  - Memperbaiki jalur revalidasi cache Next.js (`revalidatePath("/manajemen-akun")`) dan menambahkan `router.refresh()` pada modal dialog client untuk pembaruan data seketika.
 
 ### Added
 

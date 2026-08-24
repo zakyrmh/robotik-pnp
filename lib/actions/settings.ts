@@ -4,6 +4,7 @@ import "server-only";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { recordAuditLog } from "@/lib/audit";
 import { checkPasswordPwned } from "@/lib/password-security";
 import {
   updateProfileSchema,
@@ -427,12 +428,17 @@ export async function requestAccountDeletionAction(
     .eq("profile_id", user.id);
 
   // 4. Audit Log Entry (Immutable Audit Trail)
-  await supabase.from("system_audit_logs").insert({
-    actor_id: user.id,
-    target_user_id: user.id,
-    action_type: "ACCOUNT_SELF_DELETION",
-    details: `Pengguna mengajukan soft delete akun. Alasan: ${validation.data.deleteReason}`,
-    ip_address: clientIp,
+  await recordAuditLog({
+    actorId: user.id,
+    targetUserId: user.id,
+    actionType: "REQUEST_ACCOUNT_DELETION",
+    oldValue: { deleted_at: null },
+    newValue: {
+      deleted_at: nowStr,
+      delete_reason: validation.data.deleteReason,
+    },
+    details: `Pengguna mengajukan soft delete akun mandiri. Alasan: ${validation.data.deleteReason}`,
+    ipAddress: clientIp,
   });
 
   // 5. Sign out user

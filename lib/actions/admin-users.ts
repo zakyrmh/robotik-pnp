@@ -3,7 +3,8 @@
 import "server-only";
 
 import { revalidatePath } from "next/cache";
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { recordAuditLog } from "@/lib/audit";
 import {
   UpdateUserIdentitySchema,
   SoftDeleteUserSchema,
@@ -18,6 +19,7 @@ import {
   UserManagementItem,
   UserManagementQueryResult,
   SystemAuditLogQueryResult,
+  SystemAuditLogEntry,
 } from "@/lib/types/user-management";
 
 // ============================================================================
@@ -47,36 +49,17 @@ async function verifySuperAdminRole() {
     );
   }
 
-  return { supabase, currentUser, callerProfile };
-}
-
-// ============================================================================
-// HELPER FUNCTION: AUDIT LOG WRITER
-// ============================================================================
-
-async function logSystemAuditEntry(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  supabase: any,
-  actorId: string,
-  actionType: string,
-  targetUserId?: string | null,
-  oldValue?: Record<string, unknown> | null,
-  newValue?: Record<string, unknown> | null,
-  details?: string | null,
-) {
-  try {
-    await supabase.from("system_audit_logs").insert({
-      actor_id: actorId,
-      action_type: actionType,
-      target_user_id: targetUserId || null,
-      old_value: oldValue ? JSON.parse(JSON.stringify(oldValue)) : null,
-      new_value: newValue ? JSON.parse(JSON.stringify(newValue)) : null,
-      details: details || null,
-      created_at: new Date().toISOString(),
-    });
-  } catch (err) {
-    console.error("Gagal mencatat system audit log:", err);
+  // Get Admin DB client with service role bypass when available to ensure cross-user mutations succeed
+  let adminDb = supabase;
+  if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    try {
+      adminDb = createAdminClient();
+    } catch {
+      adminDb = supabase;
+    }
   }
+
+  return { supabase, adminDb, currentUser, callerProfile };
 }
 
 // ============================================================================
@@ -84,12 +67,12 @@ async function logSystemAuditEntry(
 // ============================================================================
 
 /**
- * 1. Memperbarui Identitas dan Peran (Role) Pengguna
+ * 1. Memperbarui Identitas, Program Studi, dan Peran (Role) Pengguna
  */
 export async function updateUserIdentityAction(
   rawInput: UpdateUserIdentityInput,
 ) {
-  const { supabase, currentUser } = await verifySuperAdminRole();
+  const { adminDb, currentUser } = await verifySuperAdminRole();
   const validated = UpdateUserIdentitySchema.parse(rawInput);
 
   // Guard A: Self-Demotion Guard
@@ -101,14 +84,14 @@ export async function updateUserIdentityAction(
 
   // Guard B: Last Super Admin Guard
   if (validated.role !== "super-admin") {
-    const { data: targetProfile } = await supabase
+    const { data: targetProfile } = await adminDb
       .from("profiles")
       .select("role, full_name, nim, is_onboarded")
       .eq("id", validated.userId)
       .single();
 
     if (targetProfile?.role === "super-admin") {
-      const { count } = await supabase
+      const { count } = await adminDb
         .from("profiles")
         .select("id", { count: "exact", head: true })
         .eq("role", "super-admin")
@@ -123,27 +106,29 @@ export async function updateUserIdentityAction(
   }
 
   // Ambil data profil & pendaftaran lama untuk catatan audit log
-  const { data: oldProfile } = await supabase
+  const { data: oldProfile } = await adminDb
     .from("profiles")
     .select("role, full_name, nim, is_onboarded")
     .eq("id", validated.userId)
     .single();
 
-  const { data: oldReg } = await supabase
+  const { data: oldReg } = await adminDb
     .from("registrations")
-    .select("phone_number, study_program_id")
+    .select("id, phone_number, study_program_id")
     .eq("profile_id", validated.userId)
     .maybeSingle();
 
+  const nowIso = new Date().toISOString();
+
   // Mutasi 1: Update tabel profiles
-  const { error: profileErr } = await supabase
+  const { error: profileErr } = await adminDb
     .from("profiles")
     .update({
       full_name: validated.fullName,
       nim: validated.nim || null,
       role: validated.role,
       is_onboarded: validated.isOnboarded,
-      updated_at: new Date().toISOString(),
+      updated_at: nowIso,
     })
     .eq("id", validated.userId);
 
@@ -151,30 +136,60 @@ export async function updateUserIdentityAction(
     throw new Error(`Gagal memperbarui profil pengguna: ${profileErr.message}`);
   }
 
-  // Mutasi 2: Update tabel registrations jika record pendaftaran ada
+  // Mutasi 2: Update atau Insert tabel registrations untuk Program Studi & Kontak
   if (oldReg) {
-    const { error: regErr } = await supabase
+    const { error: regErr } = await adminDb
       .from("registrations")
       .update({
         full_name: validated.fullName,
         phone_number: validated.phoneNumber || "",
         study_program_id: validated.studyProgramId || null,
-        updated_at: new Date().toISOString(),
+        updated_at: nowIso,
       })
       .eq("profile_id", validated.userId);
 
     if (regErr) {
-      console.warn("Gagal memperbarui tabel registrations:", regErr.message);
+      console.error("Gagal memperbarui tabel registrations:", regErr.message);
+      throw new Error(
+        `Gagal memperbarui data program studi/pendaftaran: ${regErr.message}`,
+      );
+    }
+  } else {
+    // Buat record pendaftaran baru jika belum ada di tabel registrations
+    const nickname = validated.fullName.trim().split(" ")[0] || "User";
+    const { error: insertErr } = await adminDb.from("registrations").insert({
+      profile_id: validated.userId,
+      full_name: validated.fullName,
+      phone_number: validated.phoneNumber || "",
+      study_program_id: validated.studyProgramId || null,
+      nickname,
+      gender: "L",
+      pob: "-",
+      dob: "2000-01-01",
+      entry_year: new Date().getFullYear(),
+      origin_address: "-",
+      domicile_address: "-",
+      status: "verified",
+      updated_at: nowIso,
+    });
+
+    if (insertErr) {
+      console.error(
+        "Gagal membuat record registrations baru:",
+        insertErr.message,
+      );
+      throw new Error(
+        `Gagal menyimpan data program studi pengguna: ${insertErr.message}`,
+      );
     }
   }
 
-  // Record Audit Log
-  await logSystemAuditEntry(
-    supabase,
-    currentUser.id,
-    "UPDATE_USER_IDENTITY",
-    validated.userId,
-    {
+  // Record Immutable Audit Log with automatic PII masking & IP capture
+  await recordAuditLog({
+    actorId: currentUser.id,
+    actionType: "UPDATE_USER_IDENTITY",
+    targetUserId: validated.userId,
+    oldValue: {
       role: oldProfile?.role,
       fullName: oldProfile?.full_name,
       nim: oldProfile?.nim,
@@ -182,7 +197,7 @@ export async function updateUserIdentityAction(
       phoneNumber: oldReg?.phone_number,
       studyProgramId: oldReg?.study_program_id,
     },
-    {
+    newValue: {
       role: validated.role,
       fullName: validated.fullName,
       nim: validated.nim,
@@ -190,10 +205,12 @@ export async function updateUserIdentityAction(
       phoneNumber: validated.phoneNumber,
       studyProgramId: validated.studyProgramId,
     },
-    `Pembaruan identitas & peran pengguna ${validated.fullName} (${validated.role})`,
-  );
+    details: `Pembaruan identitas & peran pengguna ${validated.fullName} (${validated.role})`,
+  });
 
+  revalidatePath("/manajemen-akun");
   revalidatePath("/admin/users");
+  revalidatePath("/audit-log");
   revalidatePath("/dashboard");
   return {
     success: true,
@@ -205,7 +222,7 @@ export async function updateUserIdentityAction(
  * 2. Soft-Delete (Pengarsipan / Nonaktifkan) Akun Pengguna
  */
 export async function softDeleteUserAction(rawInput: SoftDeleteUserInput) {
-  const { supabase, currentUser } = await verifySuperAdminRole();
+  const { adminDb, currentUser } = await verifySuperAdminRole();
   const validated = SoftDeleteUserSchema.parse(rawInput);
 
   // Guard A: Self-Delete Guard
@@ -214,14 +231,14 @@ export async function softDeleteUserAction(rawInput: SoftDeleteUserInput) {
   }
 
   // Guard B: Last Super Admin Guard
-  const { data: targetProfile } = await supabase
+  const { data: targetProfile } = await adminDb
     .from("profiles")
     .select("role, full_name, deleted_at")
     .eq("id", validated.userId)
     .single();
 
   if (targetProfile?.role === "super-admin") {
-    const { count } = await supabase
+    const { count } = await adminDb
       .from("profiles")
       .select("id", { count: "exact", head: true })
       .eq("role", "super-admin")
@@ -237,7 +254,7 @@ export async function softDeleteUserAction(rawInput: SoftDeleteUserInput) {
   const nowStr = new Date().toISOString();
 
   // Mutasi 1: Update Soft Delete pada profiles
-  const { error: profileErr } = await supabase
+  const { error: profileErr } = await adminDb
     .from("profiles")
     .update({
       deleted_at: nowStr,
@@ -251,7 +268,7 @@ export async function softDeleteUserAction(rawInput: SoftDeleteUserInput) {
   }
 
   // Mutasi 2: Update Soft Delete pada registrations
-  const { error: regErr } = await supabase
+  const { error: regErr } = await adminDb
     .from("registrations")
     .update({
       deleted_at: nowStr,
@@ -267,18 +284,20 @@ export async function softDeleteUserAction(rawInput: SoftDeleteUserInput) {
     );
   }
 
-  // Record Audit Log
-  await logSystemAuditEntry(
-    supabase,
-    currentUser.id,
-    "SOFT_DELETE_USER",
-    validated.userId,
-    { deleted_at: targetProfile?.deleted_at || null },
-    { deleted_at: nowStr, delete_reason: validated.deleteReason },
-    `Nonaktifkan akun ${targetProfile?.full_name || validated.userId}. Alasan: ${validated.deleteReason}`,
-  );
+  // Record Immutable Audit Log
+  await recordAuditLog({
+    actorId: currentUser.id,
+    actionType: "SOFT_DELETE_USER",
+    targetUserId: validated.userId,
+    oldValue: { deleted_at: targetProfile?.deleted_at || null },
+    newValue: { deleted_at: nowStr, delete_reason: validated.deleteReason },
+    details: `Nonaktifkan akun ${targetProfile?.full_name || validated.userId}. Alasan: ${validated.deleteReason}`,
+  });
 
+  revalidatePath("/manajemen-akun");
   revalidatePath("/admin/users");
+  revalidatePath("/audit-log");
+  revalidatePath("/dashboard");
   return { success: true, message: "Berhasil menonaktifkan akun pengguna." };
 }
 
@@ -286,10 +305,10 @@ export async function softDeleteUserAction(rawInput: SoftDeleteUserInput) {
  * 3. Memulihkan (Restore) Akun Pengguna yang Diarsip
  */
 export async function restoreUserAction(rawInput: RestoreUserInput) {
-  const { supabase, currentUser } = await verifySuperAdminRole();
+  const { adminDb, currentUser } = await verifySuperAdminRole();
   const validated = RestoreUserSchema.parse(rawInput);
 
-  const { data: targetProfile } = await supabase
+  const { data: targetProfile } = await adminDb
     .from("profiles")
     .select("full_name, deleted_at, delete_reason")
     .eq("id", validated.userId)
@@ -298,7 +317,7 @@ export async function restoreUserAction(rawInput: RestoreUserInput) {
   const nowStr = new Date().toISOString();
 
   // Mutasi 1: Restore profiles
-  const { error: profileErr } = await supabase
+  const { error: profileErr } = await adminDb
     .from("profiles")
     .update({
       deleted_at: null,
@@ -312,7 +331,7 @@ export async function restoreUserAction(rawInput: RestoreUserInput) {
   }
 
   // Mutasi 2: Restore registrations
-  await supabase
+  await adminDb
     .from("registrations")
     .update({
       deleted_at: null,
@@ -321,21 +340,23 @@ export async function restoreUserAction(rawInput: RestoreUserInput) {
     })
     .eq("profile_id", validated.userId);
 
-  // Record Audit Log
-  await logSystemAuditEntry(
-    supabase,
-    currentUser.id,
-    "RESTORE_USER",
-    validated.userId,
-    {
+  // Record Immutable Audit Log
+  await recordAuditLog({
+    actorId: currentUser.id,
+    actionType: "RESTORE_USER",
+    targetUserId: validated.userId,
+    oldValue: {
       deleted_at: targetProfile?.deleted_at,
       delete_reason: targetProfile?.delete_reason,
     },
-    { deleted_at: null, delete_reason: null },
-    `Memulihkan akun pengguna ${targetProfile?.full_name || validated.userId}`,
-  );
+    newValue: { deleted_at: null, delete_reason: null },
+    details: `Memulihkan akun pengguna ${targetProfile?.full_name || validated.userId}`,
+  });
 
+  revalidatePath("/manajemen-akun");
   revalidatePath("/admin/users");
+  revalidatePath("/audit-log");
+  revalidatePath("/dashboard");
   return { success: true, message: "Berhasil memulihkan akun pengguna." };
 }
 
@@ -343,15 +364,15 @@ export async function restoreUserAction(rawInput: RestoreUserInput) {
  * 4. Reset Status Onboarding Pengguna
  */
 export async function resetUserOnboardingAction(userId: string) {
-  const { supabase, currentUser } = await verifySuperAdminRole();
+  const { adminDb, currentUser } = await verifySuperAdminRole();
 
-  const { data: targetProfile } = await supabase
+  const { data: targetProfile } = await adminDb
     .from("profiles")
     .select("full_name, is_onboarded")
     .eq("id", userId)
     .single();
 
-  const { error } = await supabase
+  const { error } = await adminDb
     .from("profiles")
     .update({
       is_onboarded: false,
@@ -363,18 +384,20 @@ export async function resetUserOnboardingAction(userId: string) {
     throw new Error(`Gagal mereset status onboarding: ${error.message}`);
   }
 
-  // Record Audit Log
-  await logSystemAuditEntry(
-    supabase,
-    currentUser.id,
-    "RESET_USER_ONBOARDING",
-    userId,
-    { is_onboarded: targetProfile?.is_onboarded },
-    { is_onboarded: false },
-    `Reset status onboarding pengguna ${targetProfile?.full_name || userId}`,
-  );
+  // Record Immutable Audit Log
+  await recordAuditLog({
+    actorId: currentUser.id,
+    actionType: "RESET_USER_ONBOARDING",
+    targetUserId: userId,
+    oldValue: { is_onboarded: targetProfile?.is_onboarded },
+    newValue: { is_onboarded: false },
+    details: `Reset status onboarding pengguna ${targetProfile?.full_name || userId}`,
+  });
 
+  revalidatePath("/manajemen-akun");
   revalidatePath("/admin/users");
+  revalidatePath("/audit-log");
+  revalidatePath("/dashboard");
   return {
     success: true,
     message: "Berhasil mereset status onboarding pengguna.",
@@ -391,7 +414,7 @@ export async function resetUserOnboardingAction(userId: string) {
 export async function getUsersAction(
   filter: UserManagementFilter = {},
 ): Promise<UserManagementQueryResult> {
-  const { supabase } = await verifySuperAdminRole();
+  const { adminDb } = await verifySuperAdminRole();
 
   const validated = UserFilterSchema.parse({
     search: filter.search || undefined,
@@ -407,7 +430,7 @@ export async function getUsersAction(
   const from = (page - 1) * perPage;
   const to = page * perPage - 1;
 
-  let query = supabase.from("profiles").select(
+  let query = adminDb.from("profiles").select(
     `
       id,
       email,
@@ -469,7 +492,7 @@ export async function getUsersAction(
 
   // Fallback jika migrasi deleted_at di DB cloud belum/sedang dieksekusi
   if (error && error.message.includes("deleted_at")) {
-    let fallbackQuery = supabase.from("profiles").select(
+    let fallbackQuery = adminDb.from("profiles").select(
       `
       id,
       email,
@@ -583,22 +606,23 @@ export async function getStudyProgramsOptionsAction() {
 }
 
 /**
- * 7. Mengambil Log Audit Sistem Terpaginasi (Super Admin Only)
+ * 7. Mengambil Log Audit Sistem Terpaginasi dengan Relasi Aktor & Target (Super Admin Only)
  */
 export async function getAuditLogsAction(
   page = 1,
-  perPage = 10,
+  perPage = 15,
 ): Promise<SystemAuditLogQueryResult> {
-  const { supabase } = await verifySuperAdminRole();
+  const { adminDb } = await verifySuperAdminRole();
 
   const from = (page - 1) * perPage;
   const to = page * perPage - 1;
 
+  // Query audit logs with relation join to profiles
   const {
     data: rawData,
     count,
     error,
-  } = await supabase
+  } = await adminDb
     .from("system_audit_logs")
     .select(
       `
@@ -610,7 +634,19 @@ export async function getAuditLogsAction(
       new_value,
       details,
       ip_address,
-      created_at
+      created_at,
+      actor:profiles!system_audit_logs_actor_id_fkey (
+        full_name,
+        email,
+        role,
+        avatar_url
+      ),
+      target_user:profiles!system_audit_logs_target_user_id_fkey (
+        full_name,
+        email,
+        role,
+        nim
+      )
     `,
       { count: "exact" },
     )
@@ -618,28 +654,106 @@ export async function getAuditLogsAction(
     .range(from, to);
 
   if (error) {
-    console.error("Gagal membaca audit logs:", error.message);
+    console.error(
+      "Gagal membaca audit logs dengan join, mencoba fallback query:",
+      error.message,
+    );
+
+    // Graceful fallback if relation name lookup varies
+    const fallbackResult = await adminDb
+      .from("system_audit_logs")
+      .select(
+        `
+        id,
+        actor_id,
+        action_type,
+        target_user_id,
+        old_value,
+        new_value,
+        details,
+        ip_address,
+        created_at
+      `,
+        { count: "exact" },
+      )
+      .order("created_at", { ascending: false })
+      .range(from, to);
+
+    if (fallbackResult.error) {
+      console.error(
+        "Gagal membaca fallback audit logs:",
+        fallbackResult.error.message,
+      );
+      return {
+        data: [],
+        totalCount: 0,
+        page,
+        perPage,
+        totalPages: 0,
+      };
+    }
+
+    const fallbackItems: SystemAuditLogEntry[] = (
+      fallbackResult.data || []
+    ).map((r) => {
+      const row = r as Record<string, unknown>;
+      return {
+        id: String(row.id),
+        actorId: (row.actor_id as string) || null,
+        actorName: null,
+        actorEmail: null,
+        actorRole: null,
+        actorAvatarUrl: null,
+        actionType: String(row.action_type),
+        targetUserId: (row.target_user_id as string) || null,
+        targetUserName: null,
+        targetUserEmail: null,
+        targetUserRole: null,
+        oldValue: (row.old_value as Record<string, unknown>) || null,
+        newValue: (row.new_value as Record<string, unknown>) || null,
+        details: (row.details as string) || null,
+        ipAddress: (row.ip_address as string) || null,
+        createdAt: String(row.created_at),
+      };
+    });
+
     return {
-      data: [],
-      totalCount: 0,
+      data: fallbackItems,
+      totalCount: fallbackResult.count || 0,
       page,
       perPage,
-      totalPages: 0,
+      totalPages: Math.ceil((fallbackResult.count || 0) / perPage),
     };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const items = (rawData || []).map((row: any) => ({
-    id: row.id,
-    actorId: row.actor_id,
-    actionType: row.action_type,
-    targetUserId: row.target_user_id,
-    oldValue: row.old_value,
-    newValue: row.new_value,
-    details: row.details,
-    ipAddress: row.ip_address,
-    createdAt: row.created_at,
-  }));
+  const items: SystemAuditLogEntry[] = (rawData || []).map((r) => {
+    const row = r as Record<string, unknown>;
+    const actor = (
+      Array.isArray(row.actor) ? row.actor[0] : row.actor
+    ) as Record<string, unknown> | null;
+    const target = (
+      Array.isArray(row.target_user) ? row.target_user[0] : row.target_user
+    ) as Record<string, unknown> | null;
+
+    return {
+      id: String(row.id),
+      actorId: (row.actor_id as string) || null,
+      actorName: (actor?.full_name as string) || null,
+      actorEmail: (actor?.email as string) || null,
+      actorRole: (actor?.role as string) || null,
+      actorAvatarUrl: (actor?.avatar_url as string) || null,
+      actionType: String(row.action_type),
+      targetUserId: (row.target_user_id as string) || null,
+      targetUserName: (target?.full_name as string) || null,
+      targetUserEmail: (target?.email as string) || null,
+      targetUserRole: (target?.role as string) || null,
+      oldValue: (row.old_value as Record<string, unknown>) || null,
+      newValue: (row.new_value as Record<string, unknown>) || null,
+      details: (row.details as string) || null,
+      ipAddress: (row.ip_address as string) || null,
+      createdAt: String(row.created_at),
+    };
+  });
 
   const totalCount = count || 0;
   const totalPages = Math.ceil(totalCount / perPage);

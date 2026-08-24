@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   Dialog,
   DialogContent,
@@ -23,7 +24,13 @@ import { Switch } from "@/components/ui/switch";
 import { UserManagementItem, UserRole } from "@/lib/types/user-management";
 import { updateUserIdentityAction } from "@/lib/actions/admin-users";
 import { toast } from "sonner";
-import { ShieldAlert, Loader2, Save } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  AlertCircleIcon,
+  Loading03Icon,
+  FloppyDiskIcon,
+  Edit02Icon,
+} from "@hugeicons/core-free-icons";
 
 interface UserEditModalProps {
   isOpen: boolean;
@@ -40,6 +47,7 @@ export function UserEditModal({
   studyPrograms,
   currentUserId,
 }: UserEditModalProps) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   const [fullName, setFullName] = useState("");
@@ -95,6 +103,7 @@ export function UserEditModal({
 
         if (res.success) {
           toast.success(res.message);
+          router.refresh();
           onClose();
         } else {
           toast.error("Gagal memperbarui data pengguna.");
@@ -108,165 +117,186 @@ export function UserEditModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md rounded-2xl p-6">
-        <DialogHeader>
-          <DialogTitle className="text-base font-semibold flex items-center gap-2">
-            <span>Edit Identitas & Peran Pengguna</span>
-          </DialogTitle>
-          <DialogDescription className="text-xs text-neutral-500">
-            Perbarui peranan sistem dan identitas dasar pengguna ini.
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-md rounded-2xl p-0 overflow-hidden border border-border shadow-lg">
+        <form onSubmit={handleSubmit} className="flex flex-col max-h-[90vh]">
+          <DialogHeader className="p-5 sm:p-6 border-b border-border bg-card">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-soft text-primary">
+                <HugeiconsIcon icon={Edit02Icon} size={18} />
+              </div>
+              <div>
+                <DialogTitle className="font-display text-base font-semibold tracking-tight text-foreground">
+                  Edit Identitas &amp; Peran Pengguna
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                  Perbarui peranan sistem (RBAC) dan identitas dasar pengguna
+                  ini.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4 py-2">
-          {/* Email (Readonly) */}
-          <div className="space-y-1">
-            <Label className="text-xs font-semibold text-neutral-500">
-              Email Akun (Read-only)
-            </Label>
-            <Input
-              value={user.email}
-              disabled
-              className="bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 h-9 rounded-xl text-xs"
-            />
-          </div>
-
-          {/* Full Name */}
-          <div className="space-y-1">
-            <Label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-              Nama Lengkap <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="Masukkan nama lengkap..."
-              className="h-9 rounded-xl text-xs"
-              required
-            />
-          </div>
-
-          {/* NIM & Phone Number */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                NIM
+          <div className="space-y-4 p-5 sm:p-6 overflow-y-auto flex-1 bg-background text-xs">
+            {/* Email (Readonly) */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">
+                Alamat Email (Read-only)
               </Label>
               <Input
-                value={nim}
-                onChange={(e) => setNim(e.target.value)}
-                placeholder="210109..."
-                className="h-9 rounded-xl text-xs"
+                value={user.email}
+                disabled
+                className="bg-muted/50 text-muted-foreground min-h-[44px] rounded-lg text-xs font-mono"
               />
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                No. WhatsApp
+
+            {/* Full Name */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-foreground">
+                Nama Lengkap <span className="text-destructive">*</span>
               </Label>
               <Input
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                placeholder="0812..."
-                className="h-9 rounded-xl text-xs"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Masukkan nama lengkap..."
+                className="min-h-[44px] rounded-lg text-sm"
+                required
               />
             </div>
-          </div>
 
-          {/* Study Program */}
-          <div className="space-y-1">
-            <Label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-              Program Studi
-            </Label>
-            <Select
-              value={studyProgramId}
-              onValueChange={(val) => setStudyProgramId(val)}
-            >
-              <SelectTrigger className="h-9 rounded-xl text-xs">
-                <SelectValue placeholder="Pilih Program Studi" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">-- Tanpa Program Studi --</SelectItem>
-                {studyPrograms.map((sp) => (
-                  <SelectItem key={sp.id} value={sp.id}>
-                    {sp.degree} - {sp.name}
+            {/* NIM & Phone Number */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-foreground">
+                  NIM
+                </Label>
+                <Input
+                  value={nim}
+                  onChange={(e) => setNim(e.target.value)}
+                  placeholder="210109..."
+                  className="min-h-[44px] rounded-lg text-sm font-mono"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-foreground">
+                  No. WhatsApp
+                </Label>
+                <Input
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder="0812..."
+                  className="min-h-[44px] rounded-lg text-sm font-mono"
+                />
+              </div>
+            </div>
+
+            {/* Study Program */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-foreground">
+                Program Studi
+              </Label>
+              <Select
+                value={studyProgramId}
+                onValueChange={(val) => setStudyProgramId(val)}
+              >
+                <SelectTrigger className="min-h-[44px] rounded-lg text-xs">
+                  <SelectValue placeholder="Pilih Program Studi" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="none">
+                    -- Tanpa Program Studi --
                   </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* System Role */}
-          <div className="space-y-1">
-            <Label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-              Peran Sistem (Role) <span className="text-red-500">*</span>
-            </Label>
-            <Select
-              value={role}
-              onValueChange={(val) => setRole(val as UserRole)}
-            >
-              <SelectTrigger className="h-9 rounded-xl text-xs">
-                <SelectValue placeholder="Pilih Role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="super-admin">Super Admin</SelectItem>
-                <SelectItem value="admin-or">Admin OR</SelectItem>
-                <SelectItem value="admin-komdis">Admin Komdis</SelectItem>
-                <SelectItem value="admin-kestari">Admin Kestari</SelectItem>
-                <SelectItem value="admin-divisi">Admin Divisi</SelectItem>
-                <SelectItem value="anggota">Anggota Aktif</SelectItem>
-                <SelectItem value="caang">Calon Anggota (Caang)</SelectItem>
-                <SelectItem value="alumni">Alumni</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Self-Demotion Alert */}
-          {isSelfDemotion && (
-            <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300 flex items-start gap-2">
-              <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
-              <span>
-                <strong>Peringatan Keamanan:</strong> Anda sedang meninjau akun
-                Anda sendiri. Anda tidak dapat mencopot role Super Admin dari
-                akun yang sedang login.
-              </span>
+                  {studyPrograms.map((sp) => (
+                    <SelectItem key={sp.id} value={sp.id}>
+                      {sp.degree} - {sp.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          )}
 
-          {/* Is Onboarded Switch */}
-          <div className="flex items-center justify-between p-3 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-800/50">
-            <div className="space-y-0.5">
-              <Label className="text-xs font-semibold text-neutral-800 dark:text-neutral-200">
-                Status Onboarding
+            {/* System Role */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-foreground">
+                Peran Sistem (Role) <span className="text-destructive">*</span>
               </Label>
-              <p className="text-[11px] text-neutral-500">
-                Tandai jika pengguna telah menyelesaikan alur pendaftaran awal.
-              </p>
+              <Select
+                value={role}
+                onValueChange={(val) => setRole(val as UserRole)}
+              >
+                <SelectTrigger className="min-h-[44px] rounded-lg text-xs">
+                  <SelectValue placeholder="Pilih Role" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="super-admin">Super Admin</SelectItem>
+                  <SelectItem value="admin-or">Admin OR</SelectItem>
+                  <SelectItem value="admin-komdis">Admin Komdis</SelectItem>
+                  <SelectItem value="admin-kestari">Admin Kestari</SelectItem>
+                  <SelectItem value="admin-divisi">Admin Divisi</SelectItem>
+                  <SelectItem value="anggota">Anggota Aktif</SelectItem>
+                  <SelectItem value="caang">Calon Anggota (Caang)</SelectItem>
+                  <SelectItem value="alumni">Alumni</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <Switch checked={isOnboarded} onCheckedChange={setIsOnboarded} />
+
+            {/* Self-Demotion Alert */}
+            {isSelfDemotion && (
+              <div className="p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-xs text-destructive flex items-start gap-2.5">
+                <HugeiconsIcon
+                  icon={AlertCircleIcon}
+                  size={16}
+                  className="shrink-0 mt-0.5"
+                />
+                <span>
+                  <strong>Peringatan Keamanan:</strong> Anda sedang meninjau
+                  akun Anda sendiri. Anda tidak dapat mencopot role Super Admin
+                  dari akun yang sedang login.
+                </span>
+              </div>
+            )}
+
+            {/* Is Onboarded Switch */}
+            <div className="flex items-center justify-between p-3.5 rounded-xl border border-border bg-surface/50 dark:bg-card">
+              <div className="space-y-0.5">
+                <Label className="text-xs font-medium text-foreground">
+                  Status Onboarding
+                </Label>
+                <p className="text-[11px] text-muted-foreground">
+                  Tandai jika pengguna telah menyelesaikan alur pendaftaran
+                  awal.
+                </p>
+              </div>
+              <Switch checked={isOnboarded} onCheckedChange={setIsOnboarded} />
+            </div>
           </div>
 
-          <DialogFooter className="gap-2 pt-2">
+          <DialogFooter className="p-4 sm:p-5 border-t border-border bg-surface/40 dark:bg-card flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
               disabled={isPending}
-              className="h-9 rounded-xl text-xs"
+              className="min-h-[44px] rounded-lg text-xs"
             >
               Batal
             </Button>
             <Button
               type="submit"
               disabled={isPending || isSelfDemotion}
-              className="h-9 rounded-xl text-xs bg-blue-600 hover:bg-blue-700 text-white font-medium gap-1.5"
+              className="min-h-[44px] rounded-lg text-xs bg-primary hover:bg-primary/90 text-primary-foreground font-medium gap-1.5 shadow-xs"
             >
               {isPending ? (
                 <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  <HugeiconsIcon
+                    icon={Loading03Icon}
+                    size={15}
+                    className="animate-spin"
+                  />
                   <span>Menyimpan...</span>
                 </>
               ) : (
                 <>
-                  <Save className="w-3.5 h-3.5" />
+                  <HugeiconsIcon icon={FloppyDiskIcon} size={15} />
                   <span>Simpan Perubahan</span>
                 </>
               )}

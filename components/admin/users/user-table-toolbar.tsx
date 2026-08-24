@@ -10,7 +10,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, RotateCcw, UserCheck, Shield, Archive } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  Search01Icon,
+  RotateLeft01Icon,
+  SecurityCheckIcon,
+  ArchiveIcon,
+  UserCheck01Icon,
+} from "@hugeicons/core-free-icons";
 
 interface UserTableToolbarProps {
   search: string;
@@ -58,41 +65,51 @@ export function UserTableToolbar({
   );
 
   return (
-    <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between p-4 bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 rounded-t-xl">
+    <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between p-4 sm:p-5 bg-surface/30 dark:bg-card border-b border-border">
       {/* Search Input */}
       <div className="relative flex-1 max-w-md">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+        <HugeiconsIcon
+          icon={Search01Icon}
+          className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"
+        />
         <Input
           placeholder="Cari Nama, NIM, atau Email..."
           value={searchValue}
           onChange={(e) => setSearchValue(e.target.value)}
-          className="pl-9 h-10 rounded-xl bg-neutral-50 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-sm focus-visible:ring-blue-500"
+          className="pl-9 min-h-[44px] rounded-lg border-border bg-background text-sm focus-visible:ring-2 focus-visible:ring-primary/20"
         />
         {searchValue && (
           <button
+            type="button"
             onClick={() => {
               setSearchValue("");
               onSearchChange("");
             }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground p-1 rounded"
           >
-            Clear
+            Hapus
           </button>
         )}
       </div>
 
       {/* Filter Options & Action Buttons */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2.5">
         {/* Role Filter Dropdown */}
         <Select
           value={role || "all"}
           onValueChange={(val) => onRoleChange(val === "all" ? "" : val)}
         >
-          <SelectTrigger className="w-[160px] h-10 rounded-xl bg-neutral-50 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-xs">
-            <Shield className="w-3.5 h-3.5 mr-1.5 text-neutral-500 shrink-0" />
-            <SelectValue placeholder="Semua Role" />
+          <SelectTrigger className="w-full sm:w-[170px] min-h-[44px] rounded-lg border-border bg-background text-xs">
+            <div className="flex items-center gap-1.5 truncate">
+              <HugeiconsIcon
+                icon={SecurityCheckIcon}
+                size={15}
+                className="text-muted-foreground shrink-0"
+              />
+              <SelectValue placeholder="Semua Role" />
+            </div>
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="rounded-xl">
             <SelectItem value="all">Semua Role</SelectItem>
             <SelectItem value="super-admin">Super Admin</SelectItem>
             <SelectItem value="admin-or">Admin OR</SelectItem>
@@ -110,14 +127,20 @@ export function UserTableToolbar({
           value={status || "all"}
           onValueChange={(val) => onStatusChange(val)}
         >
-          <SelectTrigger className="w-[150px] h-10 rounded-xl bg-neutral-50 dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-xs">
-            <Archive className="w-3.5 h-3.5 mr-1.5 text-neutral-500 shrink-0" />
-            <SelectValue placeholder="Status Akun" />
+          <SelectTrigger className="w-full sm:w-[160px] min-h-[44px] rounded-lg border-border bg-background text-xs">
+            <div className="flex items-center gap-1.5 truncate">
+              <HugeiconsIcon
+                icon={ArchiveIcon}
+                size={15}
+                className="text-muted-foreground shrink-0"
+              />
+              <SelectValue placeholder="Status Akun" />
+            </div>
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="rounded-xl">
             <SelectItem value="all">Semua Status</SelectItem>
             <SelectItem value="active">Aktif</SelectItem>
-            <SelectItem value="archived">Diarsip (Soft Delete)</SelectItem>
+            <SelectItem value="archived">Diarsip (Nonaktif)</SelectItem>
           </SelectContent>
         </Select>
 
@@ -129,18 +152,26 @@ export function UserTableToolbar({
               setSearchValue("");
               onReset();
             }}
-            className="h-10 px-3 rounded-xl text-xs text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 gap-1.5"
+            className="min-h-[44px] px-3.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-muted gap-1.5"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
+            <HugeiconsIcon icon={RotateLeft01Icon} size={15} />
             <span>Reset</span>
           </Button>
         )}
 
         {/* Total Badge */}
-        <div className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-xs text-neutral-600 dark:text-neutral-400 font-medium ml-auto">
-          <UserCheck className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+        <div className="hidden xl:flex items-center gap-1.5 px-3 py-2 rounded-lg bg-muted/60 dark:bg-muted/30 text-xs text-muted-foreground font-medium ml-auto border border-border">
+          <HugeiconsIcon
+            icon={UserCheck01Icon}
+            size={15}
+            className="text-primary"
+          />
           <span>
-            Total: <strong>{totalCount}</strong> Pengguna
+            Total:{" "}
+            <strong className="text-foreground font-semibold">
+              {totalCount}
+            </strong>{" "}
+            Pengguna
           </span>
         </div>
       </div>

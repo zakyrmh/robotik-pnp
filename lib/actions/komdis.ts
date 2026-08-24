@@ -5,6 +5,7 @@ import "server-only";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
+import { recordAuditLog } from "@/lib/audit";
 import { decryptQRToken } from "@/lib/utils/crypto";
 import {
   CreateKomdisActivitySchema,
@@ -552,6 +553,18 @@ export async function logPointReduction(rawInput: LogPointReductionInput) {
 
   if (error) throw new Error(`Gagal mencatat pemutihan poin: ${error.message}`);
 
+  await recordAuditLog({
+    actorId: user.id,
+    actionType: "ADJUST_DISCIPLINE_POINTS",
+    targetUserId: validated.profileId,
+    newValue: {
+      category: validated.category,
+      points: validated.points,
+      description: validated.description,
+    },
+    details: `Penyesuaian poin kedisiplinan (${validated.points} poin): ${validated.description}`,
+  });
+
   revalidatePath(`/kedisiplinan/${validated.profileId}`);
   return { success: true };
 }
@@ -573,6 +586,18 @@ export async function issueSanction(rawInput: IssueSanctionInput) {
   });
 
   if (error) throw new Error(`Gagal menerbitkan SP: ${error.message}`);
+
+  await recordAuditLog({
+    actorId: user.id,
+    actionType: "ISSUE_DISCIPLINARY_SANCTION",
+    targetUserId: validated.profileId,
+    newValue: {
+      sp_level: validated.spLevel,
+      points_at_issuance: validated.pointsAtIssuance,
+      notes: validated.notes || null,
+    },
+    details: `Penerbitan sanksi kedisiplinan ${validated.spLevel} dengan akumulasi ${validated.pointsAtIssuance} poin`,
+  });
 
   revalidatePath(`/kedisiplinan/${validated.profileId}`);
   return { success: true };
@@ -605,6 +630,19 @@ export async function recordManualAttendance(rawInput: ManualAttendanceInput) {
   if (error) {
     throw new Error(`Gagal mencatat presensi manual: ${error.message}`);
   }
+
+  await recordAuditLog({
+    actorId: user.id,
+    actionType: "OVERRIDE_ATTENDANCE_STATUS",
+    targetUserId: validated.profileId,
+    newValue: {
+      activity_id: validated.activityId,
+      status: validated.status,
+      points_awarded: validated.pointsAwarded,
+      notes: validated.notes || null,
+    },
+    details: `Override status presensi kegiatan manual menjadi ${validated.status} (${validated.pointsAwarded} poin)`,
+  });
 
   revalidatePath(`/kegiatan/${validated.activityId}`);
   return { success: true };

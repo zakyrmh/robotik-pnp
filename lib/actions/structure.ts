@@ -1,12 +1,21 @@
 "use server";
 
 import { createClient, createAdminClient } from "@/lib/supabase/server";
+import { recordAuditLog } from "@/lib/audit";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { Database } from "@/types/database.types";
+
+type AdminAuthResult =
+  | {
+      authorized: true;
+      user: { id: string; email?: string };
+      role: string;
+      error?: undefined;
+    }
+  | { authorized: false; error: string; user?: undefined; role?: undefined };
 
 // Auth checker function
-async function verifyAdminAccess() {
+async function verifyAdminAccess(): Promise<AdminAuthResult> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -65,6 +74,13 @@ export async function createMembershipPeriod(
       .insert(parsed.data);
     if (error) return { success: false, error: error.message };
 
+    await recordAuditLog({
+      actorId: auth.user.id,
+      actionType: "CREATE_MEMBERSHIP_PERIOD",
+      newValue: parsed.data,
+      details: `Menambahkan periode kepengurusan baru: ${parsed.data.period_name}`,
+    });
+
     revalidatePath("/manajemen-struktur");
     return { success: true };
   } catch (err: unknown) {
@@ -95,6 +111,13 @@ export async function updateMembershipPeriod(
 
     if (error) return { success: false, error: error.message };
 
+    await recordAuditLog({
+      actorId: auth.user.id,
+      actionType: "UPDATE_MEMBERSHIP_PERIOD",
+      newValue: { id, ...parsed.data },
+      details: `Memperbarui periode kepengurusan: ${parsed.data.period_name}`,
+    });
+
     revalidatePath("/manajemen-struktur");
     return { success: true };
   } catch (err: unknown) {
@@ -116,6 +139,13 @@ export async function deleteMembershipPeriod(id: string) {
       .delete()
       .eq("id", id);
     if (error) return { success: false, error: error.message };
+
+    await recordAuditLog({
+      actorId: auth.user.id,
+      actionType: "DELETE_ORG_STRUCTURE",
+      oldValue: { id },
+      details: `Menghapus periode kepengurusan (ID: ${id})`,
+    });
 
     revalidatePath("/manajemen-struktur");
     return { success: true };
@@ -150,6 +180,13 @@ export async function createDepartment(data: z.infer<typeof departmentSchema>) {
     const { error } = await supabase.from("departments").insert(parsed.data);
     if (error) return { success: false, error: error.message };
 
+    await recordAuditLog({
+      actorId: auth.user.id,
+      actionType: "CREATE_DEPARTMENT",
+      newValue: parsed.data,
+      details: `Menambahkan departemen baru: ${parsed.data.name}`,
+    });
+
     revalidatePath("/manajemen-struktur");
     return { success: true };
   } catch (err: unknown) {
@@ -180,6 +217,13 @@ export async function updateDepartment(
 
     if (error) return { success: false, error: error.message };
 
+    await recordAuditLog({
+      actorId: auth.user.id,
+      actionType: "UPDATE_DEPARTMENT",
+      newValue: { id, ...parsed.data },
+      details: `Memperbarui data departemen: ${parsed.data.name}`,
+    });
+
     revalidatePath("/manajemen-struktur");
     return { success: true };
   } catch (err: unknown) {
@@ -198,6 +242,13 @@ export async function deleteDepartment(id: string) {
   try {
     const { error } = await supabase.from("departments").delete().eq("id", id);
     if (error) return { success: false, error: error.message };
+
+    await recordAuditLog({
+      actorId: auth.user.id,
+      actionType: "DELETE_DEPARTMENT",
+      oldValue: { id },
+      details: `Menghapus departemen (ID: ${id})`,
+    });
 
     revalidatePath("/manajemen-struktur");
     return { success: true };
@@ -344,11 +395,6 @@ export async function updateLegacyMember(nim: string, formData: FormData) {
       avatarUrl = null;
     }
 
-    console.log(
-      "[updateLegacyMember] DEBUG - avatarUrl resolved to:",
-      avatarUrl,
-    );
-
     interface MemberUpdatePayload {
       full_name: string;
       gender: string | null;
@@ -365,11 +411,6 @@ export async function updateLegacyMember(nim: string, formData: FormData) {
     if (avatarUrl !== undefined) {
       updatePayload.avatar_url = avatarUrl;
     }
-
-    console.log(
-      "[updateLegacyMember] DEBUG - updatePayload:",
-      JSON.stringify(updatePayload),
-    );
 
     const { error } = await supabase
       .from("legacy_members")

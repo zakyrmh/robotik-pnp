@@ -12,17 +12,18 @@ import { Button } from "@/components/ui/button";
 import { UserManagementItem } from "@/lib/types/user-management";
 import { UserRoleBadge } from "../user-role-badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  User,
-  Mail,
-  Phone,
-  GraduationCap,
-  Calendar,
-  ShieldCheck,
-  AlertCircle,
-  FileCheck2,
-  Lock,
-} from "lucide-react";
+  UserIcon,
+  Mail01Icon,
+  SmartPhone01Icon,
+  Mortarboard02Icon,
+  Calendar03Icon,
+  SecurityCheckIcon,
+  AlertCircleIcon,
+  CheckmarkCircle01Icon,
+  LockPasswordIcon,
+} from "@hugeicons/core-free-icons";
 
 interface UserDetailModalProps {
   isOpen: boolean;
@@ -48,98 +49,109 @@ export function UserDetailModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-lg rounded-2xl p-6">
-        <DialogHeader>
-          <div className="flex items-center gap-3">
-            <Avatar className="w-12 h-12 border-2 border-neutral-200 dark:border-neutral-700">
+      <DialogContent className="sm:max-w-lg rounded-2xl p-0 overflow-hidden border border-border shadow-lg">
+        <DialogHeader className="p-5 sm:p-6 border-b border-border bg-card">
+          <div className="flex items-center gap-3.5">
+            <Avatar className="w-12 h-12 border border-border shrink-0 shadow-2xs">
               <AvatarImage
                 src={user.avatarUrl || ""}
                 alt={user.fullName || "Avatar"}
+                className="object-cover"
               />
-              <AvatarFallback className="bg-blue-100 text-blue-700 font-bold text-sm">
+              <AvatarFallback className="bg-primary-soft text-primary font-bold text-sm">
                 {initials}
               </AvatarFallback>
             </Avatar>
 
-            <div>
-              <DialogTitle className="text-base font-bold flex items-center gap-2">
-                <span>{user.fullName || "Tanpa Nama"}</span>
+            <div className="min-w-0">
+              <DialogTitle className="font-display text-base font-semibold tracking-tight text-foreground flex items-center gap-2">
+                <span className="truncate">
+                  {user.fullName || "Tanpa Nama"}
+                </span>
                 {user.deletedAt && (
-                  <span className="px-2 py-0.5 text-[10px] bg-red-100 dark:bg-red-950 text-red-700 dark:text-red-300 rounded-md font-semibold">
+                  <span className="px-2 py-0.5 text-[10px] bg-destructive/10 text-destructive border border-destructive/20 rounded-full font-medium">
                     Diarsip
                   </span>
                 )}
               </DialogTitle>
-              <DialogDescription className="text-xs text-neutral-500 flex items-center gap-1.5 mt-0.5">
-                <Mail className="w-3 h-3 shrink-0" />
+              <DialogDescription className="text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5 truncate">
+                <HugeiconsIcon
+                  icon={Mail01Icon}
+                  size={13}
+                  className="shrink-0"
+                />
                 <span>{user.email}</span>
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
-        <div className="space-y-4 py-2 text-xs">
+        <div className="space-y-4 p-5 sm:p-6 bg-background text-xs max-h-[65vh] overflow-y-auto">
           {/* Header Status Bar */}
-          <div className="flex items-center justify-between p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200 dark:border-neutral-700">
+          <div className="flex items-center justify-between p-3.5 rounded-xl bg-surface/50 dark:bg-card border border-border">
             <div className="flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <span className="font-semibold text-neutral-700 dark:text-neutral-300">
-                Role Sistem:
+              <HugeiconsIcon
+                icon={SecurityCheckIcon}
+                size={16}
+                className="text-primary"
+              />
+              <span className="font-semibold text-foreground">
+                Role Sistem (RBAC):
               </span>
             </div>
             <UserRoleBadge role={user.role} />
           </div>
 
           {/* Details Grid */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 rounded-xl border border-neutral-200 dark:border-neutral-800 space-y-1">
-              <div className="text-neutral-400 flex items-center gap-1">
-                <User className="w-3.5 h-3.5" />
-                <span>NIM</span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="p-3.5 rounded-xl border border-border bg-card space-y-1">
+              <div className="text-muted-foreground flex items-center gap-1.5 text-[11px]">
+                <HugeiconsIcon icon={UserIcon} size={14} />
+                <span>Nomor Induk Mahasiswa (NIM)</span>
               </div>
-              <p className="font-semibold text-neutral-800 dark:text-neutral-200">
+              <p className="font-mono font-medium text-foreground text-xs">
                 {user.nim || "Belum diisi"}
               </p>
             </div>
 
-            <div className="p-3 rounded-xl border border-neutral-200 dark:border-neutral-800 space-y-1">
-              <div className="text-neutral-400 flex items-center gap-1">
-                <Phone className="w-3.5 h-3.5" />
-                <span>No. WhatsApp</span>
+            <div className="p-3.5 rounded-xl border border-border bg-card space-y-1">
+              <div className="text-muted-foreground flex items-center gap-1.5 text-[11px]">
+                <HugeiconsIcon icon={SmartPhone01Icon} size={14} />
+                <span>Kontak WhatsApp</span>
               </div>
-              <p className="font-semibold text-neutral-800 dark:text-neutral-200">
+              <p className="font-mono font-medium text-foreground text-xs">
                 {user.phoneNumber || "Belum diisi"}
               </p>
             </div>
 
-            <div className="p-3 rounded-xl border border-neutral-200 dark:border-neutral-800 space-y-1 col-span-2">
-              <div className="text-neutral-400 flex items-center gap-1">
-                <GraduationCap className="w-3.5 h-3.5" />
+            <div className="p-3.5 rounded-xl border border-border bg-card space-y-1 sm:col-span-2">
+              <div className="text-muted-foreground flex items-center gap-1.5 text-[11px]">
+                <HugeiconsIcon icon={Mortarboard02Icon} size={14} />
                 <span>Program Studi</span>
               </div>
-              <p className="font-semibold text-neutral-800 dark:text-neutral-200">
+              <p className="font-medium text-foreground text-xs">
                 {user.studyProgramName || "Tidak terafiliasi"}
               </p>
             </div>
 
-            <div className="p-3 rounded-xl border border-neutral-200 dark:border-neutral-800 space-y-1">
-              <div className="text-neutral-400 flex items-center gap-1">
-                <FileCheck2 className="w-3.5 h-3.5" />
+            <div className="p-3.5 rounded-xl border border-border bg-card space-y-1">
+              <div className="text-muted-foreground flex items-center gap-1.5 text-[11px]">
+                <HugeiconsIcon icon={CheckmarkCircle01Icon} size={14} />
                 <span>Status Onboarding</span>
               </div>
-              <p className="font-semibold text-neutral-800 dark:text-neutral-200">
+              <p className="font-medium text-foreground text-xs">
                 {user.isOnboarded
                   ? "✅ Selesai Onboarding"
                   : "⏳ Belum Onboarding"}
               </p>
             </div>
 
-            <div className="p-3 rounded-xl border border-neutral-200 dark:border-neutral-800 space-y-1">
-              <div className="text-neutral-400 flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5" />
+            <div className="p-3.5 rounded-xl border border-border bg-card space-y-1">
+              <div className="text-muted-foreground flex items-center gap-1.5 text-[11px]">
+                <HugeiconsIcon icon={Calendar03Icon} size={14} />
                 <span>Tanggal Terdaftar</span>
               </div>
-              <p className="font-semibold text-neutral-800 dark:text-neutral-200">
+              <p className="font-medium text-foreground text-xs">
                 {new Date(user.createdAt).toLocaleDateString("id-ID", {
                   day: "numeric",
                   month: "long",
@@ -151,16 +163,16 @@ export function UserDetailModal({
 
           {/* Soft Delete Information if archived */}
           {user.deletedAt && (
-            <div className="p-3.5 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 space-y-1.5">
-              <div className="flex items-center gap-2 text-red-700 dark:text-red-300 font-semibold">
-                <AlertCircle className="w-4 h-4" />
+            <div className="p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 space-y-1.5 text-xs">
+              <div className="flex items-center gap-2 text-destructive font-semibold">
+                <HugeiconsIcon icon={AlertCircleIcon} size={15} />
                 <span>Akun Ini Berstatus Nonaktif (Archived)</span>
               </div>
-              <p className="text-neutral-600 dark:text-neutral-400 text-[11px]">
-                <strong>Alasan Penghapusan:</strong>{" "}
+              <p className="text-muted-foreground text-[11px]">
+                <strong>Alasan:</strong>{" "}
                 {user.deleteReason || "Tidak ditentukan"}
               </p>
-              <p className="text-neutral-500 text-[10px]">
+              <p className="text-muted-foreground/80 text-[10px] font-mono">
                 Diarsipkan pada:{" "}
                 {new Date(user.deletedAt).toLocaleString("id-ID")}
               </p>
@@ -168,8 +180,12 @@ export function UserDetailModal({
           )}
 
           {/* Cybersecurity Notice */}
-          <div className="flex items-start gap-2 p-2.5 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-[11px] text-neutral-500">
-            <Lock className="w-3.5 h-3.5 shrink-0 mt-0.5 text-neutral-400" />
+          <div className="flex items-start gap-2.5 p-3 rounded-xl bg-muted/50 dark:bg-card border border-border text-[11px] text-muted-foreground">
+            <HugeiconsIcon
+              icon={LockPasswordIcon}
+              size={16}
+              className="shrink-0 mt-0.5 text-muted-foreground"
+            />
             <span>
               Data PII ini bersifat rahasia dan dilindungi oleh UU No. 27 Tahun
               2022 (UU PDP). Penggunaan data di luar kepentingan resmi UKM
@@ -178,11 +194,11 @@ export function UserDetailModal({
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="p-4 sm:p-5 border-t border-border bg-surface/40 dark:bg-card">
           <Button
             variant="outline"
             onClick={onClose}
-            className="h-9 rounded-xl text-xs w-full sm:w-auto"
+            className="min-h-[44px] rounded-lg text-xs w-full sm:w-auto"
           >
             Tutup
           </Button>

@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { getAuditLogsAction } from "@/lib/actions/admin-users";
-import { AuditLogViewerClient } from "./AuditLogViewerClient";
+import { AuditLogViewer } from "@/components/admin/audit-log";
 
 interface AuditLogPageProps {
   searchParams: Promise<{
@@ -41,8 +41,8 @@ export default async function AuditLogPage(props: AuditLogPageProps) {
   const auditLogsResult = await getAuditLogsAction(page, perPage);
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
-      <AuditLogViewerClient initialData={auditLogsResult} />
+    <div className="space-y-6">
+      <AuditLogViewer initialData={auditLogsResult} />
     </div>
   );
 }

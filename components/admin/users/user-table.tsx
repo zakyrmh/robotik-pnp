@@ -20,18 +20,21 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserManagementItem } from "@/lib/types/user-management";
 import { UserRoleBadge } from "./user-role-badge";
+import { Badge } from "@/components/ui/badge";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  MoreHorizontal,
-  Edit,
-  Eye,
-  UserX,
-  RotateCcw,
-  RefreshCw,
-  Phone,
-  GraduationCap,
-  Archive,
-  CheckCircle2,
-} from "lucide-react";
+  MoreHorizontalIcon,
+  Edit02Icon,
+  ViewIcon,
+  UserBlock01Icon,
+  RotateLeft01Icon,
+  ReloadIcon,
+  SmartPhone01Icon,
+  Mortarboard02Icon,
+  ArchiveIcon,
+  CheckmarkCircle01Icon,
+  UserGroupIcon,
+} from "@hugeicons/core-free-icons";
 
 interface UserTableProps {
   users: UserManagementItem[];
@@ -54,14 +57,14 @@ export function UserTable({
 }: UserTableProps) {
   if (users.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 text-center bg-white dark:bg-neutral-900 border-x border-neutral-200 dark:border-neutral-800">
-        <div className="w-12 h-12 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center text-neutral-400 mb-3">
-          <Archive className="w-6 h-6" />
+      <div className="flex flex-col items-center justify-center p-12 text-center bg-card">
+        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-muted-foreground mb-3">
+          <HugeiconsIcon icon={UserGroupIcon} size={24} />
         </div>
-        <h3 className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
+        <h3 className="text-sm font-semibold text-foreground">
           Tidak ada pengguna ditemukan
         </h3>
-        <p className="text-xs text-neutral-500 max-w-sm mt-1">
+        <p className="text-xs text-muted-foreground max-w-sm mt-1">
           Coba sesuaikan kata kunci pencarian atau filter role/status yang Anda
           gunakan.
         </p>
@@ -70,31 +73,31 @@ export function UserTable({
   }
 
   return (
-    <div className="bg-white dark:bg-neutral-900 border-x border-neutral-200 dark:border-neutral-800 overflow-hidden">
-      <Table>
-        <TableHeader className="bg-neutral-50 dark:bg-neutral-800/50">
-          <TableRow>
-            <TableHead className="w-[280px] text-xs font-semibold text-neutral-600 dark:text-neutral-400 pl-4">
+    <div className="bg-card overflow-x-auto">
+      <Table className="w-full text-left border-collapse min-w-[750px]">
+        <TableHeader className="bg-muted/40 dark:bg-muted/20">
+          <TableRow className="border-b border-border hover:bg-transparent">
+            <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground py-3 pl-5">
               Pengguna &amp; Email
             </TableHead>
-            <TableHead className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
+            <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground py-3">
               NIM &amp; Program Studi
             </TableHead>
-            <TableHead className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
+            <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground py-3">
               Peran (Role)
             </TableHead>
-            <TableHead className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
+            <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground py-3">
               Kontak WA
             </TableHead>
-            <TableHead className="text-xs font-semibold text-neutral-600 dark:text-neutral-400">
+            <TableHead className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground py-3">
               Status Akun
             </TableHead>
-            <TableHead className="w-[80px] text-right text-xs font-semibold text-neutral-600 dark:text-neutral-400 pr-4">
+            <TableHead className="w-[80px] text-right text-[11px] font-semibold uppercase tracking-wider text-muted-foreground py-3 pr-5">
               Aksi
             </TableHead>
           </TableRow>
         </TableHeader>
-        <TableBody>
+        <TableBody className="divide-y divide-border text-sm">
           {users.map((user) => {
             const isSelf = currentUserId === user.id;
             const isArchived = Boolean(user.deletedAt);
@@ -110,34 +113,38 @@ export function UserTable({
             return (
               <TableRow
                 key={user.id}
-                className={
-                  isArchived ? "bg-red-50/40 dark:bg-red-950/10 opacity-75" : ""
-                }
+                className={`transition-colors hover:bg-muted/30 dark:hover:bg-muted/10 ${
+                  isArchived ? "bg-destructive/5 opacity-75" : ""
+                }`}
               >
                 {/* User Info Column */}
-                <TableCell className="pl-4 py-3">
+                <TableCell className="pl-5 py-3.5">
                   <div className="flex items-center gap-3">
-                    <Avatar className="w-9 h-9 border border-neutral-200 dark:border-neutral-700 shrink-0">
+                    <Avatar className="w-9 h-9 border border-border shrink-0 shadow-2xs">
                       <AvatarImage
                         src={user.avatarUrl || ""}
                         alt={user.fullName || "User"}
+                        className="object-cover"
                       />
-                      <AvatarFallback className="bg-blue-100 text-blue-700 font-bold text-xs">
+                      <AvatarFallback className="bg-primary-soft text-primary font-bold text-xs">
                         {initials}
                       </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1.5">
-                        <span className="font-semibold text-xs text-neutral-900 dark:text-neutral-100 truncate">
+                        <span className="font-semibold text-xs text-foreground truncate">
                           {user.fullName || "Tanpa Nama"}
                         </span>
                         {isSelf && (
-                          <span className="px-1.5 py-0.2 text-[9px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/50 dark:text-blue-300 rounded">
+                          <Badge
+                            variant="secondary"
+                            className="px-1.5 py-0 text-[9px] font-bold bg-primary-soft text-primary rounded-md"
+                          >
                             Anda
-                          </span>
+                          </Badge>
                         )}
                       </div>
-                      <p className="text-[11px] text-neutral-500 truncate">
+                      <p className="text-[11px] text-muted-foreground truncate">
                         {user.email}
                       </p>
                     </div>
@@ -145,14 +152,18 @@ export function UserTable({
                 </TableCell>
 
                 {/* NIM & Study Program Column */}
-                <TableCell className="py-3">
+                <TableCell className="py-3.5">
                   <div className="space-y-0.5">
-                    <span className="font-medium text-xs text-neutral-800 dark:text-neutral-200">
+                    <span className="font-mono text-xs text-foreground font-medium">
                       {user.nim || "-"}
                     </span>
-                    <p className="text-[11px] text-neutral-500 flex items-center gap-1">
-                      <GraduationCap className="w-3 h-3 shrink-0" />
-                      <span className="truncate max-w-[160px]">
+                    <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+                      <HugeiconsIcon
+                        icon={Mortarboard02Icon}
+                        size={13}
+                        className="shrink-0 text-muted-foreground/80"
+                      />
+                      <span className="truncate max-w-[170px]">
                         {user.studyProgramName || "Tidak ada"}
                       </span>
                     </p>
@@ -160,84 +171,102 @@ export function UserTable({
                 </TableCell>
 
                 {/* Role Badge Column */}
-                <TableCell className="py-3">
+                <TableCell className="py-3.5">
                   <UserRoleBadge role={user.role} />
                 </TableCell>
 
                 {/* WhatsApp Contact Column */}
-                <TableCell className="py-3">
+                <TableCell className="py-3.5">
                   {user.phoneNumber ? (
                     <a
                       href={`https://wa.me/${user.phoneNumber.replace(/^0/, "62")}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-medium"
+                      className="inline-flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 hover:underline font-medium"
                     >
-                      <Phone className="w-3 h-3" />
+                      <HugeiconsIcon
+                        icon={SmartPhone01Icon}
+                        size={14}
+                        className="shrink-0"
+                      />
                       <span>{user.phoneNumber}</span>
                     </a>
                   ) : (
-                    <span className="text-neutral-400 text-xs">-</span>
+                    <span className="text-muted-foreground text-xs font-mono">
+                      -
+                    </span>
                   )}
                 </TableCell>
 
                 {/* Account Status Column */}
-                <TableCell className="py-3">
+                <TableCell className="py-3.5">
                   {isArchived ? (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 border border-red-200 dark:border-red-800">
-                      <Archive className="w-3 h-3" />
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-destructive/10 text-destructive border border-destructive/20">
+                      <HugeiconsIcon icon={ArchiveIcon} size={12} />
                       <span>Nonaktif</span>
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                      <CheckCircle2 className="w-3 h-3" />
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+                      <HugeiconsIcon icon={CheckmarkCircle01Icon} size={12} />
                       <span>Aktif</span>
                     </span>
                   )}
                 </TableCell>
 
                 {/* Actions Menu Dropdown */}
-                <TableCell className="text-right pr-4 py-3">
+                <TableCell className="text-right pr-5 py-3.5 whitespace-nowrap">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="w-8 h-8 rounded-lg"
+                        className="w-8 h-8 rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground"
                       >
-                        <MoreHorizontal className="w-4 h-4 text-neutral-500" />
+                        <HugeiconsIcon icon={MoreHorizontalIcon} size={16} />
                         <span className="sr-only">Buka Menu Aksi</span>
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
                       align="end"
-                      className="w-48 rounded-xl p-1 text-xs"
+                      className="w-52 rounded-xl p-1 text-xs shadow-lg border border-border"
                     >
-                      <DropdownMenuLabel className="text-[10px] font-semibold uppercase text-neutral-400 px-2 py-1">
+                      <DropdownMenuLabel className="text-[10px] font-semibold uppercase text-muted-foreground px-2 py-1">
                         Aksi Pengguna
                       </DropdownMenuLabel>
 
                       <DropdownMenuItem
                         onClick={() => onDetail(user)}
-                        className="rounded-lg gap-2 cursor-pointer"
+                        className="rounded-lg gap-2 cursor-pointer py-2"
                       >
-                        <Eye className="w-3.5 h-3.5 text-neutral-500" />
+                        <HugeiconsIcon
+                          icon={ViewIcon}
+                          size={15}
+                          className="text-muted-foreground"
+                        />
                         <span>Lihat Detail PII</span>
                       </DropdownMenuItem>
 
                       <DropdownMenuItem
                         onClick={() => onEdit(user)}
-                        className="rounded-lg gap-2 cursor-pointer"
+                        className="rounded-lg gap-2 cursor-pointer py-2"
                       >
-                        <Edit className="w-3.5 h-3.5 text-blue-500" />
+                        <HugeiconsIcon
+                          icon={Edit02Icon}
+                          size={15}
+                          className="text-primary"
+                        />
                         <span>Edit Peran &amp; Data</span>
                       </DropdownMenuItem>
 
                       <DropdownMenuItem
                         onClick={() => onResetOnboarding(user)}
-                        className="rounded-lg gap-2 cursor-pointer"
+                        className="rounded-lg gap-2 cursor-pointer py-2"
                       >
-                        <RefreshCw className="w-3.5 h-3.5 text-amber-500" />
+                        <HugeiconsIcon
+                          icon={ReloadIcon}
+                          size={15}
+                          className="text-amber-500"
+                        />
                         <span>Reset Onboarding</span>
                       </DropdownMenuItem>
 
@@ -246,18 +275,18 @@ export function UserTable({
                       {isArchived ? (
                         <DropdownMenuItem
                           onClick={() => onRestore(user)}
-                          className="rounded-lg gap-2 text-emerald-600 focus:text-emerald-700 cursor-pointer"
+                          className="rounded-lg gap-2 text-emerald-600 dark:text-emerald-400 focus:text-emerald-700 cursor-pointer py-2"
                         >
-                          <RotateCcw className="w-3.5 h-3.5" />
+                          <HugeiconsIcon icon={RotateLeft01Icon} size={15} />
                           <span>Pulihkan Akun</span>
                         </DropdownMenuItem>
                       ) : (
                         <DropdownMenuItem
                           onClick={() => onDelete(user)}
                           disabled={isSelf}
-                          className="rounded-lg gap-2 text-red-600 focus:text-red-700 cursor-pointer"
+                          className="rounded-lg gap-2 text-destructive focus:text-destructive cursor-pointer py-2"
                         >
-                          <UserX className="w-3.5 h-3.5" />
+                          <HugeiconsIcon icon={UserBlock01Icon} size={15} />
                           <span>Arsipkan Akun</span>
                         </DropdownMenuItem>
                       )}
