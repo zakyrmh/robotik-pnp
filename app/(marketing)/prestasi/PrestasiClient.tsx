@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search } from "lucide-react";
+import { Search, Trophy, Calendar, Award } from "lucide-react";
 import type { Database } from "@/types/database.types";
 
 type AchievementRow = Database["public"]["Tables"]["achievements"]["Row"];
@@ -41,43 +41,59 @@ export default function PrestasiClient({ achievements }: PrestasiClientProps) {
 
   return (
     <div className="container mx-auto px-4 max-w-7xl pb-24">
-      <section className="py-16 text-center">
+      {/* Header / Hero Section */}
+      <section className="py-12 sm:py-16 text-center">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="max-w-3xl mx-auto space-y-6"
+          className="max-w-3xl mx-auto space-y-4"
         >
-          <span className="inline-block px-3 py-1 bg-cyber-blue/10 text-cyber-blue font-jetbrains text-mono-eyebrow rounded-sm uppercase tracking-wider">
-            Prestasi & Penghargaan
-          </span>
-          <h1 className="text-display-lg md:text-display-xl font-bold uppercase tracking-tight text-foreground leading-tight">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-border bg-card/80 dark:bg-card/40 backdrop-blur-xs text-xs font-mono text-accent-strong shadow-2xs">
+            <span className="size-2 rounded-full bg-accent-strong animate-pulse" />
+            <span className="font-semibold uppercase tracking-wider">
+              Prestasi & Penghargaan
+            </span>
+          </div>
+
+          <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold uppercase tracking-tight text-foreground leading-tight text-balance">
             Dedikasi, Inovasi, dan Kemenangan untuk Almamater
           </h1>
-          <p className="text-body-md text-muted-foreground">
+
+          <p className="font-body text-sm sm:text-base text-muted-foreground leading-relaxed max-w-2xl mx-auto text-pretty">
             Rekam jejak perjuangan, kreativitas, dan pencapaian teknologi
             terbaik dari para talenta muda robotik.
           </p>
         </motion.div>
       </section>
 
-      <section className="mb-12 sticky top-20 z-20 bg-canvas-dark/95 backdrop-blur-md py-4 border-b border-hairline-dark">
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-end">
-          <div className="flex gap-4 w-full md:w-auto">
-            <div className="relative flex-1 md:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+      {/* Filter & Search Bar */}
+      <section className="mb-10 sticky top-20 z-20 bg-background/80 backdrop-blur-md py-4 border-y border-border transition-colors">
+        <div className="flex flex-col sm:flex-row gap-3.5 items-center justify-between">
+          <div className="text-xs font-mono text-muted-foreground self-start sm:self-auto">
+            Menampilkan{" "}
+            <span className="font-semibold text-foreground font-mono">
+              {filteredAchievements.length}
+            </span>{" "}
+            prestasi
+          </div>
+
+          <div className="flex gap-3 w-full sm:w-auto">
+            <div className="relative flex-1 sm:w-72">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
               <input
                 type="text"
                 placeholder="Cari prestasi..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-surface-card-dark border border-hairline-dark rounded-none pl-10 pr-4 py-2 font-jetbrains text-sm focus:border-cyber-blue focus:outline-none transition-colors"
+                className="w-full bg-card border border-border rounded-lg pl-10 pr-4 py-2 font-body text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden transition-all shadow-2xs min-h-[40px]"
               />
             </div>
+
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
-              className="bg-surface-card-dark border border-hairline-dark rounded-none px-4 py-2 font-jetbrains text-sm focus:border-cyber-blue focus:outline-none transition-colors"
+              className="bg-card border border-border rounded-lg px-3.5 py-2 font-body text-xs sm:text-sm text-foreground focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden transition-all shadow-2xs cursor-pointer min-h-[40px]"
             >
               <option value="Semua">Semua Tahun</option>
               {years.map((year) => (
@@ -90,6 +106,7 @@ export default function PrestasiClient({ achievements }: PrestasiClientProps) {
         </div>
       </section>
 
+      {/* Achievements Grid */}
       <motion.div
         layout
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
@@ -99,59 +116,82 @@ export default function PrestasiClient({ achievements }: PrestasiClientProps) {
             <motion.div
               key={achievement.id}
               layout
-              initial={{ opacity: 0, scale: 0.9 }}
+              initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              transition={{ duration: 0.3, delay: index * 0.05 }}
-              className="group bg-surface-card-dark border border-hairline-dark rounded-sm overflow-hidden hover:border-cyber-blue hover:shadow-[0_0_12px_rgba(0,102,177,0.2)] transition-all duration-300"
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ duration: 0.3, delay: index * 0.04 }}
+              className="group bg-card border border-border rounded-xl overflow-hidden shadow-2xs hover:border-primary/50 hover:shadow-soft transition-all duration-200 flex flex-col justify-between relative"
             >
-              <div className="relative h-48 bg-canvas-dark overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-tr from-canvas-dark to-surface-card-dark/50 z-0"></div>
-                <div className="absolute inset-0 flex items-center justify-center opacity-10 group-hover:scale-105 transition-transform duration-500">
-                  <span className="font-jetbrains text-display-md text-foreground">
-                    ROBOTIK PNP
-                  </span>
+              {/* Top Accent Line */}
+              <div className="absolute top-0 left-0 right-0 h-0.5 bg-border group-hover:bg-primary transition-colors duration-200 z-10" />
+
+              <div>
+                {/* Visual Header Box */}
+                <div className="relative h-40 bg-secondary/70 border-b border-border flex items-center justify-center overflow-hidden">
+                  <div className="absolute inset-0 bg-linear-to-b from-transparent to-card/60 z-0" />
+
+                  {/* Watermark Logo / Icon */}
+                  <div className="relative z-0 flex flex-col items-center justify-center opacity-15 group-hover:opacity-25 group-hover:scale-105 transition-all duration-300">
+                    <Trophy className="size-16 text-primary mb-1" />
+                    <span className="font-mono text-xs uppercase tracking-widest text-foreground font-bold">
+                      ROBOTIK PNP
+                    </span>
+                  </div>
+
+                  {/* Division Badge (Top Right) */}
+                  <div className="absolute top-3.5 right-3.5 z-10">
+                    <span className="inline-block px-2.5 py-1 text-[10px] font-mono font-bold uppercase tracking-wider rounded-md bg-accent text-accent-foreground dark:bg-accent/20 border border-border shadow-2xs">
+                      {achievement.divisions?.slug.toUpperCase() || "UMUM"}
+                    </span>
+                  </div>
+
+                  {/* Level Badge (Bottom Left) */}
+                  <div className="absolute bottom-3 left-3.5 z-10 flex items-center gap-1.5">
+                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[11px] font-mono font-medium rounded-md bg-card/90 dark:bg-card/70 border border-border text-foreground shadow-2xs">
+                      <Award className="size-3 text-accent-strong" />
+                      {achievement.level}
+                    </span>
+                  </div>
                 </div>
-                <div className="absolute top-4 right-4 z-10">
-                  <span
-                    className="inline-block px-2 py-1 text-xs font-jetbrains font-bold text-white rounded-sm"
-                    style={{
-                      backgroundColor:
-                        achievement.divisions?.badge_color ||
-                        "var(--color-cyber-blue)",
-                    }}
-                  >
-                    {achievement.divisions?.slug.toUpperCase() || "UMUM"}
-                  </span>
+
+                {/* Content Details */}
+                <div className="p-6 space-y-3">
+                  <div className="flex items-center justify-between text-xs font-mono text-muted-foreground">
+                    <span className="inline-flex items-center gap-1 font-semibold text-accent-strong">
+                      <Calendar className="size-3.5" />
+                      {achievement.year}
+                    </span>
+                    <span className="uppercase tracking-wider">
+                      {achievement.divisions?.name || "Tingkat Tim"}
+                    </span>
+                  </div>
+
+                  <h2 className="font-display font-bold text-lg sm:text-xl text-foreground group-hover:text-primary transition-colors leading-snug line-clamp-2">
+                    {achievement.title}
+                  </h2>
+
+                  {achievement.description && (
+                    <p className="font-body text-xs sm:text-sm text-muted-foreground line-clamp-3 leading-relaxed">
+                      {achievement.description}
+                    </p>
+                  )}
                 </div>
               </div>
 
-              <div className="p-6 space-y-4">
-                <div className="font-jetbrains text-mono-eyebrow text-muted-foreground flex justify-between items-center">
-                  <span>{achievement.level}</span>
-                  <span>{achievement.year}</span>
-                </div>
-
-                <h3 className="text-display-md text-foreground leading-tight line-clamp-2">
-                  {achievement.title}
-                </h3>
-
-                {achievement.description && (
-                  <p className="text-body-md text-muted-foreground line-clamp-3">
-                    {achievement.description}
-                  </p>
-                )}
-
-                <div className="h-[2px] w-full bg-gradient-to-r from-cyber-blue via-tech-navy to-crimson-red mt-4 opacity-50 group-hover:opacity-100 transition-opacity"></div>
+              {/* Bottom Card Footer */}
+              <div className="px-6 pb-5 pt-0">
+                <div className="h-0.5 w-full bg-border group-hover:bg-primary/50 transition-colors" />
               </div>
             </motion.div>
           ))}
         </AnimatePresence>
       </motion.div>
 
+      {/* Empty State */}
       {filteredAchievements.length === 0 && (
-        <div className="text-center py-24">
-          <p className="font-jetbrains text-muted-foreground">
+        <div className="text-center py-20 bg-card border border-border rounded-xl p-8 shadow-2xs mt-6">
+          <Trophy className="size-10 text-muted-foreground/40 mx-auto mb-3" />
+          <p className="font-body text-sm sm:text-base text-muted-foreground">
             Tidak ada prestasi yang cocok dengan filter.
           </p>
         </div>

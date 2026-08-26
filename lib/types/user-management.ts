@@ -44,9 +44,14 @@ export interface SystemAuditLogEntry {
   id: string;
   actorId: string | null;
   actorName?: string | null;
+  actorEmail?: string | null;
+  actorRole?: string | null;
+  actorAvatarUrl?: string | null;
   actionType: string;
   targetUserId: string | null;
   targetUserName?: string | null;
+  targetUserEmail?: string | null;
+  targetUserRole?: string | null;
   oldValue: Record<string, unknown> | null;
   newValue: Record<string, unknown> | null;
   details: string | null;

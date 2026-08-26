@@ -2,13 +2,7 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  ArrowRight01Icon,
-  ChampionIcon,
-  RobotIcon,
-  UserGroupIcon,
-} from "@hugeicons/core-free-icons";
+import { ArrowRight, Trophy, Users, Bot, Cpu, ShieldCheck } from "lucide-react";
 
 interface HeroSectionProps {
   activeMemberCount?: number;
@@ -20,204 +14,198 @@ export function HeroSection({
   totalAchievements = 40,
 }: HeroSectionProps) {
   return (
-    <section className="relative min-h-[90vh] 4k:min-h-[85vh] bg-background text-foreground overflow-hidden flex items-center py-16 sm:py-20 lg:py-28 xl:py-32 4k:py-48 blueprint-grid-bg transition-colors duration-200">
-      {/* Ambient Orbs */}
-      <motion.div
-        animate={{ scale: [1, 1.2, 1], opacity: [0.15, 0.3, 0.15] }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-[-10%] right-[-5%] w-112.5 sm:w-150 4k:w-[1000px] h-112.5 sm:h-150 4k:h-[1000px] rounded-full bg-dongker-surface/10 dark:bg-dongker-surface/25 blur-3xl pointer-events-none"
-      />
-      <motion.div
-        animate={{ scale: [1, 1.15, 1], opacity: [0.15, 0.25, 0.15] }}
-        transition={{
-          duration: 10,
-          repeat: Infinity,
-          ease: "easeInOut",
-          delay: 2,
-        }}
-        className="absolute bottom-[-15%] left-[-5%] w-100 sm:w-125 4k:w-[800px] h-100 sm:h-125 4k:h-[800px] rounded-full bg-pnp-orange/10 dark:bg-pnp-orange/20 blur-3xl pointer-events-none"
-      />
+    <section className="relative min-h-[90vh] bg-background text-foreground overflow-hidden flex items-center mt-6 sm:mt-0 py-16 sm:py-20 lg:py-28 xl:py-32 transition-colors duration-200">
+      {/* Subtle ambient gradient highlights */}
+      <div className="absolute top-1/4 right-0 w-96 sm:w-130 h-96 sm:h-130 rounded-full bg-primary/5 dark:bg-primary/10 blur-3xl pointer-events-none" />
+      <div className="absolute bottom-10 left-10 w-80 sm:w-110 h-80 sm:h-110 rounded-full bg-accent-strong/5 dark:bg-accent-strong/10 blur-3xl pointer-events-none" />
 
-      <div className="relative z-10 max-w-330 2xl:max-w-384 4k:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 4k:px-20 w-full">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 4k:gap-20 items-center">
-          {/* Left: Text content (7 cols) */}
-          <div className="lg:col-span-7 space-y-6 sm:space-y-8 4k:space-y-12">
-            {/* Main Headline */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 xl:gap-16 items-center">
+          {/* Left Column: Typography & CTAs (7 cols) */}
+          <div className="lg:col-span-7 space-y-6 sm:space-y-7">
+            {/* Identity Badge */}
             <motion.div
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.1 }}
+              transition={{ duration: 0.5 }}
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-border bg-card/80 dark:bg-card/40 backdrop-blur-xs text-xs font-body text-foreground shadow-2xs"
             >
-              <h1 className="font-display font-bold text-3xl sm:text-5xl md:text-6xl lg:text-7xl 2xl:text-8xl 4k:text-9xl leading-[1.05] uppercase tracking-tight text-foreground">
-                MESIN.
-                <br />
-                <span className="text-pnp-orange">LOGIKA.</span>
-                <br />
-                JUARA.
-              </h1>
-              {/* PNP Orange Accent Divider */}
-              <div className="h-1 sm:h-1.5 4k:h-3 w-16 sm:w-24 4k:w-40 bg-pnp-orange rounded-full mt-4 sm:mt-6" />
+              <span className="size-2 rounded-full bg-accent-strong animate-pulse" />
+              <span className="font-medium text-foreground">
+                Unit Kegiatan Mahasiswa
+              </span>
+              <span className="text-muted-foreground">•</span>
+              <span className="font-mono text-[11px] text-muted-foreground uppercase">
+                Politeknik Negeri Padang
+              </span>
             </motion.div>
 
-            {/* Sub Headline */}
+            {/* Main Headline & Motto */}
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              className="space-y-3"
+            >
+              <h1 className="font-display font-bold text-3xl sm:text-5xl md:text-6xl lg:text-7xl tracking-tight text-foreground leading-[1.08] text-balance">
+                We Play with <span className="text-primary">Technology.</span>
+              </h1>
+              <p className="font-display font-semibold text-lg sm:text-xl md:text-2xl text-accent-strong italic">
+                No Victory Without Sacrifice.
+              </p>
+            </motion.div>
+
+            {/* Description */}
             <motion.p
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.25 }}
-              className="text-muted-foreground text-sm sm:text-base lg:text-lg 2xl:text-xl 4k:text-3xl font-light leading-relaxed max-w-xl 2xl:max-w-2xl 4k:max-w-4xl"
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="font-body text-muted-foreground text-sm sm:text-base lg:text-lg leading-relaxed max-w-2xl text-pretty"
             >
-              Unit Kegiatan Mahasiswa Robotik Politeknik Negeri Padang adalah
-              wadah pengembangan bakat, minat, dan rekayasa teknologi robotika.
-              Bersama motto &quot;No Victory Without Sacrifice&quot; dan slogan
-              &quot;We Play With Technology&quot;, kami berkomitmen mencetak
-              juara nasional.
+              Unit Kegiatan Mahasiswa di Politeknik Negeri Padang yang berfokus
+              pada rekayasa mekatronika, sistem kendali, visi komputer, dan
+              kecerdasan buatan melalui perancangan robot kompetisi tingkat
+              regional dan nasional.
             </motion.p>
 
             {/* CTA Buttons */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.35 }}
-              className="flex flex-wrap gap-4 pt-2"
+              transition={{ duration: 0.6, delay: 0.3 }}
+              className="flex flex-wrap items-center gap-3.5 pt-2"
             >
               <Link
                 href="/divisi"
-                className="inline-flex items-center gap-3 font-mono text-xs sm:text-sm 4k:text-xl font-semibold uppercase tracking-[1.5px] px-6 py-3.5 sm:px-8 sm:py-4 4k:px-12 4k:py-6 bg-dongker-surface text-white hover:bg-dongker-hover dark:bg-pnp-orange dark:hover:bg-pnp-orange/90 rounded-md shadow-md transition-all group"
+                className="inline-flex items-center justify-center gap-2 font-body font-medium text-sm px-6 py-3.5 bg-primary hover:bg-primary-hover text-primary-foreground rounded-md shadow-xs transition-all duration-150 active:scale-[0.98] min-h-[44px] group"
               >
-                Jelajahi Divisi
-                <HugeiconsIcon
-                  icon={ArrowRight01Icon}
-                  size={18}
-                  className="group-hover:translate-x-1 transition-transform duration-200"
-                />
+                <span>Lihat Divisi Robot</span>
+                <ArrowRight className="size-4 group-hover:translate-x-0.5 transition-transform" />
               </Link>
               <Link
                 href="/register"
-                className="inline-flex items-center gap-3 font-mono text-xs sm:text-sm 4k:text-xl font-semibold uppercase tracking-[1.5px] px-6 py-3.5 sm:px-8 sm:py-4 4k:px-12 4k:py-6 bg-transparent border border-dongker-surface text-dongker-surface hover:bg-dongker-surface/10 dark:border-white/20 dark:text-white dark:hover:bg-white/10 rounded-md transition-all"
+                className="inline-flex items-center justify-center gap-2 font-body font-medium text-sm px-6 py-3.5 border border-border bg-card hover:bg-muted text-foreground rounded-md shadow-2xs transition-all duration-150 active:scale-[0.98] min-h-[44px]"
               >
-                Bergabung Sekarang
+                <span>Pendaftaran Anggota</span>
               </Link>
             </motion.div>
           </div>
 
-          {/* Right: Visual panel (5 cols) */}
+          {/* Right Column: Visual Technical CAD & Blueprint (5 cols) */}
           <motion.div
-            initial={{ opacity: 0, x: 40 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="lg:col-span-5 relative hidden lg:block"
+            initial={{ opacity: 0, scale: 0.96 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.7, delay: 0.25 }}
+            className="lg:col-span-5 relative"
           >
-            {/* Main Visual Blueprint Card */}
-            <div className="relative border border-border dark:border-white/15 bg-card dark:bg-[#112240] rounded-xl p-5 4k:p-8 shadow-blueprint overflow-hidden">
-              {/* Left edge 4px vertical accent */}
-              <div className="absolute left-0 top-0 bottom-0 w-1 sm:w-1.5 bg-pnp-orange" />
-
-              {/* Header card info */}
-              <div className="flex items-center justify-between pb-4 mb-4 border-b border-border/60 dark:border-white/10">
+            {/* Main Technical Spec Container */}
+            <div className="relative border border-border bg-card rounded-xl p-5 sm:p-6 shadow-soft overflow-hidden">
+              {/* Top Card Header */}
+              <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-border">
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-pnp-orange" />
-                  <span className="font-mono text-micro 4k:text-base uppercase tracking-widest text-muted-foreground font-semibold">
-                    BLUEPRINT ARCHITECTURE
+                  <span className="size-2 rounded-full bg-accent-strong" />
+                  <span className="font-mono text-xs uppercase tracking-wider text-muted-foreground font-semibold">
+                    CAD TELEMETRY & SPEC
                   </span>
                 </div>
-                <span className="font-mono text-micro 4k:text-base uppercase tracking-wider text-pnp-orange bg-orange-wash dark:bg-pnp-orange/15 px-2.5 py-0.5 rounded-full font-semibold">
+                <span className="font-mono text-[11px] uppercase tracking-wider text-accent-strong bg-accent dark:bg-accent/20 px-2 py-0.5 rounded-full font-semibold">
                   SYS_ONLINE
                 </span>
               </div>
 
-              {/* Robot Illustration Container */}
-              <div className="aspect-4/3 bg-muted/40 dark:bg-dongker-ink/60 rounded-lg flex items-center justify-center overflow-hidden relative border border-border/50 dark:border-white/10">
-                <div className="blueprint-grid-bg absolute inset-0 opacity-60" />
+              {/* Central Schematics Display */}
+              <div className="aspect-4/3 bg-secondary/60 rounded-lg flex flex-col items-center justify-center overflow-hidden relative border border-border/80 p-6">
+                <motion.div
+                  animate={{ y: [-4, 4, -4] }}
+                  transition={{
+                    duration: 5,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                  className="relative flex items-center justify-center"
+                >
+                  <div className="absolute inset-0 blur-2xl opacity-30 bg-primary rounded-full" />
+                  <Bot className="size-20 sm:size-24 text-primary relative z-10" />
+                </motion.div>
 
-                <div className="relative z-10 flex flex-col items-center gap-5">
-                  <motion.div
-                    animate={{ y: [-6, 6, -6] }}
-                    transition={{
-                      duration: 4,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                    }}
-                    className="relative"
-                  >
-                    <div className="absolute inset-0 blur-xl opacity-40 bg-pnp-orange/50 rounded-full" />
-                    <HugeiconsIcon
-                      icon={RobotIcon}
-                      size={90}
-                      className="text-dongker-surface dark:text-pnp-orange relative z-10 4k:w-36 4k:h-36"
-                    />
-                  </motion.div>
-
-                  <div className="text-center">
-                    <p className="font-mono text-micro 4k:text-base uppercase tracking-[2px] font-bold text-foreground">
-                      SYSTEM TELEMETRY
-                    </p>
-                    <div className="flex items-center gap-2 justify-center mt-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="font-mono text-micro 4k:text-sm text-muted-foreground uppercase tracking-wider">
-                        ALL UNITS OPERATIONAL
-                      </span>
-                    </div>
+                <div className="text-center mt-4 relative z-10">
+                  <p className="font-mono text-xs uppercase tracking-widest font-bold text-foreground">
+                    AUTONOMOUS ROBOT PLATFORM
+                  </p>
+                  <div className="flex items-center gap-2 justify-center mt-1">
+                    <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span className="font-mono text-[11px] text-muted-foreground uppercase tracking-wider">
+                      ALL SYSTEMS OPERATIONAL
+                    </span>
                   </div>
                 </div>
 
-                {/* Technical Corner Metadata */}
-                <div className="absolute top-3 left-3 font-mono text-micro 4k:text-sm text-muted-foreground/70 uppercase tracking-wider">
-                  SYS/ROBOT_V2.0
+                {/* Schematics Metadata Overlays */}
+                <div className="absolute top-2.5 left-2.5 font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
+                  SPEC: KRI-STD
                 </div>
-                <div className="absolute top-3 right-3 font-mono text-micro 4k:text-sm text-pnp-orange font-semibold uppercase tracking-wider">
-                  PORTAL_2026
+                <div className="absolute top-2.5 right-2.5 font-mono text-[10px] text-accent-strong font-semibold uppercase tracking-wider">
+                  REV_2026.1
                 </div>
-                <div className="absolute bottom-3 left-3 font-mono text-micro 4k:text-sm text-muted-foreground/70 uppercase tracking-wider">
-                  LAT: -0.9492
+                <div className="absolute bottom-2.5 left-2.5 font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
+                  COORD: 0.9492° S
                 </div>
-                <div className="absolute bottom-3 right-3 font-mono text-micro 4k:text-sm text-muted-foreground/70 uppercase tracking-wider">
+                <div className="absolute bottom-2.5 right-2.5 font-mono text-[10px] text-muted-foreground uppercase tracking-wider">
                   PNP_PADANG
+                </div>
+              </div>
+
+              {/* Bottom Quick Spec Bar */}
+              <div className="mt-4 pt-3.5 border-t border-border grid grid-cols-2 gap-3 text-xs">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Cpu className="size-3.5 text-primary shrink-0" />
+                  <span className="font-mono text-[11px]">
+                    Real-time RTOS / CV
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <ShieldCheck className="size-3.5 text-accent-strong shrink-0" />
+                  <span className="font-mono text-[11px]">
+                    Puspresnas Certified
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* Floating Stat Badges */}
+            {/* Floating Metric Badges */}
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7, duration: 0.5 }}
-              className="absolute -bottom-5 -left-5 bg-card dark:bg-[#112240] border border-border dark:border-white/15 rounded-lg p-3.5 sm:p-4 4k:p-6 shadow-blueprint flex items-center gap-3.5"
+              transition={{ delay: 0.5, duration: 0.4 }}
+              className="absolute -bottom-4 -left-4 sm:-left-5 bg-card border border-border rounded-lg p-3 sm:p-3.5 shadow-soft flex items-center gap-3"
             >
-              <div className="p-2 sm:p-2.5 rounded-md bg-orange-wash dark:bg-pnp-orange/15 text-pnp-orange">
-                <HugeiconsIcon
-                  icon={ChampionIcon}
-                  size={20}
-                  className="4k:w-8 4k:h-8"
-                />
+              <div className="p-2 rounded-md bg-accent dark:bg-accent/20 text-accent-strong">
+                <Trophy className="size-4 sm:size-5" />
               </div>
               <div>
-                <p className="font-display text-xl 4k:text-3xl font-bold text-foreground leading-none">
+                <p className="font-display text-lg sm:text-xl font-bold text-foreground leading-none">
                   {totalAchievements}+
                 </p>
-                <p className="font-mono text-micro 4k:text-base uppercase tracking-wider text-muted-foreground mt-0.5">
-                  Total Prestasi
+                <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5">
+                  Prestasi Resmi
                 </p>
               </div>
             </motion.div>
 
             <motion.div
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.9, duration: 0.5 }}
-              className="absolute -top-5 -right-5 bg-card dark:bg-[#112240] border border-border dark:border-white/15 rounded-lg p-3.5 sm:p-4 4k:p-6 shadow-blueprint flex items-center gap-3.5"
+              transition={{ delay: 0.65, duration: 0.4 }}
+              className="absolute -top-4 -right-4 sm:-right-5 bg-card border border-border rounded-lg p-3 sm:p-3.5 shadow-soft flex items-center gap-3"
             >
-              <div className="p-2 sm:p-2.5 rounded-md bg-muted dark:bg-white/10 text-dongker-surface dark:text-pnp-orange">
-                <HugeiconsIcon
-                  icon={UserGroupIcon}
-                  size={20}
-                  className="4k:w-8 4k:h-8"
-                />
+              <div className="p-2 rounded-md bg-secondary text-primary">
+                <Users className="size-4 sm:size-5" />
               </div>
               <div>
-                <p className="font-display text-xl 4k:text-3xl font-bold text-foreground leading-none">
+                <p className="font-display text-lg sm:text-xl font-bold text-foreground leading-none">
                   {activeMemberCount}+
                 </p>
-                <p className="font-mono text-micro 4k:text-base uppercase tracking-wider text-muted-foreground mt-0.5">
+                <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground mt-0.5">
                   Anggota Aktif
                 </p>
               </div>
@@ -225,9 +213,6 @@ export function HeroSection({
           </motion.div>
         </div>
       </div>
-
-      {/* Bottom Tricolor Accent Stripe */}
-      <div className="absolute bottom-0 left-0 right-0 h-0.75 bg-linear-to-r from-dongker-surface via-pnp-orange to-dongker-ink" />
     </section>
   );
 }

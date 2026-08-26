@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   Dialog,
   DialogContent,
@@ -15,7 +16,12 @@ import { Label } from "@/components/ui/label";
 import { UserManagementItem } from "@/lib/types/user-management";
 import { softDeleteUserAction } from "@/lib/actions/admin-users";
 import { toast } from "sonner";
-import { AlertTriangle, Loader2, UserX } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  AlertCircleIcon,
+  Loading03Icon,
+  UserBlock01Icon,
+} from "@hugeicons/core-free-icons";
 
 interface UserDeleteDialogProps {
   isOpen: boolean;
@@ -30,6 +36,7 @@ export function UserDeleteDialog({
   user,
   currentUserId,
 }: UserDeleteDialogProps) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [deleteReason, setDeleteReason] = useState("");
 
@@ -58,6 +65,7 @@ export function UserDeleteDialog({
         if (res.success) {
           toast.success(res.message);
           setDeleteReason("");
+          router.refresh();
           onClose();
         } else {
           toast.error("Gagal menonaktifkan akun.");
@@ -71,17 +79,17 @@ export function UserDeleteDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md rounded-2xl p-6">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md rounded-2xl p-0 overflow-hidden border border-border shadow-lg">
+        <DialogHeader className="p-5 sm:p-6 border-b border-border bg-card">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-red-100 dark:bg-red-950/60 flex items-center justify-center text-red-600 dark:text-red-400 shrink-0">
-              <AlertTriangle className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-full bg-destructive/10 text-destructive flex items-center justify-center shrink-0">
+              <HugeiconsIcon icon={AlertCircleIcon} size={20} />
             </div>
             <div>
-              <DialogTitle className="text-base font-bold text-neutral-900 dark:text-neutral-100">
-                Arsipkan / Menonaktifkan Pengguna
+              <DialogTitle className="font-display text-base font-semibold tracking-tight text-foreground">
+                Arsipkan / Nonaktifkan Pengguna
               </DialogTitle>
-              <DialogDescription className="text-xs text-neutral-500">
+              <DialogDescription className="text-xs text-muted-foreground mt-0.5">
                 Akun akan dinonaktifkan (Soft Delete) tanpa menghapus data
                 secara permanen.
               </DialogDescription>
@@ -89,39 +97,42 @@ export function UserDeleteDialog({
           </div>
         </DialogHeader>
 
-        <div className="space-y-3 py-2 text-xs">
-          <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700">
-            <p className="text-neutral-700 dark:text-neutral-300 font-medium">
+        <div className="space-y-3 p-5 sm:p-6 bg-background text-xs">
+          <div className="p-3.5 rounded-xl bg-surface/50 dark:bg-card border border-border">
+            <p className="text-foreground font-medium">
               Pengguna Target: <strong>{user.fullName || user.email}</strong> (
-              {user.role})
+              <span className="font-mono text-muted-foreground">
+                {user.role}
+              </span>
+              )
             </p>
           </div>
 
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+            <Label className="text-xs font-medium text-foreground">
               Alasan Penonaktifan / Pengarsipan{" "}
-              <span className="text-red-500">*</span>
+              <span className="text-destructive">*</span>
             </Label>
             <Textarea
-              placeholder="Jelaskan alasan organisasi (misal: Lulus kuliah, mengundurkan diri, atau duplikat akun)..."
+              placeholder="Jelaskan alasan (misal: Lulus kuliah/alumni, mengundurkan diri, atau duplikat akun)..."
               value={deleteReason}
               onChange={(e) => setDeleteReason(e.target.value)}
-              className="rounded-xl text-xs min-h-[90px] focus-visible:ring-red-500"
+              className="rounded-lg text-xs min-h-[90px] border-border bg-background focus-visible:ring-destructive/20"
             />
-            <p className="text-[11px] text-neutral-400">
-              Minimal 5 karakter. Alasan ini akan dicatat ke dalam log audit
-              sistem.
+            <p className="text-[11px] text-muted-foreground">
+              Minimal 5 karakter. Catatan ini akan disimpan ke dalam log audit
+              kepatuhan sistem.
             </p>
           </div>
         </div>
 
-        <DialogFooter className="gap-2 pt-2">
+        <DialogFooter className="p-4 sm:p-5 border-t border-border bg-surface/40 dark:bg-card flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
             disabled={isPending}
-            className="h-9 rounded-xl text-xs"
+            className="min-h-[44px] rounded-lg text-xs"
           >
             Batal
           </Button>
@@ -130,16 +141,20 @@ export function UserDeleteDialog({
             variant="destructive"
             onClick={handleConfirm}
             disabled={isPending || isSelf || deleteReason.trim().length < 5}
-            className="h-9 rounded-xl text-xs font-medium gap-1.5"
+            className="min-h-[44px] rounded-lg text-xs font-medium gap-1.5 shadow-xs"
           >
             {isPending ? (
               <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <HugeiconsIcon
+                  icon={Loading03Icon}
+                  size={15}
+                  className="animate-spin"
+                />
                 <span>Memproses...</span>
               </>
             ) : (
               <>
-                <UserX className="w-3.5 h-3.5" />
+                <HugeiconsIcon icon={UserBlock01Icon} size={15} />
                 <span>Konfirmasi Nonaktifkan</span>
               </>
             )}

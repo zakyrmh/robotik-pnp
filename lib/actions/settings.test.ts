@@ -96,16 +96,16 @@ describe("Settings Zod Schemas Validation", () => {
 
   it("should validate changePasswordSchema and check match", () => {
     const validPassword = {
-      currentPassword: "oldpassword123",
-      newPassword: "newpassword123",
-      confirmNewPassword: "newpassword123",
+      currentPassword: "OldPassword123!",
+      newPassword: "NewPassword123!",
+      confirmNewPassword: "NewPassword123!",
     };
     expect(changePasswordSchema.safeParse(validPassword).success).toBe(true);
 
     const mismatchedPassword = {
-      currentPassword: "oldpassword123",
-      newPassword: "newpassword123",
-      confirmNewPassword: "differentpassword",
+      currentPassword: "OldPassword123!",
+      newPassword: "NewPassword123!",
+      confirmNewPassword: "DifferentPassword123!",
     };
     const result = changePasswordSchema.safeParse(mismatchedPassword);
     expect(result.success).toBe(false);
@@ -227,9 +227,9 @@ describe("Settings Server Actions", () => {
     });
 
     const res = await changePasswordAction({
-      currentPassword: "correctpassword",
-      newPassword: "newpassword123",
-      confirmNewPassword: "newpassword123",
+      currentPassword: "CurrentPassword123!",
+      newPassword: "Xk9#mQ2$vL8!zW5@p",
+      confirmNewPassword: "Xk9#mQ2$vL8!zW5@p",
     });
 
     expect(res.success).toBe(true);

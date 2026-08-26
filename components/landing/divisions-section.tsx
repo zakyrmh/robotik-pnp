@@ -3,8 +3,7 @@
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 import Link from "next/link";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
+import { ArrowRight, Layers } from "lucide-react";
 
 interface DBDivision {
   slug: string;
@@ -21,64 +20,81 @@ interface DivisionsSectionProps {
   divisions?: DBDivision[];
 }
 
-const longNameMap: Record<string, string> = {
-  krai: "Kontes Robot ABU Indonesia",
-  "krsbi-b": "Sepak Bola Robot Beroda",
-  "krsbi-h": "Sepak Bola Robot Humanoid",
-  krsti: "Kontes Robot Seni Tari Indonesia",
-  krsri: "Kontes Robot SAR Indonesia",
-};
-
 const defaultDivisions = [
   {
     id: "krai",
     code: "KRAI",
     name: "Kontes Robot ABU Indonesia",
-    category: "Divisi 01",
+    divisionNum: "Divisi 01",
+    categoryTag: "Flagship / Mekatronika Daya",
     description:
-      "Robot beroda maupun berkaki yang bertempur dalam arena ABU Robocon — tantangan teknis tertinggi di skala Asia.",
-    skills: ["Kontrol Otomatis", "Navigasi Lapangan", "Strategi Tim"],
-    tag: "Flagship",
+      "Perancangan robot beroda dan berkaki untuk menyelesaikan misi bertempo tinggi pada arena ABU Robocon.",
+    skills: [
+      "Mekanisme Pelempar",
+      "Pneumatik",
+      "Kontrol Otomatis",
+      "Navigasi Lapangan",
+    ],
   },
   {
     id: "krsbi-b",
     code: "KRSBI-B",
     name: "Sepak Bola Robot Beroda",
-    category: "Divisi 02",
+    divisionNum: "Divisi 02",
+    categoryTag: "Autonomous / Multi-Agent",
     description:
-      "Robot beroda yang bermain sepak bola sesungguhnya, dengan sistem visi komputer dan koordinasi tim real-time.",
-    skills: ["Computer Vision", "Locomotion", "Ball Control"],
-    tag: "Populer",
+      "Robot beroda otonom yang bermain sepak bola secara terkoordinasi memanfaatkan visi komputer dan komunikasi nirkabel tim.",
+    skills: [
+      "Computer Vision",
+      "Omni-directional Drive",
+      "Algoritma Lokomosi",
+      "Koordinasi Tim",
+    ],
   },
   {
     id: "krsbi-h",
     code: "KRSBI-H",
     name: "Sepak Bola Robot Humanoid",
-    category: "Divisi 03",
+    divisionNum: "Divisi 03",
+    categoryTag: "Humanoid / Bipedal",
     description:
-      "Robot humanoid bipedal yang bergerak layaknya manusia dan bertanding dalam pertandingan sepak bola 5 lawan 5.",
-    skills: ["Bipedal Walking", "Balance Control", "AI Decision"],
-    tag: "Humanoid",
+      "Pengembangan robot berkaki dua dengan kendali kestabilan dinamis saat berjalan, menendang bola, dan mendeteksi objek.",
+    skills: [
+      "Bipedal Walking",
+      "Inverse Kinematics",
+      "Balance Control",
+      "Pengolahan Citra",
+    ],
   },
   {
     id: "krsti",
     code: "KRSTI",
     name: "Kontes Robot Seni Tari Indonesia",
-    category: "Divisi 04",
+    divisionNum: "Divisi 04",
+    categoryTag: "Humanoid / Art & Culture",
     description:
-      "Robot humanoid yang menarikan tari tradisional Indonesia dengan sinkronisasi musik dan gerakan presisi milimeter.",
-    skills: ["Motion Planning", "Rhythm Sync", "Servo Control"],
-    tag: "Budaya",
+      "Robot humanoid yang menarikan tarian tradisional Indonesia dengan sinkronisasi musik dan akurasi gerakan multi-axis.",
+    skills: [
+      "Motion Planning",
+      "Sinkronisasi Audio",
+      "Kendali Servo Presisi",
+      "Kinematika Gerak",
+    ],
   },
   {
     id: "krsri",
     code: "KRSRI",
     name: "Kontes Robot SAR Indonesia",
-    category: "Divisi 05",
+    divisionNum: "Divisi 05",
+    categoryTag: "Autonomous / Rescue",
     description:
-      "Robot pencari dan penyelamat korban bencana — mensimulasikan operasi SAR nyata di medan rusak dan berantakan.",
-    skills: ["SLAM Navigation", "Sensor Fusion", "Autonomous SAR"],
-    tag: "SAR",
+      "Robot otonom penelusur medan labirin simulasi bencana untuk mencari korban dan memadamkan titik api.",
+    skills: [
+      "Sensor Fusion",
+      "Pemetaan Labirin (SLAM)",
+      "Deteksi Api & Korban",
+      "Navigasi Otonom",
+    ],
   },
 ];
 
@@ -90,143 +106,163 @@ export function DivisionsSection({
 
   const renderedDivisions =
     dbDivisions && dbDivisions.length > 0
-      ? dbDivisions.map((div) => ({
-          id: div.slug,
-          code: div.name,
-          name: longNameMap[div.slug] || div.name,
-          category: `Divisi ${String(div.sort_order).padStart(2, "0")}`,
-          description: div.short_description,
-          skills: div.tags,
-          tag: div.badge_label || "Robot",
-        }))
+      ? defaultDivisions.map((defDiv) => {
+          const matched = dbDivisions.find((d) => d.slug === defDiv.id);
+          if (!matched) return defDiv;
+          return {
+            ...defDiv,
+            description: matched.short_description || defDiv.description,
+            skills: matched.tags?.length > 0 ? matched.tags : defDiv.skills,
+            categoryTag: matched.badge_label || defDiv.categoryTag,
+          };
+        })
       : defaultDivisions;
 
   return (
     <section
-      className="bg-mist-gray/40 dark:bg-dongker-ink/40 py-16 sm:py-20 4k:py-36 border-t border-border transition-colors duration-200"
+      className="bg-background py-16 sm:py-20 lg:py-24 border-t border-border transition-colors duration-200"
       ref={ref}
     >
-      <div className="max-w-330 2xl:max-w-384 4k:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 4k:px-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10 4k:mb-16">
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 sm:mb-14">
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={inView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.5 }}
+            className="max-w-2xl"
           >
-            <span className="font-mono text-micro sm:text-xs 4k:text-lg font-semibold uppercase tracking-[2px] text-pnp-orange block mb-2">
-              — EKSPLORASI DIVISI
+            <span className="font-mono text-xs uppercase tracking-wider text-accent-strong font-semibold block mb-2">
+              DIVISI KOMPETISI
             </span>
-            <h2 className="font-display font-bold text-2xl sm:text-3xl md:text-4xl 4k:text-6xl uppercase text-foreground leading-none">
-              5 DIVISI <span className="text-pnp-orange">ROBOT KOMPETISI</span>
+            <h2 className="font-display font-bold text-2xl sm:text-3xl md:text-4xl tracking-tight text-foreground">
+              5 Divisi Robot Kontes Robot Indonesia (KRI)
             </h2>
+            <p className="font-body text-sm sm:text-base text-muted-foreground mt-2 leading-relaxed">
+              Setiap divisi berfokus pada spesialisasi rekayasa tertentu sesuai
+              regulasi kompetisi tahunan Puspresnas Kemendikbudristek.
+            </p>
           </motion.div>
 
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
             animate={inView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-muted-foreground text-sm sm:text-base 4k:text-2xl font-light leading-relaxed max-w-md 4k:max-w-xl"
+            className="shrink-0"
           >
-            Setiap divisi membawa tantangan rekayasa unik — dari robot humanoid
-            bipedal hingga unit SAR otonom di medan bencana.
-          </motion.p>
+            <Link
+              href="/divisi"
+              className="inline-flex items-center gap-2 font-body font-medium text-sm text-primary hover:text-primary-hover transition-colors group"
+            >
+              <span>Jelajahi Semua Divisi</span>
+              <ArrowRight className="size-4 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </motion.div>
         </div>
 
-        {/* Section Divider */}
-        <div className="dashed-divider mb-12 4k:mb-20" />
-
-        {/* Divisions Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 4k:gap-12">
+        {/* Divisions Grid (3 columns on desktop) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {renderedDivisions.map((div, i) => (
             <motion.div
               key={div.id}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 24 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.5, delay: i * 0.08 }}
-              className={`bg-card dark:bg-[#112240] border border-border dark:border-white/12 rounded-xl p-6 sm:p-8 4k:p-12 shadow-blueprint hover:border-pnp-orange/40 transition-all duration-300 relative flex flex-col group overflow-hidden ${
-                i === 4 ? "md:col-span-2 lg:col-span-1" : ""
-              }`}
+              className="bg-card border border-border rounded-xl p-6 sm:p-7 shadow-2xs hover:border-primary/50 transition-all duration-200 flex flex-col justify-between group relative overflow-hidden"
             >
-              {/* Left edge 4px vertical accent */}
-              <div className="absolute left-0 top-0 bottom-0 w-1 sm:w-1.5 bg-dongker-surface dark:bg-pnp-orange/60 group-hover:bg-pnp-orange transition-colors duration-300" />
+              {/* Subtle top accent */}
+              <div className="absolute top-0 left-0 right-0 h-0.5 bg-border group-hover:bg-primary transition-colors" />
 
-              <div className="flex flex-col flex-1">
-                {/* Header */}
-                <div className="flex items-start justify-between mb-4">
+              <div>
+                {/* Header meta */}
+                <div className="flex items-start justify-between gap-2 mb-3">
                   <div>
-                    <span className="font-mono text-micro 4k:text-base uppercase tracking-widest text-pnp-orange font-semibold block mb-1">
-                      {div.category}
+                    <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground font-semibold block mb-0.5">
+                      {div.divisionNum}
                     </span>
-                    <h3 className="font-display font-bold text-2xl 4k:text-4xl uppercase text-foreground group-hover:text-pnp-orange transition-colors">
+                    <h3 className="font-display font-bold text-xl sm:text-2xl text-foreground group-hover:text-primary transition-colors">
                       {div.code}
                     </h3>
                   </div>
 
-                  {/* Status Badge per DESIGN.md */}
-                  <span className="font-mono text-micro 4k:text-base uppercase tracking-wider font-semibold px-2.5 py-1 4k:px-4 4k:py-2 rounded-full bg-orange-wash dark:bg-pnp-orange/15 text-orange-deep dark:text-pnp-orange border border-pnp-orange/30">
-                    {div.tag}
+                  <span className="font-mono text-[10px] uppercase tracking-wider font-semibold px-2.5 py-1 rounded-md bg-accent text-accent-foreground dark:bg-accent/20 border border-border shrink-0 text-right">
+                    {div.categoryTag}
                   </span>
                 </div>
 
-                {/* Full name */}
-                <p className="font-mono text-micro 4k:text-base uppercase tracking-wider text-muted-foreground mb-4 font-medium">
+                {/* Subtitle / Long Name */}
+                <p className="font-body text-xs font-medium text-foreground/80 mb-3">
                   {div.name}
                 </p>
 
                 {/* Description */}
-                <p className="text-muted-foreground text-sm sm:text-base 4k:text-xl font-light leading-relaxed mb-6 flex-1">
+                <p className="font-body text-sm text-muted-foreground leading-relaxed mb-6">
                   {div.description}
                 </p>
+              </div>
 
-                {/* Skills Tags */}
-                <div className="flex flex-wrap gap-2 mb-6">
-                  {div.skills.map((skill) => (
-                    <span
-                      key={skill}
-                      className="font-mono text-micro 4k:text-base uppercase tracking-wider px-2.5 py-1 4k:px-4 4k:py-2 rounded-md bg-muted dark:bg-white/5 text-muted-foreground dark:text-slate-300 border border-border dark:border-white/10 font-medium"
-                    >
-                      {skill}
-                    </span>
-                  ))}
+              <div>
+                {/* Engineering Focus Badges */}
+                <div className="mb-6 pt-4 border-t border-border/70">
+                  <p className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground mb-2 font-medium">
+                    Fokus Rekayasa:
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {div.skills.map((skill) => (
+                      <span
+                        key={skill}
+                        className="font-mono text-[11px] px-2 py-0.5 rounded-md bg-secondary text-foreground/90 border border-border"
+                      >
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
                 </div>
 
                 {/* CTA Link */}
                 <Link
                   href={`/divisi/${div.id}`}
-                  className="inline-flex items-center gap-2 font-mono text-xs 4k:text-lg font-semibold uppercase tracking-wider text-pnp-orange hover:text-dongker-surface dark:hover:text-white transition-all mt-auto group/link"
+                  className="inline-flex items-center gap-1.5 font-body text-xs font-semibold text-primary group-hover:text-primary-hover transition-colors"
                 >
-                  Lihat Detail
-                  <HugeiconsIcon
-                    icon={ArrowRight01Icon}
-                    size={14}
-                    className="group-hover/link:translate-x-1 transition-transform duration-200 4k:w-6 4k:h-6"
-                  />
+                  <span>Spesifikasi Divisi</span>
+                  <ArrowRight className="size-3.5 group-hover:translate-x-0.5 transition-transform" />
                 </Link>
               </div>
             </motion.div>
           ))}
-        </div>
 
-        {/* View All CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.5, delay: 0.5 }}
-          className="flex justify-center mt-12 4k:mt-20"
-        >
-          <Link
-            href="/divisi"
-            className="inline-flex items-center gap-3 font-mono text-xs sm:text-sm 4k:text-xl font-semibold uppercase tracking-[1.5px] px-8 py-3.5 4k:px-12 4k:py-6 bg-dongker-surface text-white hover:bg-dongker-hover dark:bg-pnp-orange dark:hover:bg-pnp-orange/90 rounded-md shadow-md transition-all group"
+          {/* Closing Card (Completing 6-grid layout on desktop) */}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={inView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.5, delay: 5 * 0.08 }}
+            className="bg-primary/5 dark:bg-primary/10 border border-dashed border-primary/30 rounded-xl p-6 sm:p-7 flex flex-col justify-between"
           >
-            Lihat Semua Divisi
-            <HugeiconsIcon
-              icon={ArrowRight01Icon}
-              size={16}
-              className="group-hover:translate-x-1 transition-transform duration-200 4k:w-6 4k:h-6"
-            />
-          </Link>
-        </motion.div>
+            <div>
+              <div className="size-10 rounded-lg bg-primary text-primary-foreground flex items-center justify-center mb-4">
+                <Layers className="size-5" />
+              </div>
+              <h3 className="font-display font-bold text-xl text-foreground mb-2">
+                Tertarik Bergabung?
+              </h3>
+              <p className="font-body text-sm text-muted-foreground leading-relaxed">
+                Pilih divisi yang sesuai dengan minat dan keahlian Anda, mulai
+                dari mekanik, elektronika kontrol, hingga computer vision dan
+                AI.
+              </p>
+            </div>
+
+            <div className="pt-6">
+              <Link
+                href="/register"
+                className="inline-flex items-center justify-center gap-2 w-full font-body font-medium text-sm px-4 py-3 bg-primary hover:bg-primary-hover text-primary-foreground rounded-md shadow-xs transition-all active:scale-[0.98] min-h-[44px]"
+              >
+                <span>Pendaftaran Calon Anggota</span>
+                <ArrowRight className="size-4" />
+              </Link>
+            </div>
+          </motion.div>
+        </div>
       </div>
     </section>
   );

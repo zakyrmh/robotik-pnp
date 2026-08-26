@@ -7,7 +7,66 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.4.0] - 2026-08-20
+## [0.5.0] - 2026-08-26
+
+### Added
+
+- **Redesign Halaman Publik & Landing Pages (Clean Institutional Standard)**:
+  - **Navbar & Footer (`components/landing/navbar.tsx`, `components/landing/footer.tsx`)**: Navigasi institusional modern dengan active route indicator, mobile drawer sheet, live system status, dan kontak resmi.
+  - **Halaman Beranda (`app/(marketing)/page.tsx`)**: Mengimplementasikan 5 section baru sesuai `RANCANGA_CONTENT_BERANDA.md` (Hero CAD visual, 4 kartu metric stats, 5 divisi KRI + Join card, 5 siklus timeline operasional, dan CTA).
+  - **Halaman Profil (`app/(marketing)/profil/page.tsx`)**: Desain ulang hero, moto/slogan bento grid, visi & misi dual card, timeline sejarah organisasi, dan struktur pimpinan BPH.
+  - **Halaman Divisi (`app/(marketing)/divisi/page.tsx`)**: Grid 3 kolom divisi robotik dengan badge spesifikasi, icons, dan link eksplorasi divisi.
+  - **Halaman Prestasi (`app/(marketing)/prestasi/page.tsx`)**: Sticky search & filter bar, badge capaian kompetisi, CAD watermark header, dan layout responsif.
+  - **Halaman Keanggotaan (`app/(marketing)/keanggotaan/page.tsx`)**: Struktur hirarki Pengurus Harian Inti, Badan Ad-Hoc, dan Departemen accordion dengan optimasi `next/image` avatar.
+  - **Halaman Artikel & Berita (`app/(marketing)/artikel/page.tsx`)**: Featured article hero card, sticky category filter bar, 3-column article grid, dan badge semantik.
+  - **Halaman Hubungi Kami (`app/(marketing)/hubungi-kami/page.tsx`)**: Split layout 5:7 dengan kartu kontak resmi, tautan media sosial Hugeicons, Google Maps interaktif, dan form kirim pesan terproteksi honeypot.
+- **Redesign Portal Autentikasi (`app/(auth)/login/page.tsx`, `app/(auth)/register/page.tsx`)**:
+  - Peningkatan ukuran touch target form input & tombol minimal 44px (`min-h-[44px]`).
+  - Indikator kekuatan kata sandi 4-segmen responsif pada registrasi akun baru.
+  - Integrasi Cloudflare Turnstile bot protection dan error alert terstandarisasi.
+- **Dokumentasi Operasional & Arsitektur Baru**:
+  - `docs/04-process-view/SOP_KEGIATAN_KOMDIS.md`: Standar operasional prosedur kegiatan, absensi QR, dan sanksi Komdis.
+  - `docs/architecture-event-registration-payment.md`: Spesifikasi arsitektur registrasi event & pembayaran.
+
+### Changed
+
+- **Optimalisasi SEO & Tipografi Global**:
+  - Mengonfigurasi font Plus Jakarta Sans (`--font-display`), Inter (`--font-body`), dan Geist/System Mono (`--font-mono`).
+  - Menyelaraskan OpenGraph metadata dan skema Organization JSON-LD pada layout root dan marketing.
+- **Peningkatan Dashboard Super Admin Terpadu & Real-Time Telemetry (`app/(private)/dashboard/page.tsx` & `components/features/dashboard/dashboard-client.tsx`)**:
+  - Menyajikan telemetri operasional cepat: Total Pengguna Aktif & Terarsip, Dispensasi Pending Komdis, Tugas Caang Menunggu Penilaian OR, dan Sanksi SP Aktif.
+  - Menampilkan panel status kepatuhan keamanan dan immutability trigger UU PDP No. 27/2022.
+  - Menambahkan pusat kendali & pintasan cepat (Quick Access Hub) ke 6 modul utama (Akun, Struktur, Audit Log, Kegiatan, Disiplin, Piket).
+  - Menampilkan live feed 5 log mutasi audit terbaru lengkap dengan nama aktor, role, tipe aksi, target, timestamp, dan IP address.
+  - Menampilkan agenda kegiatan organisasi terdekat lengkap dengan waktu dan lokasi.
+
+### Added
+
+- **Penguatan Sistem Audit Log Sistem (100% Immutable, Resilient, & Compliant UU PDP 27/2022)**:
+  - **Database Immutability Trigger (`supabase/migrations/20260824150000_audit_log_immutability_and_triggers.sql`)**: Menambahkan trigger PL/pgSQL `prevent_audit_log_tampering()` pada tabel `public.system_audit_logs` untuk mencegah segala bentuk `UPDATE` dan `DELETE` di level database engine.
+  - **Index Performa Database**: Menambahkan indeks komposit pada `actor_id`, `target_user_id`, `action_type`, dan `created_at DESC`.
+  - **Utilitas Audit Terpusat (`lib/audit.ts`)**: Modul audit logger terpusat dengan penangkapan alamat IP request (`x-forwarded-for`/`x-real-ip`) dan sanitasi penyamaran data pribadi PII (Nomor Telepon `0812-****-5678`, NIM `240104****`, Email `u***r@domain.com`, dan `[REDACTED_SECRET]`).
+  - **Integrasi Audit Lintas Modul**: Menghubungkan pencatatan audit log otomatis ke modul Manajemen Pengguna (`admin-users.ts`), Pengaturan Akun (`settings.ts`), Komisi Disiplin & Sanksi SP (`komdis.ts`), dan Struktur Organisasi (`structure.ts`).
+  - **UI Viewer Audit Log Modern (`components/admin/audit-log/audit-log-viewer.tsx` & `app/(private)/audit-log/page.tsx`)**: Menampilkan relasi nama aktor, role badge, nama target, badge IP address, dan inspeksi diff data JSON interaktif.
+- **Relokasi & Redesign Komponen Struktur Organisasi (`components/structure/structure-client.tsx`)**:
+  - Memindahkan komponen client dari `app/(private)/manajemen-struktur/StructureClient.tsx` ke direktori `components/structure/`.
+  - Desain ulang seluruh UI Manajemen Struktur sesuai `DESIGN.md` (Minimalist Soft Light, 70-20-10 color rule, touch target $\ge 44\text{px}$, scrollable tabs, dan adaptasi dark mode).
+- **Pembaruan Konfigurasi AI Engineering `AGENTS.md`**:
+  - Memperbarui sistem panduan AI native dengan stack Next.js 16.2.5, React 19.2.4, Tailwind CSS v4 `@theme`, Supabase SSR, Upstash, Turnstile, RBAC matrix, dan aturan anti-pattern.
+
+### Changed
+
+- **Redesign Halaman Manajemen Akun (`app/(private)/manajemen-akun/page.tsx` & `components/admin/users/`)**:
+  - Mengubah hero banner menjadi soft minimalist card berbingkai tipis (`border-border bg-card text-card-foreground`).
+  - Menyelaraskan seluruh toolbar pencarian, filter role/status, tabel pengguna, badge role pastel semantik, pagination, dan 4 modal dialog (Detail PII, Edit User, Soft Delete, Restore) dengan token `app/globals.css` dan Hugeicons.
+  - Menstandarisasi area sentuh tombol dan elemen interaktif minimal $44\text{px}$ (`min-h-[44px]`).
+
+### Fixed
+
+- **Perbaikan Update Program Studi & Kontak Pengguna pada Manajemen Akun (`lib/actions/admin-users.ts`)**:
+  - Menambahkan migrasi RLS `20260824140000_allow_admin_manage_registrations.sql` agar Super Admin dan Admin OR memiliki izin penuh mutasi (INSERT, UPDATE, DELETE) pada tabel `public.registrations`.
+  - Mengimplementasikan mekanisme _upsert / fallback insert_ otomatis di `updateUserIdentityAction` jika record registrasi pengguna target belum ada.
+  - Memperbaiki jalur revalidasi cache Next.js (`revalidatePath("/manajemen-akun")`) dan menambahkan `router.refresh()` pada modal dialog client untuk pembaruan data seketika.
 
 ### Added
 
@@ -144,7 +203,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Setup Husky pre-commit hook dan Commitlint.
 - Setup Next.js dengan pnpm.
 
-[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/zakyrmh/robotik-pnp/compare/v0.2.1...v0.2.2

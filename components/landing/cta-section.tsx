@@ -3,8 +3,7 @@
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 import Link from "next/link";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Mail01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons";
+import { ArrowRight, Mail, MapPin } from "lucide-react";
 
 export function CtaSection() {
   const ref = useRef<HTMLDivElement>(null);
@@ -12,105 +11,103 @@ export function CtaSection() {
 
   return (
     <section
-      className="bg-card dark:bg-[#060d19] text-foreground dark:text-white py-16 sm:py-24 4k:py-40 relative overflow-hidden blueprint-grid-bg border-t border-border transition-colors duration-200"
+      className="bg-background text-foreground py-16 sm:py-20 lg:py-24 border-t border-border transition-colors duration-200 relative overflow-hidden"
       ref={ref}
     >
-      {/* Top Tricolor Accent Stripe */}
-      <div className="absolute top-0 left-0 right-0 h-0.75 bg-linear-to-r from-dongker-surface via-pnp-orange to-dongker-ink" />
+      {/* Ambient background glow */}
+      <div className="absolute top-1/2 -right-20 -translate-y-1/2 w-80 sm:w-120 h-80 sm:h-120 rounded-full bg-primary/5 dark:bg-primary/10 blur-3xl pointer-events-none" />
 
-      {/* Ambient Glow Orb */}
-      <motion.div
-        animate={{ scale: [1, 1.2, 1], opacity: [0.15, 0.3, 0.15] }}
-        transition={{ duration: 8, repeat: Infinity }}
-        className="absolute top-0 right-0 w-100 sm:w-150 4k:w-[1000px] h-100 sm:h-150 4k:h-[1000px] rounded-full bg-pnp-orange/15 dark:bg-pnp-orange/20 blur-3xl pointer-events-none"
-      />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="bg-card border border-border rounded-2xl p-8 sm:p-10 lg:p-14 shadow-soft">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+            {/* Left Column: CTA Pitch (7 cols) */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={inView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.5 }}
+              className="lg:col-span-7 space-y-5"
+            >
+              <span className="font-mono text-xs uppercase tracking-wider text-accent-strong font-semibold block">
+                PELUANG BERGABUNG
+              </span>
 
-      <div className="relative z-10 max-w-330 2xl:max-w-384 4k:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 4k:px-20">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-10 lg:gap-16 4k:gap-24 items-center">
-          {/* Left: CTA text */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={inView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6 }}
-          >
-            <span className="font-mono text-micro sm:text-xs 4k:text-lg font-semibold uppercase tracking-[2px] text-pnp-orange block mb-4">
-              — BERGABUNG BERSAMA KAMI
-            </span>
-            <h2 className="font-display font-bold text-3xl sm:text-5xl lg:text-6xl 4k:text-8xl uppercase leading-none mb-6 text-foreground dark:text-white">
-              SIAP <span className="text-pnp-orange">BERKOMPETISI?</span>
-            </h2>
-            <p className="text-muted-foreground dark:text-slate-300 text-sm sm:text-base lg:text-lg 4k:text-2xl font-light leading-relaxed max-w-xl 4k:max-w-3xl mb-8 sm:mb-10">
-              Jadilah bagian dari tim robotika terdepan di Sumatera Barat. Kami
-              mencari mahasiswa PNP yang bersemangat, tekun, dan haus akan
-              tantangan rekayasa mesin dan kecerdasan buatan.
-            </p>
+              <h2 className="font-display font-bold text-2xl sm:text-4xl lg:text-5xl tracking-tight text-foreground text-balance">
+                Bergabung Bersama{" "}
+                <span className="text-primary">UKM Robotik PNP</span>
+              </h2>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-wrap gap-4">
-              <Link
-                href="/register"
-                className="inline-flex items-center gap-3 font-mono text-xs sm:text-sm 4k:text-xl font-semibold uppercase tracking-[1.5px] px-8 py-4 4k:px-12 4k:py-6 bg-dongker-surface text-white hover:bg-dongker-hover dark:bg-pnp-orange dark:hover:bg-pnp-orange/90 rounded-md shadow-lg transition-all group"
-              >
-                Daftar Sekarang
-                <HugeiconsIcon
-                  icon={ArrowRight01Icon}
-                  size={16}
-                  className="group-hover:translate-x-1 transition-transform duration-200 4k:w-6 4k:h-6"
-                />
-              </Link>
-              <Link
-                href="/hubungi-kami"
-                className="inline-flex items-center gap-3 font-mono text-xs sm:text-sm 4k:text-xl font-semibold uppercase tracking-[1.5px] px-8 py-4 4k:px-12 4k:py-6 bg-transparent border border-dongker-surface text-dongker-surface hover:bg-dongker-surface/10 dark:border-white/20 dark:text-white dark:hover:bg-white/10 rounded-md transition-all"
-              >
-                Hubungi Kami
-              </Link>
-            </div>
-          </motion.div>
-
-          {/* Right: Contact info card */}
-          <motion.div
-            initial={{ opacity: 0, x: 30 }}
-            animate={inView ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="w-full lg:w-80 4k:w-[450px] space-y-4"
-          >
-            <div className="bg-muted/40 dark:bg-white/5 border border-border dark:border-white/12 rounded-xl p-6 4k:p-8 backdrop-blur-xs shadow-blueprint">
-              <p className="font-mono text-micro 4k:text-base font-semibold uppercase tracking-[2px] text-pnp-orange mb-4">
-                KONTAK LANGSUNG
+              <p className="font-body text-sm sm:text-base text-muted-foreground leading-relaxed max-w-xl text-pretty">
+                Wadah terbuka bagi mahasiswa Politeknik Negeri Padang yang
+                bertekad mendalami perancangan mekanik, sistem elektronika, dan
+                kecerdasan buatan. Siapkan diri untuk berkolaborasi dan
+                berkompetisi di arena nasional.
               </p>
-              <div className="flex items-start gap-3">
-                <HugeiconsIcon
-                  icon={Mail01Icon}
-                  size={18}
-                  className="text-pnp-orange shrink-0 mt-0.5 4k:w-6 4k:h-6"
-                />
-                <div>
-                  <p className="font-mono text-micro 4k:text-sm uppercase tracking-wider text-muted-foreground dark:text-slate-400 mb-1">
-                    Email Resmi
-                  </p>
-                  <a
-                    href="mailto:infokomrobotikpnp2024@gmail.com"
-                    className="font-mono text-xs 4k:text-base text-foreground dark:text-white hover:text-pnp-orange transition-colors duration-200 break-all"
-                  >
-                    infokomrobotikpnp2024@gmail.com
-                  </a>
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center gap-3.5 pt-2">
+                <Link
+                  href="/register"
+                  className="inline-flex items-center justify-center gap-2 font-body font-medium text-sm px-6 py-3.5 bg-primary hover:bg-primary-hover text-primary-foreground rounded-md shadow-xs transition-all active:scale-[0.98] min-h-[44px] group"
+                >
+                  <span>Daftar Anggota Baru</span>
+                  <ArrowRight className="size-4 group-hover:translate-x-0.5 transition-transform" />
+                </Link>
+
+                <Link
+                  href="/hubungi-kami"
+                  className="inline-flex items-center justify-center gap-2 font-body font-medium text-sm px-6 py-3.5 border border-border bg-card hover:bg-muted text-foreground rounded-md shadow-2xs transition-all active:scale-[0.98] min-h-[44px]"
+                >
+                  <span>Hubungi Sekretariat</span>
+                </Link>
+              </div>
+            </motion.div>
+
+            {/* Right Column: Contact Cards (5 cols) */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={inView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.5, delay: 0.15 }}
+              className="lg:col-span-5 space-y-4"
+            >
+              {/* Email card */}
+              <div className="bg-secondary/60 border border-border rounded-xl p-5 shadow-2xs">
+                <div className="flex items-start gap-3">
+                  <div className="size-9 rounded-lg bg-card border border-border flex items-center justify-center text-primary shrink-0 shadow-2xs">
+                    <Mail className="size-4" />
+                  </div>
+                  <div>
+                    <p className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+                      SUREL RESMI
+                    </p>
+                    <a
+                      href="mailto:infokomrobotikpnp2024@gmail.com"
+                      className="font-body text-sm font-medium text-foreground hover:text-primary transition-colors break-all mt-0.5 inline-block"
+                    >
+                      infokomrobotikpnp2024@gmail.com
+                    </a>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="bg-muted/40 dark:bg-white/5 border border-border dark:border-white/12 rounded-xl p-6 4k:p-8 backdrop-blur-xs shadow-blueprint">
-              <p className="font-mono text-micro 4k:text-sm uppercase tracking-wider text-muted-foreground dark:text-slate-400 mb-2 font-semibold">
-                SEKRETARIAT
-              </p>
-              <p className="font-mono text-xs 4k:text-base text-foreground dark:text-slate-200 leading-relaxed">
-                Gedung P Lt. 2,
-                <br />
-                Politeknik Negeri Padang,
-                <br />
-                Limau Manis, Padang
-              </p>
-            </div>
-          </motion.div>
+              {/* Secretariat Location Card */}
+              <div className="bg-secondary/60 border border-border rounded-xl p-5 shadow-2xs">
+                <div className="flex items-start gap-3">
+                  <div className="size-9 rounded-lg bg-card border border-border flex items-center justify-center text-accent-strong shrink-0 shadow-2xs">
+                    <MapPin className="size-4" />
+                  </div>
+                  <div>
+                    <p className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+                      SEKRETARIAT
+                    </p>
+                    <p className="font-body text-xs sm:text-sm text-foreground/90 leading-relaxed mt-0.5">
+                      Gedung P Lantai 2, Politeknik Negeri Padang, Limau Manis,
+                      Padang
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
         </div>
       </div>
     </section>

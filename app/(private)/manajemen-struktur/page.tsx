@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { StructureClient } from "./StructureClient";
+import { StructureClient } from "@/components/structure";
 
 export default async function ManajemenStrukturPage() {
   const supabase = await createClient();

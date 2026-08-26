@@ -2,13 +2,7 @@
 
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
-import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  ChampionIcon,
-  UserGroupIcon,
-  BuildingIcon,
-  Calendar01Icon,
-} from "@hugeicons/core-free-icons";
+import { Trophy, Users, Layers, Calendar } from "lucide-react";
 
 interface StatsSectionProps {
   totalAchievements?: number;
@@ -24,105 +18,115 @@ export function StatsSection({
   yearsStanding = 21,
 }: StatsSectionProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-80px" });
+  const inView = useInView(ref, { once: true, margin: "-60px" });
 
   const stats = [
     {
-      icon: ChampionIcon,
+      icon: Trophy,
       value: `${totalAchievements}+`,
-      label: "Total Prestasi",
-      sublabel: "Nasional & Regional",
-      isAccent: true,
+      label: "Prestasi Resmi",
+      sublabel: "Juara Tingkat Wilayah & Nasional KRI",
+      accent: true,
     },
     {
-      icon: UserGroupIcon,
+      icon: Users,
       value: `${activeMemberCount}+`,
       label: "Anggota Aktif",
-      sublabel: `Tersebar di ${divisionCount} Divisi`,
-      isAccent: false,
+      sublabel: "Mahasiswa Lintas Jurusan Rekayasa",
+      accent: false,
     },
     {
-      icon: BuildingIcon,
+      icon: Layers,
       value: `${divisionCount}`,
       label: "Divisi Robot",
-      sublabel: "Aktif Berkompetisi",
-      isAccent: false,
+      sublabel: "Divisi Kompetisi Resmi Puspresnas",
+      accent: false,
     },
     {
-      icon: Calendar01Icon,
-      value: `${yearsStanding}+`,
-      label: "Tahun Berdiri",
-      sublabel: "Pengalaman Rekayasa",
-      isAccent: true,
+      icon: Calendar,
+      value: `${yearsStanding}+ Tahun`,
+      label: "Pengalaman Riset",
+      sublabel: "Berdiri dan Berkompetisi Sejak 2005",
+      accent: true,
     },
   ];
 
   return (
     <section
-      className="bg-background text-foreground py-16 sm:py-20 4k:py-36 border-t border-border transition-colors duration-200"
+      className="bg-secondary/40 text-foreground py-16 sm:py-20 lg:py-24 border-t border-border transition-colors duration-200"
       ref={ref}
     >
-      <div className="max-w-330 2xl:max-w-384 4k:max-w-[2200px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 4k:px-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.5 }}
-          className="flex flex-col gap-2 mb-10 sm:mb-12 4k:mb-20"
+          className="max-w-2xl mb-12 sm:mb-14"
         >
-          <span className="font-mono text-micro sm:text-xs 4k:text-lg font-semibold uppercase tracking-[2px] text-pnp-orange">
-            — SOCIAL PROOF & METRICS
+          <span className="font-mono text-xs uppercase tracking-wider text-accent-strong font-semibold block mb-2">
+            REKAM JEJAK & METRIK
           </span>
-          <h2 className="font-display font-bold text-2xl sm:text-3xl md:text-4xl 4k:text-6xl uppercase text-foreground">
-            STATISTIKA & <span className="text-pnp-orange">PETA KEKUATAN</span>
+          <h2 className="font-display font-bold text-2xl sm:text-3xl md:text-4xl tracking-tight text-foreground">
+            Statistika & Rekam Jejak Riset
           </h2>
-          <div className="dashed-divider mt-4" />
+          <p className="font-body text-sm sm:text-base text-muted-foreground mt-2 leading-relaxed">
+            Data operasional dan rekam prestasi kontinyu UKM Robotik Politeknik
+            Negeri Padang di kancah nasional.
+          </p>
         </motion.div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 4k:gap-12">
-          {stats.map((stat, i) => (
-            <motion.div
-              key={stat.label}
-              initial={{ opacity: 0, y: 30 }}
-              animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.5, delay: i * 0.1 }}
-              className="bg-card dark:bg-[#112240] border border-border dark:border-white/12 rounded-xl p-6 sm:p-8 4k:p-12 shadow-blueprint hover:border-pnp-orange/40 transition-all duration-300 relative group overflow-hidden"
-            >
-              {/* Left edge 4px vertical accent */}
-              <div
-                className={`absolute left-0 top-0 bottom-0 w-1 sm:w-1.5 transition-colors duration-300 ${
-                  stat.isAccent
-                    ? "bg-pnp-orange"
-                    : "bg-dongker-surface group-hover:bg-pnp-orange dark:bg-pnp-orange/60"
-                }`}
-              />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6">
+          {stats.map((stat, i) => {
+            const Icon = stat.icon;
+            return (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, y: 24 }}
+                animate={inView ? { opacity: 1, y: 0 } : {}}
+                transition={{ duration: 0.5, delay: i * 0.08 }}
+                className="bg-card border border-border rounded-xl p-6 shadow-2xs hover:border-primary/50 transition-all duration-200 relative group overflow-hidden flex flex-col justify-between"
+              >
+                {/* Accent top line */}
+                <div
+                  className={`absolute top-0 left-0 right-0 h-0.5 ${
+                    stat.accent ? "bg-accent-strong" : "bg-primary"
+                  }`}
+                />
 
-              <div className="flex items-center justify-between mb-4 4k:mb-8">
-                <div className="p-3 4k:p-5 rounded-lg bg-orange-wash dark:bg-pnp-orange/15 text-pnp-orange">
-                  <HugeiconsIcon
-                    icon={stat.icon}
-                    size={24}
-                    className="4k:w-10 4k:h-10"
-                  />
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div
+                      className={`p-2.5 rounded-lg border border-border ${
+                        stat.accent
+                          ? "bg-accent text-accent-strong dark:bg-accent/20"
+                          : "bg-secondary text-primary"
+                      }`}
+                    >
+                      <Icon className="size-5" />
+                    </div>
+                    <span className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">
+                      0{i + 1}
+                    </span>
+                  </div>
+
+                  <div className="font-display font-bold text-3xl sm:text-4xl tracking-tight text-foreground font-mono tabular-nums">
+                    {stat.value}
+                  </div>
                 </div>
-                <span className="font-mono text-micro 4k:text-base uppercase tracking-widest text-muted-foreground font-semibold">
-                  METRIC_0{i + 1}
-                </span>
-              </div>
 
-              <div className="font-display font-bold text-4xl sm:text-5xl 4k:text-7xl text-foreground group-hover:text-pnp-orange transition-colors">
-                {stat.value}
-              </div>
-
-              <p className="font-sans font-semibold text-base sm:text-lg 4k:text-2xl text-foreground mt-3 4k:mt-5">
-                {stat.label}
-              </p>
-              <p className="font-mono text-micro 4k:text-base uppercase tracking-wider text-muted-foreground mt-1">
-                {stat.sublabel}
-              </p>
-            </motion.div>
-          ))}
+                <div className="mt-4 pt-3.5 border-t border-border/70">
+                  <p className="font-body font-semibold text-sm sm:text-base text-foreground">
+                    {stat.label}
+                  </p>
+                  <p className="font-body text-xs text-muted-foreground mt-0.5 leading-normal">
+                    {stat.sublabel}
+                  </p>
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
       </div>
     </section>

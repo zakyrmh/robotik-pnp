@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +14,12 @@ import { Button } from "@/components/ui/button";
 import { UserManagementItem } from "@/lib/types/user-management";
 import { restoreUserAction } from "@/lib/actions/admin-users";
 import { toast } from "sonner";
-import { RotateCcw, Loader2, UserCheck } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  RotateLeft01Icon,
+  Loading03Icon,
+  UserCheck01Icon,
+} from "@hugeicons/core-free-icons";
 
 interface UserRestoreDialogProps {
   isOpen: boolean;
@@ -26,6 +32,7 @@ export function UserRestoreDialog({
   onClose,
   user,
 }: UserRestoreDialogProps) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
   if (!user) return null;
@@ -37,6 +44,7 @@ export function UserRestoreDialog({
 
         if (res.success) {
           toast.success(res.message);
+          router.refresh();
           onClose();
         } else {
           toast.error("Gagal memulihkan akun pengguna.");
@@ -50,44 +58,46 @@ export function UserRestoreDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md rounded-2xl p-6">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md rounded-2xl p-0 overflow-hidden border border-border shadow-lg">
+        <DialogHeader className="p-5 sm:p-6 border-b border-border bg-card">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
-              <RotateCcw className="w-5 h-5" />
+            <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+              <HugeiconsIcon icon={RotateLeft01Icon} size={20} />
             </div>
             <div>
-              <DialogTitle className="text-base font-bold text-neutral-900 dark:text-neutral-100">
+              <DialogTitle className="font-display text-base font-semibold tracking-tight text-foreground">
                 Pulihkan Akun Pengguna
               </DialogTitle>
-              <DialogDescription className="text-xs text-neutral-500">
-                Mengembalikan status aktif pengguna agar dapat kembali mengakses
-                sistem.
+              <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                Mengembalikan status aktif akun pengguna agar dapat kembali
+                mengakses sistem.
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
-        <div className="py-2 text-xs text-neutral-600 dark:text-neutral-400">
-          <p>
-            Apakah Anda yakin ingin memulihkan akun{" "}
+        <div className="p-5 sm:p-6 bg-background space-y-3 text-xs text-muted-foreground">
+          <p className="text-foreground">
+            Apakah Anda yakin ingin memulihkan akun pengguna{" "}
             <strong>{user.fullName || user.email}</strong>?
           </p>
           {user.deleteReason && (
-            <p className="mt-2 text-[11px] text-neutral-500 bg-neutral-100 dark:bg-neutral-800 p-2.5 rounded-xl border border-neutral-200 dark:border-neutral-700">
-              <strong>Catatan Penonaktifan Sebelumnya:</strong>{" "}
-              {user.deleteReason}
-            </p>
+            <div className="text-[11px] bg-surface/50 dark:bg-card p-3 rounded-xl border border-border space-y-1">
+              <span className="font-semibold text-foreground">
+                Catatan Penonaktifan Sebelumnya:
+              </span>
+              <p className="text-muted-foreground">{user.deleteReason}</p>
+            </div>
           )}
         </div>
 
-        <DialogFooter className="gap-2 pt-2">
+        <DialogFooter className="p-4 sm:p-5 border-t border-border bg-surface/40 dark:bg-card flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
           <Button
             type="button"
             variant="outline"
             onClick={onClose}
             disabled={isPending}
-            className="h-9 rounded-xl text-xs"
+            className="min-h-[44px] rounded-lg text-xs"
           >
             Batal
           </Button>
@@ -95,16 +105,20 @@ export function UserRestoreDialog({
             type="button"
             onClick={handleRestore}
             disabled={isPending}
-            className="h-9 rounded-xl text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-medium gap-1.5"
+            className="min-h-[44px] rounded-lg text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-medium gap-1.5 shadow-xs"
           >
             {isPending ? (
               <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <HugeiconsIcon
+                  icon={Loading03Icon}
+                  size={15}
+                  className="animate-spin"
+                />
                 <span>Memproses...</span>
               </>
             ) : (
               <>
-                <UserCheck className="w-3.5 h-3.5" />
+                <HugeiconsIcon icon={UserCheck01Icon} size={15} />
                 <span>Pulihkan Akun</span>
               </>
             )}

@@ -15,7 +15,12 @@ import { UserDeleteDialog } from "./modals/user-delete-dialog";
 import { UserRestoreDialog } from "./modals/user-restore-dialog";
 import { resetUserOnboardingAction } from "@/lib/actions/admin-users";
 import { toast } from "sonner";
-import { Users, ShieldAlert, Sparkles } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import {
+  UserGroupIcon,
+  SecurityCheckIcon,
+  SparklesIcon,
+} from "@hugeicons/core-free-icons";
 
 interface UserTableShellProps {
   initialData: UserManagementQueryResult;
@@ -111,6 +116,7 @@ export function UserTableShell({
         const res = await resetUserOnboardingAction(user.id);
         if (res.success) {
           toast.success(res.message);
+          router.refresh();
         } else {
           toast.error("Gagal mereset status onboarding.");
         }
@@ -123,33 +129,48 @@ export function UserTableShell({
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl bg-gradient-to-br from-blue-900 via-indigo-900 to-slate-900 text-white shadow-xl">
-        <div className="space-y-1.5">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-blue-300">
-            <ShieldAlert className="w-4 h-4 text-blue-400" />
-            <span>Hak Akses Khusus Super Admin</span>
+      {/* Page Header - Minimalist Soft Style */}
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-xs">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1.5">
+            <div className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-0.5 rounded-full bg-primary-soft text-primary border border-primary/20 w-fit">
+              <HugeiconsIcon icon={SecurityCheckIcon} size={14} />
+              <span>Hak Akses Super Admin</span>
+            </div>
+            <h1 className="font-display text-xl sm:text-2xl font-semibold tracking-tight text-foreground flex items-center gap-2.5">
+              <HugeiconsIcon
+                icon={UserGroupIcon}
+                size={24}
+                className="text-primary"
+              />
+              <span>Manajemen Akun &amp; Role</span>
+            </h1>
+            <p className="text-xs sm:text-sm text-muted-foreground max-w-2xl">
+              Pusat kendali autentikasi, peran sistem (RBAC), hak akses, dan
+              pengarsipan akun pengguna sesuai standar kepatuhan UU PDP &amp;
+              keamanan organisasi.
+            </p>
           </div>
-          <h1 className="text-2xl font-extrabold tracking-tight flex items-center gap-2.5">
-            <Users className="w-7 h-7 text-blue-400" />
-            <span>Manajemen User &amp; Role</span>
-          </h1>
-          <p className="text-xs text-blue-200/80 max-w-xl">
-            Pusat kendali autentikasi, peran sistem, dan pengarsipan akun
-            pengguna sesuai standar keamanan &amp; UU PDP.
-          </p>
-        </div>
 
-        <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-3 rounded-xl border border-white/10 self-start md:self-auto text-xs">
-          <Sparkles className="w-4 h-4 text-amber-300 shrink-0" />
-          <span>
-            Total Terdaftar: <strong>{initialData.totalCount}</strong> Pengguna
-          </span>
+          <div className="flex items-center gap-2 bg-muted/60 dark:bg-muted/30 px-3.5 py-2 rounded-xl border border-border self-start md:self-auto text-xs text-muted-foreground">
+            <HugeiconsIcon
+              icon={SparklesIcon}
+              size={16}
+              className="text-accent-strong shrink-0"
+            />
+            <span>
+              Total:{" "}
+              <strong className="text-foreground font-semibold">
+                {initialData.totalCount}
+              </strong>{" "}
+              Pengguna
+            </span>
+          </div>
         </div>
       </div>
 
       {/* Main Table Shell Container */}
-      <div className="rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-sm overflow-hidden bg-white dark:bg-neutral-900">
+      <div className="rounded-2xl border border-border shadow-xs overflow-hidden bg-card text-card-foreground">
         <UserTableToolbar
           search={search}
           role={role}

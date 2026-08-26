@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, ChevronDown, ChevronUp, Users, User } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 // --- Shared types (exported for use in page.tsx) ---
 export type OrgMember = {
@@ -36,25 +37,27 @@ function MemberCard({ member }: { member: OrgMember }) {
   const isVice = member.level === "Wakil";
 
   const cardContent = (
-    <div className="flex items-center gap-4">
+    <div className="flex items-center gap-3.5 w-full">
       {member.avatarUrl ? (
-        <img
-          src={member.avatarUrl}
-          alt={member.name}
-          className="w-12 h-12 rounded-none object-cover shrink-0 border border-hairline-dark"
-        />
+        <div className="size-12 rounded-lg overflow-hidden border border-border shrink-0 bg-secondary relative">
+          <Image
+            src={member.avatarUrl}
+            alt={member.name}
+            fill
+            className="object-cover"
+            sizes="48px"
+          />
+        </div>
       ) : (
-        <div className="w-12 h-12 rounded-none bg-canvas-dark border border-hairline-dark flex items-center justify-center shrink-0">
-          <span className="font-jetbrains text-muted-foreground text-sm uppercase">
-            {member.name.charAt(0)}
-          </span>
+        <div className="size-12 rounded-lg bg-secondary border border-border flex items-center justify-center shrink-0 text-primary">
+          <User className="size-5 text-muted-foreground" />
         </div>
       )}
       <div className="flex-1 min-w-0">
-        <h4 className="text-body-md font-bold text-foreground truncate">
+        <h4 className="font-display font-bold text-sm text-foreground truncate group-hover:text-primary transition-colors">
           {member.name}
         </h4>
-        <p className="text-xs font-jetbrains text-muted-foreground truncate">
+        <p className="font-body text-xs text-muted-foreground truncate mt-0.5">
           {member.role}
         </p>
       </div>
@@ -63,17 +66,27 @@ function MemberCard({ member }: { member: OrgMember }) {
 
   return (
     <motion.div
-      whileHover={member.slug ? { y: -4, scale: 1.02 } : undefined}
-      className={`p-4 rounded-sm border bg-surface-card-dark transition-all duration-300 ${
+      whileHover={member.slug ? { y: -2 } : undefined}
+      className={`group p-4 rounded-xl border bg-card shadow-2xs hover:shadow-soft transition-all duration-200 relative overflow-hidden flex items-center ${
         isLeader
-          ? "border-cyber-blue shadow-[0_0_12px_rgba(0,102,177,0.15)]"
+          ? "border-accent-strong/40 hover:border-accent-strong"
           : isVice
-            ? "border-tech-navy/50"
-            : "border-hairline-dark hover:border-hairline-light"
+            ? "border-primary/40 hover:border-primary"
+            : "border-border hover:border-primary/50"
       }`}
     >
+      {/* Top subtle accent for leaders */}
+      {isLeader && (
+        <div className="absolute top-0 left-0 right-0 h-0.5 bg-accent-strong" />
+      )}
+      {isVice && (
+        <div className="absolute top-0 left-0 right-0 h-0.5 bg-primary" />
+      )}
+
       {member.slug ? (
-        <Link href={`/member/${member.slug}`}>{cardContent}</Link>
+        <Link href={`/member/${member.slug}`} className="w-full">
+          {cardContent}
+        </Link>
       ) : (
         cardContent
       )}
@@ -95,26 +108,32 @@ function PresidiumSection({
 
   return (
     <section>
-      <h2 className="text-display-md font-bold text-center mb-8 uppercase text-foreground">
-        Pengurus Harian Inti
-      </h2>
+      <div className="text-center mb-8">
+        <h2 className="font-display text-xl sm:text-2xl font-bold uppercase tracking-tight text-foreground">
+          Pengurus Harian Inti
+        </h2>
+        <div className="h-0.5 w-12 bg-accent-strong mx-auto mt-2 rounded-full" />
+      </div>
+
       {/* Top leader: first member */}
-      <div className="flex justify-center mb-6">
+      <div className="flex justify-center mb-5">
         <div className="w-full md:w-1/2 lg:w-1/3">
           <MemberCard member={filtered[0]} />
         </div>
       </div>
+
       {/* Vice leaders */}
       {filtered.slice(1, 3).length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 max-w-2xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5 max-w-2xl mx-auto">
           {filtered.slice(1, 3).map((m) => (
             <MemberCard key={m.id} member={m} />
           ))}
         </div>
       )}
+
       {/* Rest */}
       {filtered.slice(3).length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {filtered.slice(3).map((m) => (
             <MemberCard key={m.id} member={m} />
           ))}
@@ -133,37 +152,29 @@ function AdHocSection({
   sections: OrgSection[];
   matchesSearch: (m: OrgMember) => boolean;
 }) {
-  // Each adhoc section is one "box" (e.g. Komdis, Oprec)
   const visible = sections.filter((sec) => sec.members.some(matchesSearch));
   if (visible.length === 0) return null;
 
-  const accentClass: Record<string, string> = {
-    komdis: "text-crimson-red/80",
-    oprec: "text-cyber-blue/80",
-  };
-
   return (
-    <section className="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <section className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
       {visible.map((sec) => {
-        const subKey = sec.members[0]?.subSection?.toLowerCase() ?? "";
         const filtered = sec.members.filter(matchesSearch);
         const [head, ...rest] = filtered;
         return (
           <div
             key={sec.deptName}
-            className="bg-surface-card-dark/30 border border-hairline-dark p-6 rounded-sm"
+            className="bg-card border border-border p-6 sm:p-7 rounded-xl shadow-2xs relative overflow-hidden"
           >
-            <h3
-              className={`text-display-sm font-bold uppercase mb-6 text-center border-b border-hairline-dark pb-4 ${
-                accentClass[subKey] ?? "text-muted-foreground"
-              }`}
-            >
+            <div className="absolute top-0 left-0 right-0 h-0.5 bg-accent-strong" />
+
+            <h3 className="font-display text-base sm:text-lg font-bold uppercase tracking-tight mb-5 text-center border-b border-border pb-3 text-foreground">
               {sec.deptName}
             </h3>
+
             <div className="space-y-4">
               {head && <MemberCard member={head} />}
               {rest.length > 0 && (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   {rest.map((m) => (
                     <MemberCard key={m.id} member={m} />
                   ))}
@@ -199,7 +210,6 @@ function getHierarchicalRows(deptName: string, members: OrgMember[]) {
     ].filter((r) => r.members.length > 0);
   }
 
-  // Other 3 departments: 'Informasi dan Komunikasi', 'Penelitian dan Pengembangan', 'Mekanik Elektronika Lapangan'
   let bidang1Keywords: string[] = [];
   let bidang2Keywords: string[] = [];
   let bidang1Label = "Bidang 1";
@@ -319,29 +329,35 @@ function DepartemenSection({
 
   return (
     <section className="space-y-6">
-      <h2 className="text-display-md font-bold text-center mb-8 uppercase text-foreground">
-        Departemen
-      </h2>
+      <div className="text-center mb-8">
+        <h2 className="font-display text-xl sm:text-2xl font-bold uppercase tracking-tight text-foreground">
+          Departemen
+        </h2>
+        <div className="h-0.5 w-12 bg-primary mx-auto mt-2 rounded-full" />
+      </div>
+
       {visible.map((dept) => {
         const isOpen = openDepts[dept.deptName] || !!searchQuery;
 
         return (
           <div
             key={dept.deptName}
-            className="border border-hairline-dark rounded-sm overflow-hidden bg-surface-card-dark"
+            className="border border-border rounded-xl overflow-hidden bg-card shadow-2xs"
           >
             <button
               onClick={() => toggleDept(dept.deptName)}
-              className="w-full flex items-center justify-between p-6 bg-canvas-dark hover:bg-surface-card-dark transition-colors text-left"
+              className="w-full flex items-center justify-between p-5 sm:p-6 bg-card hover:bg-secondary/60 transition-colors text-left min-h-[44px]"
             >
-              <h3 className="text-display-sm font-bold uppercase text-cyber-blue">
+              <h3 className="font-display text-base sm:text-lg font-bold uppercase text-foreground">
                 {dept.deptName}
               </h3>
-              {isOpen ? (
-                <ChevronUp className="w-5 h-5 text-muted-foreground" />
-              ) : (
-                <ChevronDown className="w-5 h-5 text-muted-foreground" />
-              )}
+              <div className="size-8 rounded-lg bg-secondary border border-border flex items-center justify-center text-muted-foreground shrink-0">
+                {isOpen ? (
+                  <ChevronUp className="size-4" />
+                ) : (
+                  <ChevronDown className="size-4" />
+                )}
+              </div>
             </button>
 
             <AnimatePresence>
@@ -350,10 +366,10 @@ function DepartemenSection({
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  className="overflow-hidden border-t border-hairline-dark"
+                  className="overflow-hidden border-t border-border"
                 >
                   <motion.div
-                    className="p-6 space-y-8"
+                    className="p-6 sm:p-7 space-y-8 bg-secondary/30"
                     initial="hidden"
                     animate="visible"
                     variants={{
@@ -368,14 +384,14 @@ function DepartemenSection({
                       dept.deptName,
                       dept.members.filter(matchesSearch),
                     ).map((row, rowIdx) => (
-                      <div key={rowIdx} className="space-y-4">
+                      <div key={rowIdx} className="space-y-3.5">
                         <div className="flex items-center gap-3">
-                          <span className="text-[10px] font-jetbrains uppercase tracking-wider text-cyber-blue font-semibold bg-cyber-blue/10 px-2 py-0.5 rounded-sm">
+                          <span className="text-[10px] font-mono uppercase tracking-wider text-accent-strong font-semibold bg-accent dark:bg-accent/20 px-2.5 py-0.5 rounded-md border border-border">
                             {row.title}
                           </span>
-                          <div className="h-px flex-1 bg-hairline-dark/40" />
+                          <div className="h-px flex-1 bg-border" />
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                           {row.members.map((m) => (
                             <MemberCard key={m.id} member={m} />
                           ))}
@@ -417,44 +433,48 @@ export default function KeanggotaanClient({
     (s) => s.category === "departemen",
   );
 
-  // Flatten presidium members from all presidium dept entries
   const presidiumMembers = presidiumSections.flatMap((s) => s.members);
 
   return (
     <div className="container mx-auto px-4 max-w-5xl pb-24">
       {/* Hero Section */}
-      <section className="py-16 text-center">
+      <section className="py-12 sm:py-16 text-center">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="max-w-2xl mx-auto space-y-6"
+          className="max-w-2xl mx-auto space-y-4"
         >
-          <span className="inline-block px-3 py-1 bg-cyber-blue/10 text-cyber-blue font-jetbrains text-mono-eyebrow rounded-sm uppercase tracking-wider">
-            Struktur Organisasi
-          </span>
-          <h1 className="text-display-lg md:text-display-xl font-bold uppercase tracking-tight text-foreground leading-tight">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-border bg-card/80 dark:bg-card/40 backdrop-blur-xs text-xs font-mono text-accent-strong shadow-2xs">
+            <span className="size-2 rounded-full bg-accent-strong animate-pulse" />
+            <span className="font-semibold uppercase tracking-wider">
+              Struktur Organisasi
+            </span>
+          </div>
+
+          <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold uppercase tracking-tight text-foreground leading-tight text-balance">
             Sinergi di Balik Inovasi
           </h1>
-          <p className="text-body-md text-muted-foreground">
+
+          <p className="font-body text-sm sm:text-base text-muted-foreground leading-relaxed max-w-xl mx-auto text-pretty">
             Talenta-talenta berbakat Politeknik Negeri Padang yang menggerakkan
             roda organisasi, riset, dan pengembangan teknologi robotika.
           </p>
 
-          <div className="relative mt-8 max-w-md mx-auto">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <div className="relative mt-6 max-w-md mx-auto">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
             <input
               type="text"
               placeholder="Cari anggota atau jabatan..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-surface-card-dark border border-hairline-dark rounded-none pl-10 pr-4 py-3 font-jetbrains text-sm focus:border-cyber-blue focus:outline-none transition-colors"
+              className="w-full bg-card border border-border rounded-lg pl-10 pr-4 py-2.5 font-body text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden transition-all shadow-2xs min-h-[42px]"
             />
           </div>
         </motion.div>
       </section>
 
-      <div className="space-y-16">
+      <div className="space-y-14 sm:space-y-16">
         {/* Pengurus Harian Inti */}
         <PresidiumSection
           members={presidiumMembers}
@@ -480,9 +500,12 @@ export default function KeanggotaanClient({
           departemenSections.every((s) =>
             s.members.every((m) => !matchesSearch(m)),
           ) && (
-            <div className="text-center py-20 text-muted-foreground font-jetbrains">
-              <p className="text-lg">Tidak ditemukan anggota untuk</p>
-              <p className="text-cyber-blue mt-1">
+            <div className="text-center py-16 bg-card border border-border rounded-xl p-8 shadow-2xs">
+              <Users className="size-10 text-muted-foreground/40 mx-auto mb-3" />
+              <p className="font-body text-sm sm:text-base text-muted-foreground">
+                Tidak ditemukan anggota untuk
+              </p>
+              <p className="font-display font-bold text-foreground text-lg mt-1">
                 &ldquo;{searchQuery}&rdquo;
               </p>
             </div>
