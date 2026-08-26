@@ -7,14 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-08-26
+
+### Added
+
+- **Redesign Halaman Publik & Landing Pages (Clean Institutional Standard)**:
+  - **Navbar & Footer (`components/landing/navbar.tsx`, `components/landing/footer.tsx`)**: Navigasi institusional modern dengan active route indicator, mobile drawer sheet, live system status, dan kontak resmi.
+  - **Halaman Beranda (`app/(marketing)/page.tsx`)**: Mengimplementasikan 5 section baru sesuai `RANCANGA_CONTENT_BERANDA.md` (Hero CAD visual, 4 kartu metric stats, 5 divisi KRI + Join card, 5 siklus timeline operasional, dan CTA).
+  - **Halaman Profil (`app/(marketing)/profil/page.tsx`)**: Desain ulang hero, moto/slogan bento grid, visi & misi dual card, timeline sejarah organisasi, dan struktur pimpinan BPH.
+  - **Halaman Divisi (`app/(marketing)/divisi/page.tsx`)**: Grid 3 kolom divisi robotik dengan badge spesifikasi, icons, dan link eksplorasi divisi.
+  - **Halaman Prestasi (`app/(marketing)/prestasi/page.tsx`)**: Sticky search & filter bar, badge capaian kompetisi, CAD watermark header, dan layout responsif.
+  - **Halaman Keanggotaan (`app/(marketing)/keanggotaan/page.tsx`)**: Struktur hirarki Pengurus Harian Inti, Badan Ad-Hoc, dan Departemen accordion dengan optimasi `next/image` avatar.
+  - **Halaman Artikel & Berita (`app/(marketing)/artikel/page.tsx`)**: Featured article hero card, sticky category filter bar, 3-column article grid, dan badge semantik.
+  - **Halaman Hubungi Kami (`app/(marketing)/hubungi-kami/page.tsx`)**: Split layout 5:7 dengan kartu kontak resmi, tautan media sosial Hugeicons, Google Maps interaktif, dan form kirim pesan terproteksi honeypot.
+- **Redesign Portal Autentikasi (`app/(auth)/login/page.tsx`, `app/(auth)/register/page.tsx`)**:
+  - Peningkatan ukuran touch target form input & tombol minimal 44px (`min-h-[44px]`).
+  - Indikator kekuatan kata sandi 4-segmen responsif pada registrasi akun baru.
+  - Integrasi Cloudflare Turnstile bot protection dan error alert terstandarisasi.
+- **Dokumentasi Operasional & Arsitektur Baru**:
+  - `docs/04-process-view/SOP_KEGIATAN_KOMDIS.md`: Standar operasional prosedur kegiatan, absensi QR, dan sanksi Komdis.
+  - `docs/architecture-event-registration-payment.md`: Spesifikasi arsitektur registrasi event & pembayaran.
+
+### Changed
+
+- **Optimalisasi SEO & Tipografi Global**:
+  - Mengonfigurasi font Plus Jakarta Sans (`--font-display`), Inter (`--font-body`), dan Geist/System Mono (`--font-mono`).
+  - Menyelaraskan OpenGraph metadata dan skema Organization JSON-LD pada layout root dan marketing.
 - **Peningkatan Dashboard Super Admin Terpadu & Real-Time Telemetry (`app/(private)/dashboard/page.tsx` & `components/features/dashboard/dashboard-client.tsx`)**:
   - Menyajikan telemetri operasional cepat: Total Pengguna Aktif & Terarsip, Dispensasi Pending Komdis, Tugas Caang Menunggu Penilaian OR, dan Sanksi SP Aktif.
   - Menampilkan panel status kepatuhan keamanan dan immutability trigger UU PDP No. 27/2022.
   - Menambahkan pusat kendali & pintasan cepat (Quick Access Hub) ke 6 modul utama (Akun, Struktur, Audit Log, Kegiatan, Disiplin, Piket).
   - Menampilkan live feed 5 log mutasi audit terbaru lengkap dengan nama aktor, role, tipe aksi, target, timestamp, dan IP address.
   - Menampilkan agenda kegiatan organisasi terdekat lengkap dengan waktu dan lokasi.
-
-## [0.5.0] - 2026-08-24
 
 ### Added
 
@@ -179,7 +203,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Setup Husky pre-commit hook dan Commitlint.
 - Setup Next.js dengan pnpm.
 
-[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.2.2...v0.3.0
 [0.2.2]: https://github.com/zakyrmh/robotik-pnp/compare/v0.2.1...v0.2.2
