@@ -2,7 +2,15 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { MapPin, Mail, Send, Loader2, CheckCircle, Globe } from "lucide-react";
+import {
+  MapPin,
+  Mail,
+  Send,
+  Loader2,
+  CheckCircle,
+  Globe,
+  AlertCircle,
+} from "lucide-react";
 import Link from "next/link";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -10,6 +18,7 @@ import {
   YoutubeIcon,
   TiktokIcon,
 } from "@hugeicons/core-free-icons";
+
 export default function HubungiKamiClient() {
   const [formData, setFormData] = useState({
     fullName: "",
@@ -74,20 +83,26 @@ export default function HubungiKamiClient() {
 
   return (
     <div className="container mx-auto px-4 max-w-7xl pb-24">
-      <section className="py-16 text-center">
+      {/* Hero Section */}
+      <section className="py-12 sm:py-16 text-center">
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="max-w-3xl mx-auto space-y-6"
+          className="max-w-3xl mx-auto space-y-4"
         >
-          <span className="inline-block px-3 py-1 bg-cyber-blue/10 text-cyber-blue font-jetbrains text-mono-eyebrow rounded-sm uppercase tracking-wider">
-            Hubungi Kami
-          </span>
-          <h1 className="text-display-lg md:text-display-xl font-bold uppercase tracking-tight text-foreground leading-tight">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-border bg-card/80 dark:bg-card/40 backdrop-blur-xs text-xs font-mono text-accent-strong shadow-2xs">
+            <span className="size-2 rounded-full bg-accent-strong animate-pulse" />
+            <span className="font-semibold uppercase tracking-wider">
+              Hubungi Kami
+            </span>
+          </div>
+
+          <h1 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold uppercase tracking-tight text-foreground leading-tight text-balance">
             Mari Berkolaborasi dan Terhubung
           </h1>
-          <p className="text-body-md text-muted-foreground">
+
+          <p className="font-body text-sm sm:text-base text-muted-foreground leading-relaxed max-w-2xl mx-auto text-pretty">
             Memiliki pertanyaan seputar riset kami, kerja sama sponsor, atau
             tertarik mengundang UKM Robotik PNP dalam event Anda? Hubungi kami
             sekarang.
@@ -95,111 +110,129 @@ export default function HubungiKamiClient() {
         </motion.div>
       </section>
 
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-12 mt-8">
+      {/* Content Section */}
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 mt-4">
+        {/* Left Column: Contact Cards & Map (5 cols) */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.2 }}
-          className="space-y-8"
+          transition={{ duration: 0.5, delay: 0.15 }}
+          className="lg:col-span-5 space-y-6"
         >
           <div className="space-y-4">
-            <div className="bg-surface-card-dark border border-hairline-dark p-6 flex items-start gap-4 rounded-sm hover:border-cyber-blue/50 transition-colors group">
-              <div className="w-12 h-12 bg-cyber-blue/10 rounded-sm flex items-center justify-center text-cyber-blue shrink-0 group-hover:bg-cyber-blue group-hover:text-white transition-colors">
-                <MapPin className="w-6 h-6" />
+            {/* Address Card */}
+            <div className="bg-card border border-border p-5 sm:p-6 flex items-start gap-4 rounded-xl shadow-2xs hover:border-primary/50 transition-all duration-200 group relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-0.5 bg-border group-hover:bg-primary transition-colors" />
+
+              <div className="size-11 rounded-lg bg-secondary border border-border text-primary flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors shadow-2xs">
+                <MapPin className="size-5" />
               </div>
               <div>
-                <h3 className="font-jetbrains text-mono-eyebrow text-muted-foreground uppercase mb-2">
+                <h3 className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
                   Alamat Sekretariat
                 </h3>
-                <p className="text-foreground text-sm leading-relaxed">
+                <p className="font-body text-sm text-foreground/90 leading-relaxed">
                   Gedung P Lt. 2, Kampus Politeknik Negeri Padang, Limau Manis,
                   Kec. Pauh, Kota Padang, Sumatera Barat.
                 </p>
               </div>
             </div>
 
+            {/* Email Card */}
             <a
               href="mailto:infokomrobotikpnp2024@gmail.com"
-              className="bg-surface-card-dark border border-hairline-dark p-6 flex items-start gap-4 rounded-sm hover:border-cyber-blue/50 transition-colors group cursor-pointer"
+              className="bg-card border border-border p-5 sm:p-6 flex items-start gap-4 rounded-xl shadow-2xs hover:border-primary/50 transition-all duration-200 group cursor-pointer relative overflow-hidden block"
             >
-              <div className="w-12 h-12 bg-cyber-blue/10 rounded-sm flex items-center justify-center text-cyber-blue shrink-0 group-hover:bg-cyber-blue group-hover:text-white transition-colors">
-                <Mail className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="font-jetbrains text-mono-eyebrow text-muted-foreground uppercase mb-2">
-                  Email Resmi
-                </h3>
-                <p className="text-foreground text-lg font-bold group-hover:text-cyber-blue transition-colors">
-                  infokomrobotikpnp2024@gmail.com
-                </p>
+              <div className="absolute top-0 left-0 right-0 h-0.5 bg-border group-hover:bg-primary transition-colors" />
+
+              <div className="flex items-start gap-4">
+                <div className="size-11 rounded-lg bg-secondary border border-border text-primary flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors shadow-2xs">
+                  <Mail className="size-5" />
+                </div>
+                <div>
+                  <h3 className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
+                    Email Resmi
+                  </h3>
+                  <p className="font-body text-base font-semibold text-foreground group-hover:text-primary transition-colors break-all">
+                    infokomrobotikpnp2024@gmail.com
+                  </p>
+                </div>
               </div>
             </a>
 
-            <div className="bg-surface-card-dark border border-hairline-dark p-6 flex items-start gap-4 rounded-sm hover:border-cyber-blue/50 transition-colors group">
-              <div className="w-12 h-12 bg-cyber-blue/10 rounded-sm flex items-center justify-center text-cyber-blue shrink-0 group-hover:bg-cyber-blue group-hover:text-white transition-colors">
-                <Globe className="w-6 h-6" />
+            {/* Social Media Card */}
+            <div className="bg-card border border-border p-5 sm:p-6 flex items-start gap-4 rounded-xl shadow-2xs hover:border-primary/50 transition-all duration-200 group relative overflow-hidden">
+              <div className="absolute top-0 left-0 right-0 h-0.5 bg-border group-hover:bg-primary transition-colors" />
+
+              <div className="size-11 rounded-lg bg-secondary border border-border text-primary flex items-center justify-center shrink-0 group-hover:bg-primary group-hover:text-primary-foreground transition-colors shadow-2xs">
+                <Globe className="size-5" />
               </div>
               <div className="w-full">
-                <h3 className="font-jetbrains text-mono-eyebrow text-muted-foreground uppercase mb-3">
+                <h3 className="font-mono text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-2.5">
                   Media Sosial Resmi
                 </h3>
-                <div className="flex gap-4">
+                <div className="flex items-center gap-3">
                   <Link
                     href="https://www.instagram.com/robotikpnp/"
-                    className="w-10 h-10 border border-hairline-dark rounded-sm flex items-center justify-center text-muted-foreground hover:bg-cyber-blue hover:text-white hover:border-cyber-blue transition-colors"
+                    className="size-10 rounded-lg bg-secondary border border-border flex items-center justify-center text-muted-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all shadow-2xs"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <HugeiconsIcon icon={InstagramIcon} size={20} />
+                    <HugeiconsIcon icon={InstagramIcon} size={18} />
                   </Link>
                   <Link
                     href="https://www.youtube.com/@robotikpnp"
-                    className="w-10 h-10 border border-hairline-dark rounded-sm flex items-center justify-center text-muted-foreground hover:bg-cyber-blue hover:text-white hover:border-cyber-blue transition-colors"
+                    className="size-10 rounded-lg bg-secondary border border-border flex items-center justify-center text-muted-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all shadow-2xs"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <HugeiconsIcon icon={YoutubeIcon} size={20} />
+                    <HugeiconsIcon icon={YoutubeIcon} size={18} />
                   </Link>
                   <Link
                     href="https://www.tiktok.com/@robotikpnp"
-                    className="w-10 h-10 border border-hairline-dark rounded-sm flex items-center justify-center text-muted-foreground hover:bg-cyber-blue hover:text-white hover:border-cyber-blue transition-colors"
+                    className="size-10 rounded-lg bg-secondary border border-border flex items-center justify-center text-muted-foreground hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all shadow-2xs"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    <HugeiconsIcon icon={TiktokIcon} size={20} />
+                    <HugeiconsIcon icon={TiktokIcon} size={18} />
                   </Link>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="bg-surface-card-dark border border-hairline-dark p-2 rounded-sm h-[300px] relative overflow-hidden group">
+          {/* Google Maps Card */}
+          <div className="bg-card border border-border p-2 rounded-xl h-[280px] sm:h-[300px] relative overflow-hidden shadow-2xs">
             <iframe
               src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d443.50713584004745!2d100.46835127221689!3d-0.91458339006708!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2fd4b7bbfa1dfc99%3A0xf0984f8a51acdad!2s3FP9%2B47V%2C%20Limau%20Manis%2C%20Kec.%20Pauh%2C%20Kota%20Padang%2C%20Sumatera%20Barat%2025175!5e1!3m2!1sid!2sid!4v1782489926618!5m2!1sid!2sid"
-              width="600"
-              height="450"
-              style={{ border: 0 }}
+              width="100%"
+              height="100%"
+              style={{ border: 0, borderRadius: "8px" }}
               allowFullScreen={false}
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
-            ></iframe>
+            />
           </div>
         </motion.div>
 
+        {/* Right Column: Contact Form (7 cols) */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          className="bg-surface-card-dark border border-hairline-dark rounded-none p-8"
+          transition={{ duration: 0.5, delay: 0.25 }}
+          className="lg:col-span-7 bg-card border border-border rounded-2xl p-6 sm:p-8 lg:p-10 shadow-soft relative overflow-hidden"
         >
-          <h2 className="text-display-md font-bold uppercase mb-8">
+          {/* Top Accent line */}
+          <div className="absolute top-0 left-0 right-0 h-0.5 bg-accent-strong" />
+
+          <h2 className="font-display text-xl sm:text-2xl font-bold uppercase tracking-tight text-foreground mb-6">
             Kirim Pesan
           </h2>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2 group">
-                <label className="font-jetbrains text-mono-eyebrow text-muted-foreground uppercase">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div className="space-y-1.5">
+                <label className="font-mono text-xs uppercase tracking-wider text-muted-foreground font-semibold">
                   Nama Lengkap *
                 </label>
                 <input
@@ -208,12 +241,13 @@ export default function HubungiKamiClient() {
                   required
                   value={formData.fullName}
                   onChange={handleChange}
-                  className="w-full bg-canvas-dark border border-hairline-dark rounded-none px-4 py-3 text-sm focus:border-cyber-blue focus:shadow-[0_0_8px_rgba(0,102,177,0.3)] focus:outline-none transition-all"
+                  className="w-full bg-secondary/50 border border-border rounded-lg px-4 py-2.5 font-body text-sm text-foreground placeholder:text-muted-foreground focus:bg-card focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden transition-all shadow-2xs min-h-[42px]"
                   placeholder="John Doe"
                 />
               </div>
-              <div className="space-y-2 group">
-                <label className="font-jetbrains text-mono-eyebrow text-muted-foreground uppercase">
+
+              <div className="space-y-1.5">
+                <label className="font-mono text-xs uppercase tracking-wider text-muted-foreground font-semibold">
                   Instansi / Organisasi
                 </label>
                 <input
@@ -221,14 +255,14 @@ export default function HubungiKamiClient() {
                   name="organization"
                   value={formData.organization}
                   onChange={handleChange}
-                  className="w-full bg-canvas-dark border border-hairline-dark rounded-none px-4 py-3 text-sm focus:border-cyber-blue focus:shadow-[0_0_8px_rgba(0,102,177,0.3)] focus:outline-none transition-all"
+                  className="w-full bg-secondary/50 border border-border rounded-lg px-4 py-2.5 font-body text-sm text-foreground placeholder:text-muted-foreground focus:bg-card focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden transition-all shadow-2xs min-h-[42px]"
                   placeholder="Opsional"
                 />
               </div>
             </div>
 
-            <div className="space-y-2 group">
-              <label className="font-jetbrains text-mono-eyebrow text-muted-foreground uppercase">
+            <div className="space-y-1.5">
+              <label className="font-mono text-xs uppercase tracking-wider text-muted-foreground font-semibold">
                 Alamat Email *
               </label>
               <input
@@ -237,13 +271,13 @@ export default function HubungiKamiClient() {
                 required
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full bg-canvas-dark border border-hairline-dark rounded-none px-4 py-3 text-sm focus:border-cyber-blue focus:shadow-[0_0_8px_rgba(0,102,177,0.3)] focus:outline-none transition-all"
+                className="w-full bg-secondary/50 border border-border rounded-lg px-4 py-2.5 font-body text-sm text-foreground placeholder:text-muted-foreground focus:bg-card focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden transition-all shadow-2xs min-h-[42px]"
                 placeholder="john@example.com"
               />
             </div>
 
-            <div className="space-y-2 group">
-              <label className="font-jetbrains text-mono-eyebrow text-muted-foreground uppercase">
+            <div className="space-y-1.5">
+              <label className="font-mono text-xs uppercase tracking-wider text-muted-foreground font-semibold">
                 Kategori Pesan *
               </label>
               <select
@@ -251,7 +285,7 @@ export default function HubungiKamiClient() {
                 required
                 value={formData.category}
                 onChange={handleChange}
-                className="w-full bg-canvas-dark border border-hairline-dark rounded-none px-4 py-3 text-sm focus:border-cyber-blue focus:shadow-[0_0_8px_rgba(0,102,177,0.3)] focus:outline-none transition-all appearance-none"
+                className="w-full bg-secondary/50 border border-border rounded-lg px-4 py-2.5 font-body text-sm text-foreground focus:bg-card focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden transition-all shadow-2xs min-h-[42px] cursor-pointer"
               >
                 <option value="" disabled>
                   Pilih Kategori
@@ -273,7 +307,7 @@ export default function HubungiKamiClient() {
 
             {/* Honeypot field for bot detection (hidden from human users) */}
             <div className="hidden" aria-hidden="true">
-              <label className="font-jetbrains text-mono-eyebrow text-muted-foreground uppercase">
+              <label className="font-mono text-xs uppercase tracking-wider text-muted-foreground">
                 Website
               </label>
               <input
@@ -286,8 +320,8 @@ export default function HubungiKamiClient() {
               />
             </div>
 
-            <div className="space-y-2 group">
-              <label className="font-jetbrains text-mono-eyebrow text-muted-foreground uppercase">
+            <div className="space-y-1.5">
+              <label className="font-mono text-xs uppercase tracking-wider text-muted-foreground font-semibold">
                 Isi Pesan *
               </label>
               <textarea
@@ -296,40 +330,44 @@ export default function HubungiKamiClient() {
                 rows={5}
                 value={formData.message}
                 onChange={handleChange}
-                className="w-full bg-canvas-dark border border-hairline-dark rounded-none px-4 py-3 text-sm focus:border-cyber-blue focus:shadow-[0_0_8px_rgba(0,102,177,0.3)] focus:outline-none transition-all resize-none"
+                className="w-full bg-secondary/50 border border-border rounded-lg p-4 font-body text-sm text-foreground placeholder:text-muted-foreground focus:bg-card focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden transition-all shadow-2xs resize-none"
                 placeholder="Tuliskan pesan Anda di sini..."
               />
             </div>
 
             {submitStatus === "error" && (
-              <div className="p-4 bg-crimson-red/10 border border-crimson-red/50 text-crimson-red text-sm">
-                {errorMessage}
+              <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-lg text-destructive text-sm flex items-center gap-2">
+                <AlertCircle className="size-4 shrink-0" />
+                <span>{errorMessage}</span>
               </div>
             )}
 
             {submitStatus === "success" && (
-              <div className="p-4 bg-green-500/10 border border-green-500/50 text-green-500 text-sm flex items-center gap-2">
-                <CheckCircle className="w-5 h-5" /> Pesan Anda telah berhasil
-                dikirim!
+              <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-emerald-600 dark:text-emerald-400 text-sm flex items-center gap-2">
+                <CheckCircle className="size-4 shrink-0" />
+                <span>Pesan Anda telah berhasil dikirim!</span>
               </div>
             )}
 
             <button
               type="submit"
               disabled={isSubmitting || submitStatus === "success"}
-              className="w-full bg-primary text-primary-foreground font-jetbrains text-mono-button px-6 py-4 rounded-none hover:bg-cyber-blue hover:text-white transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed border border-transparent hover:border-cyber-blue"
+              className="w-full bg-primary hover:bg-primary-hover text-primary-foreground font-body font-medium text-sm px-6 py-3.5 rounded-lg shadow-xs transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed min-h-[46px] cursor-pointer"
             >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" /> Mengirim...
+                  <Loader2 className="size-4 animate-spin" />
+                  <span>Mengirim...</span>
                 </>
               ) : submitStatus === "success" ? (
                 <>
-                  <CheckCircle className="w-4 h-4" /> Terkirim
+                  <CheckCircle className="size-4" />
+                  <span>Terkirim</span>
                 </>
               ) : (
                 <>
-                  <Send className="w-4 h-4" /> Kirim Pesan
+                  <Send className="size-4" />
+                  <span>Kirim Pesan</span>
                 </>
               )}
             </button>

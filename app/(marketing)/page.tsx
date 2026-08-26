@@ -13,23 +13,16 @@ import { TimelineSection } from "@/components/landing/timeline-section";
 import { CtaSection } from "@/components/landing/cta-section";
 
 export const metadata: Metadata = {
-  title: "UKM Robotik PNP — Mesin. Logika. Juara.",
+  title: "UKM Robotik PNP — We Play with Technology",
   description:
-    "Unit Kegiatan Mahasiswa Robotik Politeknik Negeri Padang. Tim robot kompetisi unggulan di KRAI, KRSBI-B, KRSBI-H, KRSTI, dan KRSRI. Bergabunglah dan berikan prestasi terbaik untuk PNP.",
-  keywords: [
-    "robotik",
-    "PNP",
-    "KRAI",
-    "KRSBI",
-    "KRSTI",
-    "KRSRI",
-    "robot kompetisi",
-    "Padang",
-  ],
+    "Unit Kegiatan Mahasiswa Robotika Politeknik Negeri Padang. Pusat riset, perancangan, dan fabrikasi robot kompetisi Kontes Robot Indonesia (KRI).",
   openGraph: {
-    title: "UKM Robotik PNP — Mesin. Logika. Juara.",
+    title: "UKM Robotik Politeknik Negeri Padang",
     description:
-      "Unit Kegiatan Mahasiswa Robotik Politeknik Negeri Padang — Bergerak dengan Presisi, Bersaing di Pentas Nasional.",
+      "No Victory Without Sacrifice. Wadah pengembangan mekatronika, elektronika, dan sistem cerdas otonom.",
+    url: "https://robotik-pnp.vercel.app/",
+    siteName: "UKM Robotik PNP",
+    locale: "id_ID",
     type: "website",
   },
 };

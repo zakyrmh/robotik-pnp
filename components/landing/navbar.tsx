@@ -4,16 +4,16 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  Menu01Icon,
-  Cancel01Icon,
-  Sun01Icon,
-  Moon01Icon,
-} from "@hugeicons/core-free-icons";
 import Image from "next/image";
+import { Menu, X, Sun, Moon, ArrowRight, LogIn } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-const navLinks = [
+interface NavLinkItem {
+  href: string;
+  label: string;
+}
+
+const navLinks: NavLinkItem[] = [
   { href: "/", label: "Beranda" },
   { href: "/profil", label: "Profil" },
   { href: "/divisi", label: "Divisi" },
@@ -31,7 +31,9 @@ export function LandingNavbar() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 40);
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 20);
+    };
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -39,10 +41,33 @@ export function LandingNavbar() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setMounted(true);
-      const isDark = document.documentElement.classList.contains("dark");
+      const isDark =
+        document.documentElement.classList.contains("dark") ||
+        localStorage.getItem("theme") === "dark";
       setTheme(isDark ? "dark" : "light");
     }, 0);
     return () => clearTimeout(timer);
+  }, []);
+
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileOpen]);
+
+  // Close mobile menu on Escape key press
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   const toggleTheme = () => {
@@ -56,80 +81,98 @@ export function LandingNavbar() {
     }
   };
 
+  const isLinkActive = (href: string) => {
+    if (href === "/") {
+      return pathname === "/";
+    }
+    return pathname.startsWith(href);
+  };
+
   return (
     <>
-      <motion.nav
-        initial={{ y: -80, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.5, ease: "easeOut" }}
-        className={`fixed top-0 left-0 right-0 z-50 h-16 4k:h-24 transition-all duration-300 ${
+      <header
+        className={cn(
+          "fixed top-0 left-0 right-0 z-50 transition-all duration-200",
           scrolled
-            ? "bg-background/95 dark:bg-dongker-ink/95 backdrop-blur-md border-b border-border shadow-xs"
-            : "bg-background/80 dark:bg-dongker-ink/80 backdrop-blur-xs border-b border-border/40"
-        }`}
+            ? "bg-background/90 dark:bg-background/95 backdrop-blur-md border-b border-border shadow-xs"
+            : "bg-background/75 dark:bg-background/85 backdrop-blur-xs border-b border-border/60",
+        )}
       >
-        {/* Tricolor top stripe */}
-        <div className="absolute top-0 left-0 right-0 h-0.75 bg-linear-to-r from-dongker-surface via-pnp-orange to-dongker-ink" />
+        {/* Subtle engineering brand accent stripe */}
+        <div className="h-0.5 w-full bg-linear-to-r from-primary via-accent-strong to-primary/40" />
 
-        <div className="max-w-330 2xl:max-w-384 4k:max-w-[2200px] mx-auto h-full px-4 sm:px-6 lg:px-8 xl:px-12 4k:px-20 flex items-center justify-between">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 4k:gap-4 group">
-            <div className="size-9 4k:size-12 flex items-center justify-center shrink-0 rounded-full border border-blueprint-border/60 dark:border-zinc-800 p-0.5 bg-background shadow-xs group-hover:border-pnp-orange transition-colors">
+        <div className="max-w-7xl mx-auto h-16 sm:h-18 px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+          {/* Brand Logo & Title */}
+          <Link
+            href="/"
+            className="flex items-center gap-3 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-lg py-1 pr-2"
+          >
+            <div className="relative size-9 sm:size-10 flex items-center justify-center shrink-0 rounded-lg border border-border bg-card p-1 shadow-2xs group-hover:border-primary transition-colors">
               <Image
                 src="/images/logo-ukm-robotik-pnp.webp"
                 alt="Logo UKM Robotik PNP"
                 width={36}
                 height={36}
-                className="rounded-full object-cover size-full h-auto w-auto"
+                className="rounded-md object-contain size-full"
+                priority
               />
             </div>
-            <div className="flex flex-col leading-none">
-              <span className="font-mono font-bold text-sm 4k:text-xl uppercase tracking-[2px] text-foreground group-hover:text-pnp-orange transition-colors">
-                Robotik
+            <div className="flex flex-col leading-tight">
+              <span className="font-display font-bold text-sm sm:text-base tracking-tight text-foreground group-hover:text-primary transition-colors flex items-center gap-1.5">
+                UKM ROBOTIK
               </span>
-              <span className="font-mono text-[10px] 4k:text-base uppercase tracking-[1.5px] text-pnp-orange font-semibold">
-                PNP
+              <span className="font-mono text-[10px] tracking-wider uppercase text-muted-foreground font-medium">
+                POLITEKNIK NEGERI PADANG
               </span>
             </div>
           </Link>
 
-          {/* Desktop nav */}
-          <ul className="hidden lg:flex items-center gap-1 xl:gap-2 4k:gap-4">
+          {/* Desktop Navigation Links */}
+          <nav
+            aria-label="Navigasi Utama"
+            className="hidden lg:flex items-center gap-1"
+          >
             {navLinks.map((link) => {
-              const isActive = pathname === link.href;
+              const active = isLinkActive(link.href);
               return (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className={`font-mono text-micro 4k:text-lg uppercase tracking-[1.5px] px-3.5 py-2 xl:px-4 4k:px-6 block transition-all duration-200 relative group ${
-                      isActive
-                        ? "text-pnp-orange font-bold"
-                        : "text-muted-foreground font-medium hover:text-pnp-orange dark:hover:text-pnp-orange"
-                    }`}
-                  >
-                    {link.label}
-                    <span
-                      className={`absolute bottom-0 left-3.5 right-3.5 xl:left-4 xl:right-4 h-0.5 bg-pnp-orange transition-transform duration-200 origin-left ${
-                        isActive
-                          ? "scale-x-100"
-                          : "scale-x-0 group-hover:scale-x-100"
-                      }`}
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    "relative font-body text-sm font-medium px-3.5 py-2 rounded-md transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                    active
+                      ? "text-primary font-semibold"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
+                  )}
+                >
+                  {link.label}
+                  {active && (
+                    <motion.span
+                      layoutId="activeNavIndicator"
+                      className="absolute bottom-0 left-3 right-3 h-0.5 bg-primary rounded-full"
+                      transition={{
+                        type: "spring",
+                        stiffness: 380,
+                        damping: 30,
+                      }}
                     />
-                  </Link>
-                </li>
+                  )}
+                </Link>
               );
             })}
-          </ul>
+          </nav>
 
-          {/* Right Action Cluster */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          {/* Right Actions Cluster */}
+          <div className="flex items-center gap-2 sm:gap-2.5">
             {/* Theme Toggle Button */}
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+            <button
               onClick={toggleTheme}
-              className="size-9 4k:size-12 flex items-center justify-center rounded-md border border-border bg-background/80 hover:bg-muted text-foreground transition-all duration-200 shadow-xs cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-pnp-orange"
-              aria-label="Ubah Tema Warna"
+              className="size-9 sm:size-10 flex items-center justify-center rounded-md border border-border bg-card hover:bg-muted text-foreground transition-colors shadow-2xs cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label={
+                theme === "light"
+                  ? "Beralih ke Mode Gelap"
+                  : "Beralih ke Mode Terang"
+              }
               title={
                 theme === "light"
                   ? "Beralih ke Dark Mode"
@@ -139,98 +182,159 @@ export function LandingNavbar() {
               {mounted ? (
                 <motion.div
                   key={theme}
-                  initial={{ rotate: -90, opacity: 0, scale: 0.8 }}
+                  initial={{ rotate: -45, opacity: 0, scale: 0.8 }}
                   animate={{ rotate: 0, opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.15 }}
+                  transition={{ duration: 0.2 }}
                 >
-                  <HugeiconsIcon
-                    icon={theme === "light" ? Moon01Icon : Sun01Icon}
-                    size={18}
-                    className="text-foreground"
-                  />
+                  {theme === "light" ? (
+                    <Moon className="size-4.5 text-foreground" />
+                  ) : (
+                    <Sun className="size-4.5 text-foreground" />
+                  )}
                 </motion.div>
               ) : (
-                <div className="size-4" />
+                <div className="size-4.5" />
               )}
-            </motion.button>
+            </button>
 
-            {/* CTA Button */}
+            {/* Login SIM Button (Desktop) */}
             <Link
-              href="/register"
-              className="hidden lg:inline-flex items-center justify-center font-mono text-micro 4k:text-base font-semibold uppercase tracking-[1.5px] px-5 py-2.5 4k:px-8 4k:py-4 bg-dongker-surface text-white hover:bg-dongker-hover dark:bg-pnp-orange dark:hover:bg-pnp-orange/90 rounded-md shadow-xs transition-all duration-200"
+              href="/login"
+              className="hidden sm:inline-flex items-center gap-1.5 font-body text-xs sm:text-sm font-medium px-3.5 py-2 rounded-md border border-border bg-card hover:bg-muted text-foreground transition-all duration-150 shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              Bergabung
+              <LogIn className="size-3.5 text-muted-foreground" />
+              <span>Masuk SIM</span>
             </Link>
 
-            {/* Mobile burger */}
+            {/* Main CTA Button (Desktop) */}
+            <Link
+              href="/register"
+              className="hidden lg:inline-flex items-center gap-1.5 font-body text-sm font-medium px-4 py-2 rounded-md bg-primary hover:bg-primary-hover text-primary-foreground shadow-xs transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <span>Bergabung</span>
+              <ArrowRight className="size-3.5" />
+            </Link>
+
+            {/* Mobile Hamburger Toggle Button */}
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="lg:hidden p-2 text-foreground hover:bg-muted rounded-md transition-colors duration-200 cursor-pointer"
-              aria-label="Toggle menu"
+              className="lg:hidden size-9 sm:size-10 flex items-center justify-center rounded-md border border-border bg-card hover:bg-muted text-foreground transition-colors shadow-2xs cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label={
+                mobileOpen ? "Tutup menu navigasi" : "Buka menu navigasi"
+              }
+              aria-expanded={mobileOpen}
             >
-              <HugeiconsIcon
-                icon={mobileOpen ? Cancel01Icon : Menu01Icon}
-                size={22}
-              />
+              {mobileOpen ? (
+                <X className="size-5 text-foreground" />
+              ) : (
+                <Menu className="size-5 text-foreground" />
+              )}
             </button>
           </div>
         </div>
-      </motion.nav>
+      </header>
 
-      {/* Mobile menu drawer */}
+      {/* Mobile Menu Overlay & Drawer */}
       <AnimatePresence>
         {mobileOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.2 }}
-            className="fixed top-16 left-0 right-0 z-40 bg-background/95 dark:bg-dongker-ink/98 backdrop-blur-md border-b border-border shadow-lg lg:hidden"
-          >
-            <ul className="flex flex-col py-3">
-              {navLinks.map((link) => {
-                const isActive = pathname === link.href;
-                return (
-                  <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      onClick={() => setMobileOpen(false)}
-                      className={`block font-mono text-xs uppercase tracking-[1.5px] px-6 py-3.5 transition-colors duration-150 border-b border-border/40 ${
-                        isActive
-                          ? "text-pnp-orange font-bold bg-pnp-orange/5"
-                          : "text-foreground font-medium hover:text-pnp-orange hover:bg-muted"
-                      }`}
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                );
-              })}
-              {/* Mobile Theme Toggle Row */}
-              <li className="px-6 py-3 border-b border-border/40 flex items-center justify-between font-mono text-xs font-medium uppercase tracking-[1.5px] text-muted-foreground">
-                <span>MODE TEMA: {theme === "light" ? "LIGHT" : "DARK"}</span>
-                <button
-                  onClick={toggleTheme}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-border bg-muted/60 text-foreground font-mono text-micro uppercase tracking-wider cursor-pointer hover:bg-muted"
-                >
-                  <HugeiconsIcon
-                    icon={theme === "light" ? Moon01Icon : Sun01Icon}
-                    size={16}
-                  />
-                  <span>{theme === "light" ? "DARK MODE" : "LIGHT MODE"}</span>
-                </button>
-              </li>
-              <li className="px-6 pt-4 pb-2">
-                <Link
-                  href="/register"
-                  onClick={() => setMobileOpen(false)}
-                  className="block font-mono text-xs font-semibold uppercase tracking-[1.5px] px-5 py-3 bg-dongker-surface text-white text-center hover:bg-dongker-hover dark:bg-pnp-orange dark:hover:bg-pnp-orange/90 rounded-md shadow-xs transition-colors duration-200"
-                >
-                  Bergabung
-                </Link>
-              </li>
-            </ul>
-          </motion.div>
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setMobileOpen(false)}
+              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-xs lg:hidden"
+              aria-hidden="true"
+            />
+
+            {/* Mobile Navigation Panel */}
+            <motion.div
+              initial={{ opacity: 0, y: -16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -16 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="fixed top-16 sm:top-18 left-0 right-0 z-40 bg-background/98 backdrop-blur-xl border-b border-border shadow-soft lg:hidden max-h-[calc(100dvh-4.5rem)] overflow-y-auto"
+            >
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 space-y-4">
+                {/* Navigation Links */}
+                <nav aria-label="Navigasi Mobile" className="space-y-1">
+                  {navLinks.map((link) => {
+                    const active = isLinkActive(link.href);
+                    return (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        onClick={() => setMobileOpen(false)}
+                        className={cn(
+                          "flex items-center justify-between font-body text-sm font-medium px-4 py-3 rounded-lg transition-colors min-h-[44px]",
+                          active
+                            ? "text-primary font-semibold bg-primary-soft/50 dark:bg-primary-soft/20 border border-primary/20"
+                            : "text-foreground hover:bg-muted/70",
+                        )}
+                      >
+                        <span>{link.label}</span>
+                        {active && (
+                          <span className="size-1.5 rounded-full bg-primary" />
+                        )}
+                      </Link>
+                    );
+                  })}
+                </nav>
+
+                {/* Divider */}
+                <div className="divider" />
+
+                {/* Mobile Theme Switcher Card */}
+                <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-card">
+                  <div className="flex items-center gap-2.5">
+                    <div className="size-8 rounded-md bg-muted flex items-center justify-center text-muted-foreground">
+                      {theme === "light" ? (
+                        <Sun className="size-4 text-accent-strong" />
+                      ) : (
+                        <Moon className="size-4 text-primary" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-body text-xs font-semibold text-foreground">
+                        Mode Tampilan
+                      </p>
+                      <p className="font-mono text-[11px] text-muted-foreground uppercase">
+                        {theme === "light" ? "Light Mode" : "Dark Mode"}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={toggleTheme}
+                    className="font-body text-xs font-medium px-3 py-1.5 rounded-md border border-border bg-background hover:bg-muted text-foreground transition-colors cursor-pointer"
+                  >
+                    Ganti Tema
+                  </button>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                  <Link
+                    href="/login"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center justify-center gap-2 font-body text-sm font-medium px-4 py-3 rounded-lg border border-border bg-card hover:bg-muted text-foreground text-center transition-colors min-h-[44px]"
+                  >
+                    <LogIn className="size-4 text-muted-foreground" />
+                    <span>Masuk SIM Robotik</span>
+                  </Link>
+                  <Link
+                    href="/register"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center justify-center gap-2 font-body text-sm font-medium px-4 py-3 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-center shadow-xs transition-colors min-h-[44px]"
+                  >
+                    <span>Daftar Calon Anggota</span>
+                    <ArrowRight className="size-4" />
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </>

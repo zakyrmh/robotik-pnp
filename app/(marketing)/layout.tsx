@@ -15,17 +15,19 @@ export default function MarketingLayout({
     "@context": "https://schema.org",
     "@type": "Organization",
     "@id": `${siteUrl}/#organization`,
-    name: "UKM Robotik Politeknik Negeri Padang",
+    name: "UKM Robotika Politeknik Negeri Padang",
     alternateName: "UKM Robotik PNP",
     url: siteUrl,
     logo: `${siteUrl}/images/logo-ukm-robotik-pnp.webp`,
+    email: "infokomrobotikpnp2024@gmail.com",
     sameAs: [
       "https://www.instagram.com/robotikpnp/",
       "https://www.youtube.com/@robotikpnp",
     ],
     address: {
       "@type": "PostalAddress",
-      streetAddress: "Kampus Politeknik Negeri Padang, Limau Manis",
+      streetAddress:
+        "Gedung P Lantai 2, Kampus Politeknik Negeri Padang, Limau Manis",
       addressLocality: "Padang",
       addressRegion: "Sumatera Barat",
       postalCode: "25164",

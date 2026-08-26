@@ -35,7 +35,7 @@ export default async function DivisiIndexPage() {
   });
 
   return (
-    <div className="min-h-screen bg-background text-foreground pt-24 pb-20">
+    <div className="min-h-screen bg-background text-foreground mt-6 sm:mt-0 py-16 sm:py-20 lg:py-24 transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <DivisiIndexClient divisions={divisions} />
       </div>

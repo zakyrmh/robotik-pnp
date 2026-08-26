@@ -43,20 +43,23 @@ export function RegisterForm() {
 
   return (
     <div className="flex flex-col gap-4">
-      <Card className="rounded-lg">
-        <CardHeader className="gap-2">
-          <CardTitle className="font-display text-lg sm:text-xl font-semibold tracking-tight">
+      <Card className="rounded-2xl border border-border bg-card shadow-soft relative overflow-hidden">
+        {/* Top Accent Line */}
+        <div className="absolute top-0 left-0 right-0 h-0.5 bg-accent-strong" />
+
+        <CardHeader className="gap-2 p-6 sm:p-8 pb-4">
+          <CardTitle className="font-display text-xl sm:text-2xl font-bold uppercase tracking-tight text-foreground">
             Portal Registrasi
           </CardTitle>
-          <CardDescription className="text-sm leading-relaxed">
+          <CardDescription className="font-body text-xs sm:text-sm text-muted-foreground leading-relaxed">
             Buat akun baru untuk mengakses sistem manajemen dan rekrutmen
             terbuka UKM Robotik PNP.
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="flex flex-col gap-4">
+        <CardContent className="flex flex-col gap-5 p-6 sm:p-8 pt-0">
           {state?.error && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="rounded-lg">
               <HugeiconsIcon icon={AlertCircleIcon} />
               <AlertDescription>{state.error}</AlertDescription>
             </Alert>
@@ -65,12 +68,20 @@ export function RegisterForm() {
           <form action={action} className="flex flex-col gap-4">
             <input type="hidden" name="captchaToken" value={captchaToken} />
 
-            <FieldGroup>
+            <FieldGroup className="gap-4">
               <Field data-disabled={isPending}>
-                <FieldLabel htmlFor="email">Alamat Email</FieldLabel>
-                <InputGroup className="h-10 sm:h-11">
+                <FieldLabel
+                  htmlFor="email"
+                  className="font-mono text-xs uppercase tracking-wider text-muted-foreground font-semibold"
+                >
+                  Alamat Email
+                </FieldLabel>
+                <InputGroup className="h-11 min-h-[44px] rounded-lg border-border focus-within:border-primary focus-within:ring-1 focus-within:ring-primary shadow-2xs">
                   <InputGroupAddon>
-                    <HugeiconsIcon icon={Mail01Icon} />
+                    <HugeiconsIcon
+                      icon={Mail01Icon}
+                      className="size-4 text-muted-foreground"
+                    />
                   </InputGroupAddon>
                   <InputGroupInput
                     id="email"
@@ -78,7 +89,7 @@ export function RegisterForm() {
                     type="email"
                     placeholder="nama@email.com"
                     autoComplete="email"
-                    className="h-full text-sm"
+                    className="h-full text-sm font-body text-foreground placeholder:text-muted-foreground"
                     required
                     disabled={isPending}
                   />
@@ -86,10 +97,18 @@ export function RegisterForm() {
               </Field>
 
               <Field data-disabled={isPending}>
-                <FieldLabel htmlFor="password">Password</FieldLabel>
-                <InputGroup className="h-10 sm:h-11">
+                <FieldLabel
+                  htmlFor="password"
+                  className="font-mono text-xs uppercase tracking-wider text-muted-foreground font-semibold"
+                >
+                  Password
+                </FieldLabel>
+                <InputGroup className="h-11 min-h-[44px] rounded-lg border-border focus-within:border-primary focus-within:ring-1 focus-within:ring-primary shadow-2xs">
                   <InputGroupAddon>
-                    <HugeiconsIcon icon={LockPasswordIcon} />
+                    <HugeiconsIcon
+                      icon={LockPasswordIcon}
+                      className="size-4 text-muted-foreground"
+                    />
                   </InputGroupAddon>
                   <InputGroupInput
                     id="password"
@@ -97,7 +116,7 @@ export function RegisterForm() {
                     type={showPassword ? "text" : "password"}
                     placeholder="Minimal 8 karakter"
                     autoComplete="new-password"
-                    className="h-full text-sm"
+                    className="h-full text-sm font-body text-foreground placeholder:text-muted-foreground"
                     required
                     disabled={isPending}
                     value={password}
@@ -115,9 +134,11 @@ export function RegisterForm() {
                           ? "Sembunyikan password"
                           : "Tampilkan password"
                       }
+                      className="text-muted-foreground hover:text-foreground cursor-pointer"
                     >
                       <HugeiconsIcon
                         icon={showPassword ? ViewOffIcon : EyeIcon}
+                        className="size-4"
                       />
                     </InputGroupButton>
                   </InputGroupAddon>
@@ -125,7 +146,7 @@ export function RegisterForm() {
 
                 {/* Password Strength Meter */}
                 {password && (
-                  <div className="mt-2.5 rounded-lg border border-border/50 bg-muted/50 p-2.5 flex flex-col gap-1.5">
+                  <div className="mt-2 rounded-lg border border-border bg-secondary/60 p-2.5 flex flex-col gap-1.5 shadow-2xs">
                     <div className="flex h-1.5 gap-1.5">
                       {[1, 2, 3, 4].map((i) => (
                         <div
@@ -138,7 +159,7 @@ export function RegisterForm() {
                         />
                       ))}
                     </div>
-                    <div className="flex items-center justify-between text-xs">
+                    <div className="flex items-center justify-between text-xs font-mono">
                       <span className="text-muted-foreground">
                         Kekuatan kunci:
                       </span>
@@ -153,12 +174,18 @@ export function RegisterForm() {
               </Field>
 
               <Field data-disabled={isPending}>
-                <FieldLabel htmlFor="confirmPassword">
+                <FieldLabel
+                  htmlFor="confirmPassword"
+                  className="font-mono text-xs uppercase tracking-wider text-muted-foreground font-semibold"
+                >
                   Konfirmasi Password
                 </FieldLabel>
-                <InputGroup className="h-10 sm:h-11">
+                <InputGroup className="h-11 min-h-[44px] rounded-lg border-border focus-within:border-primary focus-within:ring-1 focus-within:ring-primary shadow-2xs">
                   <InputGroupAddon>
-                    <HugeiconsIcon icon={LockPasswordIcon} />
+                    <HugeiconsIcon
+                      icon={LockPasswordIcon}
+                      className="size-4 text-muted-foreground"
+                    />
                   </InputGroupAddon>
                   <InputGroupInput
                     id="confirmPassword"
@@ -166,7 +193,7 @@ export function RegisterForm() {
                     type="password"
                     placeholder="Ulangi password"
                     autoComplete="new-password"
-                    className="h-full text-sm"
+                    className="h-full text-sm font-body text-foreground placeholder:text-muted-foreground"
                     required
                     disabled={isPending}
                   />
@@ -175,7 +202,7 @@ export function RegisterForm() {
             </FieldGroup>
 
             {/* Cloudflare Turnstile Bot Protection Widget */}
-            <div className="flex justify-center overflow-x-auto">
+            <div className="flex justify-center overflow-x-auto py-1">
               <Turnstile
                 siteKey={
                   process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ||
@@ -190,7 +217,7 @@ export function RegisterForm() {
             {/* Submit Button */}
             <Button
               type="submit"
-              className="w-full h-10 sm:h-11 text-sm font-semibold"
+              className="w-full h-11 min-h-[44px] text-sm font-semibold rounded-lg shadow-xs hover:shadow-soft active:scale-[0.98] transition-all cursor-pointer"
               disabled={isPending || !captchaToken}
             >
               {isPending ? (
@@ -211,12 +238,12 @@ export function RegisterForm() {
           </form>
         </CardContent>
 
-        <CardFooter className="justify-center px-5 sm:px-6">
-          <p className="text-sm text-center text-muted-foreground">
+        <CardFooter className="justify-center p-6 sm:p-8 pt-0 border-t border-border/60 mt-2">
+          <p className="font-body text-xs sm:text-sm text-center text-muted-foreground">
             Sudah memiliki akun?{" "}
             <Link
               href="/login"
-              className="font-medium text-primary underline-offset-4 hover:underline transition-colors"
+              className="font-semibold text-primary underline-offset-4 hover:underline transition-colors"
             >
               Masuk di sini
             </Link>
@@ -224,7 +251,7 @@ export function RegisterForm() {
         </CardFooter>
       </Card>
 
-      <p className="text-center text-xs text-muted-foreground leading-relaxed px-2">
+      <p className="text-center text-xs font-body text-muted-foreground leading-relaxed px-2">
         Dengan mendaftar, Anda menyetujui{" "}
         <Link
           href="/terms"

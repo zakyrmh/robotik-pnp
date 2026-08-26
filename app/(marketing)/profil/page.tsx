@@ -4,7 +4,6 @@ import { MotoSloganSection } from "@/components/profil/moto-slogan-section";
 import { VisiMisiSection } from "@/components/profil/visi-misi-section";
 import { TimelineSection } from "@/components/profil/timeline-section";
 import { BphSection, BphMember } from "@/components/profil/bph-section";
-import { WorkshopGallerySection } from "@/components/profil/workshop-gallery-section";
 import { createAdminClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = {

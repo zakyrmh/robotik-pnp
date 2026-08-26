@@ -56,20 +56,23 @@ export function LoginForm() {
   const [captchaToken, setCaptchaToken] = useState("");
 
   return (
-    <Card className="rounded-lg">
-      <CardHeader className="gap-2">
-        <CardTitle className="font-display text-lg sm:text-xl font-semibold tracking-tight">
+    <Card className="rounded-2xl border border-border bg-card shadow-soft relative overflow-hidden">
+      {/* Top Accent Line */}
+      <div className="absolute top-0 left-0 right-0 h-0.5 bg-accent-strong" />
+
+      <CardHeader className="gap-2 p-6 sm:p-8 pb-4">
+        <CardTitle className="font-display text-xl sm:text-2xl font-bold uppercase tracking-tight text-foreground">
           Portal Login
         </CardTitle>
-        <CardDescription className="text-sm leading-relaxed">
+        <CardDescription className="font-body text-xs sm:text-sm text-muted-foreground leading-relaxed">
           Masukkan alamat email dan kata sandi Anda untuk mengakses sistem
           manajemen UKM Robotik PNP.
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="flex flex-col gap-4">
+      <CardContent className="flex flex-col gap-5 p-6 sm:p-8 pt-0">
         {state?.error && (
-          <Alert variant="destructive">
+          <Alert variant="destructive" className="rounded-lg">
             <HugeiconsIcon icon={AlertCircleIcon} />
             <AlertDescription>{state.error}</AlertDescription>
           </Alert>
@@ -82,12 +85,20 @@ export function LoginForm() {
         <form action={action} className="flex flex-col gap-4">
           <input type="hidden" name="captchaToken" value={captchaToken} />
 
-          <FieldGroup>
+          <FieldGroup className="gap-4">
             <Field data-disabled={isPending}>
-              <FieldLabel htmlFor="email">Alamat Email</FieldLabel>
-              <InputGroup className="h-10 sm:h-11">
+              <FieldLabel
+                htmlFor="email"
+                className="font-mono text-xs uppercase tracking-wider text-muted-foreground font-semibold"
+              >
+                Alamat Email
+              </FieldLabel>
+              <InputGroup className="h-11 min-h-[44px] rounded-lg border-border focus-within:border-primary focus-within:ring-1 focus-within:ring-primary shadow-2xs">
                 <InputGroupAddon>
-                  <HugeiconsIcon icon={Mail01Icon} />
+                  <HugeiconsIcon
+                    icon={Mail01Icon}
+                    className="size-4 text-muted-foreground"
+                  />
                 </InputGroupAddon>
                 <InputGroupInput
                   id="email"
@@ -95,7 +106,7 @@ export function LoginForm() {
                   type="email"
                   placeholder="nama@email.com"
                   autoComplete="email"
-                  className="h-full text-sm"
+                  className="h-full text-sm font-body text-foreground placeholder:text-muted-foreground"
                   required
                   disabled={isPending}
                 />
@@ -104,19 +115,25 @@ export function LoginForm() {
 
             <Field data-disabled={isPending}>
               <div className="flex w-full items-center justify-between gap-2">
-                <FieldLabel htmlFor="password" className="w-auto">
+                <FieldLabel
+                  htmlFor="password"
+                  className="w-auto font-mono text-xs uppercase tracking-wider text-muted-foreground font-semibold"
+                >
                   Password
                 </FieldLabel>
                 <Link
                   href="/forgot-password"
-                  className="text-sm font-medium text-primary underline-offset-4 hover:underline transition-colors"
+                  className="font-mono text-xs font-semibold text-primary underline-offset-4 hover:underline transition-colors"
                 >
                   Lupa password?
                 </Link>
               </div>
-              <InputGroup className="h-10 sm:h-11">
+              <InputGroup className="h-11 min-h-[44px] rounded-lg border-border focus-within:border-primary focus-within:ring-1 focus-within:ring-primary shadow-2xs">
                 <InputGroupAddon>
-                  <HugeiconsIcon icon={LockPasswordIcon} />
+                  <HugeiconsIcon
+                    icon={LockPasswordIcon}
+                    className="size-4 text-muted-foreground"
+                  />
                 </InputGroupAddon>
                 <InputGroupInput
                   id="password"
@@ -124,7 +141,7 @@ export function LoginForm() {
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   autoComplete="current-password"
-                  className="h-full text-sm"
+                  className="h-full text-sm font-body text-foreground placeholder:text-muted-foreground"
                   required
                   disabled={isPending}
                 />
@@ -140,9 +157,11 @@ export function LoginForm() {
                         ? "Sembunyikan password"
                         : "Tampilkan password"
                     }
+                    className="text-muted-foreground hover:text-foreground cursor-pointer"
                   >
                     <HugeiconsIcon
                       icon={showPassword ? ViewOffIcon : EyeIcon}
+                      className="size-4"
                     />
                   </InputGroupButton>
                 </InputGroupAddon>
@@ -151,7 +170,7 @@ export function LoginForm() {
           </FieldGroup>
 
           {/* Cloudflare Turnstile Bot Protection Widget */}
-          <div className="flex justify-center overflow-x-auto">
+          <div className="flex justify-center overflow-x-auto py-1">
             <Turnstile
               siteKey={
                 process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ||
@@ -166,7 +185,7 @@ export function LoginForm() {
           {/* Submit Button */}
           <Button
             type="submit"
-            className="w-full h-10 sm:h-11 text-sm font-semibold"
+            className="w-full h-11 min-h-[44px] text-sm font-semibold rounded-lg shadow-xs hover:shadow-soft active:scale-[0.98] transition-all cursor-pointer"
             disabled={isPending || !captchaToken}
           >
             {isPending ? (
@@ -184,12 +203,12 @@ export function LoginForm() {
         </form>
       </CardContent>
 
-      <CardFooter className="justify-center px-5 sm:px-6">
-        <p className="text-sm text-center text-muted-foreground">
+      <CardFooter className="justify-center p-6 sm:p-8 pt-0 border-t border-border/60 mt-2">
+        <p className="font-body text-xs sm:text-sm text-center text-muted-foreground">
           Belum terdaftar?{" "}
           <Link
             href="/register"
-            className="font-medium text-primary underline-offset-4 hover:underline transition-colors"
+            className="font-semibold text-primary underline-offset-4 hover:underline transition-colors"
           >
             Daftar Akun Baru
           </Link>

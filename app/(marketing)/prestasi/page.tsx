@@ -12,7 +12,7 @@ export default async function PrestasiPage() {
   const achievements = await getAchievementsAction();
 
   return (
-    <div className="bg-canvas-dark text-foreground min-h-screen pt-20">
+    <div className="min-h-screen bg-background text-foreground mt-6 sm:mt-0 py-16 sm:py-20 lg:py-24 transition-colors duration-200">
       <PrestasiClient achievements={achievements} />
     </div>
   );

@@ -9,8 +9,8 @@
 | Parameter Dokumen                     | Spesifikasi Kebijakan                                                                                         |
 | :------------------------------------ | :------------------------------------------------------------------------------------------------------------ |
 | **ID Dokumen Master**                 | `DOC-PRC-MST-00`                                                                                              |
-| **Versi Dokumen**                     | `v2.0.0` (Production-Grade Audit-Ready Release)                                                               |
-| **Tanggal Efektif**                   | 9 Agustus 2026                                                                                                |
+| **Versi Dokumen**                     | `v2.1.0` (Production-Grade Audit-Ready Release)                                                               |
+| **Tanggal Efektif**                   | 25 Agustus 2026                                                                                               |
 | **Klasifikasi Dokumen**               | **Internal Organisasi** (Dapat dipublikasikan terbatas)                                                       |
 | **Sistem Induk (_Master Framework_)** | **Business Process & Workflow Governance Policy** (Bagian dari 4+1 Architectural View & ISMS UKM Robotik PNP) |
 | **Pemilik Dokumen (_Owner_)**         | Tim IT & Process Governance UKM Robotik PNP                                                                   |
@@ -36,15 +36,16 @@ Folder ini menghubungkan:
 
 Pemodelan alur kerja organisasi mengacu pada hirarki standar proses berikut:
 
-```
+```text
  ┌────────────────────────────────────────────────────────────────────────┐
  │                    HIRARKI PEMODELAN PROSES BISNIS                     │
  ├──────────────────────────────────┬─────────────────────────────────────┤
  │ Standar Internasional Pemodelan  │ Domain Proses Operasional Utama     │
  ├──────────────────────────────────┼─────────────────────────────────────┤
  │ • ISO/IEC 19510 (BPMN 2.0)       │ • Manajemen Presensi Digital        │
- │ • ISO 9001:2015 (Quality Mgmt)   │ • Manajemen Operasional Piket Lab   │
- │ • ISO/IEC 27001:2022 (ISMS RBAC) │ • Open Recruitment (Oprec) & Magang │
+ │ • ISO 9001:2015 (Quality Mgmt)   │ • Manajemen Operasional Piket       │
+ │ • ISO/IEC 27001:2022 (ISMS RBAC) │   Workshop                          │
+ │                                  │ • Open Recruitment (OR)             │
  └──────────────────────────────────┴─────────────────────────────────────┘
 ```
 
@@ -54,14 +55,15 @@ Pemodelan alur kerja organisasi mengacu pada hirarki standar proses berikut:
 
 Pengelolaan tata kelola dibagi ke dalam **1 (satu) subfolder model diagram** dan **1 (satu) berkas panduan dokumentasi operasional**:
 
-```
+```text
 docs/04-process-view/
 ├── README.md                                           # Master Framework & Central Index (Dokumen Ini)
-├── workflow-documentation.md                           # DOC-PRC-WKF-01 (v2.0.0) - Panduan Spesifikasi Alur Kerja Lengkap
+├── workflow-documentation.md                           # DOC-PRC-WKF-01 (v2.1.0) - Panduan Spesifikasi Alur Kerja Lengkap
+├── SOP_KEGIATAN_KOMDIS.md                              # Standar Operasional Prosedur Sanksi & Poin Komisi Disiplin
 └── business-process/                                   # Subfolder 1: Model Diagram BPMN 2.0 (XML)
     ├── attendance.bpmn.xml                             # Diagram BPMN Alur Presensi & Sanksi Kehadiran
-    ├── piket.bpmn.xml                                  # Diagram BPMN Alur Piket Laboratorium & Denda
-    └── recruitment.bpmn.xml                            # Diagram BPMN Alur Open Recruitment, Pelatihan & Magang
+    ├── piket.bpmn.xml                                  # Diagram BPMN Alur Piket Workshop & Denda Administratif
+    └── recruitment.bpmn.xml                            # Diagram BPMN Alur Open Recruitment (OR), Pelatihan & Magang
 ```
 
 ---
@@ -70,15 +72,16 @@ docs/04-process-view/
 
 ### 4.1 Subfolder `business-process/` (Model Diagram BPMN 2.0 XML)
 
-- 📄 **`attendance.bpmn.xml`**: Model BPMN 2.0 (Enterprise Architect XMI) untuk alur kerja pembuatan sesi rapat formal, pemindaian presensi QR Code dinamis, pengajuan izin/sakit, perhitungan poin otomatis per individu, hingga peng-generate-an draf Surat Peringatan (SP).
-- 📄 **`piket.bpmn.xml`**: Model BPMN 2.0 untuk alur kerja operasional penjadwalan piket laboratorium, pengiriman reminder otomatis H-1, unggah foto bukti ke Supabase Storage privat, verifikasi Komdis, dan pencatatan denda otomatis Rp10.000 bagi pelanggar.
-- 📄 **`recruitment.bpmn.xml`**: Model BPMN 2.0 komprehensif untuk alur penerimaan anggota baru (Oprec), seleksi administrasi berkas, wawancara 2 tahap, alokasi divisi magang, pelatihan 3 modul teknis (Elektronika, Mekanik, Pemrograman), logbook mini project, rapat evaluasi pleno, hingga penerbitan SK Anggota dan pelantikan.
+- 📄 **`attendance.bpmn.xml`**: Model BPMN 2.0 untuk alur kerja pembuatan sesi kegiatan/rapat, pemindaian presensi QR Code dinamis oleh admin/penyelenggara, pengajuan izin/sakit, perhitungan poin pelanggaran otomatis per individu oleh Komisi Disiplin (Komdis), hingga penerbitan draf Surat Peringatan (SP).
+- 📄 **`piket.bpmn.xml`**: Model BPMN 2.0 untuk alur kerja operasional penjadwalan piket kebersihan workshop oleh Kesekretariatan (`admin-kestari`), pengiriman reminder otomatis H-1, unggah foto bukti ke Cloudflare R2 privat oleh anggota resmi, verifikasi Kestari, dan pencatatan denda administratif dinamis bagi pelanggar.
+- 📄 **`recruitment.bpmn.xml`**: Model BPMN 2.0 komprehensif untuk alur Open Recruitment (OR) yang mencakup 8 tahapan terstruktur: Pendaftaran, Demo Robot, Wawancara 1, Pelatihan dasar teknis, Magang Divisi & Magang Departemen, Project robotika, Wawancara 2, hingga evaluasi pleno dan Pelantikan resmi.
 
 ---
 
 ### 4.2 Dokumen Panduan Operasional (_Root File_)
 
-- 📄 **[workflow-documentation.md](file:///d:/Project/robotik-pnp/docs/04-process-view/workflow-documentation.md)** (`DOC-PRC-WKF-01`, `v2.0.0`): Berkas panduan dokumentasi alur kerja bisnis komprehensif yang menguraikan rincian _step-by-step_ dari ketiga diagram BPMN XML, dilengkapi diagram alur ASCII swimlane, pemetaan hak akses **RBAC Matrix**, serta matriks otomatisasi backend (_Cron Jobs, Triggers, & Email Engine_).
+- 📄 **[workflow-documentation.md](workflow-documentation.md)** (`DOC-PRC-WKF-01`, `v2.1.0`): Berkas panduan dokumentasi alur kerja bisnis komprehensif yang menguraikan rincian _step-by-step_ dari ketiga diagram BPMN XML, dilengkapi diagram alur ASCII swimlane, pemetaan hak akses **RBAC Matrix 8 Role**, integrasi SOP Komdis, serta matriks otomatisasi backend (_Cron Jobs, Triggers, & Email Engine_).
+- 📄 **[SOP_KEGIATAN_KOMDIS.md](SOP_KEGIATAN_KOMDIS.md)**: Dokumen rujukan resmi aturan kedisiplinan, tata tertib kegiatan, skema akumulasi poin pelanggaran kehadiran, serta tahapan sanksi Surat Peringatan (SP 1, SP 2, SP 3).
 
 ---
 
@@ -86,11 +89,11 @@ docs/04-process-view/
 
 Seluruh alur proses bisnis terhubung langsung dengan pemetaan peran RBAC dan modul sistem:
 
-| Domain Proses Bisnis   | Model BPMN XML         | Peran Utama (Swimlane)               | Modul Aplikasi / Server Action Target                     |
-| :--------------------- | :--------------------- | :----------------------------------- | :-------------------------------------------------------- |
-| **Manajemen Presensi** | `attendance.bpmn.xml`  | Pemrakarsa, Komdis, Anggota, Backend | `/dashboard/kegiatan`, `submitQRAttendance`, `score.ts`   |
-| **Manajemen Piket**    | `piket.bpmn.xml`       | Komdis, Calon Anggota, Backend       | `/dashboard/piket`, `submitPiketProof`, Cron H-1 Reminder |
-| **Open Recruitment**   | `recruitment.bpmn.xml` | Admin-OR, Komdis, Caang, Backend     | `/dashboard/oprec`, `registerCaangAction`, `caang.ts`     |
+| Domain Proses Bisnis   | Model BPMN XML         | Peran Utama (Swimlane)                                                              | Modul Aplikasi / Server Action Target                                              |
+| :--------------------- | :--------------------- | :---------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------- |
+| **Manajemen Presensi** | `attendance.bpmn.xml`  | Pemrakarsa (`super-admin`/`admin-komdis`/`admin-or`), Anggota Resmi, Caang, Backend | `/dashboard/kegiatan`, `/kegiatan-absensi-caang`, `submitQRAttendance`, `score.ts` |
+| **Manajemen Piket**    | `piket.bpmn.xml`       | `admin-kestari`, `super-admin`, Anggota Resmi, Backend                              | `/dashboard/piket`, `submitPiketProof`, Cloudflare R2, Cron H-1 Reminder           |
+| **Open Recruitment**   | `recruitment.bpmn.xml` | `admin-or`, `admin-divisi`, `super-admin`, Caang, Backend                           | `/dashboard/oprec`, `registerCaangAction`, `caang.ts`                              |
 
 ---
 
@@ -98,15 +101,10 @@ Seluruh alur proses bisnis terhubung langsung dengan pemetaan peran RBAC dan mod
 
 Pelaksanaan alur kerja proses bisnis dijalankan berdasarkan ritme waktu yang teratur:
 
-```
+```text
   HARIAN               MINGGUAN               BULANAN              MUSIMAN / PERIODIK
  ┌──────────────┐     ┌──────────────┐     ┌──────────────┐     ┌─────────────────────┐
  │ • Presensi   │ ──> │ • Rekap Poin │ ──> │ • Rekap Denda│ ──> │ • Open Recruitment  │
- │   Rapat/Sesi │     │   Kehadiran  │     │   Piket Lab  │     │   Anggota Baru      │
- │ • Pelaksanaan│     │ • Evaluasi   │     │ • Uji coba   │     │ • Pelatihan 3 Modul │
- │   Piket Lab  │     │   Logbook    │     │   Automasi   │     │ • Pelantikan        │
- │ • Reminder   │     │   Magang     │     │   System     │     │   Anggota Resmi     │
- │   H-1 Piket  │     │              │     │              │     │                     │
  └──────────────┘     └──────────────┘     └──────────────┘     └─────────────────────┘
 ```
 
