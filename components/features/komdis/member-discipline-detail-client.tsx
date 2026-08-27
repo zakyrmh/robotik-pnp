@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { DisciplinePointLog, Sanction } from "@/lib/types/komdis";
 import { GoroReductionDialog } from "./goro-reduction-dialog";
+import { LegacyPointDialog } from "./legacy-point-dialog";
 import { IssueSanctionDialog } from "./issue-sanction-dialog";
 import { MemberInternshipModal } from "./member-internship-modal";
 import { Card, CardContent } from "@/components/ui/card";
@@ -75,6 +76,7 @@ export function MemberDisciplineDetailClient({
   >("attendances");
 
   const [isGoroOpen, setIsGoroOpen] = useState(false);
+  const [isLegacyOpen, setIsLegacyOpen] = useState(false);
   const [isSpOpen, setIsSpOpen] = useState(false);
   const [isInternshipModalOpen, setIsInternshipModalOpen] = useState(false);
 
@@ -213,7 +215,21 @@ export function MemberDisciplineDetailClient({
             </div>
 
             <div className="flex flex-col gap-2 w-full sm:w-auto">
-              <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex flex-col sm:flex-row flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() => setIsLegacyOpen(true)}
+                  className="font-mono text-micro uppercase tracking-wider h-9 px-3 rounded-lg bg-amber-600 hover:bg-amber-700 text-white justify-center whitespace-nowrap"
+                >
+                  <HugeiconsIcon
+                    icon={Alert01Icon}
+                    size={15}
+                    className="mr-1.5 shrink-0"
+                  />
+                  + Poin Awal Periode 20
+                </Button>
+
                 <Button
                   type="button"
                   size="sm"
@@ -304,10 +320,10 @@ export function MemberDisciplineDetailClient({
               />
               <span>
                 <span className="inline sm:hidden">
-                  PEMUTIHAN ({pointLogs.length})
+                  LOG POIN ({pointLogs.length})
                 </span>
                 <span className="hidden sm:inline">
-                  LOG PEMUTIHAN GORO ({pointLogs.length})
+                  LOG PEMUTIHAN & POIN AWAL ({pointLogs.length})
                 </span>
               </span>
             </button>
@@ -437,42 +453,57 @@ export function MemberDisciplineDetailClient({
             </div>
           )}
 
-          {/* Tab 2: Goro Point Reduction Log */}
+          {/* Tab 2: Goro Point Reduction & Legacy Point Log */}
           {activeTab === "goro" && (
             <div>
               {pointLogs.length === 0 ? (
                 <div className="p-8 text-center font-mono text-xs text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                  BELUM ADA LOG PEMUTIHAN GORO
+                  BELUM ADA LOG PEMUTIHAN ATAU POIN AWAL
                 </div>
               ) : (
                 <>
                   {/* Mobile View */}
                   <div className="block sm:hidden divide-y divide-slate-100 dark:divide-slate-800 p-3 space-y-2">
-                    {pointLogs.map((log) => (
-                      <div
-                        key={log.id}
-                        className="p-3 bg-slate-50/50 dark:bg-slate-800/40 rounded-lg space-y-1"
-                      >
-                        <div className="flex justify-between items-start">
-                          <span className="font-mono text-[10px] text-slate-400">
-                            {log.created_at
-                              ? new Date(log.created_at).toLocaleDateString(
-                                  "id-ID",
-                                )
-                              : "—"}
-                          </span>
-                          <span className="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                            {log.points} PTS
-                          </span>
+                    {pointLogs.map((log) => {
+                      const isPositive = log.points > 0;
+                      return (
+                        <div
+                          key={log.id}
+                          className="p-3 bg-slate-50/50 dark:bg-slate-800/40 rounded-lg space-y-1"
+                        >
+                          <div className="flex justify-between items-start">
+                            <span className="font-mono text-[10px] text-slate-400">
+                              {log.created_at
+                                ? new Date(log.created_at).toLocaleDateString(
+                                    "id-ID",
+                                  )
+                                : "—"}
+                            </span>
+                            <span
+                              className={`font-mono text-xs font-bold ${
+                                isPositive
+                                  ? "text-amber-600 dark:text-amber-400"
+                                  : "text-emerald-600 dark:text-emerald-400"
+                              }`}
+                            >
+                              {isPositive ? `+${log.points}` : log.points} PTS
+                            </span>
+                          </div>
+                          <div
+                            className={`font-mono text-xs font-bold uppercase ${
+                              isPositive
+                                ? "text-amber-600 dark:text-amber-400"
+                                : "text-emerald-600 dark:text-emerald-400"
+                            }`}
+                          >
+                            Kategori: {log.category}
+                          </div>
+                          <div className="text-xs text-slate-600 dark:text-slate-300">
+                            {log.description}
+                          </div>
                         </div>
-                        <div className="font-mono text-xs font-bold text-emerald-600 uppercase">
-                          Kategori: {log.category}
-                        </div>
-                        <div className="text-xs text-slate-600 dark:text-slate-300">
-                          {log.description}
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
                   {/* Desktop View */}
@@ -484,40 +515,55 @@ export function MemberDisciplineDetailClient({
                             TANGGAL
                           </TableHead>
                           <TableHead className="font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 py-3 px-4">
-                            KATEGORI PEMUTIHAN
+                            KATEGORI
                           </TableHead>
                           <TableHead className="font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 py-3 px-4">
                             DESKRIPSI CATATAN
                           </TableHead>
                           <TableHead className="text-center font-mono text-micro uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 py-3 px-4">
-                            NILAI PEMUTIHAN
+                            NILAI POIN
                           </TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody className="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs">
-                        {pointLogs.map((log) => (
-                          <TableRow
-                            key={log.id}
-                            className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40"
-                          >
-                            <TableCell className="py-3.5 px-4 font-mono text-slate-500 dark:text-slate-400">
-                              {log.created_at
-                                ? new Date(log.created_at).toLocaleDateString(
-                                    "id-ID",
-                                  )
-                                : "—"}
-                            </TableCell>
-                            <TableCell className="py-3.5 px-4 font-mono font-semibold text-emerald-600 dark:text-emerald-400 uppercase">
-                              {log.category}
-                            </TableCell>
-                            <TableCell className="py-3.5 px-4 text-slate-700 dark:text-slate-300">
-                              {log.description}
-                            </TableCell>
-                            <TableCell className="py-3.5 px-4 text-center font-mono font-bold text-emerald-600 dark:text-emerald-400 text-sm">
-                              {log.points} PTS
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                        {pointLogs.map((log) => {
+                          const isPositive = log.points > 0;
+                          return (
+                            <TableRow
+                              key={log.id}
+                              className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40"
+                            >
+                              <TableCell className="py-3.5 px-4 font-mono text-slate-500 dark:text-slate-400">
+                                {log.created_at
+                                  ? new Date(log.created_at).toLocaleDateString(
+                                      "id-ID",
+                                    )
+                                  : "—"}
+                              </TableCell>
+                              <TableCell
+                                className={`py-3.5 px-4 font-mono font-semibold uppercase ${
+                                  isPositive
+                                    ? "text-amber-600 dark:text-amber-400"
+                                    : "text-emerald-600 dark:text-emerald-400"
+                                }`}
+                              >
+                                {log.category}
+                              </TableCell>
+                              <TableCell className="py-3.5 px-4 text-slate-700 dark:text-slate-300">
+                                {log.description}
+                              </TableCell>
+                              <TableCell
+                                className={`py-3.5 px-4 text-center font-mono font-bold text-sm ${
+                                  isPositive
+                                    ? "text-amber-600 dark:text-amber-400"
+                                    : "text-emerald-600 dark:text-emerald-400"
+                                }`}
+                              >
+                                {isPositive ? `+${log.points}` : log.points} PTS
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </div>
@@ -627,6 +673,13 @@ export function MemberDisciplineDetailClient({
       </Card>
 
       {/* Dialog Modals */}
+      <LegacyPointDialog
+        profileId={member.id}
+        profileName={member.full_name || "Anggota"}
+        isOpen={isLegacyOpen}
+        onClose={() => setIsLegacyOpen(false)}
+      />
+
       <GoroReductionDialog
         profileId={member.id}
         profileName={member.full_name || "Anggota"}

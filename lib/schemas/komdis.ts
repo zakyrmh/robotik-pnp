@@ -51,6 +51,17 @@ export const LogPointReductionSchema = z.object({
 
 export type LogPointReductionInput = z.infer<typeof LogPointReductionSchema>;
 
+export const LogLegacyDisciplinePointSchema = z.object({
+  profileId: z.string().uuid("ID profil tidak valid"),
+  category: z.enum(["poin_awal_periode20", "transfer_periode", "penyesuaian_komdis"]),
+  points: z.number().int().positive("Poin sanksi awal harus bernilai positif"),
+  description: z.string().min(5, "Deskripsi/keterangan poin awal wajib diisi"),
+});
+
+export type LogLegacyDisciplinePointInput = z.infer<
+  typeof LogLegacyDisciplinePointSchema
+>;
+
 export const IssueSanctionSchema = z.object({
   profileId: z.string().uuid("ID profil tidak valid"),
   spLevel: z.union([z.literal(1), z.literal(2), z.literal(3)]),
