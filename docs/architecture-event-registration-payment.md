@@ -1,11 +1,11 @@
-# Architecture Document: Sistem Registrasi & Pembayaran — Minangkabau Robot Contest
+# Architecture Document: Sistem Registrasi & Pembayaran â€” Minangkabau Robot Contest
 
 - **Project:** SIM UKM Robotik Politeknik Negeri Padang
 - **Feature Module:** Event Competition Registration & Payment Gateway Integration
 - **Target Event Types:** Robot Soccer, Robot Line Follower, Robot Sumo, dll.
-- **Skala Estimasi:** ±100 tim per event (single event musiman)
+- **Skala Estimasi:** Â±100 tim per event (single event musiman)
 - **Stack:** Next.js 16 (App Router), Supabase Free Tier (PostgreSQL + RLS + Storage), Midtrans Snap & Webhook, Vercel Hobby, Resend (email)
-- **Status:** **Final — siap implementasi**
+- **Status:** **Final â€” siap implementasi**
 
 ---
 
@@ -13,16 +13,16 @@
 
 Dokumen ini mencakup **modul registrasi tim, pembayaran, dan verifikasi identitas peserta** untuk Minangkabau Robot Contest. Modul manajemen pertandingan (bracket, penjadwalan, live score, overlay OBS) dirancang sebagai modul terpisah dengan dokumen arsitektur sendiri, dikelola oleh role berbeda (wasit/panitia pertandingan), dan **tidak termasuk** dalam dokumen ini.
 
-Tabel-tabel di bawah adalah **tabel baru**, tidak ada tabel event lomba sebelumnya di database SIM UKM — sehingga skema ditulis langsung sebagai `CREATE TABLE`, tanpa migrasi `ALTER TABLE`.
+Tabel-tabel di bawah adalah **tabel baru**, tidak ada tabel event lomba sebelumnya di database SIM UKM â€” sehingga skema ditulis langsung sebagai `CREATE TABLE`, tanpa migrasi `ALTER TABLE`.
 
-> **Catatan desain — satu instansi dengan banyak tim:** satu pembimbing/manajer dari instansi yang sama boleh mendaftarkan lebih dari satu tim, tetapi ini ditangani di **level UX form**, bukan skema data. Setiap tim tetap 1 baris `event_registrations` terpisah (pembayaran, kuota, dan verifikasi wajah independen per tim). Form pendaftaran cukup menawarkan opsi "daftarkan tim lain dari instansi yang sama?" untuk mengisi ulang `institution`, `advisor_name`, `team_email`, `team_whatsapp` secara otomatis dari submission sebelumnya. Rekap "instansi mana membawa berapa tim" cukup lewat `GROUP BY institution, advisor_name` saat query, tanpa tabel/kolom tambahan.
+> **Catatan desain â€” satu instansi dengan banyak tim:** satu pembimbing/manajer dari instansi yang sama boleh mendaftarkan lebih dari satu tim, tetapi ini ditangani di **level UX form**, bukan skema data. Setiap tim tetap 1 baris `event_registrations` terpisah (pembayaran, kuota, dan verifikasi wajah independen per tim). Form pendaftaran cukup menawarkan opsi "daftarkan tim lain dari instansi yang sama?" untuk mengisi ulang `institution`, `advisor_name`, `team_email`, `team_whatsapp` secara otomatis dari submission sebelumnya. Rekap "instansi mana membawa berapa tim" cukup lewat `GROUP BY institution, advisor_name` saat query, tanpa tabel/kolom tambahan.
 
-| Aspek Domain             | Sistem SIM UKM Internal      | Sistem Pendaftaran Lomba (Event)                        |
-| :----------------------- | :--------------------------- | :------------------------------------------------------ |
-| **Audience**             | Mahasiswa internal PNP.      | Siswa SMA/SMK, mahasiswa lain, delegasi eksternal.      |
-| **Lifecycle Akun**       | Long-term & persistent.      | Seasonal & ephemeral (aktif ~1–3 bulan).                |
-| **Representasi Entitas** | 1 akun = 1 individu.         | 1 kontak tim mendaftarkan 1 tim (2+ anggota).           |
-| **Retensi Data**         | Permanen (arsip organisasi). | 3 bulan setelah event, dihapus manual oleh super-admin. |
+| Aspek Domain | Sistem SIM UKM Internal | Sistem Pendaftaran Lomba (Event) |
+| :--- | :--- | :--- |
+| **Audience** | Mahasiswa internal PNP. | Siswa SMA/SMK, mahasiswa lain, delegasi eksternal. |
+| **Lifecycle Akun** | Long-term & persistent. | Seasonal & ephemeral (aktif ~1â€“3 bulan). |
+| **Representasi Entitas** | 1 akun = 1 individu. | 1 kontak tim mendaftarkan 1 tim (2+ anggota). |
+| **Retensi Data** | Permanen (arsip organisasi). | 3 bulan setelah event, dihapus manual oleh super-admin. |
 
 ---
 
@@ -35,12 +35,12 @@ Tidak ada akun password permanen untuk peserta. Sistem membuat `registration_cod
 **Aturan keras:** `access_token` **tidak pernah** bisa dibaca lewat query publik langsung. Semua pembacaan (cek status, dashboard peserta) wajib lewat Server Action menggunakan `service_role` key yang memverifikasi token di sisi server sebelum mengembalikan data.
 
 ```
-Form Registrasi ──▶ Midtrans Snap ──▶ Halaman Konfirmasi & E-Tiket (QR)
-                                              │
+Form Registrasi â”€â”€â–¶ Midtrans Snap â”€â”€â–¶ Halaman Konfirmasi & E-Tiket (QR)
+                                              â”‚
                                 Kirim Access Token & E-Tiket via Email (Resend)
 ```
 
-Notifikasi WhatsApp **tidak diotomatiskan** (menghindari biaya WA Business API) — halaman konfirmasi menyediakan tombol `wa.me` berisi pesan siap kirim, dipakai peserta untuk mengirim reminder ke diri sendiri atau dibagikan panitia secara manual bila diperlukan.
+Notifikasi WhatsApp **tidak diotomatiskan** (menghindari biaya WA Business API) â€” halaman konfirmasi menyediakan tombol `wa.me` berisi pesan siap kirim, dipakai peserta untuk mengirim reminder ke diri sendiri atau dibagikan panitia secara manual bila diperlukan.
 
 ---
 
@@ -152,7 +152,7 @@ CREATE INDEX idx_event_member_qr ON public.event_team_members(member_qr_token);
 
 ## 4. Konkurensi Kuota (Race Condition Safe)
 
-Dieksekusi lewat satu fungsi Postgres — cukup untuk skala ±100 tim, tanpa infrastruktur tambahan (Redis/queue):
+Dieksekusi lewat satu fungsi Postgres â€” cukup untuk skala Â±100 tim, tanpa infrastruktur tambahan (Redis/queue):
 
 ```sql
 CREATE OR REPLACE FUNCTION public.register_team(
@@ -184,7 +184,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 ```
 
-`FOR UPDATE` pada baris kategori mengunci secara alami saat dua submit bersamaan. Baris `pending` yang lewat 2 jam otomatis tidak dihitung sebagai kuota terpakai — **tanpa bergantung pada cron job apa pun**, karena Vercel Hobby hanya mengizinkan cron 1×/hari yang terlalu jarang untuk pelepasan kuota real-time. Cron harian tetap dipasang, tapi hanya untuk mengubah status jadi `'expired'` demi kerapian tampilan admin — bukan untuk korektnya sistem.
+`FOR UPDATE` pada baris kategori mengunci secara alami saat dua submit bersamaan. Baris `pending` yang lewat 2 jam otomatis tidak dihitung sebagai kuota terpakai â€” **tanpa bergantung pada cron job apa pun**, karena Vercel Hobby hanya mengizinkan cron 1Ã—/hari yang terlalu jarang untuk pelepasan kuota real-time. Cron harian tetap dipasang, tapi hanya untuk mengubah status jadi `'expired'` demi kerapian tampilan admin â€” bukan untuk korektnya sistem.
 
 ---
 
@@ -200,13 +200,13 @@ ALTER TABLE public.profiles
         CHECK (role_event IN ('panitia-pendaftaran', 'panitia-verifikasi', 'panitia-pertandingan'));
 ```
 
-| `role_event`           | Cakupan tugas                                                           | Akses tabel                                                                                  |
-| ---------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `panitia-pendaftaran`  | Kelola kategori & kuota, pantau pendaftar, verifikasi pembayaran manual | `event_categories` (CRUD), `event_registrations` (read + update `payment_status`)            |
-| `panitia-verifikasi`   | Scan QR kokarde, cocokkan wajah di lapangan                             | `event_team_members` (read foto via `member_qr_token`), `event_member_verifications` (write) |
-| `panitia-pertandingan` | Atur jadwal/bracket, klik mulai-selesai, input skor                     | `event_matches` (di luar cakupan dokumen ini), `event_registrations` (read nama tim saja)    |
+| `role_event` | Cakupan tugas | Akses tabel |
+|---|---|---|
+| `panitia-pendaftaran` | Kelola kategori & kuota, pantau pendaftar, verifikasi pembayaran manual | `event_categories` (CRUD), `event_registrations` (read + update `payment_status`) |
+| `panitia-verifikasi` | Scan QR kokarde, cocokkan wajah di lapangan | `event_team_members` (read foto via `member_qr_token`), `event_member_verifications` (write) |
+| `panitia-pertandingan` | Atur jadwal/bracket, klik mulai-selesai, input skor | `event_matches` (di luar cakupan dokumen ini), `event_registrations` (read nama tim saja) |
 
-Nullable karena tidak semua anggota SIM UKM terlibat kepanitiaan event tertentu. Kuota per kategori (kolom `quota` di `event_categories`, §3) ditetapkan oleh role `panitia-pendaftaran` lewat form CRUD kategori di dashboard.
+Nullable karena tidak semua anggota SIM UKM terlibat kepanitiaan event tertentu. Kuota per kategori (kolom `quota` di `event_categories`, Â§3) ditetapkan oleh role `panitia-pendaftaran` lewat form CRUD kategori di dashboard.
 
 ### 5.2 Policy
 
@@ -250,47 +250,47 @@ CREATE POLICY "panitia verifikasi read member photo" ON public.event_team_member
     );
 ```
 
-Mutasi status pembayaran (`payment_status`) hanya boleh dilakukan oleh `service_role` (Server Action / webhook) atau `panitia-pendaftaran` (verifikasi manual, fallback saat webhook gagal — lihat §6). Setiap `role_event` dibatasi hanya ke tabel yang relevan dengan tugasnya, sesuai prinsip _least privilege_ — `panitia-verifikasi` misalnya tidak diberi akses ke `payment_status` atau kontak tim sama sekali.
+Mutasi status pembayaran (`payment_status`) hanya boleh dilakukan oleh `service_role` (Server Action / webhook) atau `panitia-pendaftaran` (verifikasi manual, fallback saat webhook gagal â€” lihat Â§6). Setiap `role_event` dibatasi hanya ke tabel yang relevan dengan tugasnya, sesuai prinsip *least privilege* â€” `panitia-verifikasi` misalnya tidak diberi akses ke `payment_status` atau kontak tim sama sekali.
 
 ---
 
 ## 6. Integrasi Midtrans Payment Gateway
 
 ```
-[Form Pendaftaran] ──▶ [Server Action: registerEventAction]
-                              │
-                              ├── Zod validation
-                              ├── RPC register_team() — atomik cek kuota + insert
-                              └── Call Midtrans Snap API
-                              │
-[Midtrans Snap Popup] ◀── snap_token
-       │
-       ├── Peserta bayar (QRIS/VA/E-Wallet)
-       │
-[Midtrans Engine] ──webhook──▶ [/api/webhooks/midtrans]
-                              │
-                              ├── Verifikasi signature SHA-512
-                              ├── Verifikasi gross_amount & transaction_status cocok DB
-                              ├── Update idempoten (skip jika sudah 'paid')
-                              └── Kirim email e-tiket via Resend
+[Form Pendaftaran] â”€â”€â–¶ [Server Action: registerEventAction]
+                              â”‚
+                              â”œâ”€â”€ Zod validation
+                              â”œâ”€â”€ RPC register_team() â€” atomik cek kuota + insert
+                              â””â”€â”€ Call Midtrans Snap API
+                              â”‚
+[Midtrans Snap Popup] â—€â”€â”€ snap_token
+       â”‚
+       â”œâ”€â”€ Peserta bayar (QRIS/VA/E-Wallet)
+       â”‚
+[Midtrans Engine] â”€â”€webhookâ”€â”€â–¶ [/api/webhooks/midtrans]
+                              â”‚
+                              â”œâ”€â”€ Verifikasi signature SHA-512
+                              â”œâ”€â”€ Verifikasi gross_amount & transaction_status cocok DB
+                              â”œâ”€â”€ Update idempoten (skip jika sudah 'paid')
+                              â””â”€â”€ Kirim email e-tiket via Resend
 ```
 
 $$\text{Signature} = \text{SHA512}(\text{order\_id} + \text{status\_code} + \text{gross\_amount} + \text{ServerKey})$$
 
-**Fallback verifikasi manual:** jika webhook gagal (misal Midtrans down atau delay), admin dengan permission `event:verify-payment` dapat menandai `payment_status = 'paid'` secara manual berdasarkan `manual_payment_proof_url`, dicatat di audit trail (lihat §8).
+**Fallback verifikasi manual:** jika webhook gagal (misal Midtrans down atau delay), admin dengan permission `event:verify-payment` dapat menandai `payment_status = 'paid'` secara manual berdasarkan `manual_payment_proof_url`, dicatat di audit trail (lihat Â§8).
 
 ---
 
 ## 7. Verifikasi Wajah di Lapangan (Anti-Joki)
 
-QR di kokarde/name tag mengenkode `member_qr_token` — **bukan** `access_token` tim, agar scope-nya terbatas hanya untuk menampilkan foto + nama + kategori, read-only.
+QR di kokarde/name tag mengenkode `member_qr_token` â€” **bukan** `access_token` tim, agar scope-nya terbatas hanya untuk menampilkan foto + nama + kategori, read-only.
 
 ```
-Panitia scan QR kokarde ──▶ Sistem tampilkan foto & data ──▶ Panitia bandingkan wajah
-                                                                        │
-                                                    ┌───────────────────┴──────────────────┐
+Panitia scan QR kokarde â”€â”€â–¶ Sistem tampilkan foto & data â”€â”€â–¶ Panitia bandingkan wajah
+                                                                        â”‚
+                                                    â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
                                                  cocok                                  tidak cocok
-                                                    │                                       │
+                                                    â”‚                                       â”‚
                                           Tandai terverifikasi                    Tandai mismatch
                                           (izinkan bertanding)                    (eskalasi ke panitia inti)
 ```
@@ -298,30 +298,29 @@ Panitia scan QR kokarde ──▶ Sistem tampilkan foto & data ──▶ Panitia
 Setiap hasil scan (cocok maupun tidak) dicatat di `event_member_verifications` untuk jejak audit bila terjadi sengketa.
 
 **Pertimbangan operasional:**
-
-- Endpoint scan wajib melalui sesi panitia yang sudah login — tidak ada akses publik ke foto peserta (data biometrik, sebagian peserta di bawah umur).
+- Endpoint scan wajib melalui sesi panitia yang sudah login â€” tidak ada akses publik ke foto peserta (data biometrik, sebagian peserta di bawah umur).
 - Halaman scan sebaiknya PWA dengan caching data di awal hari, mengingat koneksi venue kompetisi sering tidak stabil.
 
 ---
 
 ## 8. Aturan Lomba & Penanganan Pelanggaran
 
-Peserta menyetujui `event_rules_versions` tertentu saat mendaftar (`rules_version_id` + `rules_accepted_at` disnapshot, bukan boolean biasa — agar ada bukti persis versi aturan yang disetujui).
+Peserta menyetujui `event_rules_versions` tertentu saat mendaftar (`rules_version_id` + `rules_accepted_at` disnapshot, bukan boolean biasa â€” agar ada bukti persis versi aturan yang disetujui).
 
-**Diskualifikasi tidak sepenuhnya otomatis.** Sistem mengakumulasi peringatan di `event_violations` dan mengusulkan status `flagged_for_dq` setelah N peringatan, tapi eksekusi final tetap membutuhkan konfirmasi manual dari admin berwenang — mencegah diskualifikasi keliru akibat human error atau duplikat input tanpa jalur banding.
+**Diskualifikasi tidak sepenuhnya otomatis.** Sistem mengakumulasi peringatan di `event_violations` dan mengusulkan status `flagged_for_dq` setelah N peringatan, tapi eksekusi final tetap membutuhkan konfirmasi manual dari admin berwenang â€” mencegah diskualifikasi keliru akibat human error atau duplikat input tanpa jalur banding.
 
 ---
 
 ## 9. Optimasi Resource (Supabase Free + Vercel Hobby)
 
-| Area                             | Risiko                                                      | Mitigasi                                                                                                     |
-| :------------------------------- | :---------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------- |
-| Storage foto (1GB limit)         | Foto resolusi tinggi menghabiskan kuota cepat               | Kompresi client-side sebelum upload: resize maks lebar 480px, WebP, target <150KB/foto                       |
-| Egress (5GB/bulan)               | Serving foto berulang                                       | Signed URL berumur pendek dari Storage, bukan public bucket                                                  |
-| Vercel Cron (1×/hari di Hobby)   | Tidak cukup untuk pelepasan kuota real-time                 | Korektnya sistem tidak bergantung cron (lihat §4); cron hanya kosmetik                                       |
-| DB size (500MB limit)            | Tidak signifikan                                            | Skema ini murni metadata teks; foto disimpan di Storage, bukan DB — jauh di bawah limit untuk skala ±100 tim |
-| Project auto-pause (7 hari idle) | Cron/job terjadwal bisa gagal diam-diam saat project paused | Retensi data (§10) sengaja dibuat manual (tombol admin), bukan cron, agar tidak bergantung uptime otomatis   |
-| WhatsApp otomatis                | Butuh API berbayar                                          | Tidak diotomatiskan — tautan `wa.me` siap kirim di halaman konfirmasi                                        |
+| Area | Risiko | Mitigasi |
+| :--- | :--- | :--- |
+| Storage foto (1GB limit) | Foto resolusi tinggi menghabiskan kuota cepat | Kompresi client-side sebelum upload: resize maks lebar 480px, WebP, target <150KB/foto |
+| Egress (5GB/bulan) | Serving foto berulang | Signed URL berumur pendek dari Storage, bukan public bucket |
+| Vercel Cron (1Ã—/hari di Hobby) | Tidak cukup untuk pelepasan kuota real-time | Korektnya sistem tidak bergantung cron (lihat Â§4); cron hanya kosmetik |
+| DB size (500MB limit) | Tidak signifikan | Skema ini murni metadata teks; foto disimpan di Storage, bukan DB â€” jauh di bawah limit untuk skala Â±100 tim |
+| Project auto-pause (7 hari idle) | Cron/job terjadwal bisa gagal diam-diam saat project paused | Retensi data (Â§10) sengaja dibuat manual (tombol admin), bukan cron, agar tidak bergantung uptime otomatis |
+| WhatsApp otomatis | Butuh API berbayar | Tidak diotomatiskan â€” tautan `wa.me` siap kirim di halaman konfirmasi |
 
 ---
 
@@ -355,7 +354,6 @@ WHERE created_at < now() - interval '3 months';
 ## 12. Di Luar Cakupan Dokumen Ini
 
 Modul berikut dirancang terpisah, menyusul setelah modul ini diimplementasikan:
-
 - Manajemen babak grup & bracket otomatis
 - Live score & role wasit/panitia pertandingan
 - Overlay OBS real-time
