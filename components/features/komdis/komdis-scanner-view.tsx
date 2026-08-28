@@ -19,7 +19,9 @@ import {
   UserGroupIcon,
   Camera01Icon,
   RefreshIcon,
+  Alert02Icon,
 } from "@hugeicons/core-free-icons";
+import Image from "next/image";
 
 interface KomdisScannerViewProps {
   activityId: string;
@@ -42,10 +44,26 @@ export function KomdisScannerView({
   const [manualNotes, setManualNotes] = useState("");
   const [retryTrigger, setRetryTrigger] = useState(0);
 
+  // State untuk popup penetapan sanksi keterlambatan (> 1 jam)
+  const [latePenaltyTarget, setLatePenaltyTarget] = useState<{
+    profileId: string;
+    fullName: string;
+    nim: string;
+    avatarUrl: string | null;
+    diffMinutes: number;
+  } | null>(null);
+  const [latePenaltyPoints, setLatePenaltyPoints] = useState<number>(3);
+  const [latePenaltyNotes, setLatePenaltyNotes] = useState<string>("");
+
   const [isPending, startTransition] = useTransition();
 
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const lastScannedRef = useRef<{ token: string; time: number } | null>(null);
+  const latePenaltyTargetRef = useRef(latePenaltyTarget);
+
+  useEffect(() => {
+    latePenaltyTargetRef.current = latePenaltyTarget;
+  }, [latePenaltyTarget]);
 
   const stopCurrentScanner = async () => {
     if (scannerRef.current) {
@@ -80,6 +98,11 @@ export function KomdisScannerView({
       scannerRef.current = html5QrCode;
 
       const onScanSuccess = (decodedText: string) => {
+        // Abaikan scan jika popup sanksi keterlambatan sedang terbuka
+        if (latePenaltyTargetRef.current) {
+          return;
+        }
+
         const now = Date.now();
         if (
           lastScannedRef.current &&
@@ -96,7 +119,26 @@ export function KomdisScannerView({
             const res = await scanAttendanceQRByAdmin(activityId, decodedText);
             toast.dismiss(toastId);
             if (res.success) {
-              toast.success(res.message || "Presensi Berhasil Dicatat");
+              if (res.isLateOverOneHour && res.member) {
+                // Terlambat > 1 Jam: Munculkan modal popup penetapan sanksi SOP Komdis
+                setLatePenaltyPoints(3);
+                setLatePenaltyNotes(
+                  `Terlambat ${res.diffMinutes} menit (Izin diterima - sanksi fisik + 3 poin)`,
+                );
+                setLatePenaltyTarget({
+                  profileId: res.member.id,
+                  fullName: res.member.fullName,
+                  nim: res.member.nim,
+                  avatarUrl: res.member.avatarUrl,
+                  diffMinutes: res.diffMinutes || 60,
+                });
+                toast.warning(
+                  `Peserta terlambat ${res.diffMinutes} menit (> 1 Jam). Silakan tetapkan poin sanksi.`,
+                  { duration: 4000 },
+                );
+              } else {
+                toast.success(res.message || "Presensi Berhasil Dicatat");
+              }
             } else {
               toast.error(res.message || "Gagal memproses QR Code");
             }
@@ -191,6 +233,33 @@ export function KomdisScannerView({
       } catch (err: unknown) {
         toast.error(
           err instanceof Error ? err.message : "Gagal mencatat presensi manual",
+        );
+      }
+    });
+  };
+
+  const handleSaveLatePenalty = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!latePenaltyTarget) return;
+
+    startTransition(async () => {
+      try {
+        await recordManualAttendance({
+          activityId,
+          profileId: latePenaltyTarget.profileId,
+          status: "telat",
+          pointsAwarded: latePenaltyPoints,
+          notes: latePenaltyNotes.trim() || undefined,
+        });
+        toast.success(
+          `Sanksi (${latePenaltyPoints} PTS) berhasil disimpan untuk ${latePenaltyTarget.fullName}. Silakan lanjut scan.`,
+        );
+        setLatePenaltyTarget(null);
+      } catch (err: unknown) {
+        toast.error(
+          err instanceof Error
+            ? err.message
+            : "Gagal menyimpan sanksi keterlambatan",
         );
       }
     });
@@ -519,6 +588,185 @@ export function KomdisScannerView({
                     />
                   ) : (
                     "SIMPAN PRESENSI"
+                  )}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL POPUP PENETAPAN SANKSI KETERLAMBATAN (> 1 JAM) ── */}
+      {latePenaltyTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 border-2 border-amber-500 dark:border-amber-500/80 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
+            <div className="flex items-start justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-amber-100 dark:bg-amber-950/80 border border-amber-300 dark:border-amber-700 rounded-xl text-amber-800 dark:text-amber-300 shrink-0">
+                  <HugeiconsIcon icon={Alert02Icon} size={24} />
+                </div>
+                <div>
+                  <h3 className="font-display text-base font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wide">
+                    Sanksi Keterlambatan (&gt; 1 Jam)
+                  </h3>
+                  <p className="text-[11px] font-mono text-amber-700 dark:text-amber-400 font-semibold">
+                    Terlambat {latePenaltyTarget.diffMinutes} menit dari waktu
+                    mulai kegiatan
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Info Anggota */}
+            <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 rounded-xl">
+              <div className="relative w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold font-mono text-xs overflow-hidden shrink-0">
+                {latePenaltyTarget.avatarUrl ? (
+                  <Image
+                    src={latePenaltyTarget.avatarUrl}
+                    alt={latePenaltyTarget.fullName}
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  latePenaltyTarget.fullName.slice(0, 2).toUpperCase()
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate font-display">
+                  {latePenaltyTarget.fullName}
+                </div>
+                <div className="text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                  NIM: {latePenaltyTarget.nim || "-"}
+                </div>
+              </div>
+            </div>
+
+            <form
+              onSubmit={handleSaveLatePenalty}
+              className="space-y-3.5 font-mono text-xs"
+            >
+              {/* Preset Pilihan Cepat SOP Komdis */}
+              <div className="space-y-1.5 p-3 bg-amber-50/90 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-xl">
+                <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-900 dark:text-amber-300 mb-1">
+                  ⚡ PILIH SANKSI SOP KOMDIS:
+                </div>
+                <div className="grid grid-cols-1 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLatePenaltyPoints(0);
+                      setLatePenaltyNotes(
+                        `Terlambat ${latePenaltyTarget.diffMinutes} menit (Sanksi fisik saja di tempat)`,
+                      );
+                    }}
+                    className={`text-left px-2.5 py-2 rounded-lg border font-mono text-[11px] transition-all cursor-pointer flex items-center justify-between ${
+                      latePenaltyPoints === 0
+                        ? "bg-amber-100 dark:bg-amber-900/60 border-amber-400 dark:border-amber-600 text-amber-950 dark:text-amber-100 font-bold shadow-2xs"
+                        : "bg-white dark:bg-slate-900 border-amber-200/70 dark:border-amber-900/40 text-slate-700 dark:text-slate-300 hover:bg-amber-50 dark:hover:bg-amber-950/60"
+                    }`}
+                  >
+                    <span>
+                      🏃 <strong>Sanksi Fisik Saja</strong> (Dispensasi)
+                    </span>
+                    <span className="text-amber-700 dark:text-amber-300 font-bold shrink-0 ml-1">
+                      0 PTS
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLatePenaltyPoints(3);
+                      setLatePenaltyNotes(
+                        `Terlambat ${latePenaltyTarget.diffMinutes} menit (Izin diterima - sanksi fisik + 3 poin)`,
+                      );
+                    }}
+                    className={`text-left px-2.5 py-2 rounded-lg border font-mono text-[11px] transition-all cursor-pointer flex items-center justify-between ${
+                      latePenaltyPoints === 3
+                        ? "bg-amber-100 dark:bg-amber-900/60 border-amber-400 dark:border-amber-600 text-amber-950 dark:text-amber-100 font-bold shadow-2xs"
+                        : "bg-white dark:bg-slate-900 border-amber-200/70 dark:border-amber-900/40 text-slate-700 dark:text-slate-300 hover:bg-amber-50 dark:hover:bg-amber-950/60"
+                    }`}
+                  >
+                    <span>
+                      📋 <strong>Fisik + Poin (Izin Diterima)</strong>
+                    </span>
+                    <span className="text-amber-700 dark:text-amber-300 font-bold shrink-0 ml-1">
+                      +3 PTS
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLatePenaltyPoints(5);
+                      setLatePenaltyNotes(
+                        `Terlambat ${latePenaltyTarget.diffMinutes} menit (Izin ditolak/tanpa izin - sanksi fisik + 5 poin)`,
+                      );
+                    }}
+                    className={`text-left px-2.5 py-2 rounded-lg border font-mono text-[11px] transition-all cursor-pointer flex items-center justify-between ${
+                      latePenaltyPoints === 5
+                        ? "bg-amber-100 dark:bg-amber-900/60 border-amber-400 dark:border-amber-600 text-amber-950 dark:text-amber-100 font-bold shadow-2xs"
+                        : "bg-white dark:bg-slate-900 border-amber-200/70 dark:border-amber-900/40 text-slate-700 dark:text-slate-300 hover:bg-amber-50 dark:hover:bg-amber-950/60"
+                    }`}
+                  >
+                    <span>
+                      ⚠️ <strong>Fisik + Poin (Izin Ditolak/Tanpa Izin)</strong>
+                    </span>
+                    <span className="text-red-600 dark:text-red-400 font-bold shrink-0 ml-1">
+                      +5 PTS
+                    </span>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 font-semibold">
+                  POIN SANKSI DITERAPKAN:
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  value={latePenaltyPoints}
+                  onChange={(e) => setLatePenaltyPoints(Number(e.target.value))}
+                  className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 p-2.5 text-xs text-amber-600 dark:text-orange-400 font-bold focus:outline-hidden focus:border-amber-500 rounded-lg"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 font-semibold">
+                  CATATAN SANKSI KETERLAMBATAN:
+                </label>
+                <input
+                  type="text"
+                  value={latePenaltyNotes}
+                  onChange={(e) => setLatePenaltyNotes(e.target.value)}
+                  placeholder="Keterangan sanksi..."
+                  className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 p-2.5 text-xs text-[#0a192f] dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:border-amber-500 rounded-lg"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setLatePenaltyTarget(null)}
+                  className="flex-1 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-mono text-xs rounded-lg cursor-pointer"
+                >
+                  BATAL / LEWATI
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isPending}
+                  className="flex-1 bg-amber-600 hover:bg-amber-700 text-white font-mono text-xs uppercase tracking-wider rounded-lg cursor-pointer"
+                >
+                  {isPending ? (
+                    <HugeiconsIcon
+                      icon={Loading03Icon}
+                      size={16}
+                      className="animate-spin"
+                    />
+                  ) : (
+                    "SIMPAN & LANJUT SCAN"
                   )}
                 </Button>
               </div>

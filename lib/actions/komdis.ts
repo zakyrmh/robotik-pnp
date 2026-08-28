@@ -293,6 +293,13 @@ export async function scanAttendanceQRByAdmin(
       ? `Terlambat ${diffMinutes} menit (< 1 jam - sanksi fisik langsung di tempat).`
       : null;
 
+  // Ambil profil anggota untuk respons popup
+  const { data: memberProfile } = await supabase
+    .from("profiles")
+    .select("id, full_name, nim, avatar_url")
+    .eq("id", decrypted.profile_id)
+    .single();
+
   const { error } = await supabase.from("attendances").upsert(
     {
       activity_id: activityId,
@@ -302,7 +309,7 @@ export async function scanAttendanceQRByAdmin(
       approval_status: "approved",
       verified_by: user.id,
       verified_at: now.toISOString(),
-      points_awarded: 0, // Default scan = 0 poin (penyesuaian > 1 jam via Presensi Manual)
+      points_awarded: 0, // Default awal = 0 poin, jika > 1 jam akan diset via prompt modal popup
       notes: defaultNotes,
     },
     { onConflict: "activity_id,profile_id" },
@@ -319,8 +326,23 @@ export async function scanAttendanceQRByAdmin(
   return {
     success: true,
     status,
+    isLateOverOneHour,
+    diffMinutes,
+    member: memberProfile
+      ? {
+          id: memberProfile.id,
+          fullName: memberProfile.full_name,
+          nim: memberProfile.nim,
+          avatarUrl: memberProfile.avatar_url,
+        }
+      : {
+          id: decrypted.profile_id,
+          fullName: "Anggota",
+          nim: "-",
+          avatarUrl: null,
+        },
     message: isLateOverOneHour
-      ? `Presensi Berhasil: TELAT > 1 JAM (${diffMinutes}m) — Sanksi Fisik & Cek Poin Manual`
+      ? `Presensi Berhasil: TELAT > 1 JAM (${diffMinutes}m)`
       : isLate
         ? `Presensi Berhasil: TELAT < 1 JAM (${diffMinutes}m) — Sanksi Fisik Langsung`
         : "Presensi Berhasil: HADIR TEPAT WAKTU",
