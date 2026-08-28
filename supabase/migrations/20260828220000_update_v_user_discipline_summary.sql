@@ -1,5 +1,7 @@
 -- Migration: Update v_user_discipline_summary to separate legacy/manual penalty points from goro reduction points
-CREATE OR REPLACE VIEW "public"."v_user_discipline_summary"
+DROP VIEW IF EXISTS "public"."v_user_discipline_summary" CASCADE;
+
+CREATE VIEW "public"."v_user_discipline_summary"
 WITH (security_invoker = true) AS
 SELECT 
     "p"."id" AS "profile_id",
