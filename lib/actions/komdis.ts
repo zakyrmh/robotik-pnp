@@ -278,8 +278,20 @@ export async function scanAttendanceQRByAdmin(
     startDate.getTime() + (activity.late_tolerance_minutes || 15) * 60000,
   );
 
-  // SOP: Hadir tepat waktu vs Telat (< 1 jam)
-  const status = now > lateLimit ? "telat" : "hadir";
+  // SOP: Hadir tepat waktu vs Telat (< 1 jam vs > 1 jam)
+  const diffMinutes = Math.max(
+    0,
+    Math.floor((now.getTime() - startDate.getTime()) / 60000),
+  );
+  const isLate = now > lateLimit;
+  const isLateOverOneHour = isLate && diffMinutes >= 60;
+  const status = isLate ? "telat" : "hadir";
+
+  const defaultNotes = isLateOverOneHour
+    ? `Terlambat ${diffMinutes} menit (> 1 jam). Harap verifikasi sanksi fisik & poin di Presensi Manual.`
+    : isLate
+      ? `Terlambat ${diffMinutes} menit (< 1 jam - sanksi fisik langsung di tempat).`
+      : null;
 
   const { error } = await supabase.from("attendances").upsert(
     {
@@ -290,7 +302,8 @@ export async function scanAttendanceQRByAdmin(
       approval_status: "approved",
       verified_by: user.id,
       verified_at: now.toISOString(),
-      points_awarded: 0, // Telat < 1 jam = 0 poin sanksi
+      points_awarded: 0, // Default scan = 0 poin (penyesuaian > 1 jam via Presensi Manual)
+      notes: defaultNotes,
     },
     { onConflict: "activity_id,profile_id" },
   );
@@ -306,7 +319,11 @@ export async function scanAttendanceQRByAdmin(
   return {
     success: true,
     status,
-    message: `Presensi Berhasil (${status.toUpperCase()})`,
+    message: isLateOverOneHour
+      ? `Presensi Berhasil: TELAT > 1 JAM (${diffMinutes}m) — Sanksi Fisik & Cek Poin Manual`
+      : isLate
+        ? `Presensi Berhasil: TELAT < 1 JAM (${diffMinutes}m) — Sanksi Fisik Langsung`
+        : "Presensi Berhasil: HADIR TEPAT WAKTU",
   };
 }
 

@@ -56,6 +56,8 @@ interface MemberDisciplineDetailClientProps {
   member: MemberProfileDetailData;
   netPoints: number;
   totalAttendancePoints: number;
+  totalLegacyPoints?: number;
+  totalGoroPoints?: number;
   totalLogPoints: number;
   activeSanctionLevel: number | null;
   attendances: AttendanceHistoryItem[];
@@ -66,6 +68,9 @@ interface MemberDisciplineDetailClientProps {
 export function MemberDisciplineDetailClient({
   member,
   netPoints,
+  totalAttendancePoints,
+  totalLegacyPoints = 0,
+  totalGoroPoints = 0,
   activeSanctionLevel,
   attendances,
   pointLogs,
@@ -204,13 +209,41 @@ export function MemberDisciplineDetailClient({
 
           {/* Right Info: Net Points Counter & Admin Actions */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full xl:w-auto border-t xl:border-t-0 pt-4 xl:pt-0 border-slate-100 dark:border-slate-800">
-            <div className="bg-slate-50 dark:bg-slate-800/60 p-3 sm:p-3.5 border border-slate-200 dark:border-slate-700 rounded-xl text-center min-w-32 shrink-0">
-              <div className="font-mono text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                NETTO SAAT INI
+            <div className="bg-slate-50 dark:bg-slate-800/60 p-3 sm:p-3.5 border border-slate-200 dark:border-slate-700 rounded-xl text-center min-w-40 shrink-0 space-y-1.5">
+              <div>
+                <div className="font-mono text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                  NETTO SAAT INI
+                </div>
+                <div className="font-display text-2xl sm:text-3xl font-bold text-[#0a192f] dark:text-slate-100">
+                  {netPoints}{" "}
+                  <span className="text-xs font-mono text-slate-400">PTS</span>
+                </div>
               </div>
-              <div className="font-display text-2xl sm:text-3xl font-bold text-[#0a192f] dark:text-slate-100">
-                {netPoints}{" "}
-                <span className="text-xs font-mono text-slate-400">PTS</span>
+              <div className="pt-1.5 border-t border-slate-200/80 dark:border-slate-700/80 flex items-center justify-center gap-2 font-mono text-[10px]">
+                <span
+                  className="text-amber-600 dark:text-amber-400 font-semibold"
+                  title="Poin Presensi"
+                >
+                  +{totalAttendancePoints}
+                </span>
+                <span className="text-slate-300 dark:text-slate-600">
+                  &bull;
+                </span>
+                <span
+                  className="text-orange-600 dark:text-orange-400 font-semibold"
+                  title="Poin Awal/Manual"
+                >
+                  +{totalLegacyPoints}
+                </span>
+                <span className="text-slate-300 dark:text-slate-600">
+                  &bull;
+                </span>
+                <span
+                  className="text-emerald-600 dark:text-emerald-400 font-semibold"
+                  title="Pemutihan Goro"
+                >
+                  {totalGoroPoints}
+                </span>
               </div>
             </div>
 

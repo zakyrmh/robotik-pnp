@@ -737,25 +737,117 @@ export function ActivityAttendanceDetailClient({
                 <select
                   id="manual-status-select"
                   value={manualStatus}
-                  onChange={(e) =>
-                    setManualStatus(
-                      e.target.value as
-                        | "hadir"
-                        | "telat"
-                        | "izin"
-                        | "sakit"
-                        | "alfa",
-                    )
-                  }
+                  onChange={(e) => {
+                    const newStatus = e.target.value as
+                      | "hadir"
+                      | "telat"
+                      | "izin"
+                      | "sakit"
+                      | "alfa";
+                    setManualStatus(newStatus);
+                    if (newStatus === "hadir") {
+                      setManualPoints(0);
+                      setManualNotes("");
+                    } else if (newStatus === "telat") {
+                      setManualPoints(0);
+                      setManualNotes(
+                        "Terlambat < 1 jam (Sanksi fisik di tempat)",
+                      );
+                    } else if (newStatus === "izin" || newStatus === "sakit") {
+                      setManualPoints(5);
+                    } else if (newStatus === "alfa") {
+                      setManualPoints(15);
+                    }
+                  }}
                   className="h-10 w-full bg-background px-3 rounded-lg border border-border text-foreground focus:outline-hidden focus:border-primary"
                 >
                   <option value="hadir">Hadir (Tepat Waktu)</option>
                   <option value="telat">Telat</option>
-                  <option value="izin">Izin</option>
-                  <option value="sakit">Sakit</option>
-                  <option value="alfa">Alfa</option>
+                  <option value="izin">Izin (5 Poin)</option>
+                  <option value="sakit">Sakit (5 Poin)</option>
+                  <option value="alfa">Alfa (15 Poin)</option>
                 </select>
               </div>
+
+              {/* Preset Opsi Sanksi Keterlambatan (SOP Komdis) */}
+              {manualStatus === "telat" && (
+                <div className="flex flex-col gap-2 p-3 bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-xl">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-900 dark:text-amber-300">
+                      ⚡ PRESET SANKSI KETERLAMBATAN (SOP KOMDIS)
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setManualPoints(0);
+                        setManualNotes(
+                          "Terlambat < 1 jam (Sanksi fisik di tempat)",
+                        );
+                      }}
+                      className={`text-left px-3 py-2 rounded-lg border font-mono text-[11px] transition-all cursor-pointer flex items-center justify-between ${
+                        manualPoints === 0
+                          ? "bg-amber-100 dark:bg-amber-900/60 border-amber-400 dark:border-amber-600 text-amber-950 dark:text-amber-100 font-bold shadow-2xs"
+                          : "bg-white dark:bg-slate-900 border-amber-200/70 dark:border-amber-900/40 text-slate-700 dark:text-slate-300 hover:bg-amber-50 dark:hover:bg-amber-950/60"
+                      }`}
+                    >
+                      <span>
+                        🏃 <strong>Sanksi Fisik Saja</strong> (Telat &lt; 1 Jam)
+                      </span>
+                      <span className="text-amber-700 dark:text-amber-300 font-bold shrink-0 ml-2">
+                        0 PTS
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setManualPoints(3);
+                        setManualNotes(
+                          "Terlambat > 1 jam (Izin diterima - sanksi fisik + 3 poin)",
+                        );
+                      }}
+                      className={`text-left px-3 py-2 rounded-lg border font-mono text-[11px] transition-all cursor-pointer flex items-center justify-between ${
+                        manualPoints === 3
+                          ? "bg-amber-100 dark:bg-amber-900/60 border-amber-400 dark:border-amber-600 text-amber-950 dark:text-amber-100 font-bold shadow-2xs"
+                          : "bg-white dark:bg-slate-900 border-amber-200/70 dark:border-amber-900/40 text-slate-700 dark:text-slate-300 hover:bg-amber-50 dark:hover:bg-amber-950/60"
+                      }`}
+                    >
+                      <span>
+                        📋 <strong>Fisik + Poin (Izin Diterima)</strong> (Telat
+                        &gt; 1 Jam)
+                      </span>
+                      <span className="text-amber-700 dark:text-amber-300 font-bold shrink-0 ml-2">
+                        +3 PTS
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setManualPoints(5);
+                        setManualNotes(
+                          "Terlambat > 1 jam (Izin ditolak/tanpa izin - sanksi fisik + 5 poin)",
+                        );
+                      }}
+                      className={`text-left px-3 py-2 rounded-lg border font-mono text-[11px] transition-all cursor-pointer flex items-center justify-between ${
+                        manualPoints === 5
+                          ? "bg-amber-100 dark:bg-amber-900/60 border-amber-400 dark:border-amber-600 text-amber-950 dark:text-amber-100 font-bold shadow-2xs"
+                          : "bg-white dark:bg-slate-900 border-amber-200/70 dark:border-amber-900/40 text-slate-700 dark:text-slate-300 hover:bg-amber-50 dark:hover:bg-amber-950/60"
+                      }`}
+                    >
+                      <span>
+                        ⚠️ <strong>Fisik + Poin (Izin Ditolak)</strong> (Telat
+                        &gt; 1 Jam)
+                      </span>
+                      <span className="text-red-600 dark:text-red-400 font-bold shrink-0 ml-2">
+                        +5 PTS
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="flex flex-col gap-1.5">
                 <label
@@ -767,9 +859,10 @@ export function ActivityAttendanceDetailClient({
                 <Input
                   id="manual-points-input"
                   type="number"
+                  min={0}
                   value={manualPoints}
                   onChange={(e) => setManualPoints(Number(e.target.value))}
-                  className="h-10 bg-background font-mono text-xs border-border"
+                  className="h-10 bg-background font-mono text-xs border-border font-bold text-amber-600 dark:text-amber-400"
                 />
               </div>
 
@@ -778,11 +871,11 @@ export function ActivityAttendanceDetailClient({
                   htmlFor="manual-notes-input"
                   className="text-xs font-semibold text-foreground uppercase tracking-wider block"
                 >
-                  Catatan / Keterangan (Opsional)
+                  Catatan / Keterangan Sanksi
                 </label>
                 <Input
                   id="manual-notes-input"
-                  placeholder="Misal: Izin keperluan akademik kampus..."
+                  placeholder="Misal: Terlambat 1 jam 15 menit (izin diterima)..."
                   value={manualNotes}
                   onChange={(e) => setManualNotes(e.target.value)}
                   className="h-10 bg-background font-mono text-xs border-border placeholder:text-muted-foreground"
