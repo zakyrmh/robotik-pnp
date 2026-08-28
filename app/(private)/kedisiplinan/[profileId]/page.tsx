@@ -65,7 +65,9 @@ export default async function MemberDisciplineDetailPage({
   // Fetch Net Points Summary
   const { data: summaryData } = await supabase
     .from("v_user_discipline_summary")
-    .select("net_points, total_attendance_points, total_log_points")
+    .select(
+      "net_points, total_attendance_points, total_legacy_points, total_goro_points, total_log_points",
+    )
     .eq("profile_id", profileId)
     .single();
 
@@ -172,6 +174,8 @@ export default async function MemberDisciplineDetailPage({
         member={memberData}
         netPoints={summaryData?.net_points || 0}
         totalAttendancePoints={summaryData?.total_attendance_points || 0}
+        totalLegacyPoints={summaryData?.total_legacy_points || 0}
+        totalGoroPoints={summaryData?.total_goro_points || 0}
         totalLogPoints={summaryData?.total_log_points || 0}
         activeSanctionLevel={activeSanctionLevel}
         attendances={attendances}

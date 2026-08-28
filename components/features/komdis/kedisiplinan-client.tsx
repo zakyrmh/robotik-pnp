@@ -366,7 +366,7 @@ export function KedisiplinanClient({
                   </div>
 
                   {/* Points telemetry */}
-                  <div className="grid grid-cols-3 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-center font-mono text-xs">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-center font-mono text-xs">
                     <div className="bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg">
                       <span className="text-[10px] text-slate-400 block uppercase">
                         PRESENSI
@@ -377,10 +377,18 @@ export function KedisiplinanClient({
                     </div>
                     <div className="bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg">
                       <span className="text-[10px] text-slate-400 block uppercase">
+                        POIN AWAL
+                      </span>
+                      <span className="font-bold text-orange-600 dark:text-orange-400">
+                        +{item.total_legacy_points || 0}
+                      </span>
+                    </div>
+                    <div className="bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg">
+                      <span className="text-[10px] text-slate-400 block uppercase">
                         PEMUTIHAN
                       </span>
                       <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                        {item.total_log_points || 0}
+                        {item.total_goro_points || 0}
                       </span>
                     </div>
                     <div className="bg-slate-50 dark:bg-slate-800/50 p-2 rounded-lg border border-slate-200 dark:border-slate-700">
@@ -454,6 +462,9 @@ export function KedisiplinanClient({
                     Poin Presensi
                   </TableHead>
                   <TableHead className="text-center font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 py-3.5 px-4">
+                    Poin Awal / Manual
+                  </TableHead>
+                  <TableHead className="text-center font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 py-3.5 px-4">
                     Pemutihan Goro
                   </TableHead>
                   <TableHead className="text-center font-mono text-[11px] uppercase tracking-wider font-semibold text-slate-600 dark:text-slate-400 py-3.5 px-4">
@@ -513,8 +524,11 @@ export function KedisiplinanClient({
                       <TableCell className="py-3.5 px-4 text-center font-mono text-amber-600 dark:text-amber-400 font-bold">
                         +{item.total_attendance_points || 0}
                       </TableCell>
+                      <TableCell className="py-3.5 px-4 text-center font-mono text-orange-600 dark:text-orange-400 font-bold">
+                        +{item.total_legacy_points || 0}
+                      </TableCell>
                       <TableCell className="py-3.5 px-4 text-center font-mono text-emerald-600 dark:text-emerald-400 font-bold">
-                        {item.total_log_points || 0}
+                        {item.total_goro_points || 0}
                       </TableCell>
                       <TableCell className="py-3.5 px-4 text-center font-mono text-sm font-bold text-[#0a192f] dark:text-slate-100">
                         {net} PTS

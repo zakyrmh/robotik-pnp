@@ -361,16 +361,28 @@ export function KomdisScannerView({
                 </label>
                 <select
                   value={manualStatus}
-                  onChange={(e) =>
-                    setManualStatus(
-                      e.target.value as
-                        | "hadir"
-                        | "telat"
-                        | "izin"
-                        | "sakit"
-                        | "alfa",
-                    )
-                  }
+                  onChange={(e) => {
+                    const newStatus = e.target.value as
+                      | "hadir"
+                      | "telat"
+                      | "izin"
+                      | "sakit"
+                      | "alfa";
+                    setManualStatus(newStatus);
+                    if (newStatus === "hadir") {
+                      setManualPoints(0);
+                      setManualNotes("");
+                    } else if (newStatus === "telat") {
+                      setManualPoints(0);
+                      setManualNotes(
+                        "Terlambat < 1 jam (Sanksi fisik di tempat)",
+                      );
+                    } else if (newStatus === "izin" || newStatus === "sakit") {
+                      setManualPoints(5);
+                    } else if (newStatus === "alfa") {
+                      setManualPoints(15);
+                    }
+                  }}
                   className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 p-2.5 text-xs text-[#0a192f] dark:text-slate-100 focus:outline-hidden focus:border-[#f97316] rounded-lg"
                 >
                   <option value="hadir">HADIR (0 POIN)</option>
@@ -380,6 +392,84 @@ export function KomdisScannerView({
                   <option value="alfa">ALFA (15 POIN)</option>
                 </select>
               </div>
+
+              {/* Preset Opsi Sanksi Keterlambatan (SOP Komdis) */}
+              {manualStatus === "telat" && (
+                <div className="space-y-1.5 p-3 bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-xl">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-900 dark:text-amber-300">
+                      ⚡ PRESET SANKSI KETERLAMBATAN
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setManualPoints(0);
+                        setManualNotes(
+                          "Terlambat < 1 jam (Sanksi fisik di tempat)",
+                        );
+                      }}
+                      className={`text-left px-2.5 py-1.5 rounded-lg border font-mono text-[10px] sm:text-[11px] transition-all cursor-pointer flex items-center justify-between ${
+                        manualPoints === 0
+                          ? "bg-amber-100 dark:bg-amber-900/60 border-amber-400 dark:border-amber-600 text-amber-950 dark:text-amber-100 font-bold shadow-2xs"
+                          : "bg-white dark:bg-slate-900 border-amber-200/70 dark:border-amber-900/40 text-slate-700 dark:text-slate-300 hover:bg-amber-50 dark:hover:bg-amber-950/60"
+                      }`}
+                    >
+                      <span>
+                        🏃 <strong>Sanksi Fisik Saja</strong> (&lt; 1 Jam)
+                      </span>
+                      <span className="text-amber-700 dark:text-amber-300 font-bold shrink-0 ml-1">
+                        0 PTS
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setManualPoints(3);
+                        setManualNotes(
+                          "Terlambat > 1 jam (Izin diterima - sanksi fisik + 3 poin)",
+                        );
+                      }}
+                      className={`text-left px-2.5 py-1.5 rounded-lg border font-mono text-[10px] sm:text-[11px] transition-all cursor-pointer flex items-center justify-between ${
+                        manualPoints === 3
+                          ? "bg-amber-100 dark:bg-amber-900/60 border-amber-400 dark:border-amber-600 text-amber-950 dark:text-amber-100 font-bold shadow-2xs"
+                          : "bg-white dark:bg-slate-900 border-amber-200/70 dark:border-amber-900/40 text-slate-700 dark:text-slate-300 hover:bg-amber-50 dark:hover:bg-amber-950/60"
+                      }`}
+                    >
+                      <span>
+                        📋 <strong>Fisik + Poin (Izin Diterima)</strong>
+                      </span>
+                      <span className="text-amber-700 dark:text-amber-300 font-bold shrink-0 ml-1">
+                        +3 PTS
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setManualPoints(5);
+                        setManualNotes(
+                          "Terlambat > 1 jam (Izin ditolak/tanpa izin - sanksi fisik + 5 poin)",
+                        );
+                      }}
+                      className={`text-left px-2.5 py-1.5 rounded-lg border font-mono text-[10px] sm:text-[11px] transition-all cursor-pointer flex items-center justify-between ${
+                        manualPoints === 5
+                          ? "bg-amber-100 dark:bg-amber-900/60 border-amber-400 dark:border-amber-600 text-amber-950 dark:text-amber-100 font-bold shadow-2xs"
+                          : "bg-white dark:bg-slate-900 border-amber-200/70 dark:border-amber-900/40 text-slate-700 dark:text-slate-300 hover:bg-amber-50 dark:hover:bg-amber-950/60"
+                      }`}
+                    >
+                      <span>
+                        ⚠️ <strong>Fisik + Poin (Izin Ditolak)</strong>
+                      </span>
+                      <span className="text-red-600 dark:text-red-400 font-bold shrink-0 ml-1">
+                        +5 PTS
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="block text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 font-semibold">
@@ -402,7 +492,7 @@ export function KomdisScannerView({
                   type="text"
                   value={manualNotes}
                   onChange={(e) => setManualNotes(e.target.value)}
-                  placeholder="Contoh: HP anggota rusak / terlambat > 1 jam..."
+                  placeholder="Contoh: Terlambat 1 jam 15 menit (Izin diterima)..."
                   className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 p-2.5 text-xs text-[#0a192f] dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:border-[#f97316] rounded-lg"
                 />
               </div>

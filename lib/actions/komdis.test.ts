@@ -163,6 +163,7 @@ import {
   reviewLeaveRequest,
   batchMarkAlfa,
   logPointReduction,
+  logLegacyDisciplinePoints,
   issueSanction,
   recordManualAttendance,
   updateMemberInternshipStatus,
@@ -361,6 +362,31 @@ describe("Modul Server Actions Komdis Attendance", () => {
           category: "goro_sp1",
           points: 10,
           description: "Deskripsi pemutihan",
+        }),
+      ).rejects.toThrow();
+    });
+  });
+
+  // --- Test 5b: logLegacyDisciplinePoints ---
+  describe("logLegacyDisciplinePoints", () => {
+    it("harus sukses mencatat poin sanksi awal Periode 20 (poin positif)", async () => {
+      const res = await logLegacyDisciplinePoints({
+        profileId: VALID_UUID_1,
+        category: "poin_awal_periode20",
+        points: 15,
+        description: "Akumulasi poin sanksi pelanggaran Periode 20",
+      });
+
+      expect(res.success).toBe(true);
+    });
+
+    it("harus gagal jika poin bernilai negatif atau 0 pada poin sanksi awal", async () => {
+      await expect(
+        logLegacyDisciplinePoints({
+          profileId: VALID_UUID_1,
+          category: "poin_awal_periode20",
+          points: -10,
+          description: "Deskripsi salah",
         }),
       ).rejects.toThrow();
     });
