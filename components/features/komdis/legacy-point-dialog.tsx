@@ -32,9 +32,6 @@ export function LegacyPointDialog({
   onClose,
 }: LegacyPointDialogProps) {
   const router = useRouter();
-  const [category, setCategory] = useState<
-    "poin_awal_periode20" | "transfer_periode" | "penyesuaian_komdis"
-  >("poin_awal_periode20");
   const [points, setPoints] = useState<number>(15);
   const [description, setDescription] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -55,7 +52,7 @@ export function LegacyPointDialog({
     setSuccessMsg(null);
 
     if (points <= 0) {
-      setErrorMsg("Poin sanksi awal harus bernilai positif (contoh: 15).");
+      setErrorMsg("Poin pelanggaran harus bernilai lebih dari 0.");
       return;
     }
     if (!description.trim()) {
@@ -67,11 +64,11 @@ export function LegacyPointDialog({
       try {
         await logLegacyDisciplinePoints({
           profileId,
-          category,
+          category: "poin_awal_periode20",
           points,
           description: description.trim(),
         });
-        setSuccessMsg("Poin sanksi awal / transfer berhasil dicatat.");
+        setSuccessMsg("Poin sanksi awal Periode 20 berhasil dicatat.");
         router.refresh();
         setTimeout(() => {
           onClose();
@@ -93,11 +90,11 @@ export function LegacyPointDialog({
           <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
             <HugeiconsIcon icon={Alert01Icon} size={20} />
             <DialogTitle className="font-display text-lg font-bold text-[#0a192f] dark:text-slate-100">
-              Input Poin Sanksi Awal / Transfer Periode
+              Input Poin Pelanggaran Awal Periode 20
             </DialogTitle>
           </div>
           <DialogDescription className="text-xs font-mono text-slate-500 dark:text-slate-400">
-            Catat akumulasi poin sanksi pelanggaran periode terdahulu (seperti Periode 20) untuk anggota{" "}
+            Input poin sanksi awal dari Periode 20 yang belum tercatat di sistem digital untuk anggota{" "}
             <span className="font-bold text-[#0a192f] dark:text-slate-200">
               {profileName}
             </span>
@@ -118,45 +115,17 @@ export function LegacyPointDialog({
             </div>
           )}
 
-          {/* Category Selector */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-mono uppercase tracking-wider font-semibold text-[#0a192f] dark:text-slate-100">
-              Kategori Transfer / Poin Awal
-            </Label>
-            <select
-              value={category}
-              onChange={(e) =>
-                setCategory(
-                  e.target.value as
-                    | "poin_awal_periode20"
-                    | "transfer_periode"
-                    | "penyesuaian_komdis",
-                )
-              }
-              className="w-full h-10 px-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 font-mono text-xs text-[#0a192f] dark:text-slate-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#f97316]/20 focus:border-[#f97316]"
-            >
-              <option value="poin_awal_periode20">
-                POIN AWAL PERIODE 20 (CARRY OVER)
-              </option>
-              <option value="transfer_periode">
-                TRANSFER POIN ANTAR MASAJABATAN
-              </option>
-              <option value="penyesuaian_komdis">
-                PENYESUAIAN KHUSUS KOMDIS (+POIN)
-              </option>
-            </select>
-          </div>
-
           {/* Points Input */}
           <div className="space-y-1.5">
             <Label className="text-xs font-mono uppercase tracking-wider font-semibold text-[#0a192f] dark:text-slate-100">
-              Nilai Poin Pelanggaran (Positif)
+              Poin Pelanggaran
             </Label>
             <Input
               type="number"
               min={1}
               value={points}
               onChange={(e) => setPoints(Number(e.target.value))}
+              placeholder="Contoh: 15"
               className="bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 font-mono text-xs font-bold text-amber-600 dark:text-amber-400"
             />
           </div>
@@ -164,12 +133,12 @@ export function LegacyPointDialog({
           {/* Description Textarea */}
           <div className="space-y-1.5">
             <Label className="text-xs font-mono uppercase tracking-wider font-semibold text-[#0a192f] dark:text-slate-100">
-              Deskripsi / Catatan Poin Awal
+              Deskripsi
             </Label>
             <Textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Contoh: Akumulasi poin pelanggaran pada masa jabatan Periode 20 sebelum penerapan sistem digital..."
+              placeholder="Contoh: Akumulasi poin pelanggaran pada masa jabatan Periode 20..."
               className="bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 font-mono text-xs text-[#0a192f] dark:text-slate-100 placeholder:text-slate-400 min-h-24 rounded-lg"
             />
           </div>
