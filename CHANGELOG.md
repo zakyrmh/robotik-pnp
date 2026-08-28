@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-08-29
+
+### Added
+
+- **Pemisahan Poin Awal/Manual vs Pemutihan Gotong Royong (Goro) Kedisiplinan**:
+  - **Database View (`supabase/migrations/20260828220000_update_v_user_discipline_summary.sql`)**: Memperbarui view `v_user_discipline_summary` untuk memisahkan agregasi poin penambahan sanksi bawaan / manual (`total_legacy_points` > 0) dan poin pengurangan sanksi melalui goro (`total_goro_points` < 0) dari poin presensi (`total_attendance_points`).
+  - **Direktori Kedisiplinan (`components/features/komdis/kedisiplinan-client.tsx` & `app/(private)/kedisiplinan/page.tsx`)**: Menampilkan kolom tabel terpisah antara "Poin Awal/Manual" (+X PTS) dan "Pemutihan Goro" (-X PTS) serta metrik netto yang transparan.
+  - **Halaman Detail Kedisiplinan Anggota (`components/features/komdis/member-discipline-detail-client.tsx`)**: Menampilkan ringkasan telemetri breakdown live dan tab log terpisah.
+- **Preset Sanksi Keterlambatan SOP Komdis & Modal Pop-up Scanner Instan**:
+  - **QR Scanner Komdis (`components/features/komdis/komdis-scanner-view.tsx` & `lib/actions/komdis.ts`)**: Integrasi pop-up modal penetapan sanksi instan saat scan anggota yang terlambat $\ge 60$ menit, lengkap dengan pilihan cepat SOP Komdis:
+    - 🏃 Sanksi Fisik Saja (0 PTS)
+    - 📋 Fisik + Izin Diterima (+3 PTS)
+    - ⚠️ Fisik + Izin Ditolak / Tanpa Izin (+5 PTS)
+    - ✏️ Kustom Angka Poin & Catatan Sanksi.
+  - **Drawer Presensi Manual (`components/features/presensi/activity-attendance-detail-client.tsx`)**: Menyediakan tombol preset cepat sanksi keterlambatan yang sama pada form presensi manual kegiatan.
+  - **Alur Scan Berkelanjutan**: Petugas Komdis dapat langsung menyimpan sanksi dan melanjutkan scan QR peserta berikutnya tanpa perlu beralih ke halaman rekap.
+
+### Fixed
+
+- **PostgreSQL View Migration Fix (`supabase/migrations/20260828220000_update_v_user_discipline_summary.sql`)**: Memperbaiki migrasi view dengan menambahkan `DROP VIEW IF EXISTS ... CASCADE` sebelum re-create view guna menghindari error `SQLSTATE 42P16` saat `db push`.
+- **Type Definitions Synchronization (`types/database.types.ts`)**: Regenerasi TypeScript database types untuk menyelaraskan skema database terbaru.
+
 ## [0.5.0] - 2026-08-26
 
 ### Added
