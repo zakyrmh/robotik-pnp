@@ -732,6 +732,30 @@ export async function recordManualAttendance(rawInput: ManualAttendanceInput) {
 // REKAP PRESENSI KOMDIS (REKAP PER ANGGOTA & REKAP PER KEGIATAN)
 // ============================================================================
 
+function normalizePhotoUrl(
+  url: string | null | undefined,
+): string | null {
+  if (!url || typeof url !== "string") return null;
+  const trimmed = url.trim();
+  if (
+    !trimmed ||
+    trimmed === "Belum Diisi" ||
+    trimmed === "null" ||
+    trimmed === "undefined" ||
+    trimmed === "-"
+  ) {
+    return null;
+  }
+  if (
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("/")
+  ) {
+    return trimmed;
+  }
+  return null;
+}
+
 export interface KomdisMemberAttendanceItem {
   profileId: string;
   fullName: string;
@@ -968,7 +992,7 @@ export async function getKomdisMemberAttendanceSummary(): Promise<{
       profileId,
       fullName: prof.full_name || reg?.full_name || "—",
       nim: prof.nim || "—",
-      photoUrl: prof.avatar_url || reg?.photo_url || null,
+      photoUrl: normalizePhotoUrl(prof.avatar_url || reg?.photo_url),
       role: prof.role || "anggota",
       studyProgramName: sp ? `${sp.degree} ${sp.name}` : "—",
       majorName: major?.name || "—",
@@ -1303,7 +1327,7 @@ export async function getActivityAttendanceDetail(
       profileId,
       fullName: prof.full_name || reg?.full_name || "—",
       nim: prof.nim || "—",
-      photoUrl: prof.avatar_url || reg?.photo_url || null,
+      photoUrl: normalizePhotoUrl(prof.avatar_url || reg?.photo_url),
       role: prof.role || "anggota",
       studyProgramName: sp ? `${sp.degree} ${sp.name}` : "—",
       majorName: major?.name || "—",

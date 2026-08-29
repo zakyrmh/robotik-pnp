@@ -260,7 +260,7 @@ export default async function ActivityDetailPage({
             <span className="text-xs font-semibold text-foreground uppercase block mt-0.5">
               {activity.target_audience === "caang"
                 ? "Calon Anggota (Caang)"
-                : "Anggota & Pengurus"}
+                : "Anggota UKM Robotik PNP"}
             </span>
             <span className="text-micro text-muted-foreground block mt-0.5">
               Target Audiens Formal
@@ -299,26 +299,12 @@ export default async function ActivityDetailPage({
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-2.5 w-full sm:w-auto">
-          {isKomdisOrSuperAdmin && (
-            <Button
-              asChild
-              variant="outline"
-              size="sm"
-              className="rounded-md border-primary text-primary hover:bg-primary-soft text-xs font-medium h-9 px-4 w-full sm:w-auto"
-            >
-              <Link href={`/kegiatan/${activity.id}/presensi`}>
-                <HugeiconsIcon icon={UserCheck01Icon} size={15} />
-                Rekap Presensi Komdis
-              </Link>
-            </Button>
-          )}
-
           <Button
             asChild
             size="sm"
             className="rounded-md bg-primary text-primary-foreground hover:bg-primary-hover text-xs font-medium h-9 px-4 w-full sm:w-auto"
           >
-            <Link href={`/kegiatan/${activity.id}/absensi`}>
+            <Link href={`/presensi/${activity.id}/absensi`}>
               <HugeiconsIcon icon={CheckmarkCircle01Icon} size={15} />
               {isAttendanceActive ? "Absen Sekarang" : "Buka Modul Absensi"}
             </Link>

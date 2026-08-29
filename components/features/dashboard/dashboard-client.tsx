@@ -244,7 +244,7 @@ export function DashboardClient({ data }: DashboardClientProps) {
               </div>
             </Link>
 
-            <Link href="/absensi" className="group">
+            <Link href="/presensi" className="group">
               <div className="border border-border bg-card p-4 rounded-xl shadow-xs hover:border-emerald-500 transition-all flex items-center justify-between min-h-[44px]">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
@@ -357,7 +357,7 @@ export function DashboardClient({ data }: DashboardClientProps) {
                       asChild
                       className="bg-primary hover:bg-primary-hover text-primary-foreground font-mono text-xs min-h-[38px] px-3 rounded-lg shrink-0"
                     >
-                      <Link href={`/kegiatan/${act.id}/absensi`}>
+                      <Link href={`/presensi/${act.id}/absensi`}>
                         Absen Sekarang
                       </Link>
                     </Button>
@@ -962,7 +962,7 @@ export function DashboardClient({ data }: DashboardClientProps) {
                       asChild
                       className="bg-primary hover:bg-primary-hover text-primary-foreground font-mono text-xs min-h-[38px] px-3 rounded-lg shrink-0"
                     >
-                      <Link href={`/kegiatan/${act.id}/absensi`}>
+                      <Link href={`/presensi/${act.id}/absensi`}>
                         Detail Presensi
                       </Link>
                     </Button>

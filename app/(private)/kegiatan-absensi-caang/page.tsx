@@ -1,12 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { getActivities, getAttendanceSummary } from "@/lib/actions/activities";
+import { getActivities } from "@/lib/actions/activities";
 import { KegiatanClient } from "@/components/features/kegiatan/kegiatan-client";
 
 export const metadata = {
-  title: "Kegiatan & Absensi Caang | UKM Robotik PNP",
+  title: "Kegiatan Caang | UKM Robotik PNP",
   description:
-    "Manajemen kegiatan dan rekap absensi Calon Anggota (Caang) UKM Robotik Politeknik Negeri Padang.",
+    "Manajemen kegiatan Calon Anggota (Caang) UKM Robotik Politeknik Negeri Padang.",
 };
 
 export default async function KegiatanAbsensiCaangPage() {
@@ -39,25 +39,14 @@ export default async function KegiatanAbsensiCaangPage() {
     redirect("/dashboard");
   }
 
-  // Fetch initial data in parallel
-  const [activitiesRes, summaryRes] = await Promise.all([
-    getActivities("caang"),
-    getAttendanceSummary(),
-  ]);
-
+  const activitiesRes = await getActivities("caang");
   const activities =
     activitiesRes.success && activitiesRes.data ? activitiesRes.data : [];
-  const summaryData =
-    summaryRes.success && summaryRes.data
-      ? summaryRes.data
-      : { activities: [], summary: [] };
 
   return (
     <KegiatanClient
       variant="caang-recruitment"
       initialActivities={activities}
-      initialActivitiesForSummary={summaryData.activities}
-      initialSummary={summaryData.summary}
       userRole={rawProfile.role}
     />
   );

@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Restrukturisasi & Pemisahan Domain Modul Kegiatan (CRUD) vs Presensi (Absensi)**:
+  - **Sub-Rute Presensi `/presensi/[id]` & Pemindai QR (`app/(private)/presensi/[id]/page.tsx`, `app/(private)/presensi/[id]/absensi/page.tsx`)**:
+    - Membuat halaman rekapitulasi detail presensi kegiatan Komdis di `/presensi/[id]`.
+    - Membuat halaman modul pemindai kamera (_Scanner QR Komdis_) dan generator token QR dinamis mandiri (_QR Code Saya_) di `/presensi/[id]/absensi`.
+  - **Tombol Pintasan Presensi Berbasis Jendela Waktu (`components/features/kegiatan/kegiatan-client.tsx`)**:
+    - Menambahkan tombol **"Presensi"** di sebelah tombol **"Detail"** pada daftar kegiatan.
+    - Mengatur visibilitas tombol secara kondisional agar hanya muncul ketika waktu sekarang berada dalam rentang jendela presensi (`checkin_open_at` s/d `checkin_close_at`).
+
+### Fixed
+
+- **Sanitasi Foto Profil Anggota & Custom Type Guard TypeScript (`url is string`)**:
+  - Menyaring string bawaan `"Belum Diisi"`, `"null"`, `"undefined"`, `-` pada _backend action_ (`lib/actions/komdis.ts` & `lib/actions/activities.ts`).
+  - Mengimplementasikan Custom Type Guard `isValidImageUrl(url): url is string` pada komponen UI presensi untuk mengeliminasi crash `TypeError: Failed to construct 'URL': Invalid URL` dan kompilasi error TypeScript `TS2322`.
+
 ## [0.6.1] - 2026-08-29
 
 ### Fixed

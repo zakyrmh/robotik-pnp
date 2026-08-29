@@ -47,6 +47,25 @@ interface ActivityAttendanceDetailClientProps {
   initialData: ActivityAttendanceDetailResult;
 }
 
+function isValidImageUrl(url: string | null | undefined): url is string {
+  if (!url || typeof url !== "string") return false;
+  const trimmed = url.trim();
+  if (
+    !trimmed ||
+    trimmed === "Belum Diisi" ||
+    trimmed === "null" ||
+    trimmed === "undefined" ||
+    trimmed === "-"
+  ) {
+    return false;
+  }
+  return (
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("/")
+  );
+}
+
 export function ActivityAttendanceDetailClient({
   initialData,
 }: ActivityAttendanceDetailClientProps) {
@@ -304,7 +323,7 @@ export function ActivityAttendanceDetailClient({
           {/* Quick Actions */}
           <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
             <Button
-              onClick={() => router.push(`/kegiatan/${activity.id}/absensi`)}
+              onClick={() => router.push(`/presensi/${activity.id}/absensi`)}
               className="flex-1 md:flex-initial rounded-xl bg-[#1e3a8a] dark:bg-blue-600 hover:bg-[#1e40af] text-white font-mono text-xs uppercase tracking-wider h-10 px-4 shadow-sm"
             >
               <HugeiconsIcon icon={QrCodeIcon} size={16} className="mr-2" />
@@ -453,7 +472,7 @@ export function ActivityAttendanceDetailClient({
               >
                 <div className="flex items-center gap-3">
                   <div className="relative h-10 w-10 rounded-full border border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0 flex items-center justify-center">
-                    {m.photoUrl ? (
+                    {isValidImageUrl(m.photoUrl) ? (
                       <Image
                         src={m.photoUrl}
                         alt={m.fullName}
@@ -583,7 +602,7 @@ export function ActivityAttendanceDetailClient({
                     <td className="p-4 align-middle">
                       <div className="flex items-center gap-3">
                         <div className="relative h-9 w-9 rounded-full border border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0 flex items-center justify-center">
-                          {m.photoUrl ? (
+                          {isValidImageUrl(m.photoUrl) ? (
                             <Image
                               src={m.photoUrl}
                               alt={m.fullName}

@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { getActivityAttendances } from "@/lib/actions/activities";
-import { ActivityDetailClient } from "./ActivityDetailClient";
+import { ActivityDetailClient } from "@/components/features/kegiatan-absensi-caang/activity-detail-client";
 
 export const metadata = {
   title: "Detail Kegiatan & Absensi | UKM Robotik PNP",
