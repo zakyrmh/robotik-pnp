@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-08-29
+
+### Fixed
+
+- **Resolusi Izin Perubahan Peran Pengguna (Role Mutation Exception Fix)**:
+  - **Database Migration (`supabase/migrations/20260829094500_fix_protect_profile_role_update_service_role.sql`)**: Memperbarui fungsi trigger `protect_profile_role_update()` di PostgreSQL agar mengizinkan pemanggilan yang menggunakan `service_role` key (`auth.role() = 'service_role'`).
+  - **Perbaikan Perizinan Server Action (`lib/actions/admin-users.ts`)**: Menyelesaikan masalah kegagalan memperbarui profil/role pengguna oleh Super Admin yang sebelumnya memicu error `Akses ditolak: Hanya Super Admin yang dapat mengubah role pengguna.` saat menggunakan client `adminDb`.
+
 ## [0.6.0] - 2026-08-29
 
 ### Added
@@ -225,7 +233,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Setup Husky pre-commit hook dan Commitlint.
 - Setup Next.js dengan pnpm.
 
-[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/zakyrmh/robotik-pnp/compare/v0.6.0...v0.6.1
+[0.6.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.2.2...v0.3.0
