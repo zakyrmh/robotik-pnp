@@ -39,11 +39,13 @@ export default async function ActivityAttendanceDetailPage({
     redirect("/presensi");
   }
 
+  let data;
   try {
-    const data = await getActivityAttendanceDetail(id);
-    return <ActivityAttendanceDetailClient initialData={data} />;
+    data = await getActivityAttendanceDetail(id);
   } catch (err: unknown) {
     console.error("Gagal memuat rekap presensi kegiatan:", err);
     redirect("/presensi");
   }
+
+  return <ActivityAttendanceDetailClient initialData={data} />;
 }

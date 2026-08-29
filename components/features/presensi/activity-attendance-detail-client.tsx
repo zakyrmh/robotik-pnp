@@ -70,7 +70,7 @@ export function ActivityAttendanceDetailClient({
   initialData,
 }: ActivityAttendanceDetailClientProps) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
 
   const [data] = useState<ActivityAttendanceDetailResult>(initialData);
   const [search, setSearch] = useState("");

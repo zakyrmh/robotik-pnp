@@ -10,7 +10,6 @@ import {
   UserGroupIcon,
   ArrowLeft01Icon,
   CheckmarkCircle01Icon,
-  UserCheck01Icon,
 } from "@hugeicons/core-free-icons";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
@@ -133,10 +132,6 @@ export default async function ActivityDetailPage({
     ? new Date(activity.checkin_close_at)
     : new Date(activity.end_date);
   const isAttendanceActive = now >= openTime && now <= closeTime;
-
-  const isKomdisOrSuperAdmin = ["admin-komdis", "super-admin"].includes(
-    userRole,
-  );
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6 px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
