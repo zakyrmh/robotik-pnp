@@ -50,9 +50,9 @@ async function verifyKomdisRole() {
   if (
     profileError ||
     !profile ||
-    !["admin-komdis", "super-admin"].includes(profile.role)
+    !["admin-komdis", "super-admin", "admin-or"].includes(profile.role)
   ) {
-    throw new Error("Forbidden: Akses khusus Komisi Disiplin.");
+    throw new Error("Forbidden: Akses khusus pengelola kegiatan (Komdis/OR/Super Admin).");
   }
 
   return { supabase, user };
@@ -383,7 +383,7 @@ export async function recordSelfAttendanceKomdis(activityId: string) {
   }
 
   revalidatePath(`/kegiatan/${activityId}`);
-  revalidatePath(`/kegiatan/${activityId}/absensi`);
+  revalidatePath(`/presensi/${activityId}`);
   return {
     success: true,
     message:
@@ -692,12 +692,15 @@ export async function recordManualAttendance(rawInput: ManualAttendanceInput) {
 
   const now = new Date().toISOString();
 
+  const pointsAwarded =
+    validated.status === "magang" ? 0 : validated.pointsAwarded;
+
   const { error } = await supabase.from("attendances").upsert(
     {
       activity_id: validated.activityId,
       profile_id: validated.profileId,
       status: validated.status,
-      points_awarded: validated.pointsAwarded,
+      points_awarded: pointsAwarded,
       notes: validated.notes || null,
       approval_status: "approved",
       verified_by: user.id,
@@ -732,6 +735,30 @@ export async function recordManualAttendance(rawInput: ManualAttendanceInput) {
 // REKAP PRESENSI KOMDIS (REKAP PER ANGGOTA & REKAP PER KEGIATAN)
 // ============================================================================
 
+function normalizePhotoUrl(
+  url: string | null | undefined,
+): string | null {
+  if (!url || typeof url !== "string") return null;
+  const trimmed = url.trim();
+  if (
+    !trimmed ||
+    trimmed === "Belum Diisi" ||
+    trimmed === "null" ||
+    trimmed === "undefined" ||
+    trimmed === "-"
+  ) {
+    return null;
+  }
+  if (
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("/")
+  ) {
+    return trimmed;
+  }
+  return null;
+}
+
 export interface KomdisMemberAttendanceItem {
   profileId: string;
   fullName: string;
@@ -745,7 +772,7 @@ export interface KomdisMemberAttendanceItem {
   internshipEndDate: string | null;
   attendances: Record<
     string,
-    "hadir" | "telat" | "izin" | "sakit" | "alfa" | null
+    "hadir" | "telat" | "izin" | "sakit" | "alfa" | "magang" | null
   >;
   totals: {
     hadir: number;
@@ -753,6 +780,7 @@ export interface KomdisMemberAttendanceItem {
     izin: number;
     sakit: number;
     alfa: number;
+    magang: number;
   };
   totalPoints: number;
 }
@@ -771,6 +799,7 @@ export interface KomdisActivitySummaryItem {
     izin: number;
     sakit: number;
     alfa: number;
+    magang: number;
     unrecorded: number;
   };
   attendanceRate: number;
@@ -939,9 +968,16 @@ export async function getKomdisMemberAttendanceSummary(): Promise<{
 
     const userAttendances: Record<
       string,
-      "hadir" | "telat" | "izin" | "sakit" | "alfa" | null
+      "hadir" | "telat" | "izin" | "sakit" | "alfa" | "magang" | null
     > = {};
-    const totals = { hadir: 0, telat: 0, izin: 0, sakit: 0, alfa: 0 };
+    const totals = {
+      hadir: 0,
+      telat: 0,
+      izin: 0,
+      sakit: 0,
+      alfa: 0,
+      magang: 0,
+    };
     let totalPoints = 0;
 
     for (const activity of activities ?? []) {
@@ -952,6 +988,7 @@ export async function getKomdisMemberAttendanceSummary(): Promise<{
         | "izin"
         | "sakit"
         | "alfa"
+        | "magang"
         | null;
 
       userAttendances[activity.id] = status;
@@ -968,7 +1005,7 @@ export async function getKomdisMemberAttendanceSummary(): Promise<{
       profileId,
       fullName: prof.full_name || reg?.full_name || "—",
       nim: prof.nim || "—",
-      photoUrl: prof.avatar_url || reg?.photo_url || null,
+      photoUrl: normalizePhotoUrl(prof.avatar_url || reg?.photo_url),
       role: prof.role || "anggota",
       studyProgramName: sp ? `${sp.degree} ${sp.name}` : "—",
       majorName: major?.name || "—",
@@ -1040,11 +1077,25 @@ export async function getKomdisActivityAttendanceSummary(): Promise<
 
   const countsMap: Record<
     string,
-    { hadir: number; telat: number; izin: number; sakit: number; alfa: number }
+    {
+      hadir: number;
+      telat: number;
+      izin: number;
+      sakit: number;
+      alfa: number;
+      magang: number;
+    }
   > = {};
 
   for (const act of activities) {
-    countsMap[act.id] = { hadir: 0, telat: 0, izin: 0, sakit: 0, alfa: 0 };
+    countsMap[act.id] = {
+      hadir: 0,
+      telat: 0,
+      izin: 0,
+      sakit: 0,
+      alfa: 0,
+      magang: 0,
+    };
   }
 
   for (const att of attData ?? []) {
@@ -1062,13 +1113,20 @@ export async function getKomdisActivityAttendanceSummary(): Promise<
       izin: 0,
       sakit: 0,
       alfa: 0,
+      magang: 0,
     };
     const totalRecorded =
-      counts.hadir + counts.telat + counts.izin + counts.sakit + counts.alfa;
+      counts.hadir +
+      counts.telat +
+      counts.izin +
+      counts.sakit +
+      counts.alfa +
+      counts.magang;
     const unrecorded = Math.max(0, totalExpected - totalRecorded);
+    const totalWajibHadir = totalExpected - counts.magang;
     const attendanceRate =
-      totalExpected > 0
-        ? Math.round(((counts.hadir + counts.telat) / totalExpected) * 100)
+      totalWajibHadir > 0
+        ? Math.round(((counts.hadir + counts.telat) / totalWajibHadir) * 100)
         : 0;
 
     return {
@@ -1099,7 +1157,14 @@ export interface ActivityAttendanceMemberDetail {
   role: string;
   studyProgramName: string;
   majorName: string;
-  status: "hadir" | "telat" | "izin" | "sakit" | "alfa" | "unrecorded";
+  status:
+    | "hadir"
+    | "telat"
+    | "izin"
+    | "sakit"
+    | "alfa"
+    | "magang"
+    | "unrecorded";
   checkInAt: string | null;
   notes: string | null;
   proofUrl: string | null;
@@ -1124,6 +1189,7 @@ export interface ActivityAttendanceDetailResult {
       izin: number;
       sakit: number;
       alfa: number;
+      magang: number;
       unrecorded: number;
     };
     attendanceRate: number;
@@ -1155,7 +1221,19 @@ export async function getActivityAttendanceDetail(
     throw new Error("Kegiatan tidak ditemukan atau telah dihapus.");
   }
 
-  // 2. Ambil seluruh anggota aktif (role admin & anggota) dari profiles
+  const targetRoles =
+    activity.target_audience === "caang"
+      ? ["caang"]
+      : [
+          "super-admin",
+          "admin-komdis",
+          "admin-or",
+          "admin-kestari",
+          "admin-divisi",
+          "anggota",
+        ];
+
+  // 2. Ambil seluruh peserta aktif berdasarkan target_audience
   const { data: profilesData, error: profError } = await supabaseAdmin
     .from("profiles")
     .select(
@@ -1168,6 +1246,9 @@ export async function getActivityAttendanceDetail(
       avatar_url,
       is_onboarded,
       deleted_at,
+      is_on_internship,
+      internship_start_date,
+      internship_end_date,
       registrations (
         full_name,
         photo_url,
@@ -1180,14 +1261,7 @@ export async function getActivityAttendanceDetail(
       )
     `,
     )
-    .in("role", [
-      "super-admin",
-      "admin-komdis",
-      "admin-or",
-      "admin-kestari",
-      "admin-divisi",
-      "anggota",
-    ])
+    .in("role", targetRoles)
     .is("deleted_at", null)
     .order("full_name", { ascending: true });
 
@@ -1237,6 +1311,9 @@ export async function getActivityAttendanceDetail(
     avatar_url: string | null;
     is_onboarded: boolean;
     deleted_at: string | null;
+    is_on_internship?: boolean;
+    internship_start_date?: string | null;
+    internship_end_date?: string | null;
     registrations:
       | {
           full_name: string | null;
@@ -1267,6 +1344,7 @@ export async function getActivityAttendanceDetail(
     izin: 0,
     sakit: 0,
     alfa: 0,
+    magang: 0,
     unrecorded: 0,
   };
   let totalPenaltyPoints = 0;
@@ -1290,8 +1368,19 @@ export async function getActivityAttendanceDetail(
     const profileId = prof.id;
 
     const att = attendanceMap[profileId];
+    const isOnInternship = Boolean(prof.is_on_internship);
+    const actStart = new Date(activity.start_date);
+    const inInternshipWindow =
+      isOnInternship &&
+      (!prof.internship_start_date ||
+        new Date(prof.internship_start_date) <= actStart) &&
+      (!prof.internship_end_date ||
+        new Date(prof.internship_end_date) >= actStart);
+
     const status = (att?.status ??
-      "unrecorded") as ActivityAttendanceMemberDetail["status"];
+      (inInternshipWindow
+        ? "magang"
+        : "unrecorded")) as ActivityAttendanceMemberDetail["status"];
     const pointsAwarded = att?.pointsAwarded || 0;
 
     if (status in counts) {
@@ -1303,7 +1392,7 @@ export async function getActivityAttendanceDetail(
       profileId,
       fullName: prof.full_name || reg?.full_name || "—",
       nim: prof.nim || "—",
-      photoUrl: prof.avatar_url || reg?.photo_url || null,
+      photoUrl: normalizePhotoUrl(prof.avatar_url || reg?.photo_url),
       role: prof.role || "anggota",
       studyProgramName: sp ? `${sp.degree} ${sp.name}` : "—",
       majorName: major?.name || "—",
@@ -1316,9 +1405,10 @@ export async function getActivityAttendanceDetail(
   });
 
   const totalExpected = members.length;
+  const totalWajibHadir = totalExpected - counts.magang;
   const attendanceRate =
-    totalExpected > 0
-      ? Math.round(((counts.hadir + counts.telat) / totalExpected) * 100)
+    totalWajibHadir > 0
+      ? Math.round(((counts.hadir + counts.telat) / totalWajibHadir) * 100)
       : 0;
 
   return {

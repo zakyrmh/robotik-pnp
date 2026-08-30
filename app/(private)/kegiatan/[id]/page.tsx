@@ -10,12 +10,13 @@ import {
   UserGroupIcon,
   ArrowLeft01Icon,
   CheckmarkCircle01Icon,
-  UserCheck01Icon,
 } from "@hugeicons/core-free-icons";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { ActivityItem } from "@/lib/actions/activities";
+import { ActivityDetailActions } from "@/components/features/kegiatan/activity-detail-actions";
+
 
 interface ActivityDetailPageProps {
   params: Promise<{
@@ -106,11 +107,6 @@ export default async function ActivityDetailPage({
 
   const userRole = profile?.role || "anggota";
 
-  // caang tidak diizinkan mengakses rute /kegiatan/[id]
-  if (userRole === "caang") {
-    redirect(`/kegiatan-absensi-caang/${activityId}`);
-  }
-
   const { data, error } = await supabase
     .from("activities")
     .select("*")
@@ -125,6 +121,11 @@ export default async function ActivityDetailPage({
   const activity = data as ActivityItem;
   const status = getActivityStatus(activity);
 
+  const canManage =
+    activity.target_audience === "caang"
+      ? ["super-admin", "admin-or"].includes(userRole)
+      : ["super-admin", "admin-komdis"].includes(userRole);
+
   const now = new Date();
   const openTime = activity.checkin_open_at
     ? new Date(activity.checkin_open_at)
@@ -133,10 +134,6 @@ export default async function ActivityDetailPage({
     ? new Date(activity.checkin_close_at)
     : new Date(activity.end_date);
   const isAttendanceActive = now >= openTime && now <= closeTime;
-
-  const isKomdisOrSuperAdmin = ["admin-komdis", "super-admin"].includes(
-    userRole,
-  );
 
   return (
     <div className="w-full max-w-5xl mx-auto space-y-6 px-3 sm:px-4 lg:px-6 py-4 sm:py-6">
@@ -260,7 +257,7 @@ export default async function ActivityDetailPage({
             <span className="text-xs font-semibold text-foreground uppercase block mt-0.5">
               {activity.target_audience === "caang"
                 ? "Calon Anggota (Caang)"
-                : "Anggota & Pengurus"}
+                : "Anggota UKM Robotik PNP"}
             </span>
             <span className="text-micro text-muted-foreground block mt-0.5">
               Target Audiens Formal
@@ -294,37 +291,18 @@ export default async function ActivityDetailPage({
           <span className="text-micro text-muted-foreground block mt-0.5">
             {isAttendanceActive
               ? "Jendela presensi sedang dibuka! Anda dapat mengisi absensi sekarang."
-              : "Gunakan tombol di sebelah kanan untuk mengakses halaman absensi atau rekap."}
+              : "Gunakan tombol di sebelah kanan untuk mengakses halaman presensi atau rekap."}
           </span>
         </div>
 
-        <div className="flex flex-wrap items-center justify-center gap-2.5 w-full sm:w-auto">
-          {isKomdisOrSuperAdmin && (
-            <Button
-              asChild
-              variant="outline"
-              size="sm"
-              className="rounded-md border-primary text-primary hover:bg-primary-soft text-xs font-medium h-9 px-4 w-full sm:w-auto"
-            >
-              <Link href={`/kegiatan/${activity.id}/presensi`}>
-                <HugeiconsIcon icon={UserCheck01Icon} size={15} />
-                Rekap Presensi Komdis
-              </Link>
-            </Button>
-          )}
-
-          <Button
-            asChild
-            size="sm"
-            className="rounded-md bg-primary text-primary-foreground hover:bg-primary-hover text-xs font-medium h-9 px-4 w-full sm:w-auto"
-          >
-            <Link href={`/kegiatan/${activity.id}/absensi`}>
-              <HugeiconsIcon icon={CheckmarkCircle01Icon} size={15} />
-              {isAttendanceActive ? "Absen Sekarang" : "Buka Modul Absensi"}
-            </Link>
-          </Button>
-        </div>
+        <ActivityDetailActions
+          activity={activity}
+          userRole={userRole}
+          canManage={canManage}
+          isAttendanceActive={isAttendanceActive}
+        />
       </div>
     </div>
   );
 }
+

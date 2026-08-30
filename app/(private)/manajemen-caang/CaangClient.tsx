@@ -57,6 +57,25 @@ interface CaangClientProps {
   initialCaang: CaangItem[];
 }
 
+function isValidImageUrl(url: string | null | undefined): url is string {
+  if (!url || typeof url !== "string") return false;
+  const trimmed = url.trim();
+  if (
+    !trimmed ||
+    trimmed === "Belum Diisi" ||
+    trimmed === "null" ||
+    trimmed === "undefined" ||
+    trimmed === "-"
+  ) {
+    return false;
+  }
+  return (
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("/")
+  );
+}
+
 export function CaangClient({ initialCaang }: CaangClientProps) {
   const router = useRouter();
 
@@ -672,7 +691,7 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                       {/* Avatar Cell */}
                       <td className="p-4 align-middle text-center">
                         <div className="relative h-10 w-10 mx-auto rounded-none border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 overflow-hidden flex items-center justify-center">
-                          {item.photoUrl ? (
+                          {isValidImageUrl(item.photoUrl) ? (
                             <Image
                               src={item.photoUrl}
                               alt={item.fullName}
@@ -789,7 +808,7 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                         className="h-4 w-4 rounded-none accent-[#1c69d4] cursor-pointer"
                       />
                       <div className="relative h-10 w-10 rounded-none border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 overflow-hidden flex items-center justify-center">
-                        {item.photoUrl ? (
+                        {isValidImageUrl(item.photoUrl) ? (
                           <Image
                             src={item.photoUrl}
                             alt={item.fullName}
@@ -900,7 +919,7 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                 {/* Section 1: Utama & Foto */}
                 <div className="flex flex-col sm:flex-row gap-4 items-start pb-4 border-b border-zinc-100 dark:border-zinc-900">
                   <div className="relative h-28 w-24 shrink-0 rounded-none border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 overflow-hidden flex items-center justify-center">
-                    {viewingCaang.photoUrl ? (
+                    {isValidImageUrl(viewingCaang.photoUrl) ? (
                       <Image
                         src={viewingCaang.photoUrl}
                         alt={viewingCaang.fullName}

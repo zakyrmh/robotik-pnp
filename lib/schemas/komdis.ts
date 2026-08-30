@@ -35,7 +35,7 @@ export type ReviewLeaveInput = z.infer<typeof ReviewLeaveSchema>;
 export const ManualAttendanceSchema = z.object({
   activityId: z.string().uuid("ID kegiatan tidak valid"),
   profileId: z.string().uuid("ID profil tidak valid"),
-  status: z.enum(["hadir", "telat", "izin", "sakit", "alfa"]),
+  status: z.enum(["hadir", "telat", "izin", "sakit", "alfa", "magang"]),
   pointsAwarded: z.number().int().nonnegative().default(0),
   notes: z.string().optional(),
 });

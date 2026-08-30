@@ -311,15 +311,15 @@ export function KomdisActivityAttendanceTab({
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => router.push(`/kegiatan/${act.id}/presensi`)}
+                    onClick={() => router.push(`/presensi/${act.id}`)}
                     className="rounded-lg border border-slate-200 dark:border-slate-700 text-[#0a192f] dark:text-slate-200 h-9 font-mono text-[11px] uppercase tracking-wider px-3"
                   >
                     <HugeiconsIcon icon={EyeIcon} size={14} className="mr-1" />
-                    Detail Agenda
+                    Detail Presensi
                   </Button>
                   <Button
                     size="sm"
-                    onClick={() => router.push(`/kegiatan/${act.id}/absensi`)}
+                    onClick={() => router.push(`/presensi/${act.id}`)}
                     className="rounded-lg bg-[#1e3a8a] dark:bg-blue-600 text-white hover:bg-[#1e40af] dark:hover:bg-blue-500 h-9 font-mono text-[11px] uppercase tracking-wider px-3"
                   >
                     <HugeiconsIcon
@@ -458,6 +458,15 @@ export function KomdisActivityAttendanceTab({
                           |
                         </span>
                         <span
+                          className="text-purple-600 dark:text-purple-400 font-bold"
+                          title="Magang"
+                        >
+                          {act.counts.magang}M
+                        </span>
+                        <span className="text-slate-300 dark:text-slate-700">
+                          |
+                        </span>
+                        <span
                           className="text-red-600 dark:text-red-400 font-bold"
                           title="Alfa"
                         >
@@ -476,20 +485,20 @@ export function KomdisActivityAttendanceTab({
                           size="sm"
                           variant="outline"
                           onClick={() =>
-                            router.push(`/kegiatan/${act.id}/presensi`)
+                            router.push(`/presensi/${act.id}`)
                           }
                           className="rounded-lg border border-slate-200 dark:border-slate-700 text-[#0a192f] dark:text-slate-200 h-8 px-2.5 font-mono text-[11px] uppercase tracking-wider"
-                          title="Lihat Detail Agenda"
+                          title="Lihat Detail Rekap Presensi"
                         >
                           <HugeiconsIcon icon={EyeIcon} size={14} />
                         </Button>
                         <Button
                           size="sm"
                           onClick={() =>
-                            router.push(`/kegiatan/${act.id}/absensi`)
+                            router.push(`/presensi/${act.id}`)
                           }
                           className="rounded-lg bg-[#1e3a8a] dark:bg-blue-600 text-white hover:bg-[#1e40af] dark:hover:bg-blue-500 h-8 px-2.5 font-mono text-[11px] uppercase tracking-wider"
-                          title="Scan Presensi QR"
+                          title="Presensi QR"
                         >
                           <HugeiconsIcon icon={QrCodeIcon} size={14} />
                         </Button>

@@ -1,6 +1,6 @@
 {
   "name": "sistem-informasi-manajemen-ukm-robotik-pnp",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -69,7 +69,7 @@
     "lint-staged": "^17.0.2",
     "prettier": "^3.8.4",
     "standard-version": "^9.5.0",
-    "supabase": "^2.115.0",
+    "supabase": "^2.116.0",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.6"

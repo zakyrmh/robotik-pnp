@@ -77,18 +77,46 @@ function formatIndoDateTime(dateStr: string) {
 
 export function TrashActivitiesClient({
   initialDeletedActivities,
-  targetAudience,
+  targetAudience: initialAudienceProp,
   backPath,
+  userRole,
 }: TrashActivitiesClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
-  const [deletedActivities] = useState<ActivityItem[]>(
+  const [activeAudience, setActiveAudience] = useState<"caang" | "anggota">(
+    initialAudienceProp || (userRole === "admin-or" ? "caang" : "anggota"),
+  );
+  const [deletedActivities, setDeletedActivities] = useState<ActivityItem[]>(
     initialDeletedActivities,
   );
   const [hardDeleting, setHardDeleting] = useState<ActivityItem | null>(null);
   const [isHardDeleting, setIsHardDeleting] = useState(false);
   const [restoringId, setRestoringId] = useState<string | null>(null);
+  const [loadingData, setLoadingData] = useState(false);
+
+  const canSwitchAudience = userRole === "super-admin" || userRole === "admin-or";
+
+  const handleAudienceChange = async (aud: "caang" | "anggota") => {
+    setActiveAudience(aud);
+    setLoadingData(true);
+    try {
+      const { createClient } = await import("@/lib/supabase/client");
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("activities")
+        .select("*")
+        .eq("target_audience", aud)
+        .not("deleted_at", "is", null)
+        .order("deleted_at", { ascending: false });
+      setDeletedActivities((data as ActivityItem[]) || []);
+    } catch (err) {
+      console.error("Gagal memuat sampah kegiatan:", err);
+      toast.error("Gagal memuat sampah kegiatan.");
+    } finally {
+      setLoadingData(false);
+    }
+  };
 
   const handleRestore = async (activityId: string) => {
     setRestoringId(activityId);
@@ -98,6 +126,7 @@ export function TrashActivitiesClient({
       toast.dismiss(toastId);
       if (res.success) {
         toast.success(res.message);
+        setDeletedActivities((prev) => prev.filter((item) => item.id !== activityId));
         startTransition(() => router.refresh());
       } else {
         toast.error(res.message);
@@ -119,6 +148,7 @@ export function TrashActivitiesClient({
       toast.dismiss(toastId);
       if (res.success) {
         toast.success(res.message);
+        setDeletedActivities((prev) => prev.filter((item) => item.id !== hardDeleting.id));
         setHardDeleting(null);
         startTransition(() => router.refresh());
       } else {
@@ -133,12 +163,12 @@ export function TrashActivitiesClient({
   };
 
   const audienceLabel =
-    targetAudience === "anggota" ? "Kegiatan Anggota" : "Kegiatan Caang";
+    activeAudience === "anggota" ? "Kegiatan Anggota" : "Kegiatan Caang";
 
   return (
     <div className="flex w-full max-w-7xl mx-auto flex-col gap-6 px-2 sm:px-4 lg:px-6">
       {/* ── Header ──────────────────────────────────────────────────────── */}
-      <div className="border border-border bg-card rounded-lg p-4 sm:p-6">
+      <div className="border border-border bg-card rounded-lg p-4 sm:p-6 space-y-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-md bg-primary-soft text-primary shrink-0">
@@ -164,7 +194,35 @@ export function TrashActivitiesClient({
             Kembali ke Agenda
           </Button>
         </div>
+
+        {canSwitchAudience && (
+          <div className="flex border-b border-border pt-2 gap-2">
+            <button
+              type="button"
+              onClick={() => handleAudienceChange("caang")}
+              className={`px-4 py-2 text-xs font-mono uppercase tracking-wider font-semibold border-b-2 transition-colors cursor-pointer ${
+                activeAudience === "caang"
+                  ? "border-primary text-primary font-bold"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Sampah Caang
+            </button>
+            <button
+              type="button"
+              onClick={() => handleAudienceChange("anggota")}
+              className={`px-4 py-2 text-xs font-mono uppercase tracking-wider font-semibold border-b-2 transition-colors cursor-pointer ${
+                activeAudience === "anggota"
+                  ? "border-primary text-primary font-bold"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Sampah Anggota
+            </button>
+          </div>
+        )}
       </div>
+
 
       {/* ── Content Area ───────────────────────────────────────────────── */}
       {deletedActivities.length === 0 ? (

@@ -680,6 +680,28 @@ export async function hardDeleteActivity(
   }
 }
 
+function normalizePhotoUrl(url: string | null | undefined): string | null {
+  if (!url || typeof url !== "string") return null;
+  const trimmed = url.trim();
+  if (
+    !trimmed ||
+    trimmed === "Belum Diisi" ||
+    trimmed === "null" ||
+    trimmed === "undefined" ||
+    trimmed === "-"
+  ) {
+    return null;
+  }
+  if (
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("/")
+  ) {
+    return trimmed;
+  }
+  return null;
+}
+
 // ─── GET: Rekap Absensi Semua Caang ──────────────────────────────────────────
 
 export async function getAttendanceSummary(): Promise<
@@ -864,8 +886,7 @@ export async function getAttendanceSummary(): Promise<
         profileId,
         fullName: reg.full_name || "—",
         nim: profile?.nim || "—",
-        // photo_url disimpan sebagai full URL di tabel registrations
-        photoUrl: reg.photo_url || "",
+        photoUrl: normalizePhotoUrl(reg.photo_url),
         studyProgramName: sp ? `${sp.degree} ${sp.name}` : "—",
         majorName: major?.name || "—",
         attendances: userAttendances,
@@ -1109,7 +1130,7 @@ export async function getActivityAttendances(activityId: string): Promise<
         profileId,
         fullName: reg.full_name || "—",
         nim: profile?.nim || "—",
-        photoUrl: reg.photo_url || "",
+        photoUrl: normalizePhotoUrl(reg.photo_url),
         studyProgramName: sp ? `${sp.degree} ${sp.name}` : "—",
         majorName: major?.name || "—",
         attendances: userAttendances,

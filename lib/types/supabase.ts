@@ -747,7 +747,7 @@ export type Database = {
     };
     Enums: {
       activity_target: "caang" | "anggota";
-      attendance_status: "hadir" | "izin" | "sakit" | "alfa";
+      attendance_status: "hadir" | "izin" | "sakit" | "alfa" | "magang";
       gender_type: "L" | "P";
       piket_day:
         | "Senin"
@@ -899,7 +899,7 @@ export const Constants = {
   public: {
     Enums: {
       activity_target: ["caang", "anggota"],
-      attendance_status: ["hadir", "izin", "sakit", "alfa"],
+      attendance_status: ["hadir", "izin", "sakit", "alfa", "magang"],
       gender_type: ["L", "P"],
       piket_day: [
         "Senin",

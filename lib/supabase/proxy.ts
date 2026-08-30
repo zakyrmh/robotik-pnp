@@ -130,13 +130,12 @@ export async function updateSession(request: NextRequest) {
   const internalProtectedRoutes = [
     "/dashboard",
     "/kegiatan",
-    "/absensi",
+    "/presensi",
     "/tugas",
     "/magang",
     "/piket",
     "/manajemen-kelompok",
     "/manajemen-caang",
-    "/kegiatan-absensi-caang",
     "/settings",
   ];
   const protectedRoutes = [
@@ -230,7 +229,7 @@ export async function updateSession(request: NextRequest) {
       // Kondisi 5: Caang Resmi Terverifikasi (Masa Pembinaan/OR)
       const allowedCaangRoutes = [
         "/dashboard",
-        "/absensi",
+        "/presensi",
         "/kegiatan",
         "/tugas",
         "/settings",
@@ -243,7 +242,7 @@ export async function updateSession(request: NextRequest) {
       // Kondisi 6: Anggota Tetap / Pengurus Lama (Legacy Member)
       const allowedAnggotaRoutes = [
         "/dashboard",
-        "/absensi",
+        "/presensi",
         "/kegiatan",
         "/piket",
         "/settings",

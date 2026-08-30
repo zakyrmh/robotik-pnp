@@ -7,6 +7,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-08-30
+
+### Added
+
+- **Enum Status Presensi "Magang" (Dispensasi PKL / Magang Luar)**:
+  - **Database Migration (`supabase/migrations/20260830100000_add_magang_attendance_status.sql`)**: Menambahkan nilai `'magang'` ke enum PostgreSQL `public.attendance_status`.
+  - **Type System & Schema Validation (`types/database.types.ts`, `lib/types/supabase.ts`, `lib/schemas/komdis.ts`)**: Menyinkronkan type definitions dan Zod schema `ManualAttendanceSchema` untuk menerima status `"magang"`.
+  - **Auto-Assign Status & Dispensasi 0 Poin (`lib/actions/komdis.ts`)**:
+    - Deteksi otomatis anggota aktif yang berstatus `is_on_internship == true` pada rentang jadwal kegiatan sebagai `"magang"`.
+    - Menetapkan **0 Poin Sanksi** secara otomatis untuk status `"magang"`.
+  - **UI & Telemetri Presensi (`activity-attendance-detail-client.tsx`, `komdis-activity-attendance-tab.tsx`, `komdis-member-attendance-tab.tsx`, `personal-attendance-tab.tsx`)**:
+    - Menambahkan widget telemetri `MAGANG` (Purple Accent), badge **MAGANG** berdesain Purple Soft, opsi dropdown filter status, dan opsi presensi manual pada Drawer Komdis.
+    - Menambahkan indikator `M` (Magang) pada matriks rekap presensi per kegiatan dan per anggota Komdis.
+
+- **Restrukturisasi & Pemisahan Domain Modul Kegiatan (CRUD) vs Presensi (Absensi)**:
+  - **Sub-Rute Presensi `/presensi/[id]` & Pemindai QR (`app/(private)/presensi/[id]/page.tsx`)**:
+    - Membuat halaman rekapitulasi detail presensi kegiatan Komdis di `/presensi/[id]`.
+    - Pemisahan domain tampilan Scanner QR Komdis dan Presensi Diri peserta.
+  - **Tombol Pintasan Presensi Berbasis Jendela Waktu (`components/features/kegiatan/kegiatan-client.tsx`)**:
+    - Menambahkan tombol **"Presensi"** di sebelah tombol **"Detail"** pada daftar kegiatan.
+    - Mengatur visibilitas tombol secara kondisional agar hanya muncul ketika waktu sekarang berada dalam rentang jendela presensi (`checkin_open_at` s/d `checkin_close_at`).
+
+### Changed
+
+- **Formulasi Rasio Presensi (%) (`lib/actions/komdis.ts`)**:
+  - Memperbarui kueri `getActivityAttendanceDetail` dan `getKomdisActivityAttendanceSummary` agar anggota berstatus `magang` dipisahkan dari penyebut perhitungan kehadiran:
+    $$\text{Rasio Presensi} = \frac{\text{Hadir} + \text{Telat}}{\text{Total Anggota} - \text{Total Magang}} \times 100\%$$
+- **Penyederhanaan Tampilan Pemindai Scanner Komdis (`components/features/komdis/komdis-scanner-view.tsx`)**:
+  - Menghapus modal pop-up "Override Manual" dan tombol "Batch Alfa" yang berlebih pada tab scanner Komdis.
+  - Menghapus folder/file redundant `/app/(private)/presensi/[id]/absensi` dan `/app/(private)/presensi/[id]/presensi`.
+
+### Fixed
+
+- **Sanitasi Foto Profil Anggota & Custom Type Guard TypeScript (`url is string`)**:
+  - Menyaring string bawaan `"Belum Diisi"`, `"null"`, `"undefined"`, `-` pada _backend action_ (`lib/actions/komdis.ts` & `lib/actions/activities.ts`).
+  - Mengimplementasikan Custom Type Guard `isValidImageUrl(url): url is string` pada komponen UI presensi untuk mengeliminasi crash `TypeError: Failed to construct 'URL': Invalid URL` dan kompilasi error TypeScript `TS2322`.
+
 ## [0.6.1] - 2026-08-29
 
 ### Fixed
@@ -233,7 +270,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Setup Husky pre-commit hook dan Commitlint.
 - Setup Next.js dengan pnpm.
 
-[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.6.1...HEAD
+[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/zakyrmh/robotik-pnp/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.4.0...v0.5.0

@@ -29,23 +29,24 @@ export default async function KomdisTrashPage() {
 
   const rawProfile = profile as { id: string; role: string } | null;
 
-  // Hanya admin-komdis dan super-admin yang diizinkan mengakses sampah kegiatan anggota
-  if (
-    !rawProfile ||
-    (rawProfile.role !== "admin-komdis" && rawProfile.role !== "super-admin")
-  ) {
+  const allowedRoles = ["super-admin", "admin-komdis", "admin-or"];
+  if (!rawProfile || !allowedRoles.includes(rawProfile.role)) {
     redirect("/kegiatan");
   }
 
-  const res = await getDeletedActivities("anggota");
+  const initialAudience: "caang" | "anggota" =
+    rawProfile.role === "admin-or" ? "caang" : "anggota";
+
+  const res = await getDeletedActivities(initialAudience);
   const deletedActivities = res.success && res.data ? res.data : [];
 
   return (
     <TrashActivitiesClient
       initialDeletedActivities={deletedActivities}
-      targetAudience="anggota"
+      targetAudience={initialAudience}
       backPath="/kegiatan"
       userRole={rawProfile.role}
     />
   );
 }
+
