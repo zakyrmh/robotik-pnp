@@ -29,7 +29,7 @@ interface RawInternship {
 
 interface RawPiketMember {
   piket_schedules: {
-    day: string;
+    week_number: number;
   } | null;
 }
 
@@ -159,23 +159,20 @@ export default async function DashboardPage() {
     // 1. Piket assignment
     const { data: piketMembers } = await supabase
       .from("piket_members")
-      .select("piket_schedules(day)")
+      .select("piket_schedules(week_number)")
       .eq("profile_id", user.id);
     const piketDays = ((piketMembers as unknown as RawPiketMember[]) || [])
-      .map((pm) => pm.piket_schedules?.day)
+      .map((pm) =>
+        pm.piket_schedules?.week_number
+          ? `Minggu ${pm.piket_schedules.week_number}`
+          : null,
+      )
       .filter(Boolean) as string[];
 
-    const daysMap = [
-      "Minggu",
-      "Senin",
-      "Selasa",
-      "Rabu",
-      "Kamis",
-      "Jumat",
-      "Sabtu",
-    ] as const;
-    const todayDayName = daysMap[new Date().getDay()];
-    const isScheduledToday = piketDays.includes(todayDayName);
+    const currentWeekNumber = Math.ceil(new Date().getDate() / 7);
+    const isScheduledToday = (
+      (piketMembers as unknown as RawPiketMember[]) || []
+    ).some((pm) => pm.piket_schedules?.week_number === currentWeekNumber);
 
     // 2. Piket reports submitted
     const { count: piketLogsCount } = await supabase
@@ -301,23 +298,20 @@ export default async function DashboardPage() {
     // 5. Piket assignment for admin-komdis (as a member)
     const { data: piketMembers } = await supabase
       .from("piket_members")
-      .select("piket_schedules(day)")
+      .select("piket_schedules(week_number)")
       .eq("profile_id", user.id);
     const piketDays = ((piketMembers as unknown as RawPiketMember[]) || [])
-      .map((pm) => pm.piket_schedules?.day)
+      .map((pm) =>
+        pm.piket_schedules?.week_number
+          ? `Minggu ${pm.piket_schedules.week_number}`
+          : null,
+      )
       .filter(Boolean) as string[];
 
-    const daysMap = [
-      "Minggu",
-      "Senin",
-      "Selasa",
-      "Rabu",
-      "Kamis",
-      "Jumat",
-      "Sabtu",
-    ] as const;
-    const todayDayName = daysMap[new Date().getDay()];
-    const isScheduledToday = piketDays.includes(todayDayName);
+    const currentWeekNumber = Math.ceil(new Date().getDate() / 7);
+    const isScheduledToday = (
+      (piketMembers as unknown as RawPiketMember[]) || []
+    ).some((pm) => pm.piket_schedules?.week_number === currentWeekNumber);
 
     // 6. Piket reports submitted by admin-komdis
     const { count: piketLogsCount } = await supabase

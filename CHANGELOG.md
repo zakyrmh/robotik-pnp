@@ -7,7 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.7.0] - 2026-08-30
+## [0.7.1] - 2026-08-31
+
+### Added
+
+- **Penguraian & Pratinjau Dokumentasi Piket Kebersihan (Sebelum vs Sesudah)**:
+  - **Pemisahan Tombol Pratinjau Foto (`components/features/piket/piket-client.tsx`)**: Menyiapkan tombol **Sebelum** (Navy Soft) dan **Sesudah** (Emerald Soft) pada tampilan tabel desktop dan kartu mobile riwayat piket.
+  - **Modal Pratinjau Foto Interaktif dengan Tab Switcher (`components/features/piket/piket-client.tsx`)**: Menyediakan fitur pergantian tampilan foto Sebelum dan Sesudah secara langsung di dalam modal dialog tanpa perlu menutup dialog.
+  - **Dukungan Format Foto iPhone (HEIC/HEIF) & Kompresi Client (`lib/utils/image-processing.ts`)**: Integrasi konversi otomatis format `.heic` / `.heif` ke `.jpg` via `heic2any` dan kompresi di bawah 800 KB dengan preservasi EXIF `DateTimeOriginal`.
+
+### Changed
+
+- **Server-Side API Proxy R2 Idempotency (`lib/storage/r2.ts`)**:
+  - Memperbarui fungsi `getPublicR2Url()` agar membersihkan (_strip_) prefix `/api/r2/` atau `api/r2/` berulang untuk mencegah duplikasi URL `/api/r2/api/r2/...`.
+  - Memastikan seluruh pratinjau foto piket disalurkan via Server-Side Proxy (`/api/r2/[...key]`), 100% bebas dari pemblokiran ISP / Kominfo pada domain `*.r2.dev`.
+- **Penyelarasan Kueri PostgREST dengan Skema Database (`app/(private)/piket/page.tsx`)**:
+  - Menyelaraskan kueri Supabase `piket_logs` dan `piket_schedules` dengan skema resmi di `types/database.types.ts` untuk mengeliminasi error `PGRST204` _(column not found)_.
+  - Mengimplementasikan helper `parsePiketLogDetails()` untuk mengurai string log lama `Before URL: ... | After URL: ... | Notes: ...` secara otomatis sehingga kolom Catatan tampil bersih dari URL raw.
+
+### Fixed
+
+- **Resolusi RLS Policy Modul Piket (`supabase/migrations/20260831003000_fix_piket_logs_rls.sql` & `20260831004000_piket_logs_read_only.sql`)**:
+  - Mengizinkan pengiriman laporan piket bagi petugas piket terdaftar tanpa membatasi role khusus `anggota`.
+  - Mengamankan tabel `piket_logs` menjadi _Read-Only_ penuh untuk seluruh role (mengizinkan `SELECT` untuk semua pengguna terautentikasi dan melarang `UPDATE`/`DELETE`).
+- **Aksessibilitas Dialog Modal Radix UI (`components/features/piket/piket-client.tsx`)**: Menambahkan `DialogDescription` pada modal pratinjau foto piket untuk menghilangkan peringatan konsol React DevTools.
 
 ### Added
 
@@ -270,7 +293,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Setup Husky pre-commit hook dan Commitlint.
 - Setup Next.js dengan pnpm.
 
-[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.7.1...HEAD
+[0.7.1]: https://github.com/zakyrmh/robotik-pnp/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/zakyrmh/robotik-pnp/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.5.0...v0.6.0

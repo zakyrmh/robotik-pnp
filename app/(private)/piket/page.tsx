@@ -6,9 +6,9 @@ import { PiketClient } from "@/components/features/piket/piket-client";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const metadata: Metadata = {
-  title: "Manajemen Piket | UKM Robotik PNP",
+  title: "Piket Kebersihan Kesekretariatan & Workshop | UKM Robotik PNP",
   description:
-    "Modul jadwal piket kebersihan laboratorium dan pelaporan piket harian UKM Robotik PNP",
+    "Modul jadwal piket kebersihan ruang kesekretariatan dan ruang workshop DPH UKM Robotik PNP",
 };
 
 interface RawPiketLog {
@@ -16,19 +16,52 @@ interface RawPiketLog {
   duty_date: string;
   notes: string | null;
   proof_image_url: string;
-  is_verified: boolean;
-  schedule_id: string;
+  is_verified: boolean | null;
+  schedule_id: string | null;
   piket_schedules: {
+    id: string;
     day: string;
   } | null;
-  reported_by: string;
+  reported_by: string | null;
   profiles: {
     id: string;
     nim: string | null;
+    full_name?: string | null;
     registrations: {
       full_name: string;
     } | null;
   } | null;
+}
+
+function parsePiketLogDetails(log: {
+  notes: string | null;
+  proof_image_url: string;
+}) {
+  let beforeUrl = "";
+  let afterUrl = log.proof_image_url || "";
+  let cleanNotes = log.notes || "";
+
+  if (cleanNotes.includes("Before URL:")) {
+    const beforeMatch = cleanNotes.match(/Before URL:\s*([^\s|]+)/);
+    const afterMatch = cleanNotes.match(/After URL:\s*([^\s|]+)/);
+    const notesMatch = cleanNotes.match(/Notes:\s*(.*)$/);
+
+    if (beforeMatch && beforeMatch[1]) {
+      beforeUrl = beforeMatch[1];
+    }
+    if (afterMatch && afterMatch[1]) {
+      afterUrl = afterMatch[1];
+    }
+    if (notesMatch && notesMatch[1]) {
+      cleanNotes = notesMatch[1].trim();
+    }
+  }
+
+  return {
+    beforeUrl,
+    afterUrl,
+    cleanNotes,
+  };
 }
 
 interface RawPiketSchedule {
@@ -36,10 +69,12 @@ interface RawPiketSchedule {
   day: string;
   piket_members:
     | {
-        profile_id: string;
+        id: string;
+        profile_id: string | null;
         profiles: {
           id: string;
           nim: string | null;
+          full_name?: string | null;
           registrations: {
             full_name: string;
           } | null;
@@ -49,7 +84,7 @@ interface RawPiketSchedule {
 }
 
 interface RawPiketAssignment {
-  schedule_id: string;
+  schedule_id: string | null;
   piket_schedules: {
     id: string;
     day: string;
@@ -77,18 +112,20 @@ export default async function PiketPage() {
     redirect("/login");
   }
 
-  // 1. Fetch all schedules and their members for calendar view
-  const { data: schedules } = await supabase
+  // 1. Fetch all schedules across all periods
+  const { data: schedules, error: schedulesError } = await supabase
     .from("piket_schedules")
     .select(
       `
       id,
       day,
       piket_members (
+        id,
         profile_id,
         profiles (
           id,
           nim,
+          full_name,
           registrations (
             full_name
           )
@@ -96,10 +133,16 @@ export default async function PiketPage() {
       )
     `,
     )
-    .order("day");
+    .order("id", { ascending: true });
 
-  // 2. Fetch current user's schedule assignment
-  const { data: myAssignments } = await supabase
+  if (schedulesError) {
+    console.error("[PIKET_PAGE_ERROR] Schedules query error:", schedulesError);
+  }
+
+  const availablePeriods = ["2026/2027"];
+
+  // 2. Fetch current user's schedule assignments across all periods
+  const { data: myAssignments, error: assignmentsError } = await supabase
     .from("piket_members")
     .select(
       `
@@ -112,8 +155,15 @@ export default async function PiketPage() {
     )
     .eq("profile_id", user.id);
 
+  if (assignmentsError) {
+    console.error(
+      "[PIKET_PAGE_ERROR] Assignments query error:",
+      assignmentsError,
+    );
+  }
+
   // 3. Fetch piket logs (all logs, order by date desc)
-  const { data: logs } = await supabase
+  const { data: logs, error: logsError } = await supabase
     .from("piket_logs")
     .select(
       `
@@ -124,12 +174,14 @@ export default async function PiketPage() {
       is_verified,
       schedule_id,
       piket_schedules (
+        id,
         day
       ),
       reported_by,
-      profiles (
+      profiles:reported_by (
         id,
         nim,
+        full_name,
         registrations (
           full_name
         )
@@ -138,40 +190,65 @@ export default async function PiketPage() {
     )
     .order("duty_date", { ascending: false });
 
-  // Format logs data helper
+  if (logsError) {
+    console.error("[PIKET_PAGE_ERROR] Logs query error:", logsError);
+  }
+
+  // Format logs data
   const formattedLogs = ((logs as unknown as RawPiketLog[]) || []).map(
-    (log) => ({
-      id: log.id,
-      duty_date: log.duty_date,
-      notes: log.notes,
-      proof_image_url: log.proof_image_url,
-      is_verified: log.is_verified,
-      schedule_id: log.schedule_id,
-      schedule_day: log.piket_schedules?.day || "Tidak Diketahui",
-      reporter_id: log.reported_by,
-      reporter_name: log.profiles?.registrations?.full_name || "Anggota",
-      reporter_nim: log.profiles?.nim || "",
-    }),
+    (log) => {
+      const parsed = parsePiketLogDetails(log);
+      const dayName = log.piket_schedules?.day
+        ? `HARI ${log.piket_schedules.day.toUpperCase()}`
+        : "JADWAL PIKET";
+      return {
+        id: log.id,
+        duty_date: log.duty_date,
+        notes: parsed.cleanNotes,
+        proof_image_url: parsed.afterUrl,
+        proof_image_before_url: parsed.beforeUrl,
+        is_verified: log.is_verified ?? true,
+        schedule_id: log.schedule_id || "",
+        academic_period: "2026/2027",
+        schedule_day: dayName,
+        reporter_id: log.reported_by || "",
+        reporter_name:
+          log.profiles?.full_name ||
+          log.profiles?.registrations?.full_name ||
+          "Anggota",
+        reporter_nim: log.profiles?.nim || "",
+      };
+    },
   );
 
-  // Format schedules data helper
+  // Format schedules data
   const formattedSchedules = (
     (schedules as unknown as RawPiketSchedule[]) || []
   ).map((sched) => ({
     id: sched.id,
+    academic_period: "2026/2027",
+    week_number: 1,
     day: sched.day,
+    room_target: "Kesekretariatan & Workshop",
     members: (sched.piket_members || []).map((m) => ({
-      profile_id: m.profile_id,
+      member_id: m.id,
+      profile_id: m.profile_id || "",
       nim: m.profiles?.nim || "",
-      name: m.profiles?.registrations?.full_name || "Anggota",
+      name:
+        m.profiles?.full_name ||
+        m.profiles?.registrations?.full_name ||
+        "Anggota",
     })),
   }));
 
   const userAssignments = (
     (myAssignments as unknown as RawPiketAssignment[]) || []
   ).map((assign) => ({
-    schedule_id: assign.schedule_id,
-    day: assign.piket_schedules?.day || "",
+    schedule_id: assign.schedule_id || "",
+    academic_period: "2026/2027",
+    week_number: 1,
+    day: assign.piket_schedules?.day || "senin",
+    room_target: "Kesekretariatan & Workshop",
   }));
 
   return (
@@ -183,6 +260,7 @@ export default async function PiketPage() {
           role: profile.role,
           is_onboarded: profile.is_onboarded,
         }}
+        availablePeriods={availablePeriods}
         schedules={formattedSchedules}
         myAssignments={userAssignments}
         logs={formattedLogs}

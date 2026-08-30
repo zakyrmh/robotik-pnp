@@ -104,7 +104,16 @@ export async function deleteFromR2(key: string): Promise<boolean> {
 export function getPublicR2Url(key: string | null | undefined): string {
   if (!key) return "";
 
-  let cleanKey = key;
+  let cleanKey = key.trim();
+
+  // Strip duplicate /api/r2/ or api/r2/ prefix if key was already formatted
+  while (cleanKey.startsWith("/api/r2/") || cleanKey.startsWith("api/r2/")) {
+    if (cleanKey.startsWith("/api/r2/")) {
+      cleanKey = cleanKey.substring(8);
+    } else if (cleanKey.startsWith("api/r2/")) {
+      cleanKey = cleanKey.substring(7);
+    }
+  }
 
   // Jika key dalam bentuk URL r2.dev eksternal, ekstrak path key-nya
   if (cleanKey.includes(".r2.dev/")) {

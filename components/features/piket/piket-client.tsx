@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Image from "next/image";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -11,6 +12,7 @@ import {
   Delete02Icon,
   CheckmarkCircle01Icon,
   Image01Icon,
+  Settings02Icon,
 } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,9 +30,13 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { submitPiketReport } from "@/lib/actions/piket";
+import { getPiketWeekInfo } from "@/lib/utils/piket-date";
+import { getPublicR2Url } from "@/lib/storage/r2";
+import { processPiketImage } from "@/lib/utils/image-processing";
 
 interface PiketClientProps {
   profile: {
@@ -39,10 +45,14 @@ interface PiketClientProps {
     role: string;
     is_onboarded: boolean;
   };
+  availablePeriods?: string[];
   schedules: {
     id: string;
-    day: string;
+    academic_period?: string;
+    week_number: number;
+    room_target: string;
     members: {
+      member_id: string;
       profile_id: string;
       nim: string;
       name: string;
@@ -50,15 +60,19 @@ interface PiketClientProps {
   }[];
   myAssignments: {
     schedule_id: string;
-    day: string;
+    academic_period?: string;
+    week_number: number;
+    room_target: string;
   }[];
   logs: {
     id: string;
     duty_date: string;
     notes: string | null;
     proof_image_url: string;
+    proof_image_before_url?: string | null;
     is_verified: boolean;
     schedule_id: string;
+    academic_period?: string;
     schedule_day: string;
     reporter_id: string;
     reporter_name: string;
@@ -66,25 +80,29 @@ interface PiketClientProps {
   }[];
 }
 
-const INDO_DAYS = [
-  "Senin",
-  "Selasa",
-  "Rabu",
-  "Kamis",
-  "Jumat",
-  "Sabtu",
-] as const;
+const PEKAN_NUMBERS = [1, 2, 3, 4] as const;
 
 export function PiketClient({
   profile,
+  availablePeriods = ["2026/2027"],
   schedules,
   myAssignments,
   logs,
 }: PiketClientProps) {
   const router = useRouter();
 
-  // Selected schedule tab for viewing members
-  const [selectedDayTab, setSelectedDayTab] = useState<string>("Senin");
+  // Get current ISO cross-month week info
+  const weekInfo = getPiketWeekInfo(new Date());
+
+  // Active period state
+  const [selectedPeriod, setSelectedPeriod] = useState<string>(
+    availablePeriods[0] || "2026/2027",
+  );
+
+  // Selected schedule tab for viewing members (default to current week)
+  const [selectedWeekTab, setSelectedWeekTab] = useState<number>(
+    weekInfo.weekNumber,
+  );
 
   // Reporting states
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -102,53 +120,64 @@ export function PiketClient({
   const fileBeforeRef = useRef<HTMLInputElement>(null);
   const fileAfterRef = useRef<HTMLInputElement>(null);
 
-  // Image Preview Modal
-  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  // Image Preview Modal State
+  const [previewModal, setPreviewModal] = useState<{
+    beforeUrl: string | null;
+    afterUrl: string | null;
+    reporterName: string;
+    dutyDate: string;
+    activeTab: "before" | "after";
+  } | null>(null);
 
-  // Determine user's active schedule for today
-  const daysMap = [
-    "Minggu",
-    "Senin",
-    "Selasa",
-    "Rabu",
-    "Kamis",
-    "Jumat",
-    "Sabtu",
-  ] as const;
-  const todayDayName = daysMap[new Date().getDay()];
+  // Filter schedules and user assignments by selected period
+  const periodSchedules = schedules.filter(
+    (s) => !s.academic_period || s.academic_period === selectedPeriod,
+  );
 
-  // Check if today is a scheduled day for the user
-  const todayAssignment = myAssignments.find((a) => a.day === todayDayName);
-  const isScheduledToday = !!todayAssignment;
+  const periodAssignments = myAssignments.filter(
+    (a) => !a.academic_period || a.academic_period === selectedPeriod,
+  );
 
-  // Handle file drops & selections
-  const handleFileChange = (
+  const periodLogs = logs.filter(
+    (l) => !l.academic_period || l.academic_period === selectedPeriod,
+  );
+
+  // Check if current week is a scheduled week for the user in the selected period
+  const currentWeekAssignment = periodAssignments.find(
+    (a) => a.week_number === weekInfo.weekNumber,
+  );
+  const isScheduledThisWeek = !!currentWeekAssignment;
+
+  const isKestariAdmin =
+    profile.role === "super-admin" || profile.role === "admin-kestari";
+
+  // Handle file drops & selections with automatic compression & HEIC support
+  const handleFileChange = async (
     e: React.ChangeEvent<HTMLInputElement>,
     type: "before" | "after",
   ) => {
     if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      if (
-        !file.type.startsWith("image/jpeg") &&
-        !file.type.startsWith("image/jpg")
-      ) {
-        toast.error(
-          "Harap unggah berkas bertipe JPEG/JPG agar metadata EXIF terbaca.",
-        );
-        return;
-      }
+      const rawFile = e.target.files[0];
+      const loadToast = toast.loading("Memproses & mengompresi foto...");
 
-      const reader = new FileReader();
-      reader.onloadend = () => {
+      try {
+        const { file: processedFile, previewUrl } =
+          await processPiketImage(rawFile);
+        toast.dismiss(loadToast);
+        toast.success("Foto berhasil diproses & dikompresi.");
+
         if (type === "before") {
-          setPhotoBefore(file);
-          setPhotoBeforePreview(reader.result as string);
+          setPhotoBefore(processedFile);
+          setPhotoBeforePreview(previewUrl);
         } else {
-          setPhotoAfter(file);
-          setPhotoAfterPreview(reader.result as string);
+          setPhotoAfter(processedFile);
+          setPhotoAfterPreview(previewUrl);
         }
-      };
-      reader.readAsDataURL(file);
+      } catch (err: unknown) {
+        toast.dismiss(loadToast);
+        const errMsg = err instanceof Error ? err.message : String(err);
+        toast.error(errMsg);
+      }
     }
   };
 
@@ -156,31 +185,30 @@ export function PiketClient({
     e.preventDefault();
   };
 
-  const handleDrop = (e: React.DragEvent, type: "before" | "after") => {
+  const handleDrop = async (e: React.DragEvent, type: "before" | "after") => {
     e.preventDefault();
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const file = e.dataTransfer.files[0];
-      if (
-        !file.type.startsWith("image/jpeg") &&
-        !file.type.startsWith("image/jpg")
-      ) {
-        toast.error(
-          "Harap unggah berkas bertipe JPEG/JPG agar metadata EXIF terbaca.",
-        );
-        return;
-      }
+      const rawFile = e.dataTransfer.files[0];
+      const loadToast = toast.loading("Memproses & mengompresi foto...");
 
-      const reader = new FileReader();
-      reader.onloadend = () => {
+      try {
+        const { file: processedFile, previewUrl } =
+          await processPiketImage(rawFile);
+        toast.dismiss(loadToast);
+        toast.success("Foto berhasil diproses & dikompresi.");
+
         if (type === "before") {
-          setPhotoBefore(file);
-          setPhotoBeforePreview(reader.result as string);
+          setPhotoBefore(processedFile);
+          setPhotoBeforePreview(previewUrl);
         } else {
-          setPhotoAfter(file);
-          setPhotoAfterPreview(reader.result as string);
+          setPhotoAfter(processedFile);
+          setPhotoAfterPreview(previewUrl);
         }
-      };
-      reader.readAsDataURL(file);
+      } catch (err: unknown) {
+        toast.dismiss(loadToast);
+        const errMsg = err instanceof Error ? err.message : String(err);
+        toast.error(errMsg);
+      }
     }
   };
 
@@ -200,8 +228,10 @@ export function PiketClient({
   const handleSubmitReport = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!todayAssignment) {
-      toast.error("Anda tidak memiliki jadwal piket hari ini.");
+    if (!currentWeekAssignment) {
+      toast.error(
+        `Anda tidak memiliki jadwal piket di Pekan ${weekInfo.weekNumber} pada Periode ${selectedPeriod}.`,
+      );
       return;
     }
 
@@ -214,11 +244,11 @@ export function PiketClient({
 
     setIsSubmitting(true);
     const loadToast = toast.loading(
-      "Memvalidasi EXIF & mengirim laporan piket...",
+      "Memvalidasi EXIF & mengunggah laporan piket ke R2...",
     );
 
     const formData = new FormData();
-    formData.append("schedule_id", todayAssignment.schedule_id);
+    formData.append("schedule_id", currentWeekAssignment.schedule_id);
     formData.append("notes", notes);
     formData.append("photo_before", photoBefore);
     formData.append("photo_after", photoAfter);
@@ -262,20 +292,59 @@ export function PiketClient({
                 size={24}
                 className="text-[#1e3a8a] dark:text-blue-400 shrink-0"
               />
-              Laporan Piket Harian
+              Piket Kebersihan Kesekretariatan &amp; Workshop
             </h1>
             <p className="text-xs font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 mt-1">
-              Dokumentasi &amp; Verifikasi Kebersihan Laboratorium Robotik PNP
+              Dokumentasi Kebersihan Ruang Kesekretariatan dan Ruang Workshop
+              DPH UKM Robotik PNP
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Badge className="bg-[#ffedd5] dark:bg-orange-950/60 text-[#c2410c] dark:text-orange-300 border border-orange-200 dark:border-orange-900/60 px-3 py-1.5 rounded-full font-mono text-[11px] uppercase tracking-wider font-semibold">
-              HARI INI: {todayDayName.toUpperCase()}
+              SAAT INI: PEKAN {weekInfo.weekNumber} (
+              {weekInfo.dateRangeFormatted})
             </Badge>
+
+            {isKestariAdmin && (
+              <Link href="/piket/kelola">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-slate-300 dark:border-slate-700 font-mono text-xs text-[#1e3a8a] dark:text-blue-400 hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer"
+                >
+                  <HugeiconsIcon
+                    icon={Settings02Icon}
+                    size={15}
+                    className="mr-1.5"
+                  />
+                  Kelola Penjadwalan &amp; Periode
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Period Selection Dropdown Bar */}
+      {availablePeriods.length > 1 && (
+        <div className="flex items-center justify-between bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3.5 rounded-xl shadow-xs">
+          <span className="text-xs font-mono font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+            Periode DPH Akademik:
+          </span>
+          <select
+            value={selectedPeriod}
+            onChange={(e) => setSelectedPeriod(e.target.value)}
+            className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs font-mono font-medium text-[#0a192f] dark:text-slate-100 outline-none focus:ring-2 focus:ring-[#1e3a8a] cursor-pointer"
+          >
+            {availablePeriods.map((p) => (
+              <option key={p} value={p}>
+                Periode DPH {p}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Main Grid: Mobile First (1 col on mobile, 3 cols on md+) */}
       <div className="grid gap-6 grid-cols-1 md:grid-cols-3">
@@ -285,22 +354,22 @@ export function PiketClient({
           <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl border-l-4 border-l-[#1e3a8a] dark:border-l-blue-500 shadow-xs">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-display font-medium text-[#0a192f] dark:text-slate-100">
-                Status Piket Anda
+                Status Piket DPH Anda ({selectedPeriod})
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 font-mono text-xs">
               <div className="flex justify-between items-center border-b border-slate-100 dark:border-slate-800 pb-2">
                 <span className="text-slate-500 dark:text-slate-400">
-                  JADWAL ANDA:
+                  JADWAL PEKANAN:
                 </span>
-                {myAssignments.length > 0 ? (
+                {periodAssignments.length > 0 ? (
                   <div className="flex gap-1 flex-wrap justify-end">
-                    {myAssignments.map((a) => (
+                    {periodAssignments.map((a) => (
                       <Badge
                         key={a.schedule_id}
                         className="bg-blue-50 dark:bg-blue-950/60 text-[#1e3a8a] dark:text-blue-300 border border-blue-200 dark:border-blue-900/60 text-[10px] rounded-full px-2"
                       >
-                        {a.day}
+                        Pekan {a.week_number}
                       </Badge>
                     ))}
                   </div>
@@ -309,27 +378,34 @@ export function PiketClient({
                     variant="outline"
                     className="text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/60 text-[10px] rounded-full"
                   >
-                    TIDAK ADA
+                    BELUM TERDAFTAR
                   </Badge>
                 )}
               </div>
               <div className="pt-1">
-                {isScheduledToday ? (
-                  <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
-                    <HugeiconsIcon icon={CheckmarkCircle01Icon} size={16} />
-                    <span>Anda bertugas piket hari ini!</span>
+                {isScheduledThisWeek ? (
+                  <div className="flex items-start gap-1.5 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
+                    <HugeiconsIcon
+                      icon={CheckmarkCircle01Icon}
+                      size={16}
+                      className="shrink-0 mt-0.5"
+                    />
+                    <span>
+                      Anda bertugas piket di Pekan {weekInfo.weekNumber} ini!
+                      (Bebas pilih hari Senin–Minggu).
+                    </span>
                   </div>
                 ) : (
                   <p className="text-xs text-slate-500 dark:text-slate-400 font-body">
-                    Anda tidak dijadwalkan piket hari ini. Form lapor tidak
-                    dapat digunakan.
+                    Anda tidak bertugas piket di Pekan {weekInfo.weekNumber}{" "}
+                    ini. Form lapor tidak dapat digunakan.
                   </p>
                 )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Card: Daily Calendar Schedule View */}
+          {/* Card: Monthly Week Schedule View */}
           <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-display font-medium flex items-center gap-2 text-[#0a192f] dark:text-slate-100">
@@ -338,55 +414,57 @@ export function PiketClient({
                   size={18}
                   className="text-[#1e3a8a] dark:text-blue-400"
                 />
-                Jadwal Petugas Lab
+                Daftar Petugas Piket DPH
               </CardTitle>
               <CardDescription className="text-xs font-mono text-slate-500 dark:text-slate-400">
-                Pilih hari untuk melihat daftar petugas piket.
+                Petugas piket per pekan (Periode {selectedPeriod}).
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="grid grid-cols-3 gap-1.5">
-                {INDO_DAYS.map((day) => (
+              <div className="grid grid-cols-4 gap-1">
+                {PEKAN_NUMBERS.map((w) => (
                   <button
-                    key={day}
-                    onClick={() => setSelectedDayTab(day)}
-                    className={`py-1.5 rounded-lg font-mono text-xs font-semibold border transition-all cursor-pointer ${
-                      selectedDayTab === day
+                    key={w}
+                    onClick={() => setSelectedWeekTab(w)}
+                    className={`py-1.5 rounded-lg font-mono text-[11px] font-semibold border transition-all cursor-pointer text-center ${
+                      selectedWeekTab === w
                         ? "bg-[#1e3a8a] dark:bg-blue-600 text-white border-[#1e3a8a] dark:border-blue-600 shadow-xs"
                         : "bg-slate-50 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800"
                     }`}
                   >
-                    {day}
+                    Pekan {w}
                   </button>
                 ))}
               </div>
 
               <div className="space-y-2 min-h-[140px] pt-1">
-                {schedules
-                  .filter((s) => s.day === selectedDayTab)
+                {periodSchedules
+                  .filter((s) => s.week_number === selectedWeekTab)
                   .flatMap((s) => s.members).length === 0 ? (
                   <p className="text-xs font-mono text-slate-400 dark:text-slate-500 text-center py-6">
-                    Tidak ada petugas terjadwal.
+                    Belum ada petugas pada Pekan {selectedWeekTab}.
                   </p>
                 ) : (
-                  schedules
-                    .filter((s) => s.day === selectedDayTab)
+                  periodSchedules
+                    .filter((s) => s.week_number === selectedWeekTab)
                     .flatMap((s) => s.members)
                     .map((member) => (
                       <div
-                        key={member.profile_id}
+                        key={member.member_id}
                         className={`p-2.5 rounded-lg border flex items-center justify-between text-xs transition-colors ${
                           member.profile_id === profile.id
                             ? "bg-blue-50/70 dark:bg-blue-950/40 border-blue-200 dark:border-blue-900/60 text-[#1e3a8a] dark:text-blue-300 font-semibold"
                             : "bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200"
                         }`}
                       >
-                        <span className="font-display font-medium truncate max-w-[130px]">
-                          {member.name}
-                        </span>
-                        <span className="font-mono text-[10px] text-slate-500 dark:text-slate-400">
-                          {member.nim || "-"}
-                        </span>
+                        <div className="truncate max-w-[170px]">
+                          <span className="font-display font-medium block truncate">
+                            {member.name}
+                          </span>
+                          <span className="font-mono text-[10px] text-slate-500 dark:text-slate-400 block">
+                            {member.nim || "-"}
+                          </span>
+                        </div>
                       </div>
                     ))
                 )}
@@ -403,8 +481,8 @@ export function PiketClient({
                 Formulir Laporan Kebersihan
               </CardTitle>
               <CardDescription className="text-xs font-mono text-slate-500 dark:text-slate-400">
-                Unggah dokumentasi piket Anda. Sistem memverifikasi metadata
-                EXIF secara otomatis.
+                Unggah dokumentasi piket Anda pada pekan penugasan aktif (
+                {weekInfo.dateRangeFormatted}).
               </CardDescription>
             </CardHeader>
             <form onSubmit={handleSubmitReport}>
@@ -414,8 +492,9 @@ export function PiketClient({
                   <span className="font-bold shrink-0 mt-0.5">⚠️ PENTING:</span>
                   <p className="leading-relaxed font-body">
                     Unggah foto asli bertipe JPG/JPEG langsung dari kamera HP
-                    Anda. Sistem akan mengonfirmasi metadata EXIF tanggal
-                    pengambilan foto. Tangkapan layar / unduhan WA akan ditolak.
+                    Anda. Sistem mengonfirmasi metadata EXIF tanggal pengambilan
+                    foto. Tangkapan layar / unduhan WA akan ditolak. Foto
+                    otomatis disimpan ke Cloudflare R2.
                   </p>
                 </div>
 
@@ -430,10 +509,10 @@ export function PiketClient({
                       onDragOver={handleDragOver}
                       onDrop={(e) => handleDrop(e, "before")}
                       onClick={() =>
-                        isScheduledToday && fileBeforeRef.current?.click()
+                        isScheduledThisWeek && fileBeforeRef.current?.click()
                       }
                       className={`aspect-video rounded-lg border-2 border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex flex-col items-center justify-center p-3 text-center cursor-pointer relative overflow-hidden group ${
-                        !isScheduledToday
+                        !isScheduledThisWeek
                           ? "opacity-50 cursor-not-allowed pointer-events-none"
                           : ""
                       }`}
@@ -469,7 +548,7 @@ export function PiketClient({
                             Klik / seret foto di sini
                           </p>
                           <p className="text-[9px] text-slate-400 dark:text-slate-500 font-mono">
-                            JPEG/JPG (Max 5MB)
+                            JPG, PNG, HEIC iPhone (Otomatis Dikompresi)
                           </p>
                         </div>
                       )}
@@ -477,7 +556,7 @@ export function PiketClient({
                     <input
                       ref={fileBeforeRef}
                       type="file"
-                      accept=".jpg,.jpeg"
+                      accept="image/*,.heic,.heif,.jpg,.jpeg,.png"
                       onChange={(e) => handleFileChange(e, "before")}
                       className="hidden"
                     />
@@ -492,10 +571,10 @@ export function PiketClient({
                       onDragOver={handleDragOver}
                       onDrop={(e) => handleDrop(e, "after")}
                       onClick={() =>
-                        isScheduledToday && fileAfterRef.current?.click()
+                        isScheduledThisWeek && fileAfterRef.current?.click()
                       }
                       className={`aspect-video rounded-lg border-2 border-dashed border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all flex flex-col items-center justify-center p-3 text-center cursor-pointer relative overflow-hidden group ${
-                        !isScheduledToday
+                        !isScheduledThisWeek
                           ? "opacity-50 cursor-not-allowed pointer-events-none"
                           : ""
                       }`}
@@ -531,7 +610,7 @@ export function PiketClient({
                             Klik / seret foto di sini
                           </p>
                           <p className="text-[9px] text-slate-400 dark:text-slate-500 font-mono">
-                            JPEG/JPG (Max 5MB)
+                            JPG, PNG, HEIC iPhone (Otomatis Dikompresi)
                           </p>
                         </div>
                       )}
@@ -539,7 +618,7 @@ export function PiketClient({
                     <input
                       ref={fileAfterRef}
                       type="file"
-                      accept=".jpg,.jpeg"
+                      accept="image/*,.heic,.heif,.jpg,.jpeg,.png"
                       onChange={(e) => handleFileChange(e, "after")}
                       className="hidden"
                     />
@@ -556,8 +635,8 @@ export function PiketClient({
                   </Label>
                   <Textarea
                     id="notes"
-                    disabled={!isScheduledToday || isSubmitting}
-                    placeholder="Contoh: Menyapu area lantai utama lab, membersihkan debu meja PC 1-10..."
+                    disabled={!isScheduledThisWeek || isSubmitting}
+                    placeholder="Contoh: Menyapu dan mengepel lantai ruang kesekretariatan & workshop, membersihkan meja kerja..."
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                     className="bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700 rounded-lg focus:border-[#f97316] text-xs py-2.5 min-h-[80px] text-[#0a192f] dark:text-slate-100 placeholder:text-slate-400 font-body"
@@ -567,12 +646,12 @@ export function PiketClient({
                 <div className="pt-2">
                   <Button
                     type="submit"
-                    disabled={!isScheduledToday || isSubmitting}
+                    disabled={!isScheduledThisWeek || isSubmitting}
                     className="w-full bg-[#1e3a8a] hover:bg-[#1e40af] dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-medium text-xs rounded-lg py-2.5 shadow-xs uppercase font-mono tracking-wider cursor-pointer"
                   >
                     {isSubmitting
-                      ? "Memproses Verifikasi..."
-                      : "Kirim Laporan Piket"}
+                      ? "Memproses Verifikasi & Upload R2..."
+                      : "Kirim Laporan Piket Kebersihan"}
                   </Button>
                 </div>
               </CardContent>
@@ -585,22 +664,24 @@ export function PiketClient({
       <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs">
         <CardHeader className="border-b border-slate-100 dark:border-slate-800 pb-4">
           <CardTitle className="text-base font-display font-medium text-[#0a192f] dark:text-slate-100">
-            Riwayat Log Piket Lab
+            Riwayat Log Piket Kebersihan ({selectedPeriod})
           </CardTitle>
           <CardDescription className="text-xs font-mono text-slate-500 dark:text-slate-400">
-            Daftar lengkap laporan piket kebersihan laboratorium.
+            Daftar lengkap laporan piket kebersihan ruang kesekretariatan &amp;
+            workshop DPH.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-4 sm:p-6">
-          {logs.length === 0 ? (
+          {periodLogs.length === 0 ? (
             <div className="p-8 text-center text-slate-500 dark:text-slate-400 font-mono text-xs">
-              Belum ada riwayat piket yang tercatat.
+              Belum ada riwayat piket yang tercatat untuk periode{" "}
+              {selectedPeriod}.
             </div>
           ) : (
             <>
               {/* Mobile View: Cards */}
               <div className="block md:hidden space-y-3">
-                {logs.map((log) => (
+                {periodLogs.map((log) => (
                   <div
                     key={log.id}
                     className="border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 p-4 rounded-xl space-y-2.5"
@@ -628,7 +709,7 @@ export function PiketClient({
                     <div className="grid grid-cols-2 gap-2 text-xs font-mono pt-1">
                       <div>
                         <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest block">
-                          TANGGAL &amp; HARI
+                          TANGGAL TUGAS
                         </span>
                         <span className="text-slate-700 dark:text-slate-300 font-medium">
                           {new Date(log.duty_date).toLocaleDateString("id-ID", {
@@ -643,29 +724,64 @@ export function PiketClient({
                         <span className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest block">
                           DOKUMENTASI
                         </span>
-                        {log.proof_image_url ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              const supabaseUrl =
-                                process.env.NEXT_PUBLIC_SUPABASE_URL ||
-                                "http://localhost:54321";
-                              const publicUrl = `${supabaseUrl}/storage/v1/object/sign/piket-proofs/${log.proof_image_url}`;
-                              setPreviewImageUrl(publicUrl);
-                            }}
-                            className="border-slate-200 dark:border-slate-700 text-[#1e3a8a] dark:text-blue-400 font-mono text-[10px] uppercase h-7 px-2"
-                          >
-                            <HugeiconsIcon
-                              icon={Image01Icon}
-                              size={12}
-                              className="mr-1"
-                            />
-                            Foto
-                          </Button>
-                        ) : (
-                          <span className="text-slate-400">-</span>
-                        )}
+                        <div className="flex flex-wrap items-center gap-1 mt-1">
+                          {log.proof_image_before_url && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setPreviewModal({
+                                  beforeUrl: getPublicR2Url(
+                                    log.proof_image_before_url,
+                                  ),
+                                  afterUrl: getPublicR2Url(log.proof_image_url),
+                                  reporterName: log.reporter_name,
+                                  dutyDate: log.duty_date,
+                                  activeTab: "before",
+                                });
+                              }}
+                              className="border-slate-200 dark:border-slate-700 text-[#1e3a8a] dark:text-blue-400 font-mono text-[10px] uppercase h-7 px-2"
+                            >
+                              <HugeiconsIcon
+                                icon={Image01Icon}
+                                size={12}
+                                className="mr-1"
+                              />
+                              Sebelum
+                            </Button>
+                          )}
+                          {log.proof_image_url && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setPreviewModal({
+                                  beforeUrl: getPublicR2Url(
+                                    log.proof_image_before_url,
+                                  ),
+                                  afterUrl: getPublicR2Url(log.proof_image_url),
+                                  reporterName: log.reporter_name,
+                                  dutyDate: log.duty_date,
+                                  activeTab: "after",
+                                });
+                              }}
+                              className="border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-mono text-[10px] uppercase h-7 px-2"
+                            >
+                              <HugeiconsIcon
+                                icon={Image01Icon}
+                                size={12}
+                                className="mr-1"
+                              />
+                              Sesudah
+                            </Button>
+                          )}
+                          {!log.proof_image_before_url &&
+                            !log.proof_image_url && (
+                              <span className="text-slate-400 font-mono text-[10px]">
+                                -
+                              </span>
+                            )}
+                        </div>
                       </div>
                     </div>
 
@@ -685,14 +801,14 @@ export function PiketClient({
                     <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 font-mono text-[11px] uppercase tracking-wider text-slate-600 dark:text-slate-400">
                       <th className="p-3">Tanggal Tugas</th>
                       <th className="p-3">Petugas</th>
-                      <th className="p-3">Hari</th>
+                      <th className="p-3">Jadwal Pekan</th>
                       <th className="p-3">Verifikasi</th>
                       <th className="p-3">Foto Bukti</th>
                       <th className="p-3">Catatan</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                    {logs.map((log) => (
+                    {periodLogs.map((log) => (
                       <tr
                         key={log.id}
                         className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
@@ -725,32 +841,71 @@ export function PiketClient({
                           )}
                         </td>
                         <td className="p-3">
-                          {log.proof_image_url ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                const supabaseUrl =
-                                  process.env.NEXT_PUBLIC_SUPABASE_URL ||
-                                  "http://localhost:54321";
-                                const publicUrl = `${supabaseUrl}/storage/v1/object/sign/piket-proofs/${log.proof_image_url}`;
-                                setPreviewImageUrl(publicUrl);
-                              }}
-                              className="border-slate-200 dark:border-slate-700 text-[#1e3a8a] dark:text-blue-400 font-mono text-[11px] uppercase h-8 px-2.5"
-                            >
-                              <HugeiconsIcon
-                                icon={Image01Icon}
-                                size={14}
-                                className="mr-1"
-                              />
-                              Lihat Foto
-                            </Button>
-                          ) : (
-                            <span className="text-slate-400 font-mono">-</span>
-                          )}
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            {log.proof_image_before_url && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setPreviewModal({
+                                    beforeUrl: getPublicR2Url(
+                                      log.proof_image_before_url,
+                                    ),
+                                    afterUrl: getPublicR2Url(
+                                      log.proof_image_url,
+                                    ),
+                                    reporterName: log.reporter_name,
+                                    dutyDate: log.duty_date,
+                                    activeTab: "before",
+                                  });
+                                }}
+                                className="border-slate-200 dark:border-slate-700 text-[#1e3a8a] dark:text-blue-400 font-mono text-[10px] uppercase h-7 px-2"
+                              >
+                                <HugeiconsIcon
+                                  icon={Image01Icon}
+                                  size={12}
+                                  className="mr-1"
+                                />
+                                Sebelum
+                              </Button>
+                            )}
+                            {log.proof_image_url && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  setPreviewModal({
+                                    beforeUrl: getPublicR2Url(
+                                      log.proof_image_before_url,
+                                    ),
+                                    afterUrl: getPublicR2Url(
+                                      log.proof_image_url,
+                                    ),
+                                    reporterName: log.reporter_name,
+                                    dutyDate: log.duty_date,
+                                    activeTab: "after",
+                                  });
+                                }}
+                                className="border-slate-200 dark:border-slate-700 text-emerald-600 dark:text-emerald-400 font-mono text-[10px] uppercase h-7 px-2"
+                              >
+                                <HugeiconsIcon
+                                  icon={Image01Icon}
+                                  size={12}
+                                  className="mr-1"
+                                />
+                                Sesudah
+                              </Button>
+                            )}
+                            {!log.proof_image_before_url &&
+                              !log.proof_image_url && (
+                                <span className="text-slate-400 font-mono">
+                                  -
+                                </span>
+                              )}
+                          </div>
                         </td>
                         <td
-                          className="p-3 text-slate-600 dark:text-slate-400 max-w-[200px] truncate"
+                          className="p-3 text-slate-600 dark:text-slate-400 max-w-[220px] truncate"
                           title={log.notes || ""}
                         >
                           {log.notes || "-"}
@@ -767,30 +922,89 @@ export function PiketClient({
 
       {/* Image Preview Dialog */}
       <Dialog
-        open={!!previewImageUrl}
-        onOpenChange={(open) => !open && setPreviewImageUrl(null)}
+        open={!!previewModal}
+        onOpenChange={(open) => !open && setPreviewModal(null)}
       >
-        <DialogContent className="sm:max-w-[500px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 text-center">
+        <DialogContent className="sm:max-w-[540px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 text-center">
           <DialogHeader>
             <DialogTitle className="text-base font-display font-medium text-[#0a192f] dark:text-slate-100">
-              Foto Bukti Piket Lab
+              Dokumentasi Foto Piket Kebersihan
             </DialogTitle>
+            <DialogDescription className="text-xs font-mono text-slate-500 dark:text-slate-400">
+              Petugas: {previewModal?.reporterName || "Anggota"} •{" "}
+              {previewModal?.dutyDate
+                ? new Date(previewModal.dutyDate).toLocaleDateString("id-ID", {
+                    dateStyle: "medium",
+                  })
+                : ""}
+            </DialogDescription>
           </DialogHeader>
-          <div className="my-4 aspect-video rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-800 relative">
-            {previewImageUrl && (
+
+          {/* Tab Switcher: Before vs After */}
+          <div className="flex justify-center gap-2 my-2">
+            {previewModal?.beforeUrl && (
+              <button
+                type="button"
+                onClick={() =>
+                  setPreviewModal((prev) =>
+                    prev ? { ...prev, activeTab: "before" } : null,
+                  )
+                }
+                className={`px-3 py-1.5 rounded-lg text-xs font-mono font-medium border transition-all cursor-pointer ${
+                  previewModal.activeTab === "before"
+                    ? "bg-[#1e3a8a] text-white border-[#1e3a8a]"
+                    : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750"
+                }`}
+              >
+                Foto Sebelum (Before)
+              </button>
+            )}
+
+            {previewModal?.afterUrl && (
+              <button
+                type="button"
+                onClick={() =>
+                  setPreviewModal((prev) =>
+                    prev ? { ...prev, activeTab: "after" } : null,
+                  )
+                }
+                className={`px-3 py-1.5 rounded-lg text-xs font-mono font-medium border transition-all cursor-pointer ${
+                  previewModal.activeTab === "after"
+                    ? "bg-emerald-600 text-white border-emerald-600"
+                    : "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-750"
+                }`}
+              >
+                Foto Sesudah (After)
+              </button>
+            )}
+          </div>
+
+          {/* Active Image Canvas */}
+          <div className="my-3 aspect-video rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 flex items-center justify-center border border-slate-200 dark:border-slate-800 relative">
+            {previewModal?.activeTab === "before" && previewModal.beforeUrl && (
               <Image
-                src={previewImageUrl}
-                alt="Foto bukti piket"
+                src={previewModal.beforeUrl}
+                alt="Foto Sebelum Piket Kebersihan"
                 fill
-                sizes="(max-width: 500px) 100vw, 500px"
+                sizes="(max-width: 540px) 100vw, 540px"
+                className="object-cover"
+              />
+            )}
+            {previewModal?.activeTab === "after" && previewModal.afterUrl && (
+              <Image
+                src={previewModal.afterUrl}
+                alt="Foto Sesudah Piket Kebersihan"
+                fill
+                sizes="(max-width: 540px) 100vw, 540px"
                 className="object-cover"
               />
             )}
           </div>
+
           <DialogFooter>
             <Button
-              onClick={() => setPreviewImageUrl(null)}
-              className="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[#0a192f] dark:text-slate-100 rounded-lg py-2.5 font-mono text-xs uppercase"
+              onClick={() => setPreviewModal(null)}
+              className="w-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[#0a192f] dark:text-slate-100 rounded-lg py-2.5 font-mono text-xs uppercase cursor-pointer"
             >
               Tutup Preview
             </Button>

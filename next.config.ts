@@ -2,6 +2,11 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "10mb",
+    },
+  },
   images: {
     // Izinkan IP lokal hanya saat development (Next.js 16+ perlindungan SSRF)
     dangerouslyAllowLocalIP: process.env.NODE_ENV === "development",
