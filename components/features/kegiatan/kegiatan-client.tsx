@@ -56,7 +56,9 @@ export interface KegiatanClientProps {
   initialActivities?: ActivityItem[];
   variant?: "membership" | "caang-recruitment";
   userRole?: string;
+  initialAudience?: "caang" | "anggota";
 }
+
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -140,6 +142,7 @@ export function KegiatanClient({
   initialActivities = [],
   variant = "membership",
   userRole,
+  initialAudience,
 }: KegiatanClientProps = {}) {
   const supabase = createClient();
   const router = useRouter();
@@ -148,6 +151,17 @@ export function KegiatanClient({
   const [isPending, startTransition] = useTransition();
 
   const isRecruitmentMode = variant === "caang-recruitment";
+
+  // Target audience switching state
+  const [activeAudience, setActiveAudience] = useState<"caang" | "anggota">(
+    initialAudience || (userRole === "caang" || userRole === "admin-or" ? "caang" : "anggota"),
+  );
+
+  const canSwitchAudience = activeRole === "super-admin" || activeRole === "admin-or";
+  const canManage =
+    activeAudience === "caang"
+      ? activeRole === "super-admin" || activeRole === "admin-or"
+      : activeRole === "super-admin" || activeRole === "admin-komdis";
 
   // Data & Client Refresh State
   const [activities, setActivities] =
@@ -193,24 +207,24 @@ export function KegiatanClient({
     setActivities(initialActivities);
   }
 
-  // Fetch client side if initialActivities was empty
+  // Fetch client side if initialActivities was empty or audience switched
   const [refreshKey, setRefreshKey] = useState(0);
   const fetchActivities = useCallback(() => {
     setRefreshKey((k) => k + 1);
   }, []);
 
   useEffect(() => {
-    if (authLoading || !user || initialActivities.length > 0) return;
+    if (authLoading || !user) return;
     let isMounted = true;
 
     async function loadData() {
       setError(null);
+      setLoadingData(true);
       try {
-        const audience = user?.role === "caang" ? "caang" : "anggota";
         const { data, error: queryError } = await supabase
           .from("activities")
           .select("*")
-          .eq("target_audience", audience)
+          .eq("target_audience", activeAudience)
           .is("deleted_at", null)
           .order("start_date", { ascending: true });
         if (queryError) throw queryError;
@@ -234,7 +248,8 @@ export function KegiatanClient({
     return () => {
       isMounted = false;
     };
-  }, [user, authLoading, supabase, refreshKey, initialActivities.length]);
+  }, [user, authLoading, supabase, refreshKey, activeAudience]);
+
 
   // Dynamic telemetry calculations
   const stats = useMemo<{
@@ -471,23 +486,23 @@ export function KegiatanClient({
   return (
     <div className="space-y-6 w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
       {/* ── Header ──────────────────────────────────────────────────────── */}
-      <div className="border border-border bg-card rounded-lg p-4 sm:p-6">
+      <div className="border border-border bg-card rounded-lg p-4 sm:p-6 space-y-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-md bg-primary-soft text-primary shrink-0">
               <HugeiconsIcon
-                icon={isRecruitmentMode ? CalendarAdd01Icon : Calendar03Icon}
+                icon={activeAudience === "caang" ? CalendarAdd01Icon : Calendar03Icon}
                 size={20}
               />
             </div>
             <div>
               <h1 className="font-display font-semibold tracking-tight text-lg sm:text-xl text-foreground">
-                {isRecruitmentMode
+                {activeAudience === "caang"
                   ? "Kegiatan & Absensi Caang"
                   : "Kegiatan UKM Robotik"}
               </h1>
               <p className="text-sm text-muted-foreground mt-0.5">
-                {isRecruitmentMode
+                {activeAudience === "caang"
                   ? "Manajemen kegiatan dan rekap absensi Calon Anggota UKM Robotik PNP"
                   : "Agenda pelatihan, rapat, dan workshop teknologi robotik PNP"}
               </p>
@@ -495,64 +510,27 @@ export function KegiatanClient({
           </div>
 
           <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-            {isRecruitmentMode ? (
+            {canManage && (
               <>
-                {(activeRole === "admin-or" ||
-                  activeRole === "super-admin") && (
-                  <Button
-                    variant="outline"
-                    onClick={() => router.push("/kegiatan-absensi-caang/trash")}
-                    className="rounded-md h-9 px-4 font-medium text-sm border-primary text-primary hover:bg-primary-soft"
-                  >
-                    <HugeiconsIcon icon={Archive01Icon} size={15} />
-                    Trash
-                  </Button>
-                )}
-                {(activeRole === "admin-or" ||
-                  activeRole === "super-admin") && (
-                  <Button
-                    variant="outline"
-                    onClick={() => router.push("/kegiatan-absensi-caang/scan")}
-                    className="rounded-md h-9 px-4 font-medium text-sm border-primary text-primary hover:bg-primary-soft"
-                  >
-                    <HugeiconsIcon icon={QrCode01Icon} size={15} />
-                    Scan QR
-                  </Button>
-                )}
-                {(activeRole === "admin-or" ||
-                  activeRole === "super-admin") && (
-                  <Button
-                    onClick={openAddForm}
-                    className="rounded-md h-9 px-4 font-medium text-sm bg-primary text-primary-foreground hover:bg-primary-hover"
-                  >
-                    <HugeiconsIcon icon={Add01Icon} size={15} />
-                    Tambah Kegiatan
-                  </Button>
-                )}
-              </>
-            ) : (
-              <>
-                {(activeRole === "admin-komdis" ||
-                  activeRole === "super-admin") && (
-                  <Button
-                    onClick={() => router.push("/kegiatan/sampah")}
-                    variant="outline"
-                    className="rounded-md h-9 px-4 font-medium text-sm border-primary text-primary hover:bg-primary-soft w-full sm:w-auto"
-                  >
-                    <HugeiconsIcon icon={Delete01Icon} size={15} />
-                    Sampah
-                  </Button>
-                )}
-                {(activeRole === "admin-komdis" ||
-                  activeRole === "super-admin") && (
-                  <Button
-                    onClick={() => setIsCreateModalOpen(true)}
-                    className="rounded-md h-9 px-4 font-medium text-sm bg-primary text-primary-foreground hover:bg-primary-hover w-full sm:w-auto"
-                  >
-                    <HugeiconsIcon icon={CalendarAdd01Icon} size={15} />
-                    Buat Kegiatan Komdis
-                  </Button>
-                )}
+                <Button
+                  onClick={() => router.push("/kegiatan/sampah")}
+                  variant="outline"
+                  className="rounded-md h-9 px-4 font-medium text-sm border-primary text-primary hover:bg-primary-soft w-full sm:w-auto"
+                >
+                  <HugeiconsIcon icon={Delete01Icon} size={15} />
+                  Sampah
+                </Button>
+                <Button
+                  onClick={() =>
+                    activeAudience === "caang"
+                      ? openAddForm()
+                      : setIsCreateModalOpen(true)
+                  }
+                  className="rounded-md h-9 px-4 font-medium text-sm bg-primary text-primary-foreground hover:bg-primary-hover w-full sm:w-auto"
+                >
+                  <HugeiconsIcon icon={CalendarAdd01Icon} size={15} />
+                  Tambah Kegiatan
+                </Button>
               </>
             )}
             <Badge className="bg-accent text-accent-foreground border-accent/40 rounded-full px-3 py-1 text-micro font-semibold uppercase">
@@ -560,7 +538,36 @@ export function KegiatanClient({
             </Badge>
           </div>
         </div>
+
+        {/* Switcher Tab Audien jika role super-admin atau admin-or */}
+        {canSwitchAudience && (
+          <div className="flex border-b border-border pt-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setActiveAudience("caang")}
+              className={`px-4 py-2 text-xs font-mono uppercase tracking-wider font-semibold border-b-2 transition-colors cursor-pointer ${
+                activeAudience === "caang"
+                  ? "border-primary text-primary font-bold"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Kegiatan Caang
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveAudience("anggota")}
+              className={`px-4 py-2 text-xs font-mono uppercase tracking-wider font-semibold border-b-2 transition-colors cursor-pointer ${
+                activeAudience === "anggota"
+                  ? "border-primary text-primary font-bold"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Kegiatan Anggota
+            </button>
+          </div>
+        )}
       </div>
+
 
       {/* ── Stats Cards Grid ────────────────────────────────────────────── */}
       <div>
@@ -859,13 +866,7 @@ export function KegiatanClient({
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() =>
-                          router.push(
-                            isRecruitmentMode
-                              ? `/kegiatan-absensi-caang/${activity.id}`
-                              : `/kegiatan/${activity.id}`,
-                          )
-                        }
+                        onClick={() => router.push(`/kegiatan/${activity.id}`)}
                         className="rounded-md border-border text-foreground font-medium text-xs px-3 h-8 hover:bg-muted"
                       >
                         <HugeiconsIcon icon={EyeIcon} size={14} />
@@ -876,13 +877,7 @@ export function KegiatanClient({
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() =>
-                            router.push(
-                              isRecruitmentMode
-                                ? `/kegiatan-absensi-caang/${activity.id}`
-                                : `/presensi/${activity.id}/presensi`,
-                            )
-                          }
+                          onClick={() => router.push(`/presensi/${activity.id}`)}
                           className="rounded-md border-primary text-primary font-medium text-xs px-3 h-8 hover:bg-primary-soft"
                         >
                           <HugeiconsIcon icon={QrCode01Icon} size={14} />
@@ -890,16 +885,13 @@ export function KegiatanClient({
                         </Button>
                       )}
 
-                      {(activeRole === "super-admin" ||
-                        (isRecruitmentMode && activeRole === "admin-or") ||
-                        (!isRecruitmentMode &&
-                          activeRole === "admin-komdis")) && (
+                      {canManage && (
                         <>
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() =>
-                              isRecruitmentMode
+                              activeAudience === "caang"
                                 ? openEditForm(activity)
                                 : setEditingKomdisActivity(activity)
                             }
@@ -919,7 +911,6 @@ export function KegiatanClient({
                           </Button>
                         </>
                       )}
-
                     </div>
                   </div>
                 ))}
@@ -1018,13 +1009,7 @@ export function KegiatanClient({
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() =>
-                                router.push(
-                                  isRecruitmentMode
-                                    ? `/kegiatan-absensi-caang/${activity.id}`
-                                    : `/kegiatan/${activity.id}`,
-                                )
-                              }
+                              onClick={() => router.push(`/kegiatan/${activity.id}`)}
                               className="rounded-md border-border text-foreground font-medium text-xs h-8 px-2.5 hover:bg-muted"
                             >
                               <HugeiconsIcon icon={EyeIcon} size={14} />
@@ -1035,13 +1020,7 @@ export function KegiatanClient({
                               <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() =>
-                                  router.push(
-                                    isRecruitmentMode
-                                      ? `/kegiatan-absensi-caang/${activity.id}`
-                                      : `/presensi/${activity.id}/presensi`,
-                                  )
-                                }
+                                onClick={() => router.push(`/presensi/${activity.id}`)}
                                 className="rounded-md border-primary text-primary font-medium text-xs h-8 px-2.5 hover:bg-primary-soft"
                               >
                                 <HugeiconsIcon icon={QrCode01Icon} size={14} />
@@ -1049,17 +1028,13 @@ export function KegiatanClient({
                               </Button>
                             )}
 
-                            {(activeRole === "super-admin" ||
-                              (isRecruitmentMode &&
-                                activeRole === "admin-or") ||
-                              (!isRecruitmentMode &&
-                                activeRole === "admin-komdis")) && (
+                            {canManage && (
                               <>
                                 <Button
                                   variant="outline"
                                   size="icon"
                                   onClick={() =>
-                                    isRecruitmentMode
+                                    activeAudience === "caang"
                                       ? openEditForm(activity)
                                       : setEditingKomdisActivity(activity)
                                   }
@@ -1082,7 +1057,6 @@ export function KegiatanClient({
                                 </Button>
                               </>
                             )}
-
                           </div>
                         </td>
                       </tr>

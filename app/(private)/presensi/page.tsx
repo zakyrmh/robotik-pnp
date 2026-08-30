@@ -111,10 +111,14 @@ export default async function AbsensiPage() {
     }
   }
 
+  const initialAudience: "caang" | "anggota" =
+    userRole === "admin-or" || userRole === "caang" ? "caang" : "anggota";
+
   return (
     <Suspense fallback={<PresensiSkeleton />}>
       <PresensiClient
         userRole={userRole}
+        initialAudience={initialAudience}
         initialPersonalHistory={formattedHistory}
         initialMemberSummary={initialMemberSummary}
         initialActivitySummary={initialActivitySummary}

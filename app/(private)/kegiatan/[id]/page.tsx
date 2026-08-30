@@ -15,6 +15,8 @@ import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { ActivityItem } from "@/lib/actions/activities";
+import { ActivityDetailActions } from "@/components/features/kegiatan/activity-detail-actions";
+
 
 interface ActivityDetailPageProps {
   params: Promise<{
@@ -105,11 +107,6 @@ export default async function ActivityDetailPage({
 
   const userRole = profile?.role || "anggota";
 
-  // caang tidak diizinkan mengakses rute /kegiatan/[id]
-  if (userRole === "caang") {
-    redirect(`/kegiatan-absensi-caang/${activityId}`);
-  }
-
   const { data, error } = await supabase
     .from("activities")
     .select("*")
@@ -123,6 +120,11 @@ export default async function ActivityDetailPage({
 
   const activity = data as ActivityItem;
   const status = getActivityStatus(activity);
+
+  const canManage =
+    activity.target_audience === "caang"
+      ? ["super-admin", "admin-or"].includes(userRole)
+      : ["super-admin", "admin-komdis"].includes(userRole);
 
   const now = new Date();
   const openTime = activity.checkin_open_at
@@ -289,23 +291,18 @@ export default async function ActivityDetailPage({
           <span className="text-micro text-muted-foreground block mt-0.5">
             {isAttendanceActive
               ? "Jendela presensi sedang dibuka! Anda dapat mengisi absensi sekarang."
-              : "Gunakan tombol di sebelah kanan untuk mengakses halaman absensi atau rekap."}
+              : "Gunakan tombol di sebelah kanan untuk mengakses halaman presensi atau rekap."}
           </span>
         </div>
 
-        <div className="flex flex-wrap items-center justify-center gap-2.5 w-full sm:w-auto">
-          <Button
-            asChild
-            size="sm"
-            className="rounded-md bg-primary text-primary-foreground hover:bg-primary-hover text-xs font-medium h-9 px-4 w-full sm:w-auto"
-          >
-            <Link href={`/presensi/${activity.id}/absensi`}>
-              <HugeiconsIcon icon={CheckmarkCircle01Icon} size={15} />
-              {isAttendanceActive ? "Absen Sekarang" : "Buka Modul Absensi"}
-            </Link>
-          </Button>
-        </div>
+        <ActivityDetailActions
+          activity={activity}
+          userRole={userRole}
+          canManage={canManage}
+          isAttendanceActive={isAttendanceActive}
+        />
       </div>
     </div>
   );
 }
+

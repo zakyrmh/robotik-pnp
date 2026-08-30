@@ -319,7 +319,7 @@ export function KomdisActivityAttendanceTab({
                   </Button>
                   <Button
                     size="sm"
-                    onClick={() => router.push(`/presensi/${act.id}/absensi`)}
+                    onClick={() => router.push(`/presensi/${act.id}`)}
                     className="rounded-lg bg-[#1e3a8a] dark:bg-blue-600 text-white hover:bg-[#1e40af] dark:hover:bg-blue-500 h-9 font-mono text-[11px] uppercase tracking-wider px-3"
                   >
                     <HugeiconsIcon
@@ -458,6 +458,15 @@ export function KomdisActivityAttendanceTab({
                           |
                         </span>
                         <span
+                          className="text-purple-600 dark:text-purple-400 font-bold"
+                          title="Magang"
+                        >
+                          {act.counts.magang}M
+                        </span>
+                        <span className="text-slate-300 dark:text-slate-700">
+                          |
+                        </span>
+                        <span
                           className="text-red-600 dark:text-red-400 font-bold"
                           title="Alfa"
                         >
@@ -486,10 +495,10 @@ export function KomdisActivityAttendanceTab({
                         <Button
                           size="sm"
                           onClick={() =>
-                            router.push(`/presensi/${act.id}/absensi`)
+                            router.push(`/presensi/${act.id}`)
                           }
                           className="rounded-lg bg-[#1e3a8a] dark:bg-blue-600 text-white hover:bg-[#1e40af] dark:hover:bg-blue-500 h-8 px-2.5 font-mono text-[11px] uppercase tracking-wider"
-                          title="Scan Presensi QR"
+                          title="Presensi QR"
                         >
                           <HugeiconsIcon icon={QrCodeIcon} size={14} />
                         </Button>

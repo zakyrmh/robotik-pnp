@@ -357,7 +357,7 @@ export function DashboardClient({ data }: DashboardClientProps) {
                       asChild
                       className="bg-primary hover:bg-primary-hover text-primary-foreground font-mono text-xs min-h-[38px] px-3 rounded-lg shrink-0"
                     >
-                      <Link href={`/presensi/${act.id}/absensi`}>
+                      <Link href={`/presensi/${act.id}`}>
                         Absen Sekarang
                       </Link>
                     </Button>
@@ -962,7 +962,7 @@ export function DashboardClient({ data }: DashboardClientProps) {
                       asChild
                       className="bg-primary hover:bg-primary-hover text-primary-foreground font-mono text-xs min-h-[38px] px-3 rounded-lg shrink-0"
                     >
-                      <Link href={`/presensi/${act.id}/absensi`}>
+                      <Link href={`/presensi/${act.id}`}>
                         Detail Presensi
                       </Link>
                     </Button>

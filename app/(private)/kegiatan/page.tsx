@@ -30,16 +30,20 @@ export default async function KegiatanPage() {
   const rawProfile = profile as { id: string; role: string } | null;
   const userRole = rawProfile?.role || "anggota";
 
-  // Rule 7: caang tidak diizinkan mengakses /kegiatan
-  if (userRole === "caang") {
-    redirect("/dashboard");
-  }
+  // Penentuan audien awal berdasarkan role
+  const initialAudience: "caang" | "anggota" =
+    userRole === "caang" || userRole === "admin-or" ? "caang" : "anggota";
 
-  const res = await getActivities("anggota");
+  const res = await getActivities(initialAudience);
   const initialActivities: ActivityItem[] =
     res.success && res.data ? res.data : [];
 
   return (
-    <KegiatanClient initialActivities={initialActivities} userRole={userRole} />
+    <KegiatanClient
+      initialActivities={initialActivities}
+      userRole={userRole}
+      initialAudience={initialAudience}
+    />
   );
 }
+

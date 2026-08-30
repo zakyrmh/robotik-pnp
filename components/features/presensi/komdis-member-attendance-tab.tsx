@@ -99,7 +99,7 @@ export function KomdisMemberAttendanceTab({
   }, [members, search, pointFilter]);
 
   const getAttendancePill = (
-    status: "hadir" | "telat" | "izin" | "sakit" | "alfa" | null,
+    status: "hadir" | "telat" | "izin" | "sakit" | "alfa" | "magang" | null,
   ) => {
     if (!status) {
       return (
@@ -129,6 +129,13 @@ export function KomdisMemberAttendanceTab({
           <span
             className="inline-block w-2.5 h-2.5 rounded-full bg-blue-500"
             title={status.toUpperCase()}
+          />
+        );
+      case "magang":
+        return (
+          <span
+            className="inline-block w-2.5 h-2.5 rounded-full bg-purple-500"
+            title="Magang"
           />
         );
       case "alfa":
@@ -415,6 +422,12 @@ export function KomdisMemberAttendanceTab({
                         </span>
                         <span className="text-blue-600 dark:text-blue-400 font-bold">
                           {m.totals.izin + m.totals.sakit}I
+                        </span>
+                        <span className="text-slate-300 dark:text-slate-700">
+                          |
+                        </span>
+                        <span className="text-purple-600 dark:text-purple-400 font-bold">
+                          {m.totals.magang}M
                         </span>
                         <span className="text-slate-300 dark:text-slate-700">
                           |

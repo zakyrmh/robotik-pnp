@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import {
   scanAttendanceQRByAdmin,
   recordManualAttendance,
-  batchMarkAlfa,
   recordSelfAttendanceKomdis,
 } from "@/lib/actions/komdis";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +15,6 @@ import {
   QrCodeIcon,
   Loading03Icon,
   UserCheck01Icon,
-  UserGroupIcon,
   Camera01Icon,
   RefreshIcon,
   Alert02Icon,
@@ -34,14 +32,6 @@ export function KomdisScannerView({
 }: KomdisScannerViewProps) {
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
-
-  const [isManualOpen, setIsManualOpen] = useState(false);
-  const [manualProfileId, setManualProfileId] = useState("");
-  const [manualStatus, setManualStatus] = useState<
-    "hadir" | "telat" | "izin" | "sakit" | "alfa"
-  >("hadir");
-  const [manualPoints, setManualPoints] = useState<number>(0);
-  const [manualNotes, setManualNotes] = useState("");
   const [retryTrigger, setRetryTrigger] = useState(0);
 
   // State untuk popup penetapan sanksi keterlambatan (> 1 jam)
@@ -210,34 +200,6 @@ export function KomdisScannerView({
     };
   }, [activityId, retryTrigger]);
 
-  const handleManualSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!manualProfileId.trim()) {
-      toast.error("ID Profil / UUID Anggota wajib diisi.");
-      return;
-    }
-
-    startTransition(async () => {
-      try {
-        await recordManualAttendance({
-          activityId,
-          profileId: manualProfileId.trim(),
-          status: manualStatus,
-          pointsAwarded: manualPoints,
-          notes: manualNotes.trim() || undefined,
-        });
-        setIsManualOpen(false);
-        setManualProfileId("");
-        setManualNotes("");
-        toast.success("Presensi manual berhasil dicatat.");
-      } catch (err: unknown) {
-        toast.error(
-          err instanceof Error ? err.message : "Gagal mencatat presensi manual",
-        );
-      }
-    });
-  };
-
   const handleSaveLatePenalty = (e: React.FormEvent) => {
     e.preventDefault();
     if (!latePenaltyTarget) return;
@@ -260,29 +222,6 @@ export function KomdisScannerView({
           err instanceof Error
             ? err.message
             : "Gagal menyimpan sanksi keterlambatan",
-        );
-      }
-    });
-  };
-
-  const handleBatchAlfa = () => {
-    if (
-      !confirm(
-        "Apakah Anda yakin ingin menandai SELURUH anggota yang belum hadir sebagai ALFA (+15 Poin Sanksi)?",
-      )
-    ) {
-      return;
-    }
-
-    startTransition(async () => {
-      try {
-        const res = await batchMarkAlfa(activityId);
-        toast.success(
-          `Berhasil memproses Penandaan Alfa Massal (${res.count} anggota).`,
-        );
-      } catch (err: unknown) {
-        toast.error(
-          err instanceof Error ? err.message : "Gagal memproses alfa massal",
         );
       }
     });
@@ -359,242 +298,17 @@ export function KomdisScannerView({
       </Card>
 
       {/* Action Controls - Mobile First */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+      <div className="flex justify-center">
         <Button
           type="button"
           disabled={isPending}
           onClick={handleSelfAttendance}
-          className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-medium text-xs rounded-lg cursor-pointer py-3 shadow-xs"
+          className="w-full sm:w-auto px-8 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-medium text-xs rounded-lg cursor-pointer py-3 shadow-xs font-mono uppercase tracking-wider"
         >
           <HugeiconsIcon icon={UserCheck01Icon} size={16} className="mr-1.5" />
           PRESENSI DIRI
         </Button>
-
-        <Button
-          type="button"
-          onClick={() => setIsManualOpen(true)}
-          className="bg-[#1e3a8a] hover:bg-[#1e40af] dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-medium text-xs rounded-lg cursor-pointer py-3 shadow-xs"
-        >
-          <HugeiconsIcon icon={UserCheck01Icon} size={16} className="mr-1.5" />
-          OVERRIDE MANUAL
-        </Button>
-
-        <Button
-          type="button"
-          disabled={isPending}
-          onClick={handleBatchAlfa}
-          className="bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-500 text-white font-medium text-xs rounded-lg cursor-pointer py-3 shadow-xs"
-        >
-          <HugeiconsIcon icon={UserGroupIcon} size={16} className="mr-1.5" />
-          BATCH ALFA
-        </Button>
       </div>
-
-      {/* Modal Manual Override */}
-      {isManualOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 dark:bg-black/80 backdrop-blur-xs p-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 sm:p-6 max-w-md w-full space-y-4 shadow-xl">
-            <div className="border-b border-slate-200 dark:border-slate-800 pb-3 flex justify-between items-center">
-              <span className="font-mono text-xs text-[#1e3a8a] dark:text-blue-400 font-semibold uppercase tracking-widest">
-                PRESENSI MANUAL OVERRIDE
-              </span>
-              <button
-                onClick={() => setIsManualOpen(false)}
-                className="text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 font-mono text-xs cursor-pointer"
-              >
-                [ TUTUP X ]
-              </button>
-            </div>
-
-            <form
-              onSubmit={handleManualSubmit}
-              className="space-y-4 font-mono text-xs"
-            >
-              <div>
-                <label className="block text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 font-semibold">
-                  PROFILE ID / UUID ANGGOTA:
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={manualProfileId}
-                  onChange={(e) => setManualProfileId(e.target.value)}
-                  placeholder="00000000-0000-0000-0000-000000000000"
-                  className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 p-2.5 text-xs text-[#0a192f] dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:border-[#f97316] rounded-lg"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 font-semibold">
-                  STATUS PRESENSI:
-                </label>
-                <select
-                  value={manualStatus}
-                  onChange={(e) => {
-                    const newStatus = e.target.value as
-                      | "hadir"
-                      | "telat"
-                      | "izin"
-                      | "sakit"
-                      | "alfa";
-                    setManualStatus(newStatus);
-                    if (newStatus === "hadir") {
-                      setManualPoints(0);
-                      setManualNotes("");
-                    } else if (newStatus === "telat") {
-                      setManualPoints(0);
-                      setManualNotes(
-                        "Terlambat < 1 jam (Sanksi fisik di tempat)",
-                      );
-                    } else if (newStatus === "izin" || newStatus === "sakit") {
-                      setManualPoints(5);
-                    } else if (newStatus === "alfa") {
-                      setManualPoints(15);
-                    }
-                  }}
-                  className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 p-2.5 text-xs text-[#0a192f] dark:text-slate-100 focus:outline-hidden focus:border-[#f97316] rounded-lg"
-                >
-                  <option value="hadir">HADIR (0 POIN)</option>
-                  <option value="telat">TELAT (SANKSI SESUAI JAM)</option>
-                  <option value="izin">IZIN (5 POIN)</option>
-                  <option value="sakit">SAKIT (5 POIN)</option>
-                  <option value="alfa">ALFA (15 POIN)</option>
-                </select>
-              </div>
-
-              {/* Preset Opsi Sanksi Keterlambatan (SOP Komdis) */}
-              {manualStatus === "telat" && (
-                <div className="space-y-1.5 p-3 bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-xl">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-900 dark:text-amber-300">
-                      ⚡ PRESET SANKSI KETERLAMBATAN
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-1 gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setManualPoints(0);
-                        setManualNotes(
-                          "Terlambat < 1 jam (Sanksi fisik di tempat)",
-                        );
-                      }}
-                      className={`text-left px-2.5 py-1.5 rounded-lg border font-mono text-[10px] sm:text-[11px] transition-all cursor-pointer flex items-center justify-between ${
-                        manualPoints === 0
-                          ? "bg-amber-100 dark:bg-amber-900/60 border-amber-400 dark:border-amber-600 text-amber-950 dark:text-amber-100 font-bold shadow-2xs"
-                          : "bg-white dark:bg-slate-900 border-amber-200/70 dark:border-amber-900/40 text-slate-700 dark:text-slate-300 hover:bg-amber-50 dark:hover:bg-amber-950/60"
-                      }`}
-                    >
-                      <span>
-                        🏃 <strong>Sanksi Fisik Saja</strong> (&lt; 1 Jam)
-                      </span>
-                      <span className="text-amber-700 dark:text-amber-300 font-bold shrink-0 ml-1">
-                        0 PTS
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setManualPoints(3);
-                        setManualNotes(
-                          "Terlambat > 1 jam (Izin diterima - sanksi fisik + 3 poin)",
-                        );
-                      }}
-                      className={`text-left px-2.5 py-1.5 rounded-lg border font-mono text-[10px] sm:text-[11px] transition-all cursor-pointer flex items-center justify-between ${
-                        manualPoints === 3
-                          ? "bg-amber-100 dark:bg-amber-900/60 border-amber-400 dark:border-amber-600 text-amber-950 dark:text-amber-100 font-bold shadow-2xs"
-                          : "bg-white dark:bg-slate-900 border-amber-200/70 dark:border-amber-900/40 text-slate-700 dark:text-slate-300 hover:bg-amber-50 dark:hover:bg-amber-950/60"
-                      }`}
-                    >
-                      <span>
-                        📋 <strong>Fisik + Poin (Izin Diterima)</strong>
-                      </span>
-                      <span className="text-amber-700 dark:text-amber-300 font-bold shrink-0 ml-1">
-                        +3 PTS
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setManualPoints(5);
-                        setManualNotes(
-                          "Terlambat > 1 jam (Izin ditolak/tanpa izin - sanksi fisik + 5 poin)",
-                        );
-                      }}
-                      className={`text-left px-2.5 py-1.5 rounded-lg border font-mono text-[10px] sm:text-[11px] transition-all cursor-pointer flex items-center justify-between ${
-                        manualPoints === 5
-                          ? "bg-amber-100 dark:bg-amber-900/60 border-amber-400 dark:border-amber-600 text-amber-950 dark:text-amber-100 font-bold shadow-2xs"
-                          : "bg-white dark:bg-slate-900 border-amber-200/70 dark:border-amber-900/40 text-slate-700 dark:text-slate-300 hover:bg-amber-50 dark:hover:bg-amber-950/60"
-                      }`}
-                    >
-                      <span>
-                        ⚠️ <strong>Fisik + Poin (Izin Ditolak)</strong>
-                      </span>
-                      <span className="text-red-600 dark:text-red-400 font-bold shrink-0 ml-1">
-                        +5 PTS
-                      </span>
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <div>
-                <label className="block text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 font-semibold">
-                  POIN SANKSI YANG DITETAPKAN:
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  value={manualPoints}
-                  onChange={(e) => setManualPoints(Number(e.target.value))}
-                  className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 p-2.5 text-xs text-[#f97316] dark:text-orange-400 font-bold focus:outline-hidden focus:border-[#f97316] rounded-lg"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 font-semibold">
-                  CATATAN / ALASAN OVERRIDE:
-                </label>
-                <input
-                  type="text"
-                  value={manualNotes}
-                  onChange={(e) => setManualNotes(e.target.value)}
-                  placeholder="Contoh: Terlambat 1 jam 15 menit (Izin diterima)..."
-                  className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 p-2.5 text-xs text-[#0a192f] dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:border-[#f97316] rounded-lg"
-                />
-              </div>
-
-              <div className="flex gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsManualOpen(false)}
-                  className="flex-1 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-mono text-xs rounded-lg cursor-pointer"
-                >
-                  BATAL
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={isPending}
-                  className="flex-1 bg-[#1e3a8a] dark:bg-blue-600 hover:bg-[#1e40af] dark:hover:bg-blue-500 text-white font-mono text-xs uppercase tracking-wider rounded-lg cursor-pointer"
-                >
-                  {isPending ? (
-                    <HugeiconsIcon
-                      icon={Loading03Icon}
-                      size={16}
-                      className="animate-spin"
-                    />
-                  ) : (
-                    "SIMPAN PRESENSI"
-                  )}
-                </Button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
       {/* ── MODAL POPUP PENETAPAN SANKSI KETERLAMBATAN (> 1 JAM) ── */}
       {latePenaltyTarget && (
