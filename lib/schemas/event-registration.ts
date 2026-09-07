@@ -96,10 +96,13 @@ const optionalDatetime = z
  */
 export const eventSettingsSchema = z
   .object({
+    timeline_release_date: optionalDatetime,
     batch1_start: optionalDatetime,
     batch1_end: optionalDatetime,
     batch2_start: optionalDatetime,
     batch2_end: optionalDatetime,
+    technical_meeting_start: optionalDatetime,
+    technical_meeting_end: optionalDatetime,
     event_start: optionalDatetime,
     event_end: optionalDatetime,
   })
@@ -107,6 +110,7 @@ export const eventSettingsSchema = z
     const pairs: [unknown, unknown, string][] = [
       [v.batch1_start, v.batch1_end, "batch1"],
       [v.batch2_start, v.batch2_end, "batch2"],
+      [v.technical_meeting_start, v.technical_meeting_end, "technical meeting"],
       [v.event_start, v.event_end, "acara"],
     ];
     for (const [start, end, label] of pairs) {

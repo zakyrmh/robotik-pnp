@@ -5,6 +5,7 @@ import type {
 } from "@/types/event-registration";
 
 export type BatchPhase =
+  | { phase: "coming-soon"; batch: null; countdownTarget: string | null }
   | { phase: "before-batch1"; batch: null; countdownTarget: string | null }
   | { phase: "batch1-open"; batch: "batch1"; countdownTarget: string | null }
   | { phase: "between-batches"; batch: null; countdownTarget: string | null }
@@ -26,6 +27,39 @@ function inRange(
 }
 
 /**
+ * Mengecek apakah timeline resmi MRC sudah dirilis ke publik.
+ * Sebelum tanggal rilis, timeline publik di /mrc menampilkan "Coming Soon".
+ */
+export function isTimelineReleased(
+  settings: EventSettings | null | undefined,
+  now: Date = new Date(),
+): boolean {
+  if (!settings) return false;
+  if (settings.timeline_release_date) {
+    const rel = Date.parse(settings.timeline_release_date);
+    if (!Number.isNaN(rel)) {
+      return now.getTime() >= rel;
+    }
+  }
+  return Boolean(settings.batch1_start);
+}
+
+/**
+ * Rentang Pendaftaran Batch 2 disembunyikan sepenuhnya sampai Batch 1 berakhir
+ * atau Pendaftaran Batch 2 dimulai.
+ */
+export function isBatch2Visible(
+  settings: EventSettings | null | undefined,
+  now: Date = new Date(),
+): boolean {
+  if (!settings?.batch2_start || !settings?.batch2_end) return false;
+  if (!settings.batch1_end) return true;
+  const t = now.getTime();
+  const b1End = Date.parse(settings.batch1_end);
+  return !Number.isNaN(b1End) && t >= b1End;
+}
+
+/**
  * Menentukan fase pendaftaran/acara saat ini dari settings global.
  * Dipakai untuk countdown hero, status tombol daftar, dan penentuan biaya.
  */
@@ -37,6 +71,19 @@ export function getBatchPhase(
     return { phase: "unconfigured", batch: null, countdownTarget: null };
 
   const t = now.getTime();
+
+  if (
+    settings.timeline_release_date &&
+    !Number.isNaN(Date.parse(settings.timeline_release_date)) &&
+    t < Date.parse(settings.timeline_release_date)
+  ) {
+    return {
+      phase: "coming-soon",
+      batch: null,
+      countdownTarget: settings.timeline_release_date,
+    };
+  }
+
   const {
     batch1_start,
     batch1_end,
@@ -146,6 +193,7 @@ export const BATCH_LABELS: Record<RegistrationBatch, string> = {
 };
 
 export const PHASE_LABELS: Record<BatchPhase["phase"], string> = {
+  "coming-soon": "Timeline Resmi Rilis",
   "before-batch1": "Pendaftaran Batch 1 segera dibuka",
   "batch1-open": "Penutupan Pendaftaran Batch 1",
   "between-batches": "Pendaftaran Batch 2 segera dibuka",

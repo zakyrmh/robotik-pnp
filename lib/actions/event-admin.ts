@@ -112,10 +112,15 @@ export async function updateEventSettingsAction(
 
   const adminSupabase = createAdminClient();
   const updatePayload = {
+    timeline_release_date: toNullableIso(validated.data.timeline_release_date),
     batch1_start: toNullableIso(validated.data.batch1_start),
     batch1_end: toNullableIso(validated.data.batch1_end),
     batch2_start: toNullableIso(validated.data.batch2_start),
     batch2_end: toNullableIso(validated.data.batch2_end),
+    technical_meeting_start: toNullableIso(
+      validated.data.technical_meeting_start,
+    ),
+    technical_meeting_end: toNullableIso(validated.data.technical_meeting_end),
     event_start: toNullableIso(validated.data.event_start),
     event_end: toNullableIso(validated.data.event_end),
     updated_at: new Date().toISOString(),

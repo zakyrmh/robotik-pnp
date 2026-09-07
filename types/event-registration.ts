@@ -31,10 +31,13 @@ export type RegistrationBatch = "batch1" | "batch2";
 
 export interface EventSettings {
   id: number;
+  timeline_release_date: string | null;
   batch1_start: string | null;
   batch1_end: string | null;
   batch2_start: string | null;
   batch2_end: string | null;
+  technical_meeting_start: string | null;
+  technical_meeting_end: string | null;
   event_start: string | null;
   event_end: string | null;
   created_at: string;

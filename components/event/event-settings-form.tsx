@@ -30,6 +30,9 @@ const inputClass =
   "w-full min-h-[44px] px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#3b5b84] bg-white";
 
 export function EventSettingsForm({ initialSettings }: EventSettingsFormProps) {
+  const [timelineReleaseDate, setTimelineReleaseDate] = useState(() =>
+    toInputValue(initialSettings?.timeline_release_date ?? null),
+  );
   const [batch1Start, setBatch1Start] = useState(() =>
     toInputValue(initialSettings?.batch1_start ?? null),
   );
@@ -41,6 +44,12 @@ export function EventSettingsForm({ initialSettings }: EventSettingsFormProps) {
   );
   const [batch2End, setBatch2End] = useState(() =>
     toInputValue(initialSettings?.batch2_end ?? null),
+  );
+  const [techMeetingStart, setTechMeetingStart] = useState(() =>
+    toInputValue(initialSettings?.technical_meeting_start ?? null),
+  );
+  const [techMeetingEnd, setTechMeetingEnd] = useState(() =>
+    toInputValue(initialSettings?.technical_meeting_end ?? null),
   );
   const [eventStart, setEventStart] = useState(() =>
     toInputValue(initialSettings?.event_start ?? null),
@@ -59,10 +68,13 @@ export function EventSettingsForm({ initialSettings }: EventSettingsFormProps) {
         initialSettings
           ? {
               ...initialSettings,
+              timeline_release_date: fromInputValue(timelineReleaseDate),
               batch1_start: fromInputValue(batch1Start),
               batch1_end: fromInputValue(batch1End),
               batch2_start: fromInputValue(batch2Start),
               batch2_end: fromInputValue(batch2End),
+              technical_meeting_start: fromInputValue(techMeetingStart),
+              technical_meeting_end: fromInputValue(techMeetingEnd),
               event_start: fromInputValue(eventStart),
               event_end: fromInputValue(eventEnd),
             }
@@ -70,10 +82,13 @@ export function EventSettingsForm({ initialSettings }: EventSettingsFormProps) {
       ),
     [
       initialSettings,
+      timelineReleaseDate,
       batch1Start,
       batch1End,
       batch2Start,
       batch2End,
+      techMeetingStart,
+      techMeetingEnd,
       eventStart,
       eventEnd,
     ],
@@ -86,10 +101,13 @@ export function EventSettingsForm({ initialSettings }: EventSettingsFormProps) {
     setSuccessMsg(null);
 
     const res = await updateEventSettingsAction({
+      timeline_release_date: fromInputValue(timelineReleaseDate),
       batch1_start: fromInputValue(batch1Start),
       batch1_end: fromInputValue(batch1End),
       batch2_start: fromInputValue(batch2Start),
       batch2_end: fromInputValue(batch2End),
+      technical_meeting_start: fromInputValue(techMeetingStart),
+      technical_meeting_end: fromInputValue(techMeetingEnd),
       event_start: fromInputValue(eventStart),
       event_end: fromInputValue(eventEnd),
     });
@@ -116,7 +134,7 @@ export function EventSettingsForm({ initialSettings }: EventSettingsFormProps) {
     },
     {
       title: "Pendaftaran Batch 2",
-      hint: "Countdown & biaya Batch 2 mengikuti rentang ini.",
+      hint: "Disembunyikan dari publik hingga Batch 1 selesai.",
       start: {
         label: "Mulai Batch 2",
         value: batch2Start,
@@ -124,6 +142,17 @@ export function EventSettingsForm({ initialSettings }: EventSettingsFormProps) {
       },
       end: { label: "Selesai Batch 2", value: batch2End, set: setBatch2End },
       accent: "border-l-amber-500",
+    },
+    {
+      title: "Technical Meeting",
+      hint: "Pelaksanaan Technical Meeting selama 2 hari.",
+      start: {
+        label: "Mulai TM",
+        value: techMeetingStart,
+        set: setTechMeetingStart,
+      },
+      end: { label: "Selesai TM", value: techMeetingEnd, set: setTechMeetingEnd },
+      accent: "border-l-purple-500",
     },
     {
       title: "Rentang Acara",
@@ -157,13 +186,26 @@ export function EventSettingsForm({ initialSettings }: EventSettingsFormProps) {
 
       <p className="flex items-start gap-2 text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-lg p-3">
         <Info className="w-4 h-4 shrink-0 mt-0.5 text-[#3b5b84]" />
-        Rentang Batch 1 & Batch 2 mengendalikan countdown di halaman publik
-        <span className="font-mono font-semibold text-slate-700">
-          /mrc
-        </span>{" "}
-        serta biaya yang dikenakan saat tim mendaftar (biaya Batch 1 / Batch 2
-        diatur per kategori di bawah). Urutan wajib: Batch 1 → Batch 2 → Acara.
+        Aturan Bisnis Timeline: Sebelum tanggal Rilis Timeline reached, halaman publik{" "}
+        <span className="font-mono font-semibold text-slate-700">/mrc</span> menampilkan "Coming Soon".
+        Batch 2 disembunyikan sepenuhnya sampai Batch 1 berakhir.
       </p>
+
+      {/* Tanggal Rilis Timeline Single Field */}
+      <div className="bg-slate-50/80 border border-slate-200 border-l-4 border-l-blue-500 rounded-lg p-4 space-y-2">
+        <label className="block text-sm font-bold text-slate-800">
+          Tanggal Rilis Timeline ke Publik
+        </label>
+        <p className="text-[11px] text-slate-500">
+          Sebelum tanggal ini, timeline publik di halaman /mrc akan berstatus "Coming Soon".
+        </p>
+        <input
+          type="datetime-local"
+          value={timelineReleaseDate}
+          onChange={(e) => setTimelineReleaseDate(e.target.value)}
+          className={inputClass}
+        />
+      </div>
 
       {errorMsg && (
         <p className="text-xs font-medium text-rose-600 bg-rose-50 border border-rose-200 rounded-lg p-3">
