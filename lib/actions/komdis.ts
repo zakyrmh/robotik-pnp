@@ -52,7 +52,9 @@ async function verifyKomdisRole() {
     !profile ||
     !["admin-komdis", "super-admin", "admin-or"].includes(profile.role)
   ) {
-    throw new Error("Forbidden: Akses khusus pengelola kegiatan (Komdis/OR/Super Admin).");
+    throw new Error(
+      "Forbidden: Akses khusus pengelola kegiatan (Komdis/OR/Super Admin).",
+    );
   }
 
   return { supabase, user };
@@ -735,9 +737,7 @@ export async function recordManualAttendance(rawInput: ManualAttendanceInput) {
 // REKAP PRESENSI KOMDIS (REKAP PER ANGGOTA & REKAP PER KEGIATAN)
 // ============================================================================
 
-function normalizePhotoUrl(
-  url: string | null | undefined,
-): string | null {
+function normalizePhotoUrl(url: string | null | undefined): string | null {
   if (!url || typeof url !== "string") return null;
   const trimmed = url.trim();
   if (

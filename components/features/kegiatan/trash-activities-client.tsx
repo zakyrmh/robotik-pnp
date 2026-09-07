@@ -95,7 +95,8 @@ export function TrashActivitiesClient({
   const [restoringId, setRestoringId] = useState<string | null>(null);
   const [loadingData, setLoadingData] = useState(false);
 
-  const canSwitchAudience = userRole === "super-admin" || userRole === "admin-or";
+  const canSwitchAudience =
+    userRole === "super-admin" || userRole === "admin-or";
 
   const handleAudienceChange = async (aud: "caang" | "anggota") => {
     setActiveAudience(aud);
@@ -126,7 +127,9 @@ export function TrashActivitiesClient({
       toast.dismiss(toastId);
       if (res.success) {
         toast.success(res.message);
-        setDeletedActivities((prev) => prev.filter((item) => item.id !== activityId));
+        setDeletedActivities((prev) =>
+          prev.filter((item) => item.id !== activityId),
+        );
         startTransition(() => router.refresh());
       } else {
         toast.error(res.message);
@@ -148,7 +151,9 @@ export function TrashActivitiesClient({
       toast.dismiss(toastId);
       if (res.success) {
         toast.success(res.message);
-        setDeletedActivities((prev) => prev.filter((item) => item.id !== hardDeleting.id));
+        setDeletedActivities((prev) =>
+          prev.filter((item) => item.id !== hardDeleting.id),
+        );
         setHardDeleting(null);
         startTransition(() => router.refresh());
       } else {
@@ -222,7 +227,6 @@ export function TrashActivitiesClient({
           </div>
         )}
       </div>
-
 
       {/* ── Content Area ───────────────────────────────────────────────── */}
       {deletedActivities.length === 0 ? (

@@ -40,7 +40,8 @@ export function PresensiClient({
     initialAudience,
   );
 
-  const canSwitchAudience = userRole === "super-admin" || userRole === "admin-or";
+  const canSwitchAudience =
+    userRole === "super-admin" || userRole === "admin-or";
   const isManager =
     userRole === "super-admin" ||
     (userRole === "admin-komdis" && activeAudience === "anggota") ||
@@ -127,7 +128,11 @@ export function PresensiClient({
               }`}
             >
               <HugeiconsIcon icon={UserGroupIcon} size={16} />
-              <span>{activeAudience === "caang" ? "Rekap Per Caang" : "Rekap Per Anggota"}</span>
+              <span>
+                {activeAudience === "caang"
+                  ? "Rekap Per Caang"
+                  : "Rekap Per Anggota"}
+              </span>
             </button>
 
             <button

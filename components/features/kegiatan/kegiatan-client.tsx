@@ -59,7 +59,6 @@ export interface KegiatanClientProps {
   initialAudience?: "caang" | "anggota";
 }
 
-
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function formatIndoDate(dateStr: string) {
@@ -154,10 +153,12 @@ export function KegiatanClient({
 
   // Target audience switching state
   const [activeAudience, setActiveAudience] = useState<"caang" | "anggota">(
-    initialAudience || (userRole === "caang" || userRole === "admin-or" ? "caang" : "anggota"),
+    initialAudience ||
+      (userRole === "caang" || userRole === "admin-or" ? "caang" : "anggota"),
   );
 
-  const canSwitchAudience = activeRole === "super-admin" || activeRole === "admin-or";
+  const canSwitchAudience =
+    activeRole === "super-admin" || activeRole === "admin-or";
   const canManage =
     activeAudience === "caang"
       ? activeRole === "super-admin" || activeRole === "admin-or"
@@ -249,7 +250,6 @@ export function KegiatanClient({
       isMounted = false;
     };
   }, [user, authLoading, supabase, refreshKey, activeAudience]);
-
 
   // Dynamic telemetry calculations
   const stats = useMemo<{
@@ -491,7 +491,11 @@ export function KegiatanClient({
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-md bg-primary-soft text-primary shrink-0">
               <HugeiconsIcon
-                icon={activeAudience === "caang" ? CalendarAdd01Icon : Calendar03Icon}
+                icon={
+                  activeAudience === "caang"
+                    ? CalendarAdd01Icon
+                    : Calendar03Icon
+                }
                 size={20}
               />
             </div>
@@ -567,7 +571,6 @@ export function KegiatanClient({
           </div>
         )}
       </div>
-
 
       {/* ── Stats Cards Grid ────────────────────────────────────────────── */}
       <div>
@@ -746,11 +749,7 @@ export function KegiatanClient({
             value={selectedStatus}
             onChange={(e) =>
               setSelectedStatus(
-                e.target.value as
-                  | "all"
-                  | "upcoming"
-                  | "ongoing"
-                  | "completed",
+                e.target.value as "all" | "upcoming" | "ongoing" | "completed",
               )
             }
             className="h-10 w-full bg-card px-3 rounded-md border border-border text-sm text-foreground focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
@@ -763,312 +762,309 @@ export function KegiatanClient({
         </div>
       </div>
 
+      {isLoading ? (
+        <div className="border border-border bg-card p-8 sm:p-12 text-center rounded-lg animate-pulse space-y-4">
+          <div className="h-6 bg-muted w-1/4 mx-auto rounded-md" />
+          <div className="h-4 bg-muted w-1/2 mx-auto rounded-md" />
+          <div className="space-y-2 pt-6">
+            <div className="h-12 bg-muted/50 w-full rounded-md" />
+            <div className="h-12 bg-muted/50 w-full rounded-md" />
+          </div>
+        </div>
+      ) : error ? (
+        <div className="flex flex-col items-center justify-center py-12 text-center border border-destructive/30 rounded-lg bg-destructive/5 p-6 sm:p-8 max-w-xl mx-auto">
+          <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center text-destructive mb-3 font-bold">
+            !
+          </div>
+          <p className="text-sm text-destructive">{error}</p>
+        </div>
+      ) : filteredActivities.length === 0 ? (
+        <div className="border border-border bg-card p-8 sm:p-12 text-center rounded-lg">
+          <HugeiconsIcon
+            icon={Calendar03Icon}
+            size={42}
+            className="mx-auto text-muted-foreground mb-3"
+          />
+          <p className="text-sm text-muted-foreground">
+            {search
+              ? "Tidak ada kegiatan yang cocok."
+              : 'Belum ada kegiatan. Klik "Tambah Kegiatan" untuk memulai.'}
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* Mobile Cards View */}
+          <div className="block lg:hidden space-y-3 sm:space-y-4">
+            {filteredActivities.map((activity) => (
+              <div
+                key={activity.id}
+                className="border border-border bg-card rounded-lg p-4 space-y-3"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="relative h-11 w-16 rounded-md border border-border bg-muted overflow-hidden flex items-center justify-center shrink-0">
+                      {activity.banner_url ? (
+                        <Image
+                          src={activity.banner_url}
+                          alt={activity.title}
+                          fill
+                          sizes="64px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <HugeiconsIcon
+                          icon={Calendar03Icon}
+                          size={18}
+                          className="text-muted-foreground"
+                        />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <span className="text-micro text-muted-foreground block">
+                        Nama Kegiatan
+                      </span>
+                      <span className="text-sm font-display font-medium text-foreground truncate block">
+                        {activity.title}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="shrink-0">{getStatusBadge(activity)}</div>
+                </div>
 
-          {isLoading ? (
-            <div className="border border-border bg-card p-8 sm:p-12 text-center rounded-lg animate-pulse space-y-4">
-              <div className="h-6 bg-muted w-1/4 mx-auto rounded-md" />
-              <div className="h-4 bg-muted w-1/2 mx-auto rounded-md" />
-              <div className="space-y-2 pt-6">
-                <div className="h-12 bg-muted/50 w-full rounded-md" />
-                <div className="h-12 bg-muted/50 w-full rounded-md" />
-              </div>
-            </div>
-          ) : error ? (
-            <div className="flex flex-col items-center justify-center py-12 text-center border border-destructive/30 rounded-lg bg-destructive/5 p-6 sm:p-8 max-w-xl mx-auto">
-              <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center text-destructive mb-3 font-bold">
-                !
-              </div>
-              <p className="text-sm text-destructive">{error}</p>
-            </div>
-          ) : filteredActivities.length === 0 ? (
-            <div className="border border-border bg-card p-8 sm:p-12 text-center rounded-lg">
-              <HugeiconsIcon
-                icon={Calendar03Icon}
-                size={42}
-                className="mx-auto text-muted-foreground mb-3"
-              />
-              <p className="text-sm text-muted-foreground">
-                {search
-                  ? "Tidak ada kegiatan yang cocok."
-                  : 'Belum ada kegiatan. Klik "Tambah Kegiatan" untuk memulai.'}
-              </p>
-            </div>
-          ) : (
-            <>
-              {/* Mobile Cards View */}
-              <div className="block lg:hidden space-y-3 sm:space-y-4">
-                {filteredActivities.map((activity) => (
-                  <div
-                    key={activity.id}
-                    className="border border-border bg-card rounded-lg p-4 space-y-3"
+                <div className="space-y-2 pt-2 border-t border-dashed border-border">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <span className="text-micro text-muted-foreground block">
+                        Tanggal
+                      </span>
+                      <span className="text-sm text-foreground font-medium">
+                        {formatIndoDate(activity.start_date)}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-micro text-muted-foreground block">
+                        Waktu
+                      </span>
+                      <span className="text-sm text-foreground font-mono">
+                        {formatIndoTime(activity.start_date)}
+                      </span>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-micro text-muted-foreground block">
+                      Lokasi
+                    </span>
+                    <span className="text-sm text-foreground">
+                      {activity.location || "TBA"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-2 border-t border-border pt-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => router.push(`/kegiatan/${activity.id}`)}
+                    className="rounded-md border-border text-foreground font-medium text-xs px-3 h-8 hover:bg-muted"
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="relative h-11 w-16 rounded-md border border-border bg-muted overflow-hidden flex items-center justify-center shrink-0">
-                          {activity.banner_url ? (
-                            <Image
-                              src={activity.banner_url}
-                              alt={activity.title}
-                              fill
-                              sizes="64px"
-                              className="object-cover"
-                            />
-                          ) : (
-                            <HugeiconsIcon
-                              icon={Calendar03Icon}
-                              size={18}
-                              className="text-muted-foreground"
-                            />
-                          )}
-                        </div>
-                        <div className="min-w-0">
-                          <span className="text-micro text-muted-foreground block">
-                            Nama Kegiatan
-                          </span>
-                          <span className="text-sm font-display font-medium text-foreground truncate block">
-                            {activity.title}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="shrink-0">{getStatusBadge(activity)}</div>
-                    </div>
+                    <HugeiconsIcon icon={EyeIcon} size={14} />
+                    Detail
+                  </Button>
 
-                    <div className="space-y-2 pt-2 border-t border-dashed border-border">
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <span className="text-micro text-muted-foreground block">
-                            Tanggal
-                          </span>
-                          <span className="text-sm text-foreground font-medium">
-                            {formatIndoDate(activity.start_date)}
-                          </span>
-                        </div>
-                        <div>
-                          <span className="text-micro text-muted-foreground block">
-                            Waktu
-                          </span>
-                          <span className="text-sm text-foreground font-mono">
-                            {formatIndoTime(activity.start_date)}
-                          </span>
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-micro text-muted-foreground block">
-                          Lokasi
-                        </span>
-                        <span className="text-sm text-foreground">
-                          {activity.location || "TBA"}
-                        </span>
-                      </div>
-                    </div>
+                  {isAttendanceWindowActive(activity) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => router.push(`/presensi/${activity.id}`)}
+                      className="rounded-md border-primary text-primary font-medium text-xs px-3 h-8 hover:bg-primary-soft"
+                    >
+                      <HugeiconsIcon icon={QrCode01Icon} size={14} />
+                      Presensi
+                    </Button>
+                  )}
 
-                    <div className="flex items-center justify-end gap-2 border-t border-border pt-3">
+                  {canManage && (
+                    <>
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => router.push(`/kegiatan/${activity.id}`)}
-                        className="rounded-md border-border text-foreground font-medium text-xs px-3 h-8 hover:bg-muted"
+                        onClick={() =>
+                          activeAudience === "caang"
+                            ? openEditForm(activity)
+                            : setEditingKomdisActivity(activity)
+                        }
+                        className="rounded-md border-primary text-primary font-medium text-xs px-3 h-8 hover:bg-primary-soft"
                       >
-                        <HugeiconsIcon icon={EyeIcon} size={14} />
-                        Detail
+                        <HugeiconsIcon icon={Edit02Icon} size={14} />
+                        Edit
                       </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setDeletingActivity(activity)}
+                        className="rounded-md border-destructive/40 text-destructive font-medium text-xs px-3 h-8 hover:bg-destructive/10"
+                      >
+                        <HugeiconsIcon icon={Delete01Icon} size={14} />
+                        Hapus
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
 
-                      {isAttendanceWindowActive(activity) && (
+          {/* Desktop Table View */}
+          <div className="hidden lg:block overflow-x-auto border border-border bg-card rounded-lg">
+            <table className="w-full min-w-225 border-collapse text-left">
+              <thead>
+                <tr className="border-b border-border bg-surface">
+                  <th className="px-4 py-3 w-24 text-center text-micro font-semibold uppercase tracking-wide text-muted-foreground">
+                    Banner
+                  </th>
+                  <th className="px-4 py-3 text-micro font-semibold uppercase tracking-wide text-muted-foreground">
+                    Nama Kegiatan
+                  </th>
+                  <th className="px-4 py-3 text-micro font-semibold uppercase tracking-wide text-muted-foreground">
+                    Tanggal &amp; Waktu
+                  </th>
+                  <th className="px-4 py-3 text-micro font-semibold uppercase tracking-wide text-muted-foreground">
+                    Lokasi
+                  </th>
+                  <th className="px-4 py-3 w-32 text-micro font-semibold uppercase tracking-wide text-muted-foreground">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 w-44 text-center text-micro font-semibold uppercase tracking-wide text-muted-foreground">
+                    Aksi
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {filteredActivities.map((activity) => (
+                  <tr
+                    key={activity.id}
+                    className="hover:bg-muted/50 transition-colors"
+                  >
+                    <td className="px-4 py-3 align-middle text-center">
+                      <div className="relative h-11 w-16 mx-auto rounded-md border border-border bg-muted overflow-hidden flex items-center justify-center">
+                        {activity.banner_url ? (
+                          <Image
+                            src={activity.banner_url}
+                            alt={activity.title}
+                            fill
+                            sizes="64px"
+                            className="object-cover"
+                          />
+                        ) : (
+                          <HugeiconsIcon
+                            icon={Calendar03Icon}
+                            size={18}
+                            className="text-muted-foreground"
+                          />
+                        )}
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-3 align-middle">
+                      <div
+                        className="font-display font-medium text-foreground text-sm truncate max-w-70"
+                        title={activity.title}
+                      >
+                        {activity.title}
+                      </div>
+                      <div className="text-micro text-muted-foreground mt-0.5 uppercase tracking-wide">
+                        Audience: {activity.target_audience}
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-3 align-middle">
+                      <div className="text-foreground text-xs font-medium">
+                        {formatIndoDate(activity.start_date)}
+                      </div>
+                      <div className="text-micro text-muted-foreground mt-0.5 font-mono">
+                        {formatTimeRange(
+                          activity.start_date,
+                          activity.end_date,
+                        )}
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-3 align-middle">
+                      <div
+                        className="text-foreground text-xs truncate max-w-55"
+                        title={activity.location || "TBA"}
+                      >
+                        {activity.location || "TBA"}
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-3 align-middle">
+                      {getStatusBadge(activity)}
+                    </td>
+
+                    <td className="px-4 py-3 align-middle text-center">
+                      <div className="flex items-center justify-center gap-1.5">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => router.push(`/presensi/${activity.id}`)}
-                          className="rounded-md border-primary text-primary font-medium text-xs px-3 h-8 hover:bg-primary-soft"
+                          onClick={() =>
+                            router.push(`/kegiatan/${activity.id}`)
+                          }
+                          className="rounded-md border-border text-foreground font-medium text-xs h-8 px-2.5 hover:bg-muted"
                         >
-                          <HugeiconsIcon icon={QrCode01Icon} size={14} />
-                          Presensi
+                          <HugeiconsIcon icon={EyeIcon} size={14} />
+                          Detail
                         </Button>
-                      )}
 
-                      {canManage && (
-                        <>
+                        {isAttendanceWindowActive(activity) && (
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() =>
-                              activeAudience === "caang"
-                                ? openEditForm(activity)
-                                : setEditingKomdisActivity(activity)
+                              router.push(`/presensi/${activity.id}`)
                             }
-                            className="rounded-md border-primary text-primary font-medium text-xs px-3 h-8 hover:bg-primary-soft"
+                            className="rounded-md border-primary text-primary font-medium text-xs h-8 px-2.5 hover:bg-primary-soft"
                           >
-                            <HugeiconsIcon icon={Edit02Icon} size={14} />
-                            Edit
+                            <HugeiconsIcon icon={QrCode01Icon} size={14} />
+                            Presensi
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setDeletingActivity(activity)}
-                            className="rounded-md border-destructive/40 text-destructive font-medium text-xs px-3 h-8 hover:bg-destructive/10"
-                          >
-                            <HugeiconsIcon icon={Delete01Icon} size={14} />
-                            Hapus
-                          </Button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                        )}
 
-              {/* Desktop Table View */}
-              <div className="hidden lg:block overflow-x-auto border border-border bg-card rounded-lg">
-                <table className="w-full min-w-225 border-collapse text-left">
-                  <thead>
-                    <tr className="border-b border-border bg-surface">
-                      <th className="px-4 py-3 w-24 text-center text-micro font-semibold uppercase tracking-wide text-muted-foreground">
-                        Banner
-                      </th>
-                      <th className="px-4 py-3 text-micro font-semibold uppercase tracking-wide text-muted-foreground">
-                        Nama Kegiatan
-                      </th>
-                      <th className="px-4 py-3 text-micro font-semibold uppercase tracking-wide text-muted-foreground">
-                        Tanggal &amp; Waktu
-                      </th>
-                      <th className="px-4 py-3 text-micro font-semibold uppercase tracking-wide text-muted-foreground">
-                        Lokasi
-                      </th>
-                      <th className="px-4 py-3 w-32 text-micro font-semibold uppercase tracking-wide text-muted-foreground">
-                        Status
-                      </th>
-                      <th className="px-4 py-3 w-44 text-center text-micro font-semibold uppercase tracking-wide text-muted-foreground">
-                        Aksi
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border">
-                    {filteredActivities.map((activity) => (
-                      <tr
-                        key={activity.id}
-                        className="hover:bg-muted/50 transition-colors"
-                      >
-                        <td className="px-4 py-3 align-middle text-center">
-                          <div className="relative h-11 w-16 mx-auto rounded-md border border-border bg-muted overflow-hidden flex items-center justify-center">
-                            {activity.banner_url ? (
-                              <Image
-                                src={activity.banner_url}
-                                alt={activity.title}
-                                fill
-                                sizes="64px"
-                                className="object-cover"
-                              />
-                            ) : (
-                              <HugeiconsIcon
-                                icon={Calendar03Icon}
-                                size={18}
-                                className="text-muted-foreground"
-                              />
-                            )}
-                          </div>
-                        </td>
-
-                        <td className="px-4 py-3 align-middle">
-                          <div
-                            className="font-display font-medium text-foreground text-sm truncate max-w-70"
-                            title={activity.title}
-                          >
-                            {activity.title}
-                          </div>
-                          <div className="text-micro text-muted-foreground mt-0.5 uppercase tracking-wide">
-                            Audience: {activity.target_audience}
-                          </div>
-                        </td>
-
-                        <td className="px-4 py-3 align-middle">
-                          <div className="text-foreground text-xs font-medium">
-                            {formatIndoDate(activity.start_date)}
-                          </div>
-                          <div className="text-micro text-muted-foreground mt-0.5 font-mono">
-                            {formatTimeRange(
-                              activity.start_date,
-                              activity.end_date,
-                            )}
-                          </div>
-                        </td>
-
-                        <td className="px-4 py-3 align-middle">
-                          <div
-                            className="text-foreground text-xs truncate max-w-55"
-                            title={activity.location || "TBA"}
-                          >
-                            {activity.location || "TBA"}
-                          </div>
-                        </td>
-
-                        <td className="px-4 py-3 align-middle">
-                          {getStatusBadge(activity)}
-                        </td>
-
-                        <td className="px-4 py-3 align-middle text-center">
-                          <div className="flex items-center justify-center gap-1.5">
+                        {canManage && (
+                          <>
                             <Button
                               variant="outline"
-                              size="sm"
-                              onClick={() => router.push(`/kegiatan/${activity.id}`)}
-                              className="rounded-md border-border text-foreground font-medium text-xs h-8 px-2.5 hover:bg-muted"
+                              size="icon"
+                              onClick={() =>
+                                activeAudience === "caang"
+                                  ? openEditForm(activity)
+                                  : setEditingKomdisActivity(activity)
+                              }
+                              className="h-8 w-8 rounded-md border-primary text-primary hover:bg-primary-soft"
+                              title="Edit"
                             >
-                              <HugeiconsIcon icon={EyeIcon} size={14} />
-                              Detail
+                              <HugeiconsIcon icon={Edit02Icon} size={14} />
                             </Button>
-
-                            {isAttendanceWindowActive(activity) && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => router.push(`/presensi/${activity.id}`)}
-                                className="rounded-md border-primary text-primary font-medium text-xs h-8 px-2.5 hover:bg-primary-soft"
-                              >
-                                <HugeiconsIcon icon={QrCode01Icon} size={14} />
-                                Presensi
-                              </Button>
-                            )}
-
-                            {canManage && (
-                              <>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  onClick={() =>
-                                    activeAudience === "caang"
-                                      ? openEditForm(activity)
-                                      : setEditingKomdisActivity(activity)
-                                  }
-                                  className="h-8 w-8 rounded-md border-primary text-primary hover:bg-primary-soft"
-                                  title="Edit"
-                                >
-                                  <HugeiconsIcon icon={Edit02Icon} size={14} />
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  onClick={() => setDeletingActivity(activity)}
-                                  className="h-8 w-8 rounded-md border-destructive/40 text-destructive hover:bg-destructive/10"
-                                  title="Hapus"
-                                >
-                                  <HugeiconsIcon
-                                    icon={Delete01Icon}
-                                    size={14}
-                                  />
-                                </Button>
-                              </>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
-
-
-
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => setDeletingActivity(activity)}
+                              className="h-8 w-8 rounded-md border-destructive/40 text-destructive hover:bg-destructive/10"
+                              title="Hapus"
+                            >
+                              <HugeiconsIcon icon={Delete01Icon} size={14} />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
 
       {/* ════════════════════════════════════════════════════════════════════
           MODAL: FORM TAMBAH / EDIT KEGIATAN

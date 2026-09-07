@@ -51,9 +51,7 @@ export function OnboardingStepper({
             {/* Label (Mobile Hidden) */}
             <span
               className={`ml-2.5 hidden md:inline text-xs font-semibold uppercase tracking-wider font-mono transition-colors ${
-                isCurrent
-                  ? "text-foreground"
-                  : "text-muted-foreground"
+                isCurrent ? "text-foreground" : "text-muted-foreground"
               }`}
             >
               {s.label}

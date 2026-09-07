@@ -27,7 +27,10 @@ describe("OR Settings Server Actions", () => {
 
   describe("getOrSettings", () => {
     it("should reject if user is not authenticated", async () => {
-      mockSupabase.auth.getUser.mockResolvedValueOnce({ data: { user: null }, error: new Error("No session") });
+      mockSupabase.auth.getUser.mockResolvedValueOnce({
+        data: { user: null },
+        error: new Error("No session"),
+      });
 
       const res = await getOrSettings();
       expect(res.success).toBe(false);
@@ -35,7 +38,9 @@ describe("OR Settings Server Actions", () => {
     });
 
     it("should successfully retrieve settings", async () => {
-      mockSupabase.auth.getUser.mockResolvedValueOnce({ data: { user: { id: "user-id" } } });
+      mockSupabase.auth.getUser.mockResolvedValueOnce({
+        data: { user: { id: "user-id" } },
+      });
       mockSupabase.single.mockResolvedValueOnce({
         data: {
           periode_recruitment: "OR-21",
@@ -59,9 +64,14 @@ describe("OR Settings Server Actions", () => {
 
   describe("saveOrSettings", () => {
     it("should reject if user is not authorized (role is caang)", async () => {
-      mockSupabase.auth.getUser.mockResolvedValueOnce({ data: { user: { id: "user-id" } } });
+      mockSupabase.auth.getUser.mockResolvedValueOnce({
+        data: { user: { id: "user-id" } },
+      });
       // First single call: profile role query
-      mockSupabase.single.mockResolvedValueOnce({ data: { role: "caang" }, error: null });
+      mockSupabase.single.mockResolvedValueOnce({
+        data: { role: "caang" },
+        error: null,
+      });
 
       const res = await saveOrSettings({ periode_recruitment: "OR-22" });
       expect(res.success).toBe(false);
@@ -69,8 +79,13 @@ describe("OR Settings Server Actions", () => {
     });
 
     it("should reject if periode_recruitment is empty", async () => {
-      mockSupabase.auth.getUser.mockResolvedValueOnce({ data: { user: { id: "admin-id" } } });
-      mockSupabase.single.mockResolvedValueOnce({ data: { role: "admin-or" }, error: null });
+      mockSupabase.auth.getUser.mockResolvedValueOnce({
+        data: { user: { id: "admin-id" } },
+      });
+      mockSupabase.single.mockResolvedValueOnce({
+        data: { role: "admin-or" },
+        error: null,
+      });
 
       const res = await saveOrSettings({ periode_recruitment: "   " });
       expect(res.success).toBe(false);
@@ -79,8 +94,13 @@ describe("OR Settings Server Actions", () => {
     });
 
     it("should reject if biaya_pendaftaran is negative", async () => {
-      mockSupabase.auth.getUser.mockResolvedValueOnce({ data: { user: { id: "admin-id" } } });
-      mockSupabase.single.mockResolvedValueOnce({ data: { role: "admin-or" }, error: null });
+      mockSupabase.auth.getUser.mockResolvedValueOnce({
+        data: { user: { id: "admin-id" } },
+      });
+      mockSupabase.single.mockResolvedValueOnce({
+        data: { role: "admin-or" },
+        error: null,
+      });
 
       const res = await saveOrSettings({ biaya_pendaftaran: -500 });
       expect(res.success).toBe(false);
@@ -89,8 +109,13 @@ describe("OR Settings Server Actions", () => {
     });
 
     it("should update settings successfully when user is admin-or", async () => {
-      mockSupabase.auth.getUser.mockResolvedValueOnce({ data: { user: { id: "admin-id" } } });
-      mockSupabase.single.mockResolvedValueOnce({ data: { role: "admin-or" }, error: null }); // profile check
+      mockSupabase.auth.getUser.mockResolvedValueOnce({
+        data: { user: { id: "admin-id" } },
+      });
+      mockSupabase.single.mockResolvedValueOnce({
+        data: { role: "admin-or" },
+        error: null,
+      }); // profile check
       mockSupabase.single.mockResolvedValueOnce({
         data: {
           periode_recruitment: "OR-22",

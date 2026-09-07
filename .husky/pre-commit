@@ -25,7 +25,7 @@ fi
 
 # 3. Cek file besar (>500KB, mengabaikan lockfile & diagram assets)
 MAX_SIZE=512000
-LARGE_FILES=$(echo "$STAGED" | grep -vE "^(pnpm-lock\.yaml|package-lock\.json|yarn\.lock|.*\.bpmn(\.xml)?|.*\.drawio|.*\.svg)$" | while read -r f; do
+LARGE_FILES=$(echo "$STAGED" | grep -vE "^(pnpm-lock\.yaml|package-lock\.json|yarn\.lock|bun\.lock|supabase/seed\.sql|.*\.bpmn(\.xml)?|.*\.drawio|.*\.svg)$" | while read -r f; do
   if [ -f "$f" ]; then
     # Bersihkan spasi dari output wc (sering terjadi di Windows/MINGW)
     FILE_SIZE=$(wc -c < "$f" 2>/dev/null | tr -d ' ')

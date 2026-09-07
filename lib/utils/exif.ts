@@ -5,7 +5,7 @@
 export function extractExifDateTime(buffer: Buffer): Date | null {
   try {
     // Check if buffer is a valid JPEG
-    if (buffer.length < 4 || buffer[0] !== 0xFF || buffer[1] !== 0xD8) {
+    if (buffer.length < 4 || buffer[0] !== 0xff || buffer[1] !== 0xd8) {
       return null;
     }
 
@@ -16,12 +16,12 @@ export function extractExifDateTime(buffer: Buffer): Date | null {
     while (offset < buffer.length - 4) {
       const marker = buffer.readUInt16BE(offset);
       const length = buffer.readUInt16BE(offset + 2);
-      if (marker === 0xFFE1) {
+      if (marker === 0xffe1) {
         app1Offset = offset;
         break;
       }
       // If we see SOS (Start of Scan 0xFFDA) or EOI (End of Image 0xFFD9), stop scanning
-      if (marker === 0xFFDA || marker === 0xFFD9) {
+      if (marker === 0xffda || marker === 0xffd9) {
         break;
       }
       offset += 2 + length;
@@ -33,14 +33,22 @@ export function extractExifDateTime(buffer: Buffer): Date | null {
 
     // Check for "Exif\0\0" header
     const exifHeaderOffset = app1Offset + 4;
-    const headerStr = buffer.toString("utf8", exifHeaderOffset, exifHeaderOffset + 4);
+    const headerStr = buffer.toString(
+      "utf8",
+      exifHeaderOffset,
+      exifHeaderOffset + 4,
+    );
     if (headerStr !== "Exif") {
       return null;
     }
 
     // TIFF Header starts at app1Offset + 10
     const tiffHeaderOffset = app1Offset + 10;
-    const byteOrderMarker = buffer.toString("utf8", tiffHeaderOffset, tiffHeaderOffset + 2);
+    const byteOrderMarker = buffer.toString(
+      "utf8",
+      tiffHeaderOffset,
+      tiffHeaderOffset + 2,
+    );
     const isLittleEndian = byteOrderMarker === "II";
     if (!isLittleEndian && byteOrderMarker !== "MM") {
       return null;
@@ -91,7 +99,11 @@ export function extractExifDateTime(buffer: Buffer): Date | null {
           const valueOffset = readUInt32(entryOffset + 8);
           const dataOffset = tiffHeaderOffset + valueOffset;
           if (dataOffset + count <= buffer.length) {
-            const dateStr = buffer.toString("utf8", dataOffset, dataOffset + count - 1); // Exclude null terminator
+            const dateStr = buffer.toString(
+              "utf8",
+              dataOffset,
+              dataOffset + count - 1,
+            ); // Exclude null terminator
             // Format is "YYYY:MM:DD HH:MM:SS"
             const parts = dateStr.split(" ");
             if (parts.length >= 1) {
@@ -100,7 +112,9 @@ export function extractExifDateTime(buffer: Buffer): Date | null {
                 const year = parseInt(dateParts[0], 10);
                 const month = parseInt(dateParts[1], 10) - 1; // 0-indexed
                 const day = parseInt(dateParts[2], 10);
-                let hours = 0, minutes = 0, seconds = 0;
+                let hours = 0,
+                  minutes = 0,
+                  seconds = 0;
                 if (parts[1]) {
                   const timeParts = parts[1].split(":");
                   if (timeParts.length === 3) {

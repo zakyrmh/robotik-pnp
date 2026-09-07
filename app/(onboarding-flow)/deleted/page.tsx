@@ -59,9 +59,6 @@ export default async function DeletedPage() {
   });
 
   return (
-    <DeletedCard
-      formattedDate={formattedDate}
-      deleteReason={deleteReason}
-    />
+    <DeletedCard formattedDate={formattedDate} deleteReason={deleteReason} />
   );
 }

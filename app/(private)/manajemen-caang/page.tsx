@@ -29,37 +29,46 @@ interface RawRegistration {
   status: string | null;
   deleted_at: string | null;
   delete_reason: string | null;
-  profiles: {
-    id: string;
-    email: string;
-    nim: string | null;
-    role: string;
-    is_onboarded: boolean;
-  } | {
-    id: string;
-    email: string;
-    nim: string | null;
-    role: string;
-    is_onboarded: boolean;
-  }[] | null;
+  profiles:
+    | {
+        id: string;
+        email: string;
+        nim: string | null;
+        role: string;
+        is_onboarded: boolean;
+      }
+    | {
+        id: string;
+        email: string;
+        nim: string | null;
+        role: string;
+        is_onboarded: boolean;
+      }[]
+    | null;
   study_programs: {
     id: string;
     name: string;
     degree: string;
-    majors: {
-      id: string;
-      name: string;
-    } | {
-      id: string;
-      name: string;
-    }[] | null;
+    majors:
+      | {
+          id: string;
+          name: string;
+        }
+      | {
+          id: string;
+          name: string;
+        }[]
+      | null;
   } | null;
 }
 
 export default async function ManajemenCaangPage() {
   const supabase = await createClient();
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
   if (authError || !user) {
     redirect("/login");
   }
@@ -72,25 +81,37 @@ export default async function ManajemenCaangPage() {
 
   const rawProfile = profile as { id: string; role: string } | null;
 
-  if (!rawProfile || (rawProfile.role !== "admin-or" && rawProfile.role !== "super-admin")) {
+  if (
+    !rawProfile ||
+    (rawProfile.role !== "admin-or" && rawProfile.role !== "super-admin")
+  ) {
     redirect("/dashboard");
   }
 
   // Fetch caang candidates
   const caangRes = await getCaangList();
-  const caangData = (caangRes.success && caangRes.data ? caangRes.data : []) as unknown as RawRegistration[];
+  const caangData = (caangRes.success && caangRes.data
+    ? caangRes.data
+    : []) as unknown as RawRegistration[];
 
   // Format Caang data for the client component
   const formattedCaang = caangData.map((reg) => {
     const profile = Array.isArray(reg.profiles)
       ? reg.profiles[0]
-      : reg.profiles || { id: "", email: "", nim: "", role: "caang", is_onboarded: false };
+      : reg.profiles || {
+          id: "",
+          email: "",
+          nim: "",
+          role: "caang",
+          is_onboarded: false,
+        };
     const sp = Array.isArray(reg.study_programs)
       ? reg.study_programs[0]
       : reg.study_programs || { id: "", name: "", degree: "", majors: null };
-    const major = sp && Array.isArray(sp.majors)
-      ? sp.majors[0]
-      : sp?.majors || { id: "", name: "" };
+    const major =
+      sp && Array.isArray(sp.majors)
+        ? sp.majors[0]
+        : sp?.majors || { id: "", name: "" };
 
     return {
       profileId: profile.id || "",
@@ -127,9 +148,5 @@ export default async function ManajemenCaangPage() {
     };
   });
 
-  return (
-    <CaangClient
-      initialCaang={formattedCaang}
-    />
-  );
+  return <CaangClient initialCaang={formattedCaang} />;
 }

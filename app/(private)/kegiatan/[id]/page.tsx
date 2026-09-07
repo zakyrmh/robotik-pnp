@@ -17,7 +17,6 @@ import { Badge } from "@/components/ui/badge";
 import type { ActivityItem } from "@/lib/actions/activities";
 import { ActivityDetailActions } from "@/components/features/kegiatan/activity-detail-actions";
 
-
 interface ActivityDetailPageProps {
   params: Promise<{
     id: string;
@@ -305,4 +304,3 @@ export default async function ActivityDetailPage({
     </div>
   );
 }
-

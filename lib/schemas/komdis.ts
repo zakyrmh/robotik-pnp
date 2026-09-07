@@ -53,7 +53,11 @@ export type LogPointReductionInput = z.infer<typeof LogPointReductionSchema>;
 
 export const LogLegacyDisciplinePointSchema = z.object({
   profileId: z.string().uuid("ID profil tidak valid"),
-  category: z.enum(["poin_awal_periode20", "transfer_periode", "penyesuaian_komdis"]),
+  category: z.enum([
+    "poin_awal_periode20",
+    "transfer_periode",
+    "penyesuaian_komdis",
+  ]),
   points: z.number().int().positive("Poin sanksi awal harus bernilai positif"),
   description: z.string().min(5, "Deskripsi/keterangan poin awal wajib diisi"),
 });

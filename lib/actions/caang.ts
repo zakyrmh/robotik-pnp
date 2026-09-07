@@ -13,7 +13,10 @@ async function verifyAdminAccess() {
   } = await supabase.auth.getUser();
 
   if (error || !user) {
-    return { authorized: false, error: "Sesi tidak ditemukan. Silakan login kembali." };
+    return {
+      authorized: false,
+      error: "Sesi tidak ditemukan. Silakan login kembali.",
+    };
   }
 
   const { data: profile } = await supabase
@@ -22,8 +25,14 @@ async function verifyAdminAccess() {
     .eq("id", user.id)
     .single();
 
-  if (!profile || (profile.role !== "super-admin" && profile.role !== "admin-or")) {
-    return { authorized: false, error: "Akses ditolak. Anda tidak memiliki izin." };
+  if (
+    !profile ||
+    (profile.role !== "super-admin" && profile.role !== "admin-or")
+  ) {
+    return {
+      authorized: false,
+      error: "Akses ditolak. Anda tidak memiliki izin.",
+    };
   }
 
   return { authorized: true, user, role: profile.role };
@@ -38,13 +47,14 @@ export async function getCaangList() {
 
   const supabaseAdmin = createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
 
   try {
     const { data, error } = await supabaseAdmin
       .from("registrations")
-      .select(`
+      .select(
+        `
         id,
         full_name,
         nickname,
@@ -86,14 +96,18 @@ export async function getCaangList() {
             name
           )
         )
-      `)
+      `,
+      )
       .eq("profiles.role", "caang")
       .is("deleted_at", null)
       .order("created_at", { ascending: false });
 
     if (error) {
       console.error("Error fetching caang list:", error);
-      return { success: false, error: "Gagal mengambil data Caang dari database." };
+      return {
+        success: false,
+        error: "Gagal mengambil data Caang dari database.",
+      };
     }
 
     return { success: true, data };
@@ -112,7 +126,7 @@ export async function deleteCaang(profileId: string, reason: string) {
 
   const supabaseAdmin = createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
 
   try {
@@ -127,7 +141,10 @@ export async function deleteCaang(profileId: string, reason: string) {
     }
 
     if (targetProfile.role !== "caang") {
-      return { success: false, error: "Aksi ditolak. Hanya data Caang yang dapat dihapus." };
+      return {
+        success: false,
+        error: "Aksi ditolak. Hanya data Caang yang dapat dihapus.",
+      };
     }
 
     // Soft delete by updating registrations
@@ -145,7 +162,10 @@ export async function deleteCaang(profileId: string, reason: string) {
     }
 
     revalidatePath("/manajemen-caang");
-    return { success: true, message: "Data Caang berhasil dihapus (soft delete)." };
+    return {
+      success: true,
+      message: "Data Caang berhasil dihapus (soft delete).",
+    };
   } catch (err) {
     console.error("Unexpected error deleting caang:", err);
     return { success: false, error: "Terjadi kesalahan tidak terduga." };
@@ -168,7 +188,7 @@ export async function updateCaang(
     currentClass: string;
     entryYear: number;
     status: string;
-  }
+  },
 ) {
   const authCheck = await verifyAdminAccess();
   if (!authCheck.authorized) {
@@ -177,7 +197,7 @@ export async function updateCaang(
 
   const supabaseAdmin = createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
 
   try {
@@ -203,7 +223,10 @@ export async function updateCaang(
 
     if (regError) {
       console.error("Error updating registration:", regError);
-      return { success: false, error: "Gagal memperbarui data pendaftaran Caang." };
+      return {
+        success: false,
+        error: "Gagal memperbarui data pendaftaran Caang.",
+      };
     }
 
     revalidatePath("/manajemen-caang");
@@ -225,7 +248,8 @@ export async function getAllStudyProgramsWithMajors() {
   try {
     const { data, error } = await supabase
       .from("study_programs")
-      .select(`
+      .select(
+        `
         id,
         name,
         degree,
@@ -233,7 +257,8 @@ export async function getAllStudyProgramsWithMajors() {
           id,
           name
         )
-      `)
+      `,
+      )
       .order("name", { ascending: true });
 
     if (error) {

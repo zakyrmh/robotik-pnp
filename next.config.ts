@@ -2,6 +2,12 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ["sharp"],
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "10mb",
+    },
+  },
   images: {
     // Izinkan IP lokal hanya saat development (Next.js 16+ perlindungan SSRF)
     dangerouslyAllowLocalIP: process.env.NODE_ENV === "development",
@@ -42,6 +48,18 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "api.qrserver.com",
+      },
+      {
+        protocol: "https",
+        hostname: "quickchart.io",
+      },
+      {
+        protocol: "https",
+        hostname: "api.midtrans.com",
+      },
+      {
+        protocol: "https",
+        hostname: "api.sandbox.midtrans.com",
       },
       {
         protocol: "https",

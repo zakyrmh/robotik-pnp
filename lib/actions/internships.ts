@@ -6,7 +6,10 @@ import { createClient } from "@/lib/supabase/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import { ServerActionResponse } from "@/lib/types/action";
 
-const settingsPath = path.join(process.cwd(), "lib/actions/internship_settings.json");
+const settingsPath = path.join(
+  process.cwd(),
+  "lib/actions/internship_settings.json",
+);
 
 /**
  * Helper to check if internship registration is open.
@@ -30,18 +33,21 @@ export async function isInternshipRegistrationOpen(): Promise<boolean> {
  * Persists status in a local workspace JSON configuration file.
  */
 export async function toggleInternshipRegistration(
-  isOpen: boolean
+  isOpen: boolean,
 ): Promise<ServerActionResponse> {
   try {
     const supabase = await createClient();
 
     // 1. Verify authenticated admin
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
       return {
         success: false,
         message: "Sesi tidak ditemukan. Silakan login kembali.",
-        error: { code: "UNAUTHORIZED", details: "User is not logged in" }
+        error: { code: "UNAUTHORIZED", details: "User is not logged in" },
       };
     }
 
@@ -55,7 +61,7 @@ export async function toggleInternshipRegistration(
       return {
         success: false,
         message: "Profil tidak ditemukan.",
-        error: { code: "NOT_FOUND", details: "Profile not found" }
+        error: { code: "NOT_FOUND", details: "Profile not found" },
       };
     }
 
@@ -63,8 +69,9 @@ export async function toggleInternshipRegistration(
     if (!allowedRoles.includes(profile.role)) {
       return {
         success: false,
-        message: "Hanya Admin OR atau Super Admin yang dapat membuka/menutup pendaftaran magang.",
-        error: { code: "FORBIDDEN", details: "User role is not authorized" }
+        message:
+          "Hanya Admin OR atau Super Admin yang dapat membuka/menutup pendaftaran magang.",
+        error: { code: "FORBIDDEN", details: "User role is not authorized" },
       };
     }
 
@@ -84,7 +91,7 @@ export async function toggleInternshipRegistration(
     return {
       success: false,
       message: "Gagal mengubah status pendaftaran magang.",
-      error: { code: "SERVER_ERROR", details: errMsg }
+      error: { code: "SERVER_ERROR", details: errMsg },
     };
   }
 }
@@ -95,18 +102,21 @@ export async function toggleInternshipRegistration(
  * Uses service role to bypass database insert RLS.
  */
 export async function applyInternship(
-  divisionId: string
+  divisionId: string,
 ): Promise<ServerActionResponse> {
   try {
     const supabase = await createClient();
 
     // 1. Verify authenticated caang
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
       return {
         success: false,
         message: "Sesi tidak ditemukan. Silakan login kembali.",
-        error: { code: "UNAUTHORIZED", details: "User is not logged in" }
+        error: { code: "UNAUTHORIZED", details: "User is not logged in" },
       };
     }
 
@@ -120,7 +130,7 @@ export async function applyInternship(
       return {
         success: false,
         message: "Profil tidak ditemukan.",
-        error: { code: "NOT_FOUND", details: "Profile not found" }
+        error: { code: "NOT_FOUND", details: "Profile not found" },
       };
     }
 
@@ -128,7 +138,7 @@ export async function applyInternship(
       return {
         success: false,
         message: "Hanya Calon Anggota (Caang) yang dapat mendaftar magang.",
-        error: { code: "FORBIDDEN", details: "Role is not authorized" }
+        error: { code: "FORBIDDEN", details: "Role is not authorized" },
       };
     }
 
@@ -138,7 +148,10 @@ export async function applyInternship(
       return {
         success: false,
         message: "Pendaftaran magang saat ini sedang ditutup.",
-        error: { code: "FORBIDDEN", details: "Internship registration is closed" }
+        error: {
+          code: "FORBIDDEN",
+          details: "Internship registration is closed",
+        },
       };
     }
 
@@ -147,7 +160,7 @@ export async function applyInternship(
     // we use supabaseAdmin service client.
     const supabaseAdmin = createSupabaseClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
     );
 
     const { data: existing, error: selectError } = await supabaseAdmin
@@ -160,7 +173,7 @@ export async function applyInternship(
       return {
         success: false,
         message: "Gagal memeriksa status magang.",
-        error: { code: "DATABASE_ERROR", details: selectError.message }
+        error: { code: "DATABASE_ERROR", details: selectError.message },
       };
     }
 
@@ -174,7 +187,7 @@ export async function applyInternship(
         return {
           success: false,
           message: "Gagal memperbarui pilihan divisi magang.",
-          error: { code: "DATABASE_ERROR", details: updateError.message }
+          error: { code: "DATABASE_ERROR", details: updateError.message },
         };
       }
     } else {
@@ -182,14 +195,14 @@ export async function applyInternship(
         .from("internships")
         .insert({
           profile_id: user.id,
-          division_id: divisionId
+          division_id: divisionId,
         });
 
       if (insertError) {
         return {
           success: false,
           message: "Gagal mendaftar divisi magang.",
-          error: { code: "DATABASE_ERROR", details: insertError.message }
+          error: { code: "DATABASE_ERROR", details: insertError.message },
         };
       }
     }
@@ -203,7 +216,7 @@ export async function applyInternship(
     return {
       success: false,
       message: "Gagal memproses pendaftaran magang.",
-      error: { code: "SERVER_ERROR", details: errMsg }
+      error: { code: "SERVER_ERROR", details: errMsg },
     };
   }
 }
@@ -220,18 +233,21 @@ interface PlottingData {
  * Accessible only by Admin OR or Super Admin.
  */
 export async function verifyInternshipPlotting(
-  data: PlottingData
+  data: PlottingData,
 ): Promise<ServerActionResponse> {
   try {
     const supabase = await createClient();
 
     // 1. Verify authenticated admin
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
       return {
         success: false,
         message: "Sesi tidak ditemukan. Silakan login kembali.",
-        error: { code: "UNAUTHORIZED", details: "User is not logged in" }
+        error: { code: "UNAUTHORIZED", details: "User is not logged in" },
       };
     }
 
@@ -245,7 +261,7 @@ export async function verifyInternshipPlotting(
       return {
         success: false,
         message: "Profil tidak ditemukan.",
-        error: { code: "NOT_FOUND", details: "Profile not found" }
+        error: { code: "NOT_FOUND", details: "Profile not found" },
       };
     }
 
@@ -253,8 +269,9 @@ export async function verifyInternshipPlotting(
     if (!allowedRoles.includes(profile.role)) {
       return {
         success: false,
-        message: "Hanya Admin OR atau Super Admin yang dapat melakukan plotting magang.",
-        error: { code: "FORBIDDEN", details: "User role is not authorized" }
+        message:
+          "Hanya Admin OR atau Super Admin yang dapat melakukan plotting magang.",
+        error: { code: "FORBIDDEN", details: "User role is not authorized" },
       };
     }
 
@@ -263,27 +280,28 @@ export async function verifyInternshipPlotting(
       return {
         success: false,
         message: "Semua kolom input wajib diisi.",
-        error: { code: "BAD_REQUEST", details: "Missing required fields" }
+        error: { code: "BAD_REQUEST", details: "Missing required fields" },
       };
     }
 
     // 2. Upsert official internship plotting (admin client bypasses RLS naturally due to policy)
-    const { error: upsertError } = await supabase
-      .from("internships")
-      .upsert({
+    const { error: upsertError } = await supabase.from("internships").upsert(
+      {
         profile_id: profileId,
         division_id: divisionId,
         mentor_id: mentorId,
-        task_description: taskDescription
-      }, {
-        onConflict: "profile_id"
-      });
+        task_description: taskDescription,
+      },
+      {
+        onConflict: "profile_id",
+      },
+    );
 
     if (upsertError) {
       return {
         success: false,
         message: "Gagal menetapkan plotting magang resmi.",
-        error: { code: "DATABASE_ERROR", details: upsertError.message }
+        error: { code: "DATABASE_ERROR", details: upsertError.message },
       };
     }
 
@@ -296,7 +314,7 @@ export async function verifyInternshipPlotting(
     return {
       success: false,
       message: "Gagal memproses plotting magang.",
-      error: { code: "SERVER_ERROR", details: errMsg }
+      error: { code: "SERVER_ERROR", details: errMsg },
     };
   }
 }

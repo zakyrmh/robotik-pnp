@@ -35,7 +35,10 @@ interface RawSubmissionCaang {
 export default async function TugasPage() {
   const supabase = await createClient();
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
   if (authError || !user) {
     redirect("/login");
   }
@@ -66,7 +69,8 @@ export default async function TugasPage() {
     // Admin fetches all submissions
     const { data: submissions } = await supabase
       .from("task_submissions")
-      .select(`
+      .select(
+        `
         id,
         task_id,
         profile_id,
@@ -82,10 +86,13 @@ export default async function TugasPage() {
             full_name
           )
         )
-      `)
+      `,
+      )
       .order("updated_at", { ascending: false });
 
-    formattedSubmissions = ((submissions as unknown as RawSubmissionAdmin[]) || []).map((sub) => ({
+    formattedSubmissions = (
+      (submissions as unknown as RawSubmissionAdmin[]) || []
+    ).map((sub) => ({
       id: sub.id,
       task_id: sub.task_id || "",
       profile_id: sub.profile_id || "",
@@ -105,7 +112,9 @@ export default async function TugasPage() {
       .select("*")
       .eq("profile_id", user.id);
 
-    formattedSubmissions = ((submissions as unknown as RawSubmissionCaang[]) || []).map((sub) => ({
+    formattedSubmissions = (
+      (submissions as unknown as RawSubmissionCaang[]) || []
+    ).map((sub) => ({
       id: sub.id,
       task_id: sub.task_id || "",
       profile_id: sub.profile_id || "",
@@ -120,13 +129,15 @@ export default async function TugasPage() {
     }));
   }
 
-  const formattedTasks = ((tasks as unknown as {
-    id: string;
-    title: string;
-    description: string;
-    due_date: string;
-    created_at: string;
-  }[]) || []).map((task) => ({
+  const formattedTasks = (
+    (tasks as unknown as {
+      id: string;
+      title: string;
+      description: string;
+      due_date: string;
+      created_at: string;
+    }[]) || []
+  ).map((task) => ({
     id: task.id,
     title: task.title,
     description: task.description,

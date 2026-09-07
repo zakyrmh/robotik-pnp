@@ -33,22 +33,36 @@ describe("Tasks LMS Server Actions", () => {
 
   describe("createTask", () => {
     it("should reject if user is not authorized", async () => {
-      mockSupabase.auth.getUser.mockResolvedValueOnce({ data: { user: { id: "user-id" } } });
+      mockSupabase.auth.getUser.mockResolvedValueOnce({
+        data: { user: { id: "user-id" } },
+      });
       mockSupabase.single.mockResolvedValueOnce({ data: { role: "caang" } });
 
-      const res = await createTask({ title: "Task 1", description: "Desc", dueDate: new Date().toISOString() });
+      const res = await createTask({
+        title: "Task 1",
+        description: "Desc",
+        dueDate: new Date().toISOString(),
+      });
       expect(res.success).toBe(false);
       expect(res.error?.code).toBe("FORBIDDEN");
     });
 
     it("should successfully create task if user is authorized", async () => {
-      mockSupabase.auth.getUser.mockResolvedValueOnce({ data: { user: { id: "admin-id" } } });
+      mockSupabase.auth.getUser.mockResolvedValueOnce({
+        data: { user: { id: "admin-id" } },
+      });
       mockSupabase.single.mockResolvedValueOnce({ data: { role: "admin-or" } });
       mockSupabase.insert.mockReturnThis();
       mockSupabase.select.mockReturnThis();
-      mockSupabase.single.mockResolvedValueOnce({ data: { id: "new-task-id" } });
+      mockSupabase.single.mockResolvedValueOnce({
+        data: { id: "new-task-id" },
+      });
 
-      const res = await createTask({ title: "Task 1", description: "Desc", dueDate: new Date().toISOString() });
+      const res = await createTask({
+        title: "Task 1",
+        description: "Desc",
+        dueDate: new Date().toISOString(),
+      });
       expect(res.success).toBe(true);
       expect(res.data?.id).toBe("new-task-id");
     });
@@ -56,15 +70,21 @@ describe("Tasks LMS Server Actions", () => {
 
   describe("submitTaskSubmission", () => {
     it("should reject if file type is invalid", async () => {
-      mockSupabase.auth.getUser.mockResolvedValueOnce({ data: { user: { id: "user-id" } } });
+      mockSupabase.auth.getUser.mockResolvedValueOnce({
+        data: { user: { id: "user-id" } },
+      });
       mockSupabase.single.mockResolvedValueOnce({ data: { role: "caang" } });
 
       const formData = new FormData();
       formData.append("task_id", "task-id");
       formData.append("notes", "my notes");
-      
-      const blob = new Blob(["some content"], { type: "application/octet-stream" });
-      const file = new File([blob], "virus.exe", { type: "application/octet-stream" });
+
+      const blob = new Blob(["some content"], {
+        type: "application/octet-stream",
+      });
+      const file = new File([blob], "virus.exe", {
+        type: "application/octet-stream",
+      });
       formData.append("file", file);
 
       const res = await submitTaskSubmission(formData);
@@ -75,7 +95,9 @@ describe("Tasks LMS Server Actions", () => {
 
   describe("gradeTaskSubmission", () => {
     it("should reject if grade is out of bounds", async () => {
-      mockSupabase.auth.getUser.mockResolvedValueOnce({ data: { user: { id: "admin-id" } } });
+      mockSupabase.auth.getUser.mockResolvedValueOnce({
+        data: { user: { id: "admin-id" } },
+      });
       mockSupabase.single.mockResolvedValueOnce({ data: { role: "admin-or" } });
 
       const res = await gradeTaskSubmission("submission-id", 150, "Good job");

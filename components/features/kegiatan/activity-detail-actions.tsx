@@ -37,7 +37,11 @@ export function ActivityDetailActions({
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleSoftDelete = async () => {
-    if (!confirm(`Apakah Anda yakin ingin memindahkan "${activity.title}" ke tempat sampah?`)) {
+    if (
+      !confirm(
+        `Apakah Anda yakin ingin memindahkan "${activity.title}" ke tempat sampah?`,
+      )
+    ) {
       return;
     }
 
@@ -46,9 +50,15 @@ export function ActivityDetailActions({
 
     try {
       let res;
-      if (activity.target_audience === "anggota" && userRole === "admin-komdis") {
+      if (
+        activity.target_audience === "anggota" &&
+        userRole === "admin-komdis"
+      ) {
         await softDeleteKomdisActivity(activity.id);
-        res = { success: true, message: "Kegiatan berhasil dipindahkan ke tempat sampah." };
+        res = {
+          success: true,
+          message: "Kegiatan berhasil dipindahkan ke tempat sampah.",
+        };
       } else {
         res = await softDeleteActivity(activity.id);
       }

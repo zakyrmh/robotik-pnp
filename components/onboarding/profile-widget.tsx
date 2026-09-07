@@ -104,11 +104,16 @@ export function ProfileWidget({ user }: ProfileWidgetProps) {
                   )}
                 </div>
               </div>
-              <h3 className="font-bold text-sm text-foreground line-clamp-1">{user.name}</h3>
+              <h3 className="font-bold text-sm text-foreground line-clamp-1">
+                {user.name}
+              </h3>
               <p className="text-xs text-muted-foreground line-clamp-1 mb-2 font-sans">
                 {user.email || "-"}
               </p>
-              <Badge variant="outline" className="gap-1 px-2.5 py-0.5 text-micro font-mono font-semibold uppercase bg-orange-wash dark:bg-pnp-orange/15 text-orange-deep dark:text-pnp-orange border-pnp-orange/30">
+              <Badge
+                variant="outline"
+                className="gap-1 px-2.5 py-0.5 text-micro font-mono font-semibold uppercase bg-orange-wash dark:bg-pnp-orange/15 text-orange-deep dark:text-pnp-orange border-pnp-orange/30"
+              >
                 <HugeiconsIcon icon={UserCheck01Icon} size={12} />
                 {user.role}
               </Badge>
@@ -121,7 +126,11 @@ export function ProfileWidget({ user }: ProfileWidgetProps) {
                   type="submit"
                   className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs font-semibold text-destructive transition-all hover:bg-destructive/10 active:scale-98 cursor-pointer"
                 >
-                  <HugeiconsIcon icon={Logout01Icon} size={16} className="text-destructive shrink-0" />
+                  <HugeiconsIcon
+                    icon={Logout01Icon}
+                    size={16}
+                    className="text-destructive shrink-0"
+                  />
                   <span>Keluar / Sign Out</span>
                 </button>
               </form>

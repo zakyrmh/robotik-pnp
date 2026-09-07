@@ -15,11 +15,11 @@ interface NavLinkItem {
 
 const navLinks: NavLinkItem[] = [
   { href: "/", label: "Beranda" },
+  { href: "/mrc", label: "MRC X" },
   { href: "/profil", label: "Profil" },
   { href: "/divisi", label: "Divisi" },
   { href: "/prestasi", label: "Prestasi" },
   { href: "/keanggotaan", label: "Keanggotaan" },
-  { href: "/artikel", label: "Artikel" },
   { href: "/hubungi-kami", label: "Hubungi Kami" },
 ];
 
