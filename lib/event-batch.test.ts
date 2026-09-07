@@ -1,0 +1,115 @@
+import { describe, it, expect } from "vitest";
+import {
+  getActiveBatch,
+  getBatchPhase,
+  getCategoryBatchFee,
+} from "@/lib/event-batch";
+import type { EventSettings } from "@/types/event-registration";
+
+const SETTINGS: EventSettings = {
+  id: 1,
+  batch1_start: "2026-09-01T00:00:00+07:00",
+  batch1_end: "2026-09-15T23:59:00+07:00",
+  batch2_start: "2026-09-16T00:00:00+07:00",
+  batch2_end: "2026-10-05T23:59:00+07:00",
+  event_start: "2026-10-15T09:00:00+07:00",
+  event_end: "2026-10-17T17:00:00+07:00",
+  created_at: "2026-09-01T00:00:00.000Z",
+  updated_at: "2026-09-01T00:00:00.000Z",
+};
+
+describe("event-batch phase detection", () => {
+  it("returns unconfigured when settings are null", () => {
+    expect(getBatchPhase(null).phase).toBe("unconfigured");
+    expect(getActiveBatch(null)).toBeNull();
+  });
+
+  it("detects before-batch1 with countdown to batch1_start", () => {
+    const phase = getBatchPhase(
+      SETTINGS,
+      new Date("2026-08-20T12:00:00+07:00"),
+    );
+    expect(phase.phase).toBe("before-batch1");
+    expect(phase.batch).toBeNull();
+    expect(phase.countdownTarget).toBe(SETTINGS.batch1_start);
+  });
+
+  it("detects batch1-open with countdown to batch1_end", () => {
+    const phase = getBatchPhase(
+      SETTINGS,
+      new Date("2026-09-10T12:00:00+07:00"),
+    );
+    expect(phase.phase).toBe("batch1-open");
+    expect(
+      getActiveBatch(SETTINGS, new Date("2026-09-10T12:00:00+07:00")),
+    ).toBe("batch1");
+    expect(phase.countdownTarget).toBe(SETTINGS.batch1_end);
+  });
+
+  it("detects between-batches gap with countdown to batch2_start", () => {
+    const gapSettings: EventSettings = {
+      ...SETTINGS,
+      batch2_start: "2026-09-20T00:00:00+07:00",
+    };
+    const phase = getBatchPhase(
+      gapSettings,
+      new Date("2026-09-17T12:00:00+07:00"),
+    );
+    expect(phase.phase).toBe("between-batches");
+    expect(phase.countdownTarget).toBe(gapSettings.batch2_start);
+  });
+
+  it("detects batch2-open with countdown to batch2_end", () => {
+    const phase = getBatchPhase(
+      SETTINGS,
+      new Date("2026-09-20T12:00:00+07:00"),
+    );
+    expect(phase.phase).toBe("batch2-open");
+    expect(
+      getActiveBatch(SETTINGS, new Date("2026-09-20T12:00:00+07:00")),
+    ).toBe("batch2");
+    expect(phase.countdownTarget).toBe(SETTINGS.batch2_end);
+  });
+
+  it("detects before-event after batch2 closes", () => {
+    const phase = getBatchPhase(
+      SETTINGS,
+      new Date("2026-10-10T12:00:00+07:00"),
+    );
+    expect(phase.phase).toBe("before-event");
+    expect(phase.countdownTarget).toBe(SETTINGS.event_start);
+  });
+
+  it("detects event-ongoing and event-ended", () => {
+    expect(
+      getBatchPhase(SETTINGS, new Date("2026-10-16T12:00:00+07:00")).phase,
+    ).toBe("event-ongoing");
+    expect(
+      getBatchPhase(SETTINGS, new Date("2026-10-20T12:00:00+07:00")).phase,
+    ).toBe("event-ended");
+  });
+});
+
+describe("getCategoryBatchFee", () => {
+  const category = {
+    registration_fee: 100000,
+    registration_fee_batch1: 150000,
+    registration_fee_batch2: 200000,
+  };
+
+  it("returns batch-specific fees", () => {
+    expect(getCategoryBatchFee(category, "batch1")).toBe(150000);
+    expect(getCategoryBatchFee(category, "batch2")).toBe(200000);
+  });
+
+  it("falls back to legacy fee when batch fees are null", () => {
+    const legacy = {
+      registration_fee: 100000,
+      registration_fee_batch1: null,
+      registration_fee_batch2: null,
+    };
+    expect(getCategoryBatchFee(legacy, "batch1")).toBe(100000);
+    expect(getCategoryBatchFee(legacy, "batch2")).toBe(100000);
+    expect(getCategoryBatchFee(legacy, null)).toBe(100000);
+  });
+});

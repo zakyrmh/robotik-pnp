@@ -127,6 +127,19 @@ NEXT_PUBLIC_SENTRY_DSN=your-sentry-dsn
 CLOUDFLARE_R2_ACCESS_KEY_ID=your-r2-access-key
 CLOUDFLARE_R2_SECRET_ACCESS_KEY=your-r2-secret-key
 CLOUDFLARE_R2_BUCKET_NAME=ukm-robotik-pnp
+
+# Email E-Tiket MRC — Resend (Production)
+# Tanpa RESEND_API_KEY, pengiriman turun ke Mailpit/SMTP lokal lalu ke mock-log.
+# Domain pengirim WAJIB terverifikasi di dashboard Resend, jika tidak pengiriman gagal.
+RESEND_API_KEY=re_your-resend-api-key
+RESEND_FROM_EMAIL="Minangkabau Robot Contest <noreply@ukmrobotikpnp.org>"
+
+# Email E-Tiket MRC — SMTP / Mailpit (Development)
+SMTP_HOST=127.0.0.1
+SMTP_PORT=1025
+SMTP_USER=
+SMTP_PASS=
+SMTP_FROM="Minangkabau Robot Contest <noreply@ukmrobotikpnp.org>"
 ```
 
 ### 4. Menjalankan Server Pengembang

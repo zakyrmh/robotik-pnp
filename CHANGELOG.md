@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Pipeline Validasi Gambar MRC Server-Side (Magic Bytes + Sharp + R2)**:
+  - **Konfigurasi tunggal (`lib/mrc-image-config.ts`)**: batas tipe/ukuran/varian dipakai bersama client & server agar tidak drift.
+  - **Pipeline server (`lib/server/mrc-image-pipeline.ts`)**: validasi otoritatif berbasis magic bytes via `file-type` (`File.type` browser tidak dipercaya), proteksi decompression-bomb, normalisasi EXIF → WebP (varian utama + thumbnail) via `sharp`, upload ke Cloudflare R2.
+  - **Rate limiter upload MRC (`lib/redis.ts`)**: `mrcUploadRateLimiter` 30 req/10 mnt untuk endpoint publik tanpa auth.
+  - **Pengerasan client (`components/event/registration-form.tsx`)**: validasi awal tipe/ukuran, konversi HEIC/HEIF → JPEG via `heic2any`, kompresi ringan via `browser-image-compression`, pratinjau `next/image`.
+  - **Unit test (`lib/server/__tests__/mrc-image-pipeline.test.ts`)**: PNG/JPEG valid lolos, file samaran & HEIC mentah ditolak, output terdeteksi WebP via magic bytes.
+- **Halaman Pembayaran QRIS Dinamis (`app/(marketing)/mrc/bayar/[token]/page.tsx` + `components/event/qris-payment-view.tsx`)**: menggantikan popup Midtrans Snap; QR dinamis per nominal batch via Core API, countdown kedaluwarsa, polling status 5 detik + auto-redirect ke E-Tiket saat lunas, tombol buat QR baru via `refreshQrisChargeAction`.
+  - **Migrasi database (`supabase/migrations/20260909000000_add_qris_payment_columns.sql`)**: kolom `midtrans_qr_url` & `midtrans_qr_expiry` (kolom snap lama dipertahankan untuk histori).
+- **Token Semantik Success/Warning (`app/globals.css`)**: `--color-success(-soft)` & `--color-warning(-soft)` light/dark sesuai DESIGN.md §3.3 (nilai teks disesuaikan agar lolos kontras WCAG AA 4.5:1).
+- **Dokumentasi env email (`README.md`)**: variabel `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, dan SMTP/Mailpit untuk E-Tiket MRC beserta catatan verifikasi domain pengirim.
+
+### Changed
+
+- **Server Actions upload foto MRC (`lib/actions/event-registration.ts`)**: `uploadMemberPhotoAction` & `uploadMemberIdentityCardAction` tidak lagi upload mentah ke Supabase Storage — kini lewat pipeline R2 + rate limit.
+- **Migrasi pembayaran ke QRIS-only (`lib/actions/event-registration.ts`, `lib/services/midtrans.ts`)**: `registerEventAction` membuat Core API charge `payment_type: "qris"`; helper Snap yang mati dihapus; skrip `snap.js` tidak lagi dimuat di halaman daftar.
+- **Kepatuhan DESIGN.md halaman MRC (`mrc/page`, `mrc/[slug]/daftar`, `mrc/tiket/[token]` + 8 komponen)**: seluruh warna hardcoded (`slate-*`, `emerald/amber/rose-*`, hex mentah) → token semantik dengan dark-mode penuh; class mati `bg-accent-soft/*` diperbaiki; heading ke skala `clamp()` + `text-balance`; radius kartu ke 10px; touch target ≥44px + focus ring; accordion FAQ dapat `aria-expanded`.
+- **Template email E-Tiket (`lib/services/resend.ts`)**: font Inter/Plus Jakarta Sans + monospace untuk kode (tetap inline-style karena klien email); badge selaras token success/warning-soft; tombol Deep Accent `#9a5b30` agar teks putih lolos kontras.
+
+### Fixed
+
+- **Email lunas webhook Midtrans (`app/api/webhooks/midtrans/route.ts`)**: menambahkan `paymentStatus: "paid"` yang hilang sehingga peserta yang berhasil bayar tidak lagi menerima email "menunggu pembayaran".
+- **Typo status E-Tiket (`components/event/e-ticket-view.tsx`)**: "Cadars" → "Dibatalkan"; `<img>` → `next/image` (+ `remotePattern quickchart.io` & host API Midtrans di `next.config.ts`).
+
 ## [0.7.1] - 2026-08-31
 
 ### Added

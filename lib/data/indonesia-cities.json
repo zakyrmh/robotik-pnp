@@ -1,0 +1,2060 @@
+{
+  "data": [
+    {
+      "nama_kabupaten_kota": "Kabupaten Aceh Selatan",
+      "nama_provinsi": "Aceh"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Aceh Tenggara",
+      "nama_provinsi": "Aceh"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Aceh Timur",
+      "nama_provinsi": "Aceh"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Aceh Tengah",
+      "nama_provinsi": "Aceh"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Aceh Barat",
+      "nama_provinsi": "Aceh"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Aceh Besar",
+      "nama_provinsi": "Aceh"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Pidie",
+      "nama_provinsi": "Aceh"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Aceh Utara",
+      "nama_provinsi": "Aceh"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Simeulue",
+      "nama_provinsi": "Aceh"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Aceh Singkil",
+      "nama_provinsi": "Aceh"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Bireuen",
+      "nama_provinsi": "Aceh"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Aceh Barat Daya",
+      "nama_provinsi": "Aceh"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Gayo Lues",
+      "nama_provinsi": "Aceh"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Aceh Jaya",
+      "nama_provinsi": "Aceh"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Nagan Raya",
+      "nama_provinsi": "Aceh"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Aceh Tamiang",
+      "nama_provinsi": "Aceh"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Bener Meriah",
+      "nama_provinsi": "Aceh"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Pidie Jaya",
+      "nama_provinsi": "Aceh"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Banda Aceh",
+      "nama_provinsi": "Aceh"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Sabang",
+      "nama_provinsi": "Aceh"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Lhokseumawe",
+      "nama_provinsi": "Aceh"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Langsa",
+      "nama_provinsi": "Aceh"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Subulussalam",
+      "nama_provinsi": "Aceh"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Tapanuli Tengah",
+      "nama_provinsi": "Sumatera Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Tapanuli Utara",
+      "nama_provinsi": "Sumatera Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Tapanuli Selatan",
+      "nama_provinsi": "Sumatera Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Nias",
+      "nama_provinsi": "Sumatera Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Langkat",
+      "nama_provinsi": "Sumatera Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Karo",
+      "nama_provinsi": "Sumatera Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Deli Serdang",
+      "nama_provinsi": "Sumatera Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Simalungun",
+      "nama_provinsi": "Sumatera Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Asahan",
+      "nama_provinsi": "Sumatera Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Labuhanbatu",
+      "nama_provinsi": "Sumatera Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Dairi",
+      "nama_provinsi": "Sumatera Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Toba",
+      "nama_provinsi": "Sumatera Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Mandailing Natal",
+      "nama_provinsi": "Sumatera Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Nias Selatan",
+      "nama_provinsi": "Sumatera Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Pakpak Bharat",
+      "nama_provinsi": "Sumatera Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Humbang Hasundutan",
+      "nama_provinsi": "Sumatera Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Samosir",
+      "nama_provinsi": "Sumatera Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Serdang Bedagai",
+      "nama_provinsi": "Sumatera Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Batu Bara",
+      "nama_provinsi": "Sumatera Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Padang Lawas Utara",
+      "nama_provinsi": "Sumatera Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Padang Lawas",
+      "nama_provinsi": "Sumatera Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Labuhanbatu Selatan",
+      "nama_provinsi": "Sumatera Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Labuhanbatu Utara",
+      "nama_provinsi": "Sumatera Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Nias Utara",
+      "nama_provinsi": "Sumatera Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Nias Barat",
+      "nama_provinsi": "Sumatera Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Medan",
+      "nama_provinsi": "Sumatera Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Pematangsiantar",
+      "nama_provinsi": "Sumatera Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Sibolga",
+      "nama_provinsi": "Sumatera Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Tanjungbalai",
+      "nama_provinsi": "Sumatera Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Binjai",
+      "nama_provinsi": "Sumatera Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Tebing Tinggi",
+      "nama_provinsi": "Sumatera Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Padangsidimpuan",
+      "nama_provinsi": "Sumatera Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Gunungsitoli",
+      "nama_provinsi": "Sumatera Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Pesisir Selatan",
+      "nama_provinsi": "Sumatera Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Solok",
+      "nama_provinsi": "Sumatera Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Sijunjung",
+      "nama_provinsi": "Sumatera Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Tanah Datar",
+      "nama_provinsi": "Sumatera Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Padang Pariaman",
+      "nama_provinsi": "Sumatera Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Agam",
+      "nama_provinsi": "Sumatera Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Lima Puluh Kota",
+      "nama_provinsi": "Sumatera Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Pasaman",
+      "nama_provinsi": "Sumatera Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kepulauan Mentawai",
+      "nama_provinsi": "Sumatera Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Dharmasraya",
+      "nama_provinsi": "Sumatera Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Solok Selatan",
+      "nama_provinsi": "Sumatera Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Pasaman Barat",
+      "nama_provinsi": "Sumatera Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Padang",
+      "nama_provinsi": "Sumatera Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Solok",
+      "nama_provinsi": "Sumatera Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Sawahlunto",
+      "nama_provinsi": "Sumatera Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Padang Panjang",
+      "nama_provinsi": "Sumatera Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Bukittinggi",
+      "nama_provinsi": "Sumatera Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Payakumbuh",
+      "nama_provinsi": "Sumatera Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Pariaman",
+      "nama_provinsi": "Sumatera Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kampar",
+      "nama_provinsi": "Riau"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Indragiri Hulu",
+      "nama_provinsi": "Riau"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Bengkalis",
+      "nama_provinsi": "Riau"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Indragiri Hilir",
+      "nama_provinsi": "Riau"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Pelalawan",
+      "nama_provinsi": "Riau"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Rokan Hulu",
+      "nama_provinsi": "Riau"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Rokan Hilir",
+      "nama_provinsi": "Riau"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Siak",
+      "nama_provinsi": "Riau"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kuantan Singingi",
+      "nama_provinsi": "Riau"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kepulauan Meranti",
+      "nama_provinsi": "Riau"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Pekanbaru",
+      "nama_provinsi": "Riau"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Dumai",
+      "nama_provinsi": "Riau"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kerinci",
+      "nama_provinsi": "Jambi"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Merangin",
+      "nama_provinsi": "Jambi"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Sarolangun",
+      "nama_provinsi": "Jambi"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Batanghari",
+      "nama_provinsi": "Jambi"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Muaro Jambi",
+      "nama_provinsi": "Jambi"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Tanjung Jabung Barat",
+      "nama_provinsi": "Jambi"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Tanjung Jabung Timur",
+      "nama_provinsi": "Jambi"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Bungo",
+      "nama_provinsi": "Jambi"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Tebo",
+      "nama_provinsi": "Jambi"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Jambi",
+      "nama_provinsi": "Jambi"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Sungai Penuh",
+      "nama_provinsi": "Jambi"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Ogan Komering Ulu",
+      "nama_provinsi": "Sumatera Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Ogan Komering Ilir",
+      "nama_provinsi": "Sumatera Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Muara Enim",
+      "nama_provinsi": "Sumatera Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Lahat",
+      "nama_provinsi": "Sumatera Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Musi Rawas",
+      "nama_provinsi": "Sumatera Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Musi Banyuasin",
+      "nama_provinsi": "Sumatera Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Banyuasin",
+      "nama_provinsi": "Sumatera Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Ogan Komering Ulu Timur",
+      "nama_provinsi": "Sumatera Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Ogan Komering Ulu Selatan",
+      "nama_provinsi": "Sumatera Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Ogan Ilir",
+      "nama_provinsi": "Sumatera Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Empat Lawang",
+      "nama_provinsi": "Sumatera Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Penukal Abab Lematang Ilir",
+      "nama_provinsi": "Sumatera Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Musi Rawas Utara",
+      "nama_provinsi": "Sumatera Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Palembang",
+      "nama_provinsi": "Sumatera Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Pagar Alam",
+      "nama_provinsi": "Sumatera Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Lubuk Linggau",
+      "nama_provinsi": "Sumatera Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Prabumulih",
+      "nama_provinsi": "Sumatera Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Bengkulu Selatan",
+      "nama_provinsi": "Bengkulu"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Rejang Lebong",
+      "nama_provinsi": "Bengkulu"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Bengkulu Utara",
+      "nama_provinsi": "Bengkulu"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kaur",
+      "nama_provinsi": "Bengkulu"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Seluma",
+      "nama_provinsi": "Bengkulu"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Mukomuko",
+      "nama_provinsi": "Bengkulu"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Lebong",
+      "nama_provinsi": "Bengkulu"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kepahiang",
+      "nama_provinsi": "Bengkulu"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Bengkulu Tengah",
+      "nama_provinsi": "Bengkulu"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Bengkulu",
+      "nama_provinsi": "Bengkulu"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Lampung Selatan",
+      "nama_provinsi": "Lampung"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Lampung Tengah",
+      "nama_provinsi": "Lampung"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Lampung Utara",
+      "nama_provinsi": "Lampung"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Lampung Barat",
+      "nama_provinsi": "Lampung"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Tulang Bawang",
+      "nama_provinsi": "Lampung"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Tanggamus",
+      "nama_provinsi": "Lampung"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Lampung Timur",
+      "nama_provinsi": "Lampung"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Way Kanan",
+      "nama_provinsi": "Lampung"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Pesawaran",
+      "nama_provinsi": "Lampung"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Pringsewu",
+      "nama_provinsi": "Lampung"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Mesuji",
+      "nama_provinsi": "Lampung"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Tulang Bawang Barat",
+      "nama_provinsi": "Lampung"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Pesisir Barat",
+      "nama_provinsi": "Lampung"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Bandar Lampung",
+      "nama_provinsi": "Lampung"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Metro",
+      "nama_provinsi": "Lampung"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Bangka",
+      "nama_provinsi": "Kepulauan Bangka Belitung"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Belitung",
+      "nama_provinsi": "Kepulauan Bangka Belitung"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Bangka Selatan",
+      "nama_provinsi": "Kepulauan Bangka Belitung"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Bangka Tengah",
+      "nama_provinsi": "Kepulauan Bangka Belitung"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Bangka Barat",
+      "nama_provinsi": "Kepulauan Bangka Belitung"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Belitung Timur",
+      "nama_provinsi": "Kepulauan Bangka Belitung"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Pangkal Pinang",
+      "nama_provinsi": "Kepulauan Bangka Belitung"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Bintan",
+      "nama_provinsi": "Kepulauan Riau"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Karimun",
+      "nama_provinsi": "Kepulauan Riau"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Natuna",
+      "nama_provinsi": "Kepulauan Riau"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Lingga",
+      "nama_provinsi": "Kepulauan Riau"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kepulauan Anambas",
+      "nama_provinsi": "Kepulauan Riau"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Batam",
+      "nama_provinsi": "Kepulauan Riau"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Tanjung Pinang",
+      "nama_provinsi": "Kepulauan Riau"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Administrasi Kepulauan Seribu",
+      "nama_provinsi": "DKI Jakarta"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Administrasi Jakarta Pusat",
+      "nama_provinsi": "DKI Jakarta"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Administrasi Jakarta Utara ",
+      "nama_provinsi": "DKI Jakarta"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Administrasi Jakarta Barat",
+      "nama_provinsi": "DKI Jakarta"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Administrasi Jakarta Selatan",
+      "nama_provinsi": "DKI Jakarta"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Administrasi Jakarta Timur",
+      "nama_provinsi": "DKI Jakarta"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Bogor",
+      "nama_provinsi": "Jawa Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Sukabumi",
+      "nama_provinsi": "Jawa Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Cianjur",
+      "nama_provinsi": "Jawa Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Bandung",
+      "nama_provinsi": "Jawa Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Garut",
+      "nama_provinsi": "Jawa Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Tasikmalaya",
+      "nama_provinsi": "Jawa Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Ciamis",
+      "nama_provinsi": "Jawa Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kuningan",
+      "nama_provinsi": "Jawa Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Cirebon",
+      "nama_provinsi": "Jawa Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Majalengka",
+      "nama_provinsi": "Jawa Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Sumedang",
+      "nama_provinsi": "Jawa Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Indramayu",
+      "nama_provinsi": "Jawa Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Subang",
+      "nama_provinsi": "Jawa Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Purwakarta",
+      "nama_provinsi": "Jawa Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Karawang",
+      "nama_provinsi": "Jawa Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Bekasi",
+      "nama_provinsi": "Jawa Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Bandung Barat",
+      "nama_provinsi": "Jawa Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Pangandaran",
+      "nama_provinsi": "Jawa Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Bogor",
+      "nama_provinsi": "Jawa Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Sukabumi",
+      "nama_provinsi": "Jawa Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Bandung",
+      "nama_provinsi": "Jawa Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Cirebon",
+      "nama_provinsi": "Jawa Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Bekasi",
+      "nama_provinsi": "Jawa Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Depok",
+      "nama_provinsi": "Jawa Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Cimahi",
+      "nama_provinsi": "Jawa Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Tasikmalaya",
+      "nama_provinsi": "Jawa Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Banjar",
+      "nama_provinsi": "Jawa Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Cilacap",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Banyumas",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Purbalingga",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Banjarnegara",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kebumen",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Purworejo",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Wonosobo",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Magelang",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Boyolali",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Klaten",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Sukoharjo",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Wonogiri",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Karanganyar",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Sragen",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Grobogan",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Blora",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Rembang",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Pati",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kudus",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Jepara",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Demak",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Semarang",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Temanggung",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kendal",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Batang",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Pekalongan",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Pemalang",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Tegal",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Brebes",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Magelang",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Surakarta",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Salatiga",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Semarang",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Pekalongan",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Tegal",
+      "nama_provinsi": "Jawa Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kulon Progo",
+      "nama_provinsi": "Daerah Istimewa Yogyakarta"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Bantul",
+      "nama_provinsi": "Daerah Istimewa Yogyakarta"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Gunungkidul",
+      "nama_provinsi": "Daerah Istimewa Yogyakarta"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Sleman",
+      "nama_provinsi": "Daerah Istimewa Yogyakarta"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Yogyakarta",
+      "nama_provinsi": "Daerah Istimewa Yogyakarta"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Pacitan",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Ponorogo",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Trenggalek",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Tulungagung",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Blitar",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kediri",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Malang",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Lumajang",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Jember",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Banyuwangi",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Bondowoso",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Situbondo",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Probolinggo",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Pasuruan",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Sidoarjo",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Mojokerto",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Jombang",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Nganjuk",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Madiun",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Magetan",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Ngawi",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Bojonegoro",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Tuban",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Lamongan",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Gresik",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Bangkalan",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Sampang",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Pamekasan",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Sumenep",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Kediri",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Blitar",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Malang",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Probolinggo",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Pasuruan",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Mojokerto",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Madiun",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Surabaya",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Batu",
+      "nama_provinsi": "Jawa Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Pandeglang",
+      "nama_provinsi": "Banten"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Lebak",
+      "nama_provinsi": "Banten"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Tangerang",
+      "nama_provinsi": "Banten"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Serang",
+      "nama_provinsi": "Banten"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Tangerang",
+      "nama_provinsi": "Banten"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Cilegon",
+      "nama_provinsi": "Banten"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Serang",
+      "nama_provinsi": "Banten"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Tangerang Selatan",
+      "nama_provinsi": "Banten"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Jembrana",
+      "nama_provinsi": "Bali"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Tabanan",
+      "nama_provinsi": "Bali"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Badung",
+      "nama_provinsi": "Bali"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Gianyar",
+      "nama_provinsi": "Bali"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Klungkung",
+      "nama_provinsi": "Bali"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Bangli",
+      "nama_provinsi": "Bali"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Karangasem",
+      "nama_provinsi": "Bali"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Buleleng",
+      "nama_provinsi": "Bali"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Denpasar",
+      "nama_provinsi": "Bali"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Lombok Barat",
+      "nama_provinsi": "Nusa Tenggara Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Lombok Tengah",
+      "nama_provinsi": "Nusa Tenggara Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Lombok Timur",
+      "nama_provinsi": "Nusa Tenggara Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Sumbawa",
+      "nama_provinsi": "Nusa Tenggara Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Dompu",
+      "nama_provinsi": "Nusa Tenggara Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Bima",
+      "nama_provinsi": "Nusa Tenggara Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Sumbawa Barat",
+      "nama_provinsi": "Nusa Tenggara Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Lombok Utara",
+      "nama_provinsi": "Nusa Tenggara Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Mataram",
+      "nama_provinsi": "Nusa Tenggara Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Bima",
+      "nama_provinsi": "Nusa Tenggara Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kupang",
+      "nama_provinsi": "Nusa Tenggara Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Timor Tengah Selatan",
+      "nama_provinsi": "Nusa Tenggara Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Timor Tengah Utara",
+      "nama_provinsi": "Nusa Tenggara Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Belu",
+      "nama_provinsi": "Nusa Tenggara Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Alor",
+      "nama_provinsi": "Nusa Tenggara Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Flores Timur",
+      "nama_provinsi": "Nusa Tenggara Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Sikka",
+      "nama_provinsi": "Nusa Tenggara Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Ende",
+      "nama_provinsi": "Nusa Tenggara Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Ngada",
+      "nama_provinsi": "Nusa Tenggara Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Manggarai",
+      "nama_provinsi": "Nusa Tenggara Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Sumba Timur",
+      "nama_provinsi": "Nusa Tenggara Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Sumba Barat",
+      "nama_provinsi": "Nusa Tenggara Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Lembata",
+      "nama_provinsi": "Nusa Tenggara Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Rote Ndao",
+      "nama_provinsi": "Nusa Tenggara Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Manggarai Barat",
+      "nama_provinsi": "Nusa Tenggara Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Nagekeo",
+      "nama_provinsi": "Nusa Tenggara Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Sumba Tengah",
+      "nama_provinsi": "Nusa Tenggara Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Sumba Barat Daya",
+      "nama_provinsi": "Nusa Tenggara Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Manggarai Timur",
+      "nama_provinsi": "Nusa Tenggara Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Sabu Raijua",
+      "nama_provinsi": "Nusa Tenggara Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Malaka",
+      "nama_provinsi": "Nusa Tenggara Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Kupang",
+      "nama_provinsi": "Nusa Tenggara Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Sambas",
+      "nama_provinsi": "Kalimantan Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Mempawah",
+      "nama_provinsi": "Kalimantan Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Sanggau",
+      "nama_provinsi": "Kalimantan Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Ketapang",
+      "nama_provinsi": "Kalimantan Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Sintang",
+      "nama_provinsi": "Kalimantan Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kapuas Hulu",
+      "nama_provinsi": "Kalimantan Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Bengkayang",
+      "nama_provinsi": "Kalimantan Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Landak",
+      "nama_provinsi": "Kalimantan Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Sekadau",
+      "nama_provinsi": "Kalimantan Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Melawi",
+      "nama_provinsi": "Kalimantan Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kayong Utara",
+      "nama_provinsi": "Kalimantan Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kubu Raya",
+      "nama_provinsi": "Kalimantan Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Pontianak",
+      "nama_provinsi": "Kalimantan Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Singkawang",
+      "nama_provinsi": "Kalimantan Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kotawaringin Barat",
+      "nama_provinsi": "Kalimantan Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kotawaringin Timur",
+      "nama_provinsi": "Kalimantan Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kapuas",
+      "nama_provinsi": "Kalimantan Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Barito Selatan",
+      "nama_provinsi": "Kalimantan Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Barito Utara",
+      "nama_provinsi": "Kalimantan Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Katingan",
+      "nama_provinsi": "Kalimantan Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Seruyan",
+      "nama_provinsi": "Kalimantan Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Sukamara",
+      "nama_provinsi": "Kalimantan Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Lamandau",
+      "nama_provinsi": "Kalimantan Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Gunung Mas",
+      "nama_provinsi": "Kalimantan Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Pulang Pisau",
+      "nama_provinsi": "Kalimantan Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Murung Raya",
+      "nama_provinsi": "Kalimantan Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Barito Timur",
+      "nama_provinsi": "Kalimantan Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Palangkaraya",
+      "nama_provinsi": "Kalimantan Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Tanah Laut",
+      "nama_provinsi": "Kalimantan Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kotabaru",
+      "nama_provinsi": "Kalimantan Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Banjar",
+      "nama_provinsi": "Kalimantan Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Barito Kuala",
+      "nama_provinsi": "Kalimantan Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Tapin",
+      "nama_provinsi": "Kalimantan Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Hulu Sungai Selatan",
+      "nama_provinsi": "Kalimantan Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Hulu Sungai Tengah",
+      "nama_provinsi": "Kalimantan Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Hulu Sungai Utara",
+      "nama_provinsi": "Kalimantan Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Tabalong",
+      "nama_provinsi": "Kalimantan Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Tanah Bumbu",
+      "nama_provinsi": "Kalimantan Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Balangan",
+      "nama_provinsi": "Kalimantan Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Banjarmasin",
+      "nama_provinsi": "Kalimantan Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Banjarbaru",
+      "nama_provinsi": "Kalimantan Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Paser",
+      "nama_provinsi": "Kalimantan Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kutai Kartanegara",
+      "nama_provinsi": "Kalimantan Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Berau",
+      "nama_provinsi": "Kalimantan Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kutai Barat",
+      "nama_provinsi": "Kalimantan Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kutai Timur",
+      "nama_provinsi": "Kalimantan Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Penajam Paser Utara",
+      "nama_provinsi": "Kalimantan Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Mahakam Ulu",
+      "nama_provinsi": "Kalimantan Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Balikpapan",
+      "nama_provinsi": "Kalimantan Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Samarinda",
+      "nama_provinsi": "Kalimantan Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Bontang",
+      "nama_provinsi": "Kalimantan Timur"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Bulungan",
+      "nama_provinsi": "Kalimantan Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Malinau",
+      "nama_provinsi": "Kalimantan Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Nunukan",
+      "nama_provinsi": "Kalimantan Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Tana Tidung",
+      "nama_provinsi": "Kalimantan Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Tarakan",
+      "nama_provinsi": "Kalimantan Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Bolaang Mongondow",
+      "nama_provinsi": "Sulawesi Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Minahasa",
+      "nama_provinsi": "Sulawesi Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kepulauan Sangihe",
+      "nama_provinsi": "Sulawesi Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kepulauan Talaud",
+      "nama_provinsi": "Sulawesi Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Minahasa Selatan",
+      "nama_provinsi": "Sulawesi Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Minahasa Utara",
+      "nama_provinsi": "Sulawesi Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Minahasa Tenggara",
+      "nama_provinsi": "Sulawesi Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Bolaang Mongondow Utara",
+      "nama_provinsi": "Sulawesi Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kep. Siau Tagulandang Biaro",
+      "nama_provinsi": "Sulawesi Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Bolaang Mongondow Timur",
+      "nama_provinsi": "Sulawesi Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Bolaang Mongondow Selatan",
+      "nama_provinsi": "Sulawesi Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Manado",
+      "nama_provinsi": "Sulawesi Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Bitung",
+      "nama_provinsi": "Sulawesi Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Tomohon",
+      "nama_provinsi": "Sulawesi Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Kotamobagu",
+      "nama_provinsi": "Sulawesi Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Banggai",
+      "nama_provinsi": "Sulawesi Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Poso",
+      "nama_provinsi": "Sulawesi Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Donggala",
+      "nama_provinsi": "Sulawesi Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Toli-Toli",
+      "nama_provinsi": "Sulawesi Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Buol",
+      "nama_provinsi": "Sulawesi Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Morowali",
+      "nama_provinsi": "Sulawesi Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Banggai Kepulauan",
+      "nama_provinsi": "Sulawesi Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Parigi Moutong",
+      "nama_provinsi": "Sulawesi Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Tojo Una Una",
+      "nama_provinsi": "Sulawesi Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Sigi",
+      "nama_provinsi": "Sulawesi Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Banggai Laut",
+      "nama_provinsi": "Sulawesi Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Morowali Utara",
+      "nama_provinsi": "Sulawesi Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Palu",
+      "nama_provinsi": "Sulawesi Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kepulauan Selayar",
+      "nama_provinsi": "Sulawesi Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Bulukumba",
+      "nama_provinsi": "Sulawesi Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Bantaeng",
+      "nama_provinsi": "Sulawesi Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Jeneponto",
+      "nama_provinsi": "Sulawesi Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Takalar",
+      "nama_provinsi": "Sulawesi Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Gowa",
+      "nama_provinsi": "Sulawesi Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Sinjai",
+      "nama_provinsi": "Sulawesi Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Bone",
+      "nama_provinsi": "Sulawesi Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Maros",
+      "nama_provinsi": "Sulawesi Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Pangkajene dan Kepulauan",
+      "nama_provinsi": "Sulawesi Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Barru",
+      "nama_provinsi": "Sulawesi Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Soppeng",
+      "nama_provinsi": "Sulawesi Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Wajo",
+      "nama_provinsi": "Sulawesi Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Sidenreng Rappang",
+      "nama_provinsi": "Sulawesi Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Pinrang",
+      "nama_provinsi": "Sulawesi Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Enrekang",
+      "nama_provinsi": "Sulawesi Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Luwu",
+      "nama_provinsi": "Sulawesi Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Tana Toraja",
+      "nama_provinsi": "Sulawesi Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Luwu Utara",
+      "nama_provinsi": "Sulawesi Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Luwu Timur",
+      "nama_provinsi": "Sulawesi Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Toraja Utara",
+      "nama_provinsi": "Sulawesi Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Makassar",
+      "nama_provinsi": "Sulawesi Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Parepare",
+      "nama_provinsi": "Sulawesi Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Palopo",
+      "nama_provinsi": "Sulawesi Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kolaka",
+      "nama_provinsi": "Sulawesi Tenggara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Konawe",
+      "nama_provinsi": "Sulawesi Tenggara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Muna",
+      "nama_provinsi": "Sulawesi Tenggara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Buton",
+      "nama_provinsi": "Sulawesi Tenggara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Konawe Selatan",
+      "nama_provinsi": "Sulawesi Tenggara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Bombana",
+      "nama_provinsi": "Sulawesi Tenggara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Wakatobi",
+      "nama_provinsi": "Sulawesi Tenggara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kolaka Utara",
+      "nama_provinsi": "Sulawesi Tenggara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Konawe Utara",
+      "nama_provinsi": "Sulawesi Tenggara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Buton Utara",
+      "nama_provinsi": "Sulawesi Tenggara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kolaka Timur",
+      "nama_provinsi": "Sulawesi Tenggara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Konawe Kepulauan",
+      "nama_provinsi": "Sulawesi Tenggara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Muna Barat",
+      "nama_provinsi": "Sulawesi Tenggara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Buton Tengah",
+      "nama_provinsi": "Sulawesi Tenggara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Buton Selatan",
+      "nama_provinsi": "Sulawesi Tenggara"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Kendari",
+      "nama_provinsi": "Sulawesi Tenggara"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Bau Bau",
+      "nama_provinsi": "Sulawesi Tenggara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Gorontalo",
+      "nama_provinsi": "Gorontalo"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Boalemo",
+      "nama_provinsi": "Gorontalo"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Bone Bolango",
+      "nama_provinsi": "Gorontalo"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Pohuwato",
+      "nama_provinsi": "Gorontalo"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Gorontalo Utara",
+      "nama_provinsi": "Gorontalo"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Gorontalo",
+      "nama_provinsi": "Gorontalo"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Pasangkayu",
+      "nama_provinsi": "Sulawesi Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Mamuju",
+      "nama_provinsi": "Sulawesi Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Mamasa",
+      "nama_provinsi": "Sulawesi Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Polewali Mandar",
+      "nama_provinsi": "Sulawesi Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Majene",
+      "nama_provinsi": "Sulawesi Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Mamuju Tengah",
+      "nama_provinsi": "Sulawesi Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Maluku Tengah",
+      "nama_provinsi": "Maluku"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Maluku Tenggara",
+      "nama_provinsi": "Maluku"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kepulauan Tanimbar",
+      "nama_provinsi": "Maluku"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Buru",
+      "nama_provinsi": "Maluku"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Seram Bagian Timur",
+      "nama_provinsi": "Maluku"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Seram Bagian Barat",
+      "nama_provinsi": "Maluku"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kepulauan Aru",
+      "nama_provinsi": "Maluku"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Maluku Barat Daya",
+      "nama_provinsi": "Maluku"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Buru Selatan",
+      "nama_provinsi": "Maluku"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Ambon",
+      "nama_provinsi": "Maluku"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Tual",
+      "nama_provinsi": "Maluku"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Halmahera Barat",
+      "nama_provinsi": "Maluku Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Halmahera Tengah",
+      "nama_provinsi": "Maluku Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Halmahera Utara",
+      "nama_provinsi": "Maluku Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Halmahera Selatan",
+      "nama_provinsi": "Maluku Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kepulauan Sula",
+      "nama_provinsi": "Maluku Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Halmahera Timur",
+      "nama_provinsi": "Maluku Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Pulau Morotai",
+      "nama_provinsi": "Maluku Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Pulau Taliabu",
+      "nama_provinsi": "Maluku Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Ternate",
+      "nama_provinsi": "Maluku Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Tidore Kepulauan",
+      "nama_provinsi": "Maluku Utara"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Jayapura",
+      "nama_provinsi": "Papua"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kepulauan Yapen",
+      "nama_provinsi": "Papua"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Biak Numfor",
+      "nama_provinsi": "Papua"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Sarmi",
+      "nama_provinsi": "Papua"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Keerom",
+      "nama_provinsi": "Papua"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Waropen",
+      "nama_provinsi": "Papua"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Supiori",
+      "nama_provinsi": "Papua"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Mamberamo Raya",
+      "nama_provinsi": "Papua"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Jayapura",
+      "nama_provinsi": "Papua"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Manokwari",
+      "nama_provinsi": "Papua Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Fak Fak",
+      "nama_provinsi": "Papua Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Teluk Bintuni",
+      "nama_provinsi": "Papua Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Teluk Wondama",
+      "nama_provinsi": "Papua Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Kaimana",
+      "nama_provinsi": "Papua Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Manokwari Selatan",
+      "nama_provinsi": "Papua Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Pegunungan Arfak",
+      "nama_provinsi": "Papua Barat"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Merauke",
+      "nama_provinsi": "Papua Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Boven Digoel",
+      "nama_provinsi": "Papua Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Mappi",
+      "nama_provinsi": "Papua Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Asmat",
+      "nama_provinsi": "Papua Selatan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Nabire",
+      "nama_provinsi": "Papua Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Puncak Jaya",
+      "nama_provinsi": "Papua Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Paniai",
+      "nama_provinsi": "Papua Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Mimika",
+      "nama_provinsi": "Papua Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Puncak",
+      "nama_provinsi": "Papua Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Dogiyai",
+      "nama_provinsi": "Papua Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Intan Jaya",
+      "nama_provinsi": "Papua Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Deiyai",
+      "nama_provinsi": "Papua Tengah"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Jayawijaya",
+      "nama_provinsi": "Papua Pegunungan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Pegunungan Bintang",
+      "nama_provinsi": "Papua Pegunungan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Yahukimo",
+      "nama_provinsi": "Papua Pegunungan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Tolikara",
+      "nama_provinsi": "Papua Pegunungan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Mamberamo Tengah",
+      "nama_provinsi": "Papua Pegunungan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Yalimo",
+      "nama_provinsi": "Papua Pegunungan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Lanny Jaya",
+      "nama_provinsi": "Papua Pegunungan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Nduga",
+      "nama_provinsi": "Papua Pegunungan"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Sorong",
+      "nama_provinsi": "Papua Barat Daya"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Sorong Selatan",
+      "nama_provinsi": "Papua Barat Daya"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Raja Ampat",
+      "nama_provinsi": "Papua Barat Daya"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Tambrauw",
+      "nama_provinsi": "Papua Barat Daya"
+    },
+    {
+      "nama_kabupaten_kota": "Kabupaten Maybrat",
+      "nama_provinsi": "Papua Barat Daya"
+    },
+    {
+      "nama_kabupaten_kota": "Kota Sorong",
+      "nama_provinsi": "Papua Barat Daya"
+    }
+  ]
+}

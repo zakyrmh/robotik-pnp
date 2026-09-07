@@ -21,6 +21,10 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -101,6 +105,16 @@
   --accent-strong: #f0975a;
 
   --destructive: #ef4444;
+
+  /* Status semantik (DESIGN.md §3.3). Nilai teks sengaja satu tingkat lebih
+     gelap dari tabel (#15803d / #b45309) agar lolos kontras WCAG AA 4.5:1
+     untuk teks kecil di atas latar terang; varian soft dipakai via
+     opacity (bg-success/10) atau token *-soft di bawah. */
+  --success: #15803d;
+  --success-soft: #dcfce7;
+  --warning: #b45309;
+  --warning-soft: #fef3c7;
+
   --border: #e5e7eb;
   --input: #e5e7eb;
   --ring: #3b5b84;
@@ -147,6 +161,10 @@
   --accent-strong: #f0975a;
 
   --destructive: #f87171;
+  --success: #4ade80;
+  --success-soft: rgba(74, 222, 128, 0.15);
+  --warning: #fbbf24;
+  --warning-soft: rgba(251, 191, 36, 0.15);
   --border: rgba(255, 255, 255, 0.1);
   --input: rgba(255, 255, 255, 0.12);
   --ring: #f0975a;

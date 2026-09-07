@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ["sharp"],
   experimental: {
     serverActions: {
       bodySizeLimit: "10mb",
@@ -47,6 +48,18 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "api.qrserver.com",
+      },
+      {
+        protocol: "https",
+        hostname: "quickchart.io",
+      },
+      {
+        protocol: "https",
+        hostname: "api.midtrans.com",
+      },
+      {
+        protocol: "https",
+        hostname: "api.sandbox.midtrans.com",
       },
       {
         protocol: "https",
