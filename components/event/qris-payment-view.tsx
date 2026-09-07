@@ -48,19 +48,36 @@ export function QrisPaymentView({
   initialRegistration: EventRegistration;
 }) {
   const [reg, setReg] = useState<EventRegistration>(initialRegistration);
-  const [now, setNow] = useState(() => Date.now());
   const [refreshing, setRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
   const tickRef = useRef(0);
 
-  // Polling status tiap 5 detik selama pending (sinkronisasi aktif ke Midtrans).
-  // Lunas → langsung arahkan ke halaman E-Tiket.
+  // Load Midtrans Snap script (sandbox / production dynamically)
+  useEffect(() => {
+    const clientKey = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || "";
+    const isProduction =
+      process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION === "true";
+    const snapUrl = isProduction
+      ? "https://app.midtrans.com/snap/snap.js"
+      : "https://app.sandbox.midtrans.com/snap/snap.js";
+
+    if (!document.querySelector(`script[src="${snapUrl}"]`)) {
+      const script = document.createElement("script");
+      script.src = snapUrl;
+      if (clientKey) {
+        script.setAttribute("data-client-key", clientKey);
+      }
+      script.async = true;
+      document.body.appendChild(script);
+    }
+  }, []);
+
+  // Polling status tiap 5 detik selama pending.
   useEffect(() => {
     if (reg.payment_status !== "pending") return;
     let cancelled = false;
     const id = setInterval(async () => {
       if (cancelled) return;
-      setNow(Date.now());
       tickRef.current += 1;
       if (tickRef.current % 5 !== 0) return;
       try {
@@ -72,7 +89,7 @@ export function QrisPaymentView({
           }
         }
       } catch {
-        // Abaikan kegagalan sesaat, coba lagi pada interval berikut.
+        // Abaikan kegagalan sesaat
       }
     }, 1000);
     return () => {
@@ -81,22 +98,62 @@ export function QrisPaymentView({
     };
   }, [reg.payment_status, reg.access_token]);
 
+  const handleOpenSnapModal = () => {
+    if (!reg.midtrans_snap_token) {
+      handleRefresh();
+      return;
+    }
+
+    if (window.snap) {
+      window.snap.pay(reg.midtrans_snap_token, {
+        onSuccess: () => {
+          window.location.href = `/mrc/tiket/${reg.access_token}`;
+        },
+        onPending: () => {
+          // Status pending, polling akan terus mengecek
+        },
+        onError: () => {
+          setRefreshError("Pembayaran gagal. Silakan coba lagi.");
+        },
+        onClose: () => {
+          // User menutup popup modal
+        },
+      });
+    } else {
+      setRefreshError(
+        "Gagal memuat sistem pembayaran Midtrans. Coba muat ulang halaman.",
+      );
+    }
+  };
+
   const handleRefresh = async () => {
     setRefreshing(true);
     setRefreshError(null);
     try {
       const res = await refreshQrisChargeAction(reg.access_token);
       if (!res.success) {
-        setRefreshError(res.error || "Gagal membuat QR baru.");
+        setRefreshError(res.error || "Gagal membuat sesi pembayaran baru.");
         return;
       }
       const fresh = await getRegistrationByAccessTokenAction(reg.access_token);
       if (fresh.success && fresh.data) {
         tickRef.current = 0;
         setReg(fresh.data);
+        if (fresh.data.midtrans_snap_token && window.snap) {
+          window.snap.pay(fresh.data.midtrans_snap_token, {
+            onSuccess: () => {
+              window.location.href = `/mrc/tiket/${fresh.data.access_token}`;
+            },
+            onError: () => {
+              setRefreshError("Pembayaran gagal. Silakan coba lagi.");
+            },
+          });
+        }
       }
     } catch (err: unknown) {
-      setRefreshError((err as Error).message || "Gagal membuat QR baru.");
+      setRefreshError(
+        (err as Error).message || "Gagal membuat sesi pembayaran baru.",
+      );
     } finally {
       setRefreshing(false);
     }
@@ -124,7 +181,7 @@ export function QrisPaymentView({
     );
   }
 
-  // ---- Pendaftaran GRATIS (pengaman, normalnya sudah auto-paid) ----
+  // ---- Pendaftaran GRATIS ----
   if (reg.total_amount <= 0) {
     return (
       <div className="bg-card p-8 rounded-lg border border-border shadow-soft text-center space-y-3">
@@ -145,7 +202,7 @@ export function QrisPaymentView({
     );
   }
 
-  // ---- QR KEDALUWARSA / GAGAL ----
+  // ---- KEDALUWARSA / GAGAL ----
   if (reg.payment_status === "expired" || reg.payment_status === "failed") {
     return (
       <div className="bg-card p-8 rounded-lg border border-border shadow-soft text-center space-y-4">
@@ -154,16 +211,16 @@ export function QrisPaymentView({
         </div>
         <h2 className="text-balance">
           {reg.payment_status === "expired"
-            ? "QR Kedaluwarsa"
+            ? "Sesi Pembayaran Kedaluwarsa"
             : "Pembayaran Gagal"}
         </h2>
         <p className="text-sm text-muted-foreground max-w-md mx-auto">
-          Kode QR sebelumnya sudah tidak berlaku. Buat kode QR baru dengan
-          nominal yang sama (
+          Sesi pembayaran sebelumnya sudah tidak berlaku. Klik tombol di bawah
+          untuk membuka pembayaran baru dengan nominal yang sama (
           <span className="font-mono font-bold">
             {formatRupiah(reg.total_amount)}
           </span>
-          ), lalu pindai ulang.
+          ).
         </p>
         {refreshError && (
           <p className="text-xs text-destructive" role="alert">
@@ -179,11 +236,11 @@ export function QrisPaymentView({
           >
             {refreshing ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" /> Membuat QR Baru…
+                <Loader2 className="w-4 h-4 animate-spin" /> Memuat Sesi Baru…
               </>
             ) : (
               <>
-                <RefreshCw className="w-4 h-4" /> Buat QR Baru
+                <RefreshCw className="w-4 h-4" /> Bayar Sekarang
               </>
             )}
           </button>
@@ -198,38 +255,13 @@ export function QrisPaymentView({
     );
   }
 
-  const expiryMs = parseMidtransExpiry(reg.midtrans_qr_expiry);
-  const remaining = expiryMs !== null ? expiryMs - now : null;
-
-  // ---- QR BELUM TERSEDIA (kunci Midtrans belum dikonfigurasi) ----
-  if (!reg.midtrans_qr_url) {
-    return (
-      <div className="bg-card p-8 rounded-lg border border-border shadow-soft text-center space-y-3">
-        <div className="inline-flex p-3 bg-warning/15 text-warning rounded-full">
-          <QrCode className="w-8 h-8" />
-        </div>
-        <p className="text-sm text-muted-foreground max-w-md mx-auto">
-          QR pembayaran belum dapat dibuat otomatis (gateway dalam mode
-          pengembangan). Selesaikan via bukti transfer manual di halaman E-Tiket
-          — panitia akan memverifikasi.
-        </p>
-        <a
-          href={`/mrc/tiket/${reg.access_token}`}
-          className="inline-flex min-h-[44px] items-center justify-center px-5 py-2.5 bg-primary hover:bg-primary-hover text-primary-foreground text-sm font-semibold rounded-md transition-colors"
-        >
-          Buka E-Tiket & Upload Bukti Manual
-        </a>
-      </div>
-    );
-  }
-
-  // ---- QR AKTIF (pending) ----
+  // ---- PEMBAYARAN AKTIF (pending) ----
   return (
     <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
-      <div className="p-6 sm:p-8 space-y-5 text-center">
+      <div className="p-6 sm:p-8 space-y-6 text-center">
         <div>
           <p className="text-xs text-muted-foreground font-medium">
-            Nominal Pembayaran
+            Total Biaya Pendaftaran
           </p>
           <p className="font-mono text-3xl font-extrabold text-foreground tracking-tight">
             {formatRupiah(reg.total_amount)}
@@ -239,41 +271,53 @@ export function QrisPaymentView({
           </p>
         </div>
 
-        <div className="inline-block p-4 bg-background border border-border rounded-lg">
-          <Image
-            src={reg.midtrans_qr_url}
-            alt={`Kode QRIS pembayaran ${formatRupiah(reg.total_amount)} tim ${reg.team_name}`}
-            width={280}
-            height={280}
-            className="w-60 h-60 sm:w-70 sm:h-70 object-contain"
-            priority
-          />
-        </div>
+        {refreshError && (
+          <p
+            className="text-xs text-destructive bg-destructive/10 p-2.5 rounded-md"
+            role="alert"
+          >
+            {refreshError}
+          </p>
+        )}
 
-        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-warning/15 text-warning border border-warning/30">
-          <Clock className="w-4 h-4" />
-          {remaining !== null && remaining > 0 ? (
-            <span>Berlaku {formatCountdown(remaining)} lagi</span>
-          ) : (
-            <span>Menunggu status pembayaran…</span>
-          )}
+        <div className="space-y-3 max-w-sm mx-auto">
+          <button
+            type="button"
+            onClick={handleOpenSnapModal}
+            disabled={refreshing}
+            className="w-full min-h-[48px] inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary hover:bg-primary-hover text-primary-foreground text-base font-bold rounded-lg shadow-md transition-all active:scale-[0.98] disabled:opacity-60"
+          >
+            {refreshing ? (
+              <>
+                <Loader2 className="w-5 h-5 animate-spin" /> Mempersiapkan
+                Pembayaran…
+              </>
+            ) : (
+              <>
+                <QrCode className="w-5 h-5" /> Bayar via Midtrans (Pop-up Modal)
+              </>
+            )}
+          </button>
+
+          <p className="text-xs text-muted-foreground">
+            Dukung pembayaran QRIS (GoPay, ShopeePay, OVO, DANA, Mobile
+            Banking), Transfer Bank (VA), & E-Wallet.
+          </p>
         </div>
 
         <ol className="text-left text-xs text-muted-foreground space-y-2 max-w-sm mx-auto bg-muted/40 border border-border rounded-md p-4">
           <li>
-            <strong className="text-foreground">1.</strong> Buka aplikasi apa
-            pun (GoPay, OVO, DANA, BCA Mobile, BRImo, Livin&apos;).
+            <strong className="text-foreground">1.</strong> Klik tombol{" "}
+            <strong>Bayar via Midtrans</strong> di atas.
           </li>
           <li>
-            <strong className="text-foreground">2.</strong> Pilih bayar pakai
-            QRIS / pindai QR, arahkan ke kode di atas.
+            <strong className="text-foreground">2.</strong> Pilih metode
+            pembayaran yang Anda inginkan (QRIS, Bank Transfer, E-Wallet) pada
+            pop-up modal Midtrans.
           </li>
           <li>
-            <strong className="text-foreground">3.</strong> Pastikan nominal{" "}
-            <span className="font-mono font-bold">
-              {formatRupiah(reg.total_amount)}
-            </span>{" "}
-            atas nama tim <strong>{reg.team_name}</strong>, lalu konfirmasi.
+            <strong className="text-foreground">3.</strong> Selesaikan
+            pembayaran sesuai instruksi pada layar modal.
           </li>
           <li>
             <strong className="text-foreground">4.</strong> Halaman ini otomatis

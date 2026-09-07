@@ -7,7 +7,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  * dengan pola `as unknown as ...` seperti sebelumnya.
  */
 export function untypedFrom(client: SupabaseClient, table: string) {
-  const from = client.from as unknown as (
+  const from = client.from.bind(client) as unknown as (
     relation: string,
   ) => ReturnType<SupabaseClient["from"]>;
   return from(table);
@@ -18,7 +18,7 @@ export function untypedRpc<T>(
   fn: string,
   args: Record<string, unknown>,
 ): Promise<T> {
-  const rpc = client.rpc as unknown as (
+  const rpc = client.rpc.bind(client) as unknown as (
     fn: string,
     args: Record<string, unknown>,
   ) => Promise<T>;

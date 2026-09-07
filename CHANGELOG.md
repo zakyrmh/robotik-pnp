@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.2] - 2026-09-08
+
+### Added
+
+- **Tipe Global Midtrans Snap Window (`types/midtrans-client.d.ts`)**: Menambahkan interface `Window.snap` untuk dukungan pembayaran Midtrans Snap fallback/popup.
+- **Dukungan Snap Token & Dynamic QRIS (`lib/services/midtrans.ts`, `lib/actions/event-registration.ts`)**: Integrasi transaksi Snap token opsional pada pembuatan transaksi pendaftaran event.
+
+### Changed
+
+- **Penyelarasan Komponen Pembayaran QRIS (`components/event/qris-payment-view.tsx`)**: Peningkatan UX indikator status, timer kedaluwarsa QRIS, dan penanganan status transaksi.
+- **Pembaruan Timestamp Migrasi Database (`supabase/migrations/20260906000000_create_event_registration_and_payment_system.sql`)**: Menyelaraskan urutan migrasi sistem pendaftaran event dan skema transaksi Midtrans.
+
 ## [0.8.0] - 2026-09-07
 
 ### Added

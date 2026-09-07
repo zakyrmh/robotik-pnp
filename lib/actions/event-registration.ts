@@ -9,6 +9,7 @@ import {
 } from "@/lib/schemas/event-registration";
 import {
   createMidtransQrisCharge,
+  createMidtransSnapTransaction,
   checkMidtransTransactionStatus,
 } from "@/lib/services/midtrans";
 import { sendETicketEmail } from "@/lib/services/resend";
@@ -166,10 +167,12 @@ export async function registerEventAction(
 
     // Buat tagihan QRIS dinamis (satu-satunya metode pembayaran) bila ada biaya
     let currentRegRecord: EventRegistration | null = null;
-    let qrUrl: string | null = null;
+    const qrUrl: string | null = null;
+
+    let snapToken: string | null = null;
 
     if (totalAmount > 0) {
-      const qrisRes = await createMidtransQrisCharge({
+      const snapRes = await createMidtransSnapTransaction({
         orderId,
         grossAmount: totalAmount,
         customerDetails: {
@@ -186,18 +189,17 @@ export async function registerEventAction(
           },
         ],
       });
-      qrUrl = qrisRes.qrUrl;
+      snapToken = snapRes.token;
 
-      // Update registration record with order_id and QRIS payload
+      // Update registration record with order_id and Snap token
       const { data: updatedReg } = await (untypedFrom(
         adminSupabase,
         "event_registrations",
       )
         .update({
           midtrans_order_id: orderId,
-          midtrans_payment_type: "qris",
-          midtrans_qr_url: qrisRes.qrUrl,
-          midtrans_qr_expiry: qrisRes.expiryTime,
+          midtrans_snap_token: snapRes.token,
+          midtrans_payment_type: "snap",
         })
         .eq("id", regId)
         .select("*")
@@ -331,7 +333,7 @@ export async function refreshQrisChargeAction(
   const orderId = `${generateOrderId(reg.registration_code)}-R${Date.now().toString().slice(-4)}`;
 
   try {
-    const qrisRes = await createMidtransQrisCharge({
+    const snapRes = await createMidtransSnapTransaction({
       orderId,
       grossAmount: reg.total_amount,
       customerDetails: {
@@ -352,9 +354,8 @@ export async function refreshQrisChargeAction(
     await untypedFrom(adminSupabase, "event_registrations")
       .update({
         midtrans_order_id: orderId,
-        midtrans_payment_type: "qris",
-        midtrans_qr_url: qrisRes.qrUrl,
-        midtrans_qr_expiry: qrisRes.expiryTime,
+        midtrans_snap_token: snapRes.token,
+        midtrans_payment_type: "snap",
         payment_status: "pending",
         updated_at: new Date().toISOString(),
       })
@@ -362,12 +363,12 @@ export async function refreshQrisChargeAction(
 
     revalidatePath("/manajemen-event");
 
-    return { success: true, data: { qrUrl: qrisRes.qrUrl } };
+    return { success: true, data: { qrUrl: null } };
   } catch (err: unknown) {
     console.error("refreshQrisChargeAction error:", err);
     return {
       success: false,
-      error: "Gagal membuat QR baru. Silakan coba lagi.",
+      error: "Gagal membuat sesi pembayaran baru. Silakan coba lagi.",
     };
   }
 }

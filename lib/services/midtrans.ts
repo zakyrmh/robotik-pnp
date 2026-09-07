@@ -50,6 +50,50 @@ export interface QrisChargeResult {
   orderId: string;
 }
 
+export interface SnapTransactionResult {
+  token: string | null;
+  redirectUrl: string | null;
+  orderId: string;
+}
+
+/**
+ * Membuat Snap token transaksi via Midtrans Snap API (Pop-up Modal / Redirect).
+ */
+export async function createMidtransSnapTransaction(
+  params: CreateQrisChargeParams,
+): Promise<SnapTransactionResult> {
+  const { serverKey, clientKey, isProduction } = getMidtransConfig();
+  if (!serverKey) {
+    return {
+      token: null,
+      redirectUrl: null,
+      orderId: params.orderId,
+    };
+  }
+
+  const snap = new midtransClient.Snap({
+    isProduction,
+    serverKey,
+    clientKey,
+  });
+
+  const parameter = {
+    transaction_details: {
+      order_id: params.orderId,
+      gross_amount: Math.round(params.grossAmount),
+    },
+    customer_details: params.customerDetails,
+    item_details: params.itemDetails,
+  };
+
+  const res = await snap.createTransaction(parameter);
+  return {
+    token: res.token || null,
+    redirectUrl: res.redirect_url || null,
+    orderId: params.orderId,
+  };
+}
+
 /**
  * Membuat transaksi QRIS dinamis via Midtrans Core API (VT-Direct).
  * HANYA QRIS yang dipakai — tidak ada pilihan metode lain.
