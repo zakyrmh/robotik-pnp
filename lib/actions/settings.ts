@@ -273,7 +273,8 @@ export async function updateEmailAction(
   }
 
   // 2. Request email update via Supabase Auth
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "";
+  const siteUrl =
+    process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || "";
   const { error: updateErr } = await supabase.auth.updateUser(
     { email: validation.data.newEmail },
     {

@@ -22,7 +22,7 @@ export interface Division {
  */
 export async function countDivisions(): Promise<number> {
   const supabase = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL)!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
 
@@ -46,7 +46,7 @@ export async function countDivisions(): Promise<number> {
  */
 export async function getDivisions(): Promise<Division[]> {
   const supabase = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL)!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
 

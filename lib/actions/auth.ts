@@ -82,9 +82,9 @@ export async function register(prevState: RegisterState, formData: FormData) {
     console.error("[HIBP] Gagal mengecek password bocor:", err);
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  const siteUrl = process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL;
   if (!siteUrl) {
-    console.error("NEXT_PUBLIC_SITE_URL is not configured");
+    console.error("SITE_URL is not configured");
     return { error: "Konfigurasi server tidak valid. Hubungi administrator." };
   }
 
@@ -320,9 +320,9 @@ export async function forgotPassword(
     return { error: "Email tidak terdaftar atau tidak cocok dengan NIM." };
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  const siteUrl = process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL;
   if (!siteUrl) {
-    console.error("NEXT_PUBLIC_SITE_URL is not configured");
+    console.error("SITE_URL is not configured");
     return { error: "Konfigurasi server tidak valid. Hubungi administrator." };
   }
 

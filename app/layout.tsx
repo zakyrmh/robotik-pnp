@@ -34,7 +34,9 @@ export const metadata: Metadata = {
   description:
     "Unit Kegiatan Mahasiswa Robotika Politeknik Negeri Padang. Pusat riset, perancangan, dan fabrikasi robot kompetisi Kontes Robot Indonesia (KRI).",
   metadataBase: new URL(
-    process.env.NEXT_PUBLIC_SITE_URL || "https://robotik-pnp.vercel.app",
+    process.env.SITE_URL ||
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      "https://robotik-pnp.vercel.app",
   ),
   keywords: [
     "UKM Robotik PNP",

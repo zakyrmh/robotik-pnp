@@ -2,6 +2,39 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
+  env: {
+    NEXT_PUBLIC_SITE_URL:
+      process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL,
+    NEXT_PUBLIC_APP_URL: process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL,
+    NEXT_PUBLIC_SUPABASE_URL:
+      process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY:
+      process.env.SUPABASE_ANON_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY:
+      process.env.TURNSTILE_SITE_KEY ||
+      process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
+    NEXT_PUBLIC_MIDTRANS_CLIENT_KEY:
+      process.env.MIDTRANS_CLIENT_KEY ||
+      process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY,
+    NEXT_PUBLIC_SENTRY_DSN:
+      process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN,
+
+    SITE_URL: process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL,
+    APP_URL: process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL,
+    SUPABASE_URL:
+      process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL,
+    SUPABASE_ANON_KEY:
+      process.env.SUPABASE_ANON_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    TURNSTILE_SITE_KEY:
+      process.env.TURNSTILE_SITE_KEY ||
+      process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
+    MIDTRANS_CLIENT_KEY:
+      process.env.MIDTRANS_CLIENT_KEY ||
+      process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY,
+    SENTRY_DSN: process.env.SENTRY_DSN || process.env.NEXT_PUBLIC_SENTRY_DSN,
+  },
   serverExternalPackages: ["sharp"],
   experimental: {
     serverActions: {

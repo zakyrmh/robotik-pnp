@@ -173,6 +173,7 @@ export function LoginForm() {
           <div className="flex justify-center overflow-x-auto py-1">
             <Turnstile
               siteKey={
+                process.env.TURNSTILE_SITE_KEY ||
                 process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ||
                 "1x00000000000000000000AA"
               }

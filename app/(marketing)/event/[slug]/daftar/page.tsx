@@ -56,7 +56,10 @@ export default async function EventRegistrationPage({
     ? "https://app.midtrans.com/snap/snap.js"
     : "https://app.sandbox.midtrans.com/snap/snap.js";
 
-  const clientKey = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || "";
+  const clientKey =
+    process.env.MIDTRANS_CLIENT_KEY ||
+    process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY ||
+    "";
 
   return (
     <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">

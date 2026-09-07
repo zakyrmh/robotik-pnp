@@ -541,7 +541,7 @@ export function TasksClient({ profile, tasks, submissions }: TasksClientProps) {
                           </td>
                           <td className="px-4 py-4">
                             <a
-                              href={`${process.env.NEXT_PUBLIC_SUPABASE_URL || "http://localhost:54321"}/storage/v1/object/sign/task-submissions/${sub.submission_url}`}
+                              href={`${process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || "http://localhost:54321"}/storage/v1/object/sign/task-submissions/${sub.submission_url}`}
                               target="_blank"
                               rel="noreferrer"
                               className="inline-flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 font-semibold"

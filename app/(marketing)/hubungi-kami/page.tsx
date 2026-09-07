@@ -9,7 +9,9 @@ export const metadata: Metadata = {
 
 export default function HubungiKamiPage() {
   const siteUrl = (
-    process.env.NEXT_PUBLIC_SITE_URL || "https://robotik-pnp.vercel.app"
+    process.env.SITE_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    "https://robotik-pnp.vercel.app"
   ).replace(/\/$/, "");
 
   const contactPageJsonLd = {

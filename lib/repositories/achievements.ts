@@ -9,7 +9,7 @@ import type { Database } from "@/types/database.types";
  */
 export async function countAchievements(): Promise<number> {
   const supabase = createSupabaseClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL)!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
 
@@ -27,7 +27,7 @@ export async function countAchievements(): Promise<number> {
 
 export async function getAchievements() {
   const supabase = createSupabaseClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL)!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
 

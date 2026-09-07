@@ -159,7 +159,7 @@ export async function applyInternship(
     // Since caang cannot insert/update internships table directly via RLS,
     // we use supabaseAdmin service client.
     const supabaseAdmin = createSupabaseClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL)!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
     );
 

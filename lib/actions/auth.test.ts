@@ -13,7 +13,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Env stubs — aksi auth membutuhkan variabel ini agar tidak short-circuit.
-process.env.NEXT_PUBLIC_SITE_URL = "http://localhost:3000";
+process.env.SITE_URL = "http://localhost:3000";
+process.env.NEXT_PUBLIC_SITE_URL = "http://localhost:3000"; // backward compat
 
 // Variabel mock yang dapat dikontrol dinamis di setiap test block.
 // Nama HARUS diawali "mock" agar bisa diakses di dalam factory vi.mock() yang di-hoist.

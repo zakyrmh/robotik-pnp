@@ -36,7 +36,9 @@ function toSingle<T extends object>(raw: T | T[] | null | undefined): T | null {
 
 export default async function ProfilPage() {
   const siteUrl = (
-    process.env.NEXT_PUBLIC_SITE_URL || "https://robotik-pnp.vercel.app"
+    process.env.SITE_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    "https://robotik-pnp.vercel.app"
   ).replace(/\/$/, "");
 
   const aboutPageJsonLd = {

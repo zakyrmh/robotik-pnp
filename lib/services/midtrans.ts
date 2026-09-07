@@ -2,7 +2,10 @@ import midtransClient from "midtrans-client";
 
 function getMidtransConfig() {
   const serverKey = process.env.MIDTRANS_SERVER_KEY || "";
-  const clientKey = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || "";
+  const clientKey =
+    process.env.MIDTRANS_CLIENT_KEY ||
+    process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY ||
+    "";
   const isProduction = process.env.MIDTRANS_IS_PRODUCTION === "true";
 
   if (!serverKey) {

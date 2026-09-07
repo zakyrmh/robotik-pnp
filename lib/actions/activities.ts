@@ -724,7 +724,7 @@ export async function getAttendanceSummary(): Promise<
 
   // Use service-role client to bypass RLS (mirrors caang.ts pattern)
   const supabaseAdmin = createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL)!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
 
@@ -989,7 +989,7 @@ export async function getActivityAttendances(activityId: string): Promise<
   }
 
   const supabaseAdmin = createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL)!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
 

@@ -325,7 +325,12 @@ export async function updatePaymentStatusAction(
 
   // If set to paid, send e-ticket email if not already sent
   if (newStatus === "paid") {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const appUrl =
+      process.env.APP_URL ||
+      process.env.NEXT_PUBLIC_APP_URL ||
+      process.env.SITE_URL ||
+      process.env.NEXT_PUBLIC_SITE_URL ||
+      "http://localhost:3000";
     await sendETicketEmail({
       toEmail: updatedReg.team_email,
       teamName: updatedReg.team_name,

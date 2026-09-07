@@ -16,7 +16,7 @@ export type UserRole =
  */
 export async function countProfilesByRoles(roles: UserRole[]): Promise<number> {
   const supabase = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL)!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
 

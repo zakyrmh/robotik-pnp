@@ -110,7 +110,12 @@ export async function POST(request: Request) {
 
     // Send E-Ticket if transition to paid
     if (newStatus === "paid") {
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+      const appUrl =
+        process.env.APP_URL ||
+        process.env.NEXT_PUBLIC_APP_URL ||
+        process.env.SITE_URL ||
+        process.env.NEXT_PUBLIC_SITE_URL ||
+        "http://localhost:3000";
       await sendETicketEmail({
         toEmail: reg.team_email,
         teamName: reg.team_name,

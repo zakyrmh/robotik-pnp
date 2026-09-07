@@ -208,7 +208,11 @@ export async function registerEventAction(
       // Send pending registration confirmation email with access link
       if (currentRegRecord) {
         const appUrl =
-          process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+          process.env.APP_URL ||
+          process.env.NEXT_PUBLIC_APP_URL ||
+          process.env.SITE_URL ||
+          process.env.NEXT_PUBLIC_SITE_URL ||
+          "http://localhost:3000";
         await sendETicketEmail({
           toEmail: currentRegRecord.team_email,
           teamName: currentRegRecord.team_name,
@@ -237,7 +241,11 @@ export async function registerEventAction(
 
       if (regRecord) {
         const appUrl =
-          process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+          process.env.APP_URL ||
+          process.env.NEXT_PUBLIC_APP_URL ||
+          process.env.SITE_URL ||
+          process.env.NEXT_PUBLIC_SITE_URL ||
+          "http://localhost:3000";
         await sendETicketEmail({
           toEmail: regRecord.team_email,
           teamName: regRecord.team_name,
@@ -440,7 +448,11 @@ export async function getRegistrationByAccessTokenAction(
 
         if (newStatus === "paid") {
           const appUrl =
-            process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+            process.env.APP_URL ||
+            process.env.NEXT_PUBLIC_APP_URL ||
+            process.env.SITE_URL ||
+            process.env.NEXT_PUBLIC_SITE_URL ||
+            "http://localhost:3000";
           await sendETicketEmail({
             toEmail: data.team_email,
             teamName: data.team_name,

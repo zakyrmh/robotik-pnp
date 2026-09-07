@@ -2,7 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function robots(): MetadataRoute.Robots {
   const baseUrl = (
-    process.env.NEXT_PUBLIC_SITE_URL || "https://robotik-pnp.vercel.app"
+    process.env.SITE_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    "https://robotik-pnp.vercel.app"
   ).replace(/\/$/, "");
 
   return {

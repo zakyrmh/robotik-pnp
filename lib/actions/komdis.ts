@@ -815,7 +815,7 @@ export async function getKomdisMemberAttendanceSummary(): Promise<{
   const { supabase } = await verifyKomdisRole();
 
   const supabaseAdmin = createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL)!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
 
@@ -1033,7 +1033,7 @@ export async function getKomdisActivityAttendanceSummary(): Promise<
   const { supabase } = await verifyKomdisRole();
 
   const supabaseAdmin = createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL)!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
 
@@ -1204,7 +1204,7 @@ export async function getActivityAttendanceDetail(
   const { supabase } = await verifyKomdisRole();
 
   const supabaseAdmin = createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL)!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
   );
 
