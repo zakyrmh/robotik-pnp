@@ -533,7 +533,7 @@ export async function submitLeaveRequest(
 
     revalidatePath("/perizinan");
     revalidatePath(`/kegiatan/${activityId}`);
-    revalidatePath(`/kegiatan/${activityId}/absensi`);
+    revalidatePath(`/presensi/${activityId}`);
     revalidatePath("/presensi");
 
     return {

@@ -72,6 +72,8 @@ export default async function KedisiplinanPage() {
         full_name: s.full_name || null,
         nim: s.nim || null,
         total_attendance_points: s.total_attendance_points || 0,
+        total_legacy_points: s.total_legacy_points || 0,
+        total_goro_points: s.total_goro_points || 0,
         total_log_points: s.total_log_points || 0,
         net_points: s.net_points || 0,
         is_on_internship: prof?.is_on_internship ?? false,

@@ -17,12 +17,12 @@ Tabel-tabel di bawah adalah **tabel baru**, tidak ada tabel event lomba sebelumn
 
 > **Catatan desain â€” satu instansi dengan banyak tim:** satu pembimbing/manajer dari instansi yang sama boleh mendaftarkan lebih dari satu tim, tetapi ini ditangani di **level UX form**, bukan skema data. Setiap tim tetap 1 baris `event_registrations` terpisah (pembayaran, kuota, dan verifikasi wajah independen per tim). Form pendaftaran cukup menawarkan opsi "daftarkan tim lain dari instansi yang sama?" untuk mengisi ulang `institution`, `advisor_name`, `team_email`, `team_whatsapp` secara otomatis dari submission sebelumnya. Rekap "instansi mana membawa berapa tim" cukup lewat `GROUP BY institution, advisor_name` saat query, tanpa tabel/kolom tambahan.
 
-| Aspek Domain | Sistem SIM UKM Internal | Sistem Pendaftaran Lomba (Event) |
-| :--- | :--- | :--- |
-| **Audience** | Mahasiswa internal PNP. | Siswa SMA/SMK, mahasiswa lain, delegasi eksternal. |
-| **Lifecycle Akun** | Long-term & persistent. | Seasonal & ephemeral (aktif ~1â€“3 bulan). |
-| **Representasi Entitas** | 1 akun = 1 individu. | 1 kontak tim mendaftarkan 1 tim (2+ anggota). |
-| **Retensi Data** | Permanen (arsip organisasi). | 3 bulan setelah event, dihapus manual oleh super-admin. |
+| Aspek Domain             | Sistem SIM UKM Internal      | Sistem Pendaftaran Lomba (Event)                        |
+| :----------------------- | :--------------------------- | :------------------------------------------------------ |
+| **Audience**             | Mahasiswa internal PNP.      | Siswa SMA/SMK, mahasiswa lain, delegasi eksternal.      |
+| **Lifecycle Akun**       | Long-term & persistent.      | Seasonal & ephemeral (aktif ~1â€“3 bulan).              |
+| **Representasi Entitas** | 1 akun = 1 individu.         | 1 kontak tim mendaftarkan 1 tim (2+ anggota).           |
+| **Retensi Data**         | Permanen (arsip organisasi). | 3 bulan setelah event, dihapus manual oleh super-admin. |
 
 ---
 
@@ -200,11 +200,11 @@ ALTER TABLE public.profiles
         CHECK (role_event IN ('panitia-pendaftaran', 'panitia-verifikasi', 'panitia-pertandingan'));
 ```
 
-| `role_event` | Cakupan tugas | Akses tabel |
-|---|---|---|
-| `panitia-pendaftaran` | Kelola kategori & kuota, pantau pendaftar, verifikasi pembayaran manual | `event_categories` (CRUD), `event_registrations` (read + update `payment_status`) |
-| `panitia-verifikasi` | Scan QR kokarde, cocokkan wajah di lapangan | `event_team_members` (read foto via `member_qr_token`), `event_member_verifications` (write) |
-| `panitia-pertandingan` | Atur jadwal/bracket, klik mulai-selesai, input skor | `event_matches` (di luar cakupan dokumen ini), `event_registrations` (read nama tim saja) |
+| `role_event`           | Cakupan tugas                                                           | Akses tabel                                                                                  |
+| ---------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `panitia-pendaftaran`  | Kelola kategori & kuota, pantau pendaftar, verifikasi pembayaran manual | `event_categories` (CRUD), `event_registrations` (read + update `payment_status`)            |
+| `panitia-verifikasi`   | Scan QR kokarde, cocokkan wajah di lapangan                             | `event_team_members` (read foto via `member_qr_token`), `event_member_verifications` (write) |
+| `panitia-pertandingan` | Atur jadwal/bracket, klik mulai-selesai, input skor                     | `event_matches` (di luar cakupan dokumen ini), `event_registrations` (read nama tim saja)    |
 
 Nullable karena tidak semua anggota SIM UKM terlibat kepanitiaan event tertentu. Kuota per kategori (kolom `quota` di `event_categories`, Â§3) ditetapkan oleh role `panitia-pendaftaran` lewat form CRUD kategori di dashboard.
 
@@ -250,7 +250,7 @@ CREATE POLICY "panitia verifikasi read member photo" ON public.event_team_member
     );
 ```
 
-Mutasi status pembayaran (`payment_status`) hanya boleh dilakukan oleh `service_role` (Server Action / webhook) atau `panitia-pendaftaran` (verifikasi manual, fallback saat webhook gagal â€” lihat Â§6). Setiap `role_event` dibatasi hanya ke tabel yang relevan dengan tugasnya, sesuai prinsip *least privilege* â€” `panitia-verifikasi` misalnya tidak diberi akses ke `payment_status` atau kontak tim sama sekali.
+Mutasi status pembayaran (`payment_status`) hanya boleh dilakukan oleh `service_role` (Server Action / webhook) atau `panitia-pendaftaran` (verifikasi manual, fallback saat webhook gagal â€” lihat Â§6). Setiap `role_event` dibatasi hanya ke tabel yang relevan dengan tugasnya, sesuai prinsip _least privilege_ â€” `panitia-verifikasi` misalnya tidak diberi akses ke `payment_status` atau kontak tim sama sekali.
 
 ---
 
@@ -298,6 +298,7 @@ Panitia scan QR kokarde â”€â”€â–¶ Sistem tampilkan foto & data â�
 Setiap hasil scan (cocok maupun tidak) dicatat di `event_member_verifications` untuk jejak audit bila terjadi sengketa.
 
 **Pertimbangan operasional:**
+
 - Endpoint scan wajib melalui sesi panitia yang sudah login â€” tidak ada akses publik ke foto peserta (data biometrik, sebagian peserta di bawah umur).
 - Halaman scan sebaiknya PWA dengan caching data di awal hari, mengingat koneksi venue kompetisi sering tidak stabil.
 
@@ -313,14 +314,14 @@ Peserta menyetujui `event_rules_versions` tertentu saat mendaftar (`rules_versio
 
 ## 9. Optimasi Resource (Supabase Free + Vercel Hobby)
 
-| Area | Risiko | Mitigasi |
-| :--- | :--- | :--- |
-| Storage foto (1GB limit) | Foto resolusi tinggi menghabiskan kuota cepat | Kompresi client-side sebelum upload: resize maks lebar 480px, WebP, target <150KB/foto |
-| Egress (5GB/bulan) | Serving foto berulang | Signed URL berumur pendek dari Storage, bukan public bucket |
-| Vercel Cron (1Ã—/hari di Hobby) | Tidak cukup untuk pelepasan kuota real-time | Korektnya sistem tidak bergantung cron (lihat Â§4); cron hanya kosmetik |
-| DB size (500MB limit) | Tidak signifikan | Skema ini murni metadata teks; foto disimpan di Storage, bukan DB â€” jauh di bawah limit untuk skala Â±100 tim |
-| Project auto-pause (7 hari idle) | Cron/job terjadwal bisa gagal diam-diam saat project paused | Retensi data (Â§10) sengaja dibuat manual (tombol admin), bukan cron, agar tidak bergantung uptime otomatis |
-| WhatsApp otomatis | Butuh API berbayar | Tidak diotomatiskan â€” tautan `wa.me` siap kirim di halaman konfirmasi |
+| Area                             | Risiko                                                      | Mitigasi                                                                                                        |
+| :------------------------------- | :---------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------- |
+| Storage foto (1GB limit)         | Foto resolusi tinggi menghabiskan kuota cepat               | Kompresi client-side sebelum upload: resize maks lebar 480px, WebP, target <150KB/foto                          |
+| Egress (5GB/bulan)               | Serving foto berulang                                       | Signed URL berumur pendek dari Storage, bukan public bucket                                                     |
+| Vercel Cron (1Ã—/hari di Hobby)  | Tidak cukup untuk pelepasan kuota real-time                 | Korektnya sistem tidak bergantung cron (lihat Â§4); cron hanya kosmetik                                         |
+| DB size (500MB limit)            | Tidak signifikan                                            | Skema ini murni metadata teks; foto disimpan di Storage, bukan DB â€” jauh di bawah limit untuk skala Â±100 tim |
+| Project auto-pause (7 hari idle) | Cron/job terjadwal bisa gagal diam-diam saat project paused | Retensi data (Â§10) sengaja dibuat manual (tombol admin), bukan cron, agar tidak bergantung uptime otomatis     |
+| WhatsApp otomatis                | Butuh API berbayar                                          | Tidak diotomatiskan â€” tautan `wa.me` siap kirim di halaman konfirmasi                                         |
 
 ---
 
@@ -354,6 +355,7 @@ WHERE created_at < now() - interval '3 months';
 ## 12. Di Luar Cakupan Dokumen Ini
 
 Modul berikut dirancang terpisah, menyusul setelah modul ini diimplementasikan:
+
 - Manajemen babak grup & bracket otomatis
 - Live score & role wasit/panitia pertandingan
 - Overlay OBS real-time

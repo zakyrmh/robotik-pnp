@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 export interface HistoryItem {
   id: string;
   check_in_at: string;
-  status: "hadir" | "telat" | "izin" | "sakit" | "alfa";
+  status: "hadir" | "telat" | "izin" | "sakit" | "alfa" | "magang";
   notes: string | null;
   proof_url: string | null;
   activity_id: string | null;
@@ -33,12 +33,14 @@ export function PersonalAttendanceTab({
     let hadir = 0;
     let telat = 0;
     let izinSakit = 0;
+    let magang = 0;
     let alfa = 0;
 
     initialHistory.forEach((item) => {
       if (item.status === "hadir") hadir++;
       else if (item.status === "telat") telat++;
       else if (item.status === "izin" || item.status === "sakit") izinSakit++;
+      else if (item.status === "magang") magang++;
       else if (item.status === "alfa") alfa++;
     });
 
@@ -47,6 +49,7 @@ export function PersonalAttendanceTab({
       hadir,
       telat,
       izinSakit,
+      magang,
       alfa,
     };
   }, [initialHistory]);
@@ -119,6 +122,12 @@ export function PersonalAttendanceTab({
             SAKIT
           </Badge>
         );
+      case "magang":
+        return (
+          <Badge className="bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-900/60 font-mono text-[11px] font-semibold rounded-full px-3 py-0.5 uppercase">
+            MAGANG
+          </Badge>
+        );
       case "alfa":
         return (
           <Badge className="bg-red-50 dark:bg-red-950/60 text-red-700 dark:text-red-300 border border-red-200 dark:border-red-900/60 font-mono text-[11px] font-semibold rounded-full px-3 py-0.5 uppercase">
@@ -137,7 +146,7 @@ export function PersonalAttendanceTab({
   return (
     <div className="space-y-4 w-full">
       {/* Telemetry Summary Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 rounded-xl text-center border-l-4 border-l-[#1e3a8a] dark:border-l-blue-500 shadow-xs">
           <span className="font-mono text-[10px] uppercase tracking-widest text-slate-400 dark:text-slate-500 block">
             HADIR
@@ -162,6 +171,15 @@ export function PersonalAttendanceTab({
           </span>
           <span className="font-display text-xl sm:text-2xl font-bold text-[#1e3a8a] dark:text-blue-400">
             {stats.izinSakit}
+          </span>
+        </div>
+
+        <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 rounded-xl text-center border-l-4 border-l-purple-500 shadow-xs">
+          <span className="font-mono text-[10px] uppercase tracking-widest text-slate-400 dark:text-slate-500 block">
+            MAGANG
+          </span>
+          <span className="font-display text-xl sm:text-2xl font-bold text-purple-600 dark:text-purple-400">
+            {stats.magang}
           </span>
         </div>
 
@@ -200,6 +218,7 @@ export function PersonalAttendanceTab({
             <option value="hadir">Hadir</option>
             <option value="telat">Telat</option>
             <option value="izin_sakit">Izin / Sakit</option>
+            <option value="magang">Magang / PKL</option>
             <option value="alfa">Alfa</option>
           </select>
         </div>

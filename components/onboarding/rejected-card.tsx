@@ -2,7 +2,10 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Cancel01Icon, InformationCircleIcon } from "@hugeicons/core-free-icons";
+import {
+  Cancel01Icon,
+  InformationCircleIcon,
+} from "@hugeicons/core-free-icons";
 
 export function RejectedCard() {
   return (
@@ -28,7 +31,8 @@ export function RejectedCard() {
 
           <CardContent className="space-y-5 pb-8 px-5 sm:px-6">
             <p className="text-xs sm:text-sm text-muted-foreground font-sans leading-relaxed">
-              Maaf, pendaftaran kamu sebagai Calon Anggota UKM Robotik PNP tidak dapat disetujui saat ini.
+              Maaf, pendaftaran kamu sebagai Calon Anggota UKM Robotik PNP tidak
+              dapat disetujui saat ini.
             </p>
 
             <div className="flex items-center justify-center gap-3 font-medium text-destructive bg-destructive/10 p-3.5 rounded-lg border border-destructive/20 text-xs sm:text-sm">

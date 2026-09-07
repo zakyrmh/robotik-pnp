@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import {
   scanAttendanceQRByAdmin,
   recordManualAttendance,
-  batchMarkAlfa,
   recordSelfAttendanceKomdis,
 } from "@/lib/actions/komdis";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,10 +15,11 @@ import {
   QrCodeIcon,
   Loading03Icon,
   UserCheck01Icon,
-  UserGroupIcon,
   Camera01Icon,
   RefreshIcon,
+  Alert02Icon,
 } from "@hugeicons/core-free-icons";
+import Image from "next/image";
 
 interface KomdisScannerViewProps {
   activityId: string;
@@ -32,20 +32,28 @@ export function KomdisScannerView({
 }: KomdisScannerViewProps) {
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
-
-  const [isManualOpen, setIsManualOpen] = useState(false);
-  const [manualProfileId, setManualProfileId] = useState("");
-  const [manualStatus, setManualStatus] = useState<
-    "hadir" | "telat" | "izin" | "sakit" | "alfa"
-  >("hadir");
-  const [manualPoints, setManualPoints] = useState<number>(0);
-  const [manualNotes, setManualNotes] = useState("");
   const [retryTrigger, setRetryTrigger] = useState(0);
+
+  // State untuk popup penetapan sanksi keterlambatan (> 1 jam)
+  const [latePenaltyTarget, setLatePenaltyTarget] = useState<{
+    profileId: string;
+    fullName: string;
+    nim: string;
+    avatarUrl: string | null;
+    diffMinutes: number;
+  } | null>(null);
+  const [latePenaltyPoints, setLatePenaltyPoints] = useState<number>(3);
+  const [latePenaltyNotes, setLatePenaltyNotes] = useState<string>("");
 
   const [isPending, startTransition] = useTransition();
 
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const lastScannedRef = useRef<{ token: string; time: number } | null>(null);
+  const latePenaltyTargetRef = useRef(latePenaltyTarget);
+
+  useEffect(() => {
+    latePenaltyTargetRef.current = latePenaltyTarget;
+  }, [latePenaltyTarget]);
 
   const stopCurrentScanner = async () => {
     if (scannerRef.current) {
@@ -80,6 +88,11 @@ export function KomdisScannerView({
       scannerRef.current = html5QrCode;
 
       const onScanSuccess = (decodedText: string) => {
+        // Abaikan scan jika popup sanksi keterlambatan sedang terbuka
+        if (latePenaltyTargetRef.current) {
+          return;
+        }
+
         const now = Date.now();
         if (
           lastScannedRef.current &&
@@ -96,7 +109,26 @@ export function KomdisScannerView({
             const res = await scanAttendanceQRByAdmin(activityId, decodedText);
             toast.dismiss(toastId);
             if (res.success) {
-              toast.success(res.message || "Presensi Berhasil Dicatat");
+              if (res.isLateOverOneHour && res.member) {
+                // Terlambat > 1 Jam: Munculkan modal popup penetapan sanksi SOP Komdis
+                setLatePenaltyPoints(3);
+                setLatePenaltyNotes(
+                  `Terlambat ${res.diffMinutes} menit (Izin diterima - sanksi fisik + 3 poin)`,
+                );
+                setLatePenaltyTarget({
+                  profileId: res.member.id,
+                  fullName: res.member.fullName,
+                  nim: res.member.nim,
+                  avatarUrl: res.member.avatarUrl,
+                  diffMinutes: res.diffMinutes || 60,
+                });
+                toast.warning(
+                  `Peserta terlambat ${res.diffMinutes} menit (> 1 Jam). Silakan tetapkan poin sanksi.`,
+                  { duration: 4000 },
+                );
+              } else {
+                toast.success(res.message || "Presensi Berhasil Dicatat");
+              }
             } else {
               toast.error(res.message || "Gagal memproses QR Code");
             }
@@ -168,52 +200,28 @@ export function KomdisScannerView({
     };
   }, [activityId, retryTrigger]);
 
-  const handleManualSubmit = (e: React.FormEvent) => {
+  const handleSaveLatePenalty = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!manualProfileId.trim()) {
-      toast.error("ID Profil / UUID Anggota wajib diisi.");
-      return;
-    }
+    if (!latePenaltyTarget) return;
 
     startTransition(async () => {
       try {
         await recordManualAttendance({
           activityId,
-          profileId: manualProfileId.trim(),
-          status: manualStatus,
-          pointsAwarded: manualPoints,
-          notes: manualNotes.trim() || undefined,
+          profileId: latePenaltyTarget.profileId,
+          status: "telat",
+          pointsAwarded: latePenaltyPoints,
+          notes: latePenaltyNotes.trim() || undefined,
         });
-        setIsManualOpen(false);
-        setManualProfileId("");
-        setManualNotes("");
-        toast.success("Presensi manual berhasil dicatat.");
-      } catch (err: unknown) {
-        toast.error(
-          err instanceof Error ? err.message : "Gagal mencatat presensi manual",
-        );
-      }
-    });
-  };
-
-  const handleBatchAlfa = () => {
-    if (
-      !confirm(
-        "Apakah Anda yakin ingin menandai SELURUH anggota yang belum hadir sebagai ALFA (+15 Poin Sanksi)?",
-      )
-    ) {
-      return;
-    }
-
-    startTransition(async () => {
-      try {
-        const res = await batchMarkAlfa(activityId);
         toast.success(
-          `Berhasil memproses Penandaan Alfa Massal (${res.count} anggota).`,
+          `Sanksi (${latePenaltyPoints} PTS) berhasil disimpan untuk ${latePenaltyTarget.fullName}. Silakan lanjut scan.`,
         );
+        setLatePenaltyTarget(null);
       } catch (err: unknown) {
         toast.error(
-          err instanceof Error ? err.message : "Gagal memproses alfa massal",
+          err instanceof Error
+            ? err.message
+            : "Gagal menyimpan sanksi keterlambatan",
         );
       }
     });
@@ -290,136 +298,180 @@ export function KomdisScannerView({
       </Card>
 
       {/* Action Controls - Mobile First */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+      <div className="flex justify-center">
         <Button
           type="button"
           disabled={isPending}
           onClick={handleSelfAttendance}
-          className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-medium text-xs rounded-lg cursor-pointer py-3 shadow-xs"
+          className="w-full sm:w-auto px-8 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500 text-white font-medium text-xs rounded-lg cursor-pointer py-3 shadow-xs font-mono uppercase tracking-wider"
         >
           <HugeiconsIcon icon={UserCheck01Icon} size={16} className="mr-1.5" />
           PRESENSI DIRI
         </Button>
-
-        <Button
-          type="button"
-          onClick={() => setIsManualOpen(true)}
-          className="bg-[#1e3a8a] hover:bg-[#1e40af] dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-medium text-xs rounded-lg cursor-pointer py-3 shadow-xs"
-        >
-          <HugeiconsIcon icon={UserCheck01Icon} size={16} className="mr-1.5" />
-          OVERRIDE MANUAL
-        </Button>
-
-        <Button
-          type="button"
-          disabled={isPending}
-          onClick={handleBatchAlfa}
-          className="bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-500 text-white font-medium text-xs rounded-lg cursor-pointer py-3 shadow-xs"
-        >
-          <HugeiconsIcon icon={UserGroupIcon} size={16} className="mr-1.5" />
-          BATCH ALFA
-        </Button>
       </div>
 
-      {/* Modal Manual Override */}
-      {isManualOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 dark:bg-black/80 backdrop-blur-xs p-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 sm:p-6 max-w-md w-full space-y-4 shadow-xl">
-            <div className="border-b border-slate-200 dark:border-slate-800 pb-3 flex justify-between items-center">
-              <span className="font-mono text-xs text-[#1e3a8a] dark:text-blue-400 font-semibold uppercase tracking-widest">
-                PRESENSI MANUAL OVERRIDE
-              </span>
-              <button
-                onClick={() => setIsManualOpen(false)}
-                className="text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 font-mono text-xs cursor-pointer"
-              >
-                [ TUTUP X ]
-              </button>
+      {/* ── MODAL POPUP PENETAPAN SANKSI KETERLAMBATAN (> 1 JAM) ── */}
+      {latePenaltyTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 border-2 border-amber-500 dark:border-amber-500/80 rounded-2xl w-full max-w-md p-6 shadow-2xl space-y-4">
+            <div className="flex items-start justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-amber-100 dark:bg-amber-950/80 border border-amber-300 dark:border-amber-700 rounded-xl text-amber-800 dark:text-amber-300 shrink-0">
+                  <HugeiconsIcon icon={Alert02Icon} size={24} />
+                </div>
+                <div>
+                  <h3 className="font-display text-base font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wide">
+                    Sanksi Keterlambatan (&gt; 1 Jam)
+                  </h3>
+                  <p className="text-[11px] font-mono text-amber-700 dark:text-amber-400 font-semibold">
+                    Terlambat {latePenaltyTarget.diffMinutes} menit dari waktu
+                    mulai kegiatan
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Info Anggota */}
+            <div className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 rounded-xl">
+              <div className="relative w-10 h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold font-mono text-xs overflow-hidden shrink-0">
+                {latePenaltyTarget.avatarUrl ? (
+                  <Image
+                    src={latePenaltyTarget.avatarUrl}
+                    alt={latePenaltyTarget.fullName}
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  latePenaltyTarget.fullName.slice(0, 2).toUpperCase()
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate font-display">
+                  {latePenaltyTarget.fullName}
+                </div>
+                <div className="text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                  NIM: {latePenaltyTarget.nim || "-"}
+                </div>
+              </div>
             </div>
 
             <form
-              onSubmit={handleManualSubmit}
-              className="space-y-4 font-mono text-xs"
+              onSubmit={handleSaveLatePenalty}
+              className="space-y-3.5 font-mono text-xs"
             >
-              <div>
-                <label className="block text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 font-semibold">
-                  PROFILE ID / UUID ANGGOTA:
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={manualProfileId}
-                  onChange={(e) => setManualProfileId(e.target.value)}
-                  placeholder="00000000-0000-0000-0000-000000000000"
-                  className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 p-2.5 text-xs text-[#0a192f] dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:border-[#f97316] rounded-lg"
-                />
+              {/* Preset Pilihan Cepat SOP Komdis */}
+              <div className="space-y-1.5 p-3 bg-amber-50/90 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-xl">
+                <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-900 dark:text-amber-300 mb-1">
+                  ⚡ PILIH SANKSI SOP KOMDIS:
+                </div>
+                <div className="grid grid-cols-1 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLatePenaltyPoints(0);
+                      setLatePenaltyNotes(
+                        `Terlambat ${latePenaltyTarget.diffMinutes} menit (Sanksi fisik saja di tempat)`,
+                      );
+                    }}
+                    className={`text-left px-2.5 py-2 rounded-lg border font-mono text-[11px] transition-all cursor-pointer flex items-center justify-between ${
+                      latePenaltyPoints === 0
+                        ? "bg-amber-100 dark:bg-amber-900/60 border-amber-400 dark:border-amber-600 text-amber-950 dark:text-amber-100 font-bold shadow-2xs"
+                        : "bg-white dark:bg-slate-900 border-amber-200/70 dark:border-amber-900/40 text-slate-700 dark:text-slate-300 hover:bg-amber-50 dark:hover:bg-amber-950/60"
+                    }`}
+                  >
+                    <span>
+                      🏃 <strong>Sanksi Fisik Saja</strong> (Dispensasi)
+                    </span>
+                    <span className="text-amber-700 dark:text-amber-300 font-bold shrink-0 ml-1">
+                      0 PTS
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLatePenaltyPoints(3);
+                      setLatePenaltyNotes(
+                        `Terlambat ${latePenaltyTarget.diffMinutes} menit (Izin diterima - sanksi fisik + 3 poin)`,
+                      );
+                    }}
+                    className={`text-left px-2.5 py-2 rounded-lg border font-mono text-[11px] transition-all cursor-pointer flex items-center justify-between ${
+                      latePenaltyPoints === 3
+                        ? "bg-amber-100 dark:bg-amber-900/60 border-amber-400 dark:border-amber-600 text-amber-950 dark:text-amber-100 font-bold shadow-2xs"
+                        : "bg-white dark:bg-slate-900 border-amber-200/70 dark:border-amber-900/40 text-slate-700 dark:text-slate-300 hover:bg-amber-50 dark:hover:bg-amber-950/60"
+                    }`}
+                  >
+                    <span>
+                      📋 <strong>Fisik + Poin (Izin Diterima)</strong>
+                    </span>
+                    <span className="text-amber-700 dark:text-amber-300 font-bold shrink-0 ml-1">
+                      +3 PTS
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setLatePenaltyPoints(5);
+                      setLatePenaltyNotes(
+                        `Terlambat ${latePenaltyTarget.diffMinutes} menit (Izin ditolak/tanpa izin - sanksi fisik + 5 poin)`,
+                      );
+                    }}
+                    className={`text-left px-2.5 py-2 rounded-lg border font-mono text-[11px] transition-all cursor-pointer flex items-center justify-between ${
+                      latePenaltyPoints === 5
+                        ? "bg-amber-100 dark:bg-amber-900/60 border-amber-400 dark:border-amber-600 text-amber-950 dark:text-amber-100 font-bold shadow-2xs"
+                        : "bg-white dark:bg-slate-900 border-amber-200/70 dark:border-amber-900/40 text-slate-700 dark:text-slate-300 hover:bg-amber-50 dark:hover:bg-amber-950/60"
+                    }`}
+                  >
+                    <span>
+                      ⚠️ <strong>Fisik + Poin (Izin Ditolak/Tanpa Izin)</strong>
+                    </span>
+                    <span className="text-red-600 dark:text-red-400 font-bold shrink-0 ml-1">
+                      +5 PTS
+                    </span>
+                  </button>
+                </div>
               </div>
 
               <div>
                 <label className="block text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 font-semibold">
-                  STATUS PRESENSI:
-                </label>
-                <select
-                  value={manualStatus}
-                  onChange={(e) =>
-                    setManualStatus(
-                      e.target.value as
-                        | "hadir"
-                        | "telat"
-                        | "izin"
-                        | "sakit"
-                        | "alfa",
-                    )
-                  }
-                  className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 p-2.5 text-xs text-[#0a192f] dark:text-slate-100 focus:outline-hidden focus:border-[#f97316] rounded-lg"
-                >
-                  <option value="hadir">HADIR (0 POIN)</option>
-                  <option value="telat">TELAT (SANKSI SESUAI JAM)</option>
-                  <option value="izin">IZIN (5 POIN)</option>
-                  <option value="sakit">SAKIT (5 POIN)</option>
-                  <option value="alfa">ALFA (15 POIN)</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 font-semibold">
-                  POIN SANKSI YANG DITETAPKAN:
+                  POIN SANKSI DITERAPKAN:
                 </label>
                 <input
                   type="number"
                   min={0}
-                  value={manualPoints}
-                  onChange={(e) => setManualPoints(Number(e.target.value))}
-                  className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 p-2.5 text-xs text-[#f97316] dark:text-orange-400 font-bold focus:outline-hidden focus:border-[#f97316] rounded-lg"
+                  value={latePenaltyPoints}
+                  onChange={(e) => setLatePenaltyPoints(Number(e.target.value))}
+                  className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 p-2.5 text-xs text-amber-600 dark:text-orange-400 font-bold focus:outline-hidden focus:border-amber-500 rounded-lg"
                 />
               </div>
 
               <div>
                 <label className="block text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 font-semibold">
-                  CATATAN / ALASAN OVERRIDE:
+                  CATATAN SANKSI KETERLAMBATAN:
                 </label>
                 <input
                   type="text"
-                  value={manualNotes}
-                  onChange={(e) => setManualNotes(e.target.value)}
-                  placeholder="Contoh: HP anggota rusak / terlambat > 1 jam..."
-                  className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 p-2.5 text-xs text-[#0a192f] dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:border-[#f97316] rounded-lg"
+                  value={latePenaltyNotes}
+                  onChange={(e) => setLatePenaltyNotes(e.target.value)}
+                  placeholder="Keterangan sanksi..."
+                  className="w-full bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 p-2.5 text-xs text-[#0a192f] dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-hidden focus:border-amber-500 rounded-lg"
                 />
               </div>
 
-              <div className="flex gap-2 pt-3 border-t border-slate-200 dark:border-slate-800">
+              <div className="flex gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setIsManualOpen(false)}
+                  onClick={() => setLatePenaltyTarget(null)}
                   className="flex-1 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-mono text-xs rounded-lg cursor-pointer"
                 >
-                  BATAL
+                  BATAL / LEWATI
                 </Button>
                 <Button
                   type="submit"
                   disabled={isPending}
-                  className="flex-1 bg-[#1e3a8a] dark:bg-blue-600 hover:bg-[#1e40af] dark:hover:bg-blue-500 text-white font-mono text-xs uppercase tracking-wider rounded-lg cursor-pointer"
+                  className="flex-1 bg-amber-600 hover:bg-amber-700 text-white font-mono text-xs uppercase tracking-wider rounded-lg cursor-pointer"
                 >
                   {isPending ? (
                     <HugeiconsIcon
@@ -428,7 +480,7 @@ export function KomdisScannerView({
                       className="animate-spin"
                     />
                   ) : (
-                    "SIMPAN PRESENSI"
+                    "SIMPAN & LANJUT SCAN"
                   )}
                 </Button>
               </div>

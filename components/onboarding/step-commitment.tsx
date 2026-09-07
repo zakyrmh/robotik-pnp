@@ -27,7 +27,11 @@ interface StepCommitmentProps {
   initialData?: OnboardingInitialCommitment | null;
 }
 
-export function StepCommitment({ onNext, onPrev, initialData }: StepCommitmentProps) {
+export function StepCommitment({
+  onNext,
+  onPrev,
+  initialData,
+}: StepCommitmentProps) {
   const [isPending, startTransition] = useTransition();
 
   // State lokal — motivation pre-filled jika sudah ada di DB
@@ -64,7 +68,7 @@ export function StepCommitment({ onNext, onPrev, initialData }: StepCommitmentPr
         const uploadFile = async (
           file: File | null,
           path: string,
-          label: string
+          label: string,
         ): Promise<string | null> => {
           if (!file) return null;
           setUploadLabel(`Mengompresi ${label}...`);
@@ -74,9 +78,9 @@ export function StepCommitment({ onNext, onPrev, initialData }: StepCommitmentPr
             .from("registrations")
             .upload(path, compressed, { upsert: true });
           if (error) throw new Error(`Gagal upload ${label}: ${error.message}`);
-          const { data: { publicUrl } } = supabase.storage
-            .from("registrations")
-            .getPublicUrl(path);
+          const {
+            data: { publicUrl },
+          } = supabase.storage.from("registrations").getPublicUrl(path);
           return publicUrl;
         };
 
@@ -84,17 +88,17 @@ export function StepCommitment({ onNext, onPrev, initialData }: StepCommitmentPr
         const igRobotikUrl = await uploadFile(
           igRobotikFile,
           `${year}/${userId}/ig_robotik_${igRobotikFile?.name}`,
-          "Bukti Follow IG Robotik"
+          "Bukti Follow IG Robotik",
         );
         const igMrcUrl = await uploadFile(
           igMrcFile,
           `${year}/${userId}/ig_mrc_${igMrcFile?.name}`,
-          "Bukti Follow IG MRC"
+          "Bukti Follow IG MRC",
         );
         const ytUrl = await uploadFile(
           ytFile,
           `${year}/${userId}/yt_robotik_${ytFile?.name}`,
-          "Bukti Subscribe YT"
+          "Bukti Subscribe YT",
         );
 
         setUploadLabel("Menyimpan data...");
@@ -145,7 +149,11 @@ export function StepCommitment({ onNext, onPrev, initialData }: StepCommitmentPr
       <div className="space-y-6">
         <div className="space-y-2">
           <Label className="text-sm font-medium flex items-center gap-2">
-            <HugeiconsIcon icon={Note01Icon} size={16} className="text-blue-500" />
+            <HugeiconsIcon
+              icon={Note01Icon}
+              size={16}
+              className="text-blue-500"
+            />
             Motivasi Masuk UKM Robotik <span className="text-red-500">*</span>
           </Label>
           <Textarea
@@ -221,7 +229,11 @@ export function StepCommitment({ onNext, onPrev, initialData }: StepCommitmentPr
 
       {isPending && uploadLabel && (
         <p className="mt-4 text-sm text-center text-neutral-500 dark:text-neutral-400 animate-pulse">
-          <HugeiconsIcon icon={Loading02Icon} size={14} className="inline mr-1.5 animate-spin" />
+          <HugeiconsIcon
+            icon={Loading02Icon}
+            size={14}
+            className="inline mr-1.5 animate-spin"
+          />
           {uploadLabel}
         </p>
       )}

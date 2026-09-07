@@ -85,11 +85,6 @@ const allMenuItems = {
     href: "/manajemen-caang",
     icon: UserGroupIcon,
   },
-  kegiatanAbsensiCaang: {
-    title: "Kegiatan & Presensi",
-    href: "/kegiatan-absensi-caang",
-    icon: CalendarAdd01Icon,
-  },
   manajemenKelompokCaang: {
     title: "Manajemen Kelompok",
     href: "/manajemen-kelompok",
@@ -133,7 +128,6 @@ const roleMenuKeys: Record<string, (keyof typeof allMenuItems)[]> = {
     "dashboard",
     "pengaturanOr",
     "manajemenCaang",
-    "kegiatanAbsensiCaang",
     "manajemenKelompokCaang",
     "manajemenMagang",
     "kegiatan",
@@ -144,7 +138,6 @@ const roleMenuKeys: Record<string, (keyof typeof allMenuItems)[]> = {
     "dashboard",
     "pengaturanOr",
     "manajemenCaang",
-    "kegiatanAbsensiCaang",
     "manajemenKelompokCaang",
     "manajemenMagang",
     "kegiatan",
@@ -355,7 +348,6 @@ export function Sidebar() {
         [
           "pengaturanOr",
           "manajemenCaang",
-          "kegiatanAbsensiCaang",
           "manajemenKelompokCaang",
           "manajemenMagang",
         ] as MenuKey[]

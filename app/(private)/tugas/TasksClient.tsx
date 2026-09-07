@@ -4,43 +4,116 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { createTask, submitTaskSubmission, gradeTaskSubmission } from "@/lib/actions/tasks";
+import {
+  createTask,
+  submitTaskSubmission,
+  gradeTaskSubmission,
+} from "@/lib/actions/tasks";
 
 // Custom SVG Icons
 const DocumentIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth={1.5}
+    stroke="currentColor"
+    className="w-5 h-5"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z"
+    />
   </svg>
 );
 
 const PlusIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth={1.5}
+    stroke="currentColor"
+    className="w-5 h-5"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M12 4.5v15m7.5-7.5h-15"
+    />
   </svg>
 );
 
 const UploadIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-indigo-400">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M12 16.5V9.75m0 0 3 3m-3-3-3 3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z" />
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth={1.5}
+    stroke="currentColor"
+    className="w-8 h-8 text-indigo-400"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M12 16.5V9.75m0 0 3 3m-3-3-3 3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z"
+    />
   </svg>
 );
 
 const TrashIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-rose-400">
-    <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth={1.5}
+    stroke="currentColor"
+    className="w-4 h-4 text-rose-400"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="m14.74 9-.346 9m-4.788 0L9 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
+    />
   </svg>
 );
 
 const PencilIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-indigo-400">
-    <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth={1.5}
+    stroke="currentColor"
+    className="w-4 h-4 text-indigo-400"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"
+    />
   </svg>
 );
 
@@ -90,13 +163,16 @@ export function TasksClient({ profile, tasks, submissions }: TasksClientProps) {
   const [isCreating, setIsCreating] = useState(false);
 
   // --- ADMIN: Grading Dialog States ---
-  const [gradingSubmission, setGradingSubmission] = useState<Submission | null>(null);
+  const [gradingSubmission, setGradingSubmission] = useState<Submission | null>(
+    null,
+  );
   const [gradeValue, setGradeValue] = useState<number>(80);
   const [feedbackText, setFeedbackText] = useState("");
   const [isGrading, setIsGrading] = useState(false);
 
   // --- CAANG: Submission Dialog & Drag-Drop States ---
-  const [selectedTaskForSubmit, setSelectedTaskForSubmit] = useState<Task | null>(null);
+  const [selectedTaskForSubmit, setSelectedTaskForSubmit] =
+    useState<Task | null>(null);
   const [submissionNotes, setSubmissionNotes] = useState("");
   const [submissionFile, setSubmissionFile] = useState<File | null>(null);
   const [filePreview, setFilePreview] = useState<string | null>(null);
@@ -155,7 +231,11 @@ export function TasksClient({ profile, tasks, submissions }: TasksClientProps) {
     const loadToast = toast.loading("Menyimpan penilaian...");
 
     try {
-      const res = await gradeTaskSubmission(gradingSubmission.id, gradeValue, feedbackText);
+      const res = await gradeTaskSubmission(
+        gradingSubmission.id,
+        gradeValue,
+        feedbackText,
+      );
       toast.dismiss(loadToast);
 
       if (res.success) {
@@ -184,7 +264,9 @@ export function TasksClient({ profile, tasks, submissions }: TasksClientProps) {
       const ext = file.name.split(".").pop()?.toLowerCase();
 
       if (!ext || !allowed.includes(ext)) {
-        toast.error("Format berkas ditolak. Gunakan file gambar, PDF, Word, atau teks.");
+        toast.error(
+          "Format berkas ditolak. Gunakan file gambar, PDF, Word, atau teks.",
+        );
         return;
       }
 
@@ -205,7 +287,9 @@ export function TasksClient({ profile, tasks, submissions }: TasksClientProps) {
       const ext = file.name.split(".").pop()?.toLowerCase();
 
       if (!ext || !allowed.includes(ext)) {
-        toast.error("Format berkas ditolak. Gunakan file gambar, PDF, Word, atau teks.");
+        toast.error(
+          "Format berkas ditolak. Gunakan file gambar, PDF, Word, atau teks.",
+        );
         return;
       }
 
@@ -277,12 +361,22 @@ export function TasksClient({ profile, tasks, submissions }: TasksClientProps) {
         )}
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="space-y-6"
+      >
         <TabsList className="bg-white/5 backdrop-blur-md border border-white/10 p-1 rounded-xl w-full grid grid-cols-2">
-          <TabsTrigger value="daftar-tugas" className="rounded-lg data-[state=active]:bg-indigo-500/20 data-[state=active]:text-indigo-400 data-[state=active]:border-indigo-500/30">
+          <TabsTrigger
+            value="daftar-tugas"
+            className="rounded-lg data-[state=active]:bg-indigo-500/20 data-[state=active]:text-indigo-400 data-[state=active]:border-indigo-500/30"
+          >
             Daftar Tugas Aktif
           </TabsTrigger>
-          <TabsTrigger value="submissions" className="rounded-lg data-[state=active]:bg-indigo-500/20 data-[state=active]:text-indigo-400 data-[state=active]:border-indigo-500/30">
+          <TabsTrigger
+            value="submissions"
+            className="rounded-lg data-[state=active]:bg-indigo-500/20 data-[state=active]:text-indigo-400 data-[state=active]:border-indigo-500/30"
+          >
             {isAdmin ? "Data Submission Caang" : "Riwayat Pengumpulan"}
           </TabsTrigger>
         </TabsList>
@@ -296,9 +390,12 @@ export function TasksClient({ profile, tasks, submissions }: TasksClientProps) {
                   <div className="inline-flex p-4 rounded-full bg-white/5 text-muted-foreground">
                     <DocumentIcon />
                   </div>
-                  <h3 className="font-semibold text-foreground text-lg">Belum Ada Tugas</h3>
+                  <h3 className="font-semibold text-foreground text-lg">
+                    Belum Ada Tugas
+                  </h3>
                   <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                    Panitia belum mempublikasikan tugas pendaftaran untuk calon anggota.
+                    Panitia belum mempublikasikan tugas pendaftaran untuk calon
+                    anggota.
                   </p>
                 </CardContent>
               </Card>
@@ -308,7 +405,10 @@ export function TasksClient({ profile, tasks, submissions }: TasksClientProps) {
                 const isOverdue = new Date(task.due_date) < new Date();
 
                 return (
-                  <Card key={task.id} className="bg-white/5 backdrop-blur-xl border border-white/10 hover:border-white/20 transition-all rounded-2xl overflow-hidden shadow-lg flex flex-col justify-between group">
+                  <Card
+                    key={task.id}
+                    className="bg-white/5 backdrop-blur-xl border border-white/10 hover:border-white/20 transition-all rounded-2xl overflow-hidden shadow-lg flex flex-col justify-between group"
+                  >
                     <CardHeader className="pb-3">
                       <div className="flex justify-between items-start gap-2">
                         <CardTitle className="text-base font-bold group-hover:text-indigo-400 transition-colors line-clamp-1">
@@ -320,8 +420,8 @@ export function TasksClient({ profile, tasks, submissions }: TasksClientProps) {
                               sub.status === "selesai"
                                 ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px]"
                                 : sub.status === "revisi"
-                                ? "bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[10px]"
-                                : "bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px]"
+                                  ? "bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[10px]"
+                                  : "bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px]"
                             }
                           >
                             {sub.status.toUpperCase()}
@@ -339,14 +439,23 @@ export function TasksClient({ profile, tasks, submissions }: TasksClientProps) {
                     <CardContent className="pb-4 pt-1 flex justify-between items-center text-xs text-muted-foreground">
                       <div className="flex flex-col gap-0.5">
                         <span>Batas Pengumpulan:</span>
-                        <span className={`font-medium ${isOverdue && !sub ? "text-rose-400" : "text-foreground"}`}>
-                          {new Date(task.due_date).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}
+                        <span
+                          className={`font-medium ${isOverdue && !sub ? "text-rose-400" : "text-foreground"}`}
+                        >
+                          {new Date(task.due_date).toLocaleString([], {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          })}
                         </span>
                       </div>
                       {sub?.grade !== null && sub?.grade !== undefined && (
                         <div className="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-xl px-2.5 py-1 text-center">
-                          <p className="text-[8px] text-indigo-300 font-medium">NILAI</p>
-                          <p className="text-sm font-bold font-mono">{sub.grade}</p>
+                          <p className="text-[8px] text-indigo-300 font-medium">
+                            NILAI
+                          </p>
+                          <p className="text-sm font-bold font-mono">
+                            {sub.grade}
+                          </p>
                         </div>
                       )}
                     </CardContent>
@@ -373,7 +482,9 @@ export function TasksClient({ profile, tasks, submissions }: TasksClientProps) {
           <Card className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-xl overflow-hidden">
             <CardHeader>
               <CardTitle className="text-base font-semibold">
-                {isAdmin ? "Rekapitulasi Tugas Caang" : "Riwayat Pengumpulan Tugas Anda"}
+                {isAdmin
+                  ? "Rekapitulasi Tugas Caang"
+                  : "Riwayat Pengumpulan Tugas Anda"}
               </CardTitle>
               <CardDescription>
                 {isAdmin
@@ -403,20 +514,30 @@ export function TasksClient({ profile, tasks, submissions }: TasksClientProps) {
                     {submissions.map((sub) => {
                       const task = tasks.find((t) => t.id === sub.task_id);
                       return (
-                        <tr key={sub.id} className="hover:bg-white/[0.02] transition-colors">
+                        <tr
+                          key={sub.id}
+                          className="hover:bg-white/[0.02] transition-colors"
+                        >
                           <td className="px-4 py-4 font-semibold text-foreground">
                             {task?.title || "Tugas Tidak Diketahui"}
                           </td>
                           {isAdmin && (
                             <td className="px-4 py-4">
                               <div className="flex flex-col">
-                                <span className="font-medium text-foreground">{sub.caang_name}</span>
-                                <span className="text-[10px] text-muted-foreground font-mono">{sub.caang_nim}</span>
+                                <span className="font-medium text-foreground">
+                                  {sub.caang_name}
+                                </span>
+                                <span className="text-[10px] text-muted-foreground font-mono">
+                                  {sub.caang_nim}
+                                </span>
                               </div>
                             </td>
                           )}
                           <td className="px-4 py-4 text-xs text-muted-foreground font-mono">
-                            {new Date(sub.updated_at).toLocaleString([], { dateStyle: "short", timeStyle: "short" })}
+                            {new Date(sub.updated_at).toLocaleString([], {
+                              dateStyle: "short",
+                              timeStyle: "short",
+                            })}
                           </td>
                           <td className="px-4 py-4">
                             <a
@@ -429,7 +550,9 @@ export function TasksClient({ profile, tasks, submissions }: TasksClientProps) {
                             </a>
                           </td>
                           <td className="px-4 py-4 font-mono font-bold text-foreground">
-                            {sub.grade !== null && sub.grade !== undefined ? sub.grade : "-"}
+                            {sub.grade !== null && sub.grade !== undefined
+                              ? sub.grade
+                              : "-"}
                           </td>
                           <td className="px-4 py-4">
                             <Badge
@@ -437,8 +560,8 @@ export function TasksClient({ profile, tasks, submissions }: TasksClientProps) {
                                 sub.status === "selesai"
                                   ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px]"
                                   : sub.status === "revisi"
-                                  ? "bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[10px]"
-                                  : "bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px]"
+                                    ? "bg-rose-500/10 text-rose-400 border border-rose-500/20 text-[10px]"
+                                    : "bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[10px]"
                               }
                             >
                               {sub.status.toUpperCase()}
@@ -475,15 +598,20 @@ export function TasksClient({ profile, tasks, submissions }: TasksClientProps) {
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent className="sm:max-w-[420px] bg-slate-900 border border-white/10 rounded-2xl p-6 text-white">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold tracking-tight text-center">Buat Tugas Baru</DialogTitle>
+            <DialogTitle className="text-lg font-bold tracking-tight text-center">
+              Buat Tugas Baru
+            </DialogTitle>
             <DialogDescription className="text-slate-400 text-xs text-center mt-1">
-              Buat rincian pengerjaan tugas baru untuk seluruh Calon Anggota (Caang).
+              Buat rincian pengerjaan tugas baru untuk seluruh Calon Anggota
+              (Caang).
             </DialogDescription>
           </DialogHeader>
 
           <form onSubmit={handleCreateTask} className="space-y-4 my-4">
             <div className="space-y-1">
-              <Label htmlFor="task-title" className="text-xs text-slate-300">Judul Tugas</Label>
+              <Label htmlFor="task-title" className="text-xs text-slate-300">
+                Judul Tugas
+              </Label>
               <Input
                 id="task-title"
                 required
@@ -495,7 +623,9 @@ export function TasksClient({ profile, tasks, submissions }: TasksClientProps) {
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="task-desc" className="text-xs text-slate-300">Rincian Deskripsi Tugas</Label>
+              <Label htmlFor="task-desc" className="text-xs text-slate-300">
+                Rincian Deskripsi Tugas
+              </Label>
               <Textarea
                 id="task-desc"
                 required
@@ -507,7 +637,9 @@ export function TasksClient({ profile, tasks, submissions }: TasksClientProps) {
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="task-due" className="text-xs text-slate-300">Batas Pengumpulan (Deadline)</Label>
+              <Label htmlFor="task-due" className="text-xs text-slate-300">
+                Batas Pengumpulan (Deadline)
+              </Label>
               <Input
                 id="task-due"
                 type="datetime-local"
@@ -540,19 +672,27 @@ export function TasksClient({ profile, tasks, submissions }: TasksClientProps) {
       </Dialog>
 
       {/* --- DIALOG 2: ADMIN - Grade Task Dialog --- */}
-      <Dialog open={!!gradingSubmission} onOpenChange={(open) => !open && setGradingSubmission(null)}>
+      <Dialog
+        open={!!gradingSubmission}
+        onOpenChange={(open) => !open && setGradingSubmission(null)}
+      >
         <DialogContent className="sm:max-w-[420px] bg-slate-900 border border-white/10 rounded-2xl p-6 text-white">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold tracking-tight text-center">Penilaian Tugas Caang</DialogTitle>
+            <DialogTitle className="text-lg font-bold tracking-tight text-center">
+              Penilaian Tugas Caang
+            </DialogTitle>
             <DialogDescription className="text-slate-400 text-xs text-center mt-1">
-              Berikan skor pengerjaan dan umpan balik pembimbing kepada {gradingSubmission?.caang_name}.
+              Berikan skor pengerjaan dan umpan balik pembimbing kepada{" "}
+              {gradingSubmission?.caang_name}.
             </DialogDescription>
           </DialogHeader>
 
           {gradingSubmission && (
             <form onSubmit={handleGradeSubmission} className="space-y-4 my-4">
               <div className="space-y-1">
-                <Label htmlFor="grade" className="text-xs text-slate-300">Nilai Angka (0 - 100)</Label>
+                <Label htmlFor="grade" className="text-xs text-slate-300">
+                  Nilai Angka (0 - 100)
+                </Label>
                 <Input
                   id="grade"
                   type="number"
@@ -564,12 +704,15 @@ export function TasksClient({ profile, tasks, submissions }: TasksClientProps) {
                   className="bg-white/5 border-white/10 rounded-xl focus:border-indigo-500 text-xs py-3 text-white placeholder-slate-500"
                 />
                 <span className="text-[10px] text-slate-400">
-                  * Nilai &gt;= 50 otomatis set status &quot;Selesai&quot;. Nilai &lt; 50 set status &quot;Revisi&quot;.
+                  * Nilai &gt;= 50 otomatis set status &quot;Selesai&quot;.
+                  Nilai &lt; 50 set status &quot;Revisi&quot;.
                 </span>
               </div>
 
               <div className="space-y-1">
-                <Label htmlFor="feedback" className="text-xs text-slate-300">Umpan Balik / Catatan Evaluasi</Label>
+                <Label htmlFor="feedback" className="text-xs text-slate-300">
+                  Umpan Balik / Catatan Evaluasi
+                </Label>
                 <Textarea
                   id="feedback"
                   placeholder="Berikan saran perbaikan atau catatan apresiasi..."
@@ -602,12 +745,18 @@ export function TasksClient({ profile, tasks, submissions }: TasksClientProps) {
       </Dialog>
 
       {/* --- DIALOG 3: CAANG - Upload Submission Dialog --- */}
-      <Dialog open={!!selectedTaskForSubmit} onOpenChange={(open) => !open && setSelectedTaskForSubmit(null)}>
+      <Dialog
+        open={!!selectedTaskForSubmit}
+        onOpenChange={(open) => !open && setSelectedTaskForSubmit(null)}
+      >
         <DialogContent className="sm:max-w-[420px] bg-slate-900 border border-white/10 rounded-2xl p-6 text-white">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold tracking-tight text-center">Pengumpulan Tugas</DialogTitle>
+            <DialogTitle className="text-lg font-bold tracking-tight text-center">
+              Pengumpulan Tugas
+            </DialogTitle>
             <DialogDescription className="text-slate-400 text-xs text-center mt-1">
-              Kumpulkan file bukti jawaban Anda untuk tugas: {selectedTaskForSubmit?.title}
+              Kumpulkan file bukti jawaban Anda untuk tugas:{" "}
+              {selectedTaskForSubmit?.title}
             </DialogDescription>
           </DialogHeader>
 
@@ -627,7 +776,10 @@ export function TasksClient({ profile, tasks, submissions }: TasksClientProps) {
                       <div className="p-2.5 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-xl">
                         <DocumentIcon />
                       </div>
-                      <p className="text-xs font-semibold text-foreground truncate max-w-[250px]" title={filePreview}>
+                      <p
+                        className="text-xs font-semibold text-foreground truncate max-w-[250px]"
+                        title={filePreview}
+                      >
                         {filePreview}
                       </p>
                       <button
@@ -645,10 +797,15 @@ export function TasksClient({ profile, tasks, submissions }: TasksClientProps) {
                     </div>
                   ) : (
                     <div className="space-y-1.5">
-                      <div className="flex justify-center"><UploadIcon /></div>
-                      <p className="text-xs font-medium text-foreground">Klik / seret file ke sini</p>
+                      <div className="flex justify-center">
+                        <UploadIcon />
+                      </div>
+                      <p className="text-xs font-medium text-foreground">
+                        Klik / seret file ke sini
+                      </p>
                       <p className="text-[10px] text-muted-foreground leading-relaxed">
-                        Mendukung PDF, Word (docx), Teks (txt), Gambar (png, jpg, jpeg) max 10MB
+                        Mendukung PDF, Word (docx), Teks (txt), Gambar (png,
+                        jpg, jpeg) max 10MB
                       </p>
                     </div>
                   )}
@@ -663,7 +820,12 @@ export function TasksClient({ profile, tasks, submissions }: TasksClientProps) {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="submit-notes" className="text-xs text-slate-300">Catatan Tambahan (Opsional)</Label>
+                <Label
+                  htmlFor="submit-notes"
+                  className="text-xs text-slate-300"
+                >
+                  Catatan Tambahan (Opsional)
+                </Label>
                 <Textarea
                   id="submit-notes"
                   placeholder="Tulis pesan/link pengerjaan alternatif kepada panitia jika ada..."

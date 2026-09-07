@@ -34,14 +34,20 @@ interface StepUploadProps {
   initialPaymentMethod?: string | null;
 }
 
-export function StepUpload({ onPrev, onSuccess, initialPaymentMethod }: StepUploadProps) {
+export function StepUpload({
+  onPrev,
+  onSuccess,
+  initialPaymentMethod,
+}: StepUploadProps) {
   const [isPending, startTransition] = useTransition();
 
   // State lokal — tidak perlu diangkat ke page.tsx
   const [pasFoto, setPasFoto] = useState<File | null>(null);
   const [ktmFoto, setKtmFoto] = useState<File | null>(null);
   const [paymentProof, setPaymentProof] = useState<File | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState(initialPaymentMethod ?? "");
+  const [paymentMethod, setPaymentMethod] = useState(
+    initialPaymentMethod ?? "",
+  );
 
   // Status upload granular untuk feedback ke user
   const [uploadLabel, setUploadLabel] = useState("");
@@ -49,7 +55,9 @@ export function StepUpload({ onPrev, onSuccess, initialPaymentMethod }: StepUplo
 
   // State untuk modal crop
   const [cropperModalOpen, setCropperModalOpen] = useState(false);
-  const [selectedImageForCrop, setSelectedImageForCrop] = useState<string | null>(null);
+  const [selectedImageForCrop, setSelectedImageForCrop] = useState<
+    string | null
+  >(null);
 
   const handlePasFotoChange = (file: File | null) => {
     if (file) {
@@ -62,9 +70,18 @@ export function StepUpload({ onPrev, onSuccess, initialPaymentMethod }: StepUplo
 
   const handleSubmit = () => {
     // Validasi sebelum masuk transition
-    if (!pasFoto) { toast.error("Pas foto wajib diupload."); return; }
-    if (!paymentProof) { toast.error("Bukti pembayaran wajib diupload."); return; }
-    if (!paymentMethod) { toast.error("Metode pembayaran wajib dipilih."); return; }
+    if (!pasFoto) {
+      toast.error("Pas foto wajib diupload.");
+      return;
+    }
+    if (!paymentProof) {
+      toast.error("Bukti pembayaran wajib diupload.");
+      return;
+    }
+    if (!paymentMethod) {
+      toast.error("Metode pembayaran wajib dipilih.");
+      return;
+    }
 
     startTransition(async () => {
       try {

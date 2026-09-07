@@ -1457,6 +1457,8 @@ export type Database = {
           nim: string | null;
           profile_id: string | null;
           total_attendance_points: number | null;
+          total_goro_points: number | null;
+          total_legacy_points: number | null;
           total_log_points: number | null;
         };
         Relationships: [];
@@ -1492,7 +1494,13 @@ export type Database = {
     };
     Enums: {
       activity_target: "caang" | "anggota";
-      attendance_status: "hadir" | "izin" | "sakit" | "alfa" | "telat";
+      attendance_status:
+        | "hadir"
+        | "izin"
+        | "sakit"
+        | "alfa"
+        | "telat"
+        | "magang";
       gender_type: "L" | "P";
       piket_day:
         | "Senin"
@@ -1647,7 +1655,7 @@ export const Constants = {
   public: {
     Enums: {
       activity_target: ["caang", "anggota"],
-      attendance_status: ["hadir", "izin", "sakit", "alfa", "telat"],
+      attendance_status: ["hadir", "izin", "sakit", "alfa", "telat", "magang"],
       gender_type: ["L", "P"],
       piket_day: [
         "Senin",

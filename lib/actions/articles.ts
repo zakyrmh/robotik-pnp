@@ -9,7 +9,8 @@ export async function getArticlesAction() {
 
     const { data, error } = await supabase
       .from("articles")
-      .select(`
+      .select(
+        `
         id,
         title,
         slug,
@@ -23,7 +24,8 @@ export async function getArticlesAction() {
           email,
           nim
         )
-      `)
+      `,
+      )
       .eq("is_published", true)
       .order("published_at", { ascending: false });
 
@@ -45,7 +47,8 @@ export async function getArticleBySlugAction(slug: string) {
 
     const { data, error } = await supabase
       .from("articles")
-      .select(`
+      .select(
+        `
         id,
         title,
         slug,
@@ -59,7 +62,8 @@ export async function getArticleBySlugAction(slug: string) {
           email,
           nim
         )
-      `)
+      `,
+      )
       .eq("slug", slug)
       .eq("is_published", true)
       .single();

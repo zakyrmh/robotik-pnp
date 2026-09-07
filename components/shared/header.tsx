@@ -138,11 +138,7 @@ export function Header() {
       const checkRes = await checkActivityExists(notif.reference_id);
       if (checkRes.success && checkRes.data?.exists) {
         setIsNotifOpen(false);
-        if (user?.role === "caang") {
-          router.push(`/kegiatan-absensi-caang/${notif.reference_id}`);
-        } else {
-          router.push(`/kegiatan/${notif.reference_id}`);
-        }
+        router.push(`/kegiatan/${notif.reference_id}`);
       } else {
         toast.error("Kegiatan ini telah dibatalkan atau dihapus oleh Admin");
       }

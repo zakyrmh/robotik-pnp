@@ -47,11 +47,30 @@ interface ActivityAttendanceDetailClientProps {
   initialData: ActivityAttendanceDetailResult;
 }
 
+function isValidImageUrl(url: string | null | undefined): url is string {
+  if (!url || typeof url !== "string") return false;
+  const trimmed = url.trim();
+  if (
+    !trimmed ||
+    trimmed === "Belum Diisi" ||
+    trimmed === "null" ||
+    trimmed === "undefined" ||
+    trimmed === "-"
+  ) {
+    return false;
+  }
+  return (
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("/")
+  );
+}
+
 export function ActivityAttendanceDetailClient({
   initialData,
 }: ActivityAttendanceDetailClientProps) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
 
   const [data] = useState<ActivityAttendanceDetailResult>(initialData);
   const [search, setSearch] = useState("");
@@ -62,7 +81,7 @@ export function ActivityAttendanceDetailClient({
   const [editingMember, setEditingMember] =
     useState<ActivityAttendanceMemberDetail | null>(null);
   const [manualStatus, setManualStatus] = useState<
-    "hadir" | "telat" | "izin" | "sakit" | "alfa"
+    "hadir" | "telat" | "izin" | "sakit" | "alfa" | "magang"
   >("hadir");
   const [manualNotes, setManualNotes] = useState("");
   const [manualPoints, setManualPoints] = useState(0);
@@ -196,6 +215,12 @@ export function ActivityAttendanceDetailClient({
             ALFA
           </Badge>
         );
+      case "magang":
+        return (
+          <Badge className="bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-900/60 font-mono text-[10px] font-bold rounded-full px-2.5 py-0.5">
+            MAGANG
+          </Badge>
+        );
       default:
         return (
           <Badge className="bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 font-mono text-[10px] font-semibold rounded-full px-2.5 py-0.5">
@@ -304,7 +329,7 @@ export function ActivityAttendanceDetailClient({
           {/* Quick Actions */}
           <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
             <Button
-              onClick={() => router.push(`/kegiatan/${activity.id}/absensi`)}
+              onClick={() => router.push(`/presensi/${activity.id}`)}
               className="flex-1 md:flex-initial rounded-xl bg-[#1e3a8a] dark:bg-blue-600 hover:bg-[#1e40af] text-white font-mono text-xs uppercase tracking-wider h-10 px-4 shadow-sm"
             >
               <HugeiconsIcon icon={QrCodeIcon} size={16} className="mr-2" />
@@ -327,7 +352,7 @@ export function ActivityAttendanceDetailClient({
       </div>
 
       {/* ── Telemetry Summary Bar ────────────────────────────────────────── */}
-      <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-7 gap-3">
         <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 rounded-xl text-center border-l-4 border-l-[#1e3a8a] shadow-xs">
           <span className="font-mono text-[10px] uppercase tracking-widest text-slate-400 dark:text-slate-500 block">
             TOTAL ANGGOTA
@@ -361,6 +386,15 @@ export function ActivityAttendanceDetailClient({
           </span>
           <span className="font-display text-xl sm:text-2xl font-bold text-[#1e3a8a] dark:text-blue-400">
             {summary.counts.izin + summary.counts.sakit}
+          </span>
+        </div>
+
+        <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 rounded-xl text-center border-l-4 border-l-purple-500 shadow-xs">
+          <span className="font-mono text-[10px] uppercase tracking-widest text-slate-400 dark:text-slate-500 block">
+            MAGANG
+          </span>
+          <span className="font-display text-xl sm:text-2xl font-bold text-purple-600 dark:text-purple-400">
+            {summary.counts.magang}
           </span>
         </div>
 
@@ -408,6 +442,7 @@ export function ActivityAttendanceDetailClient({
             <option value="hadir">Hadir</option>
             <option value="telat">Telat</option>
             <option value="izin_sakit">Izin / Sakit</option>
+            <option value="magang">Magang / PKL</option>
             <option value="alfa">Alfa</option>
             <option value="unrecorded">Belum Presensi</option>
           </select>
@@ -453,7 +488,7 @@ export function ActivityAttendanceDetailClient({
               >
                 <div className="flex items-center gap-3">
                   <div className="relative h-10 w-10 rounded-full border border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0 flex items-center justify-center">
-                    {m.photoUrl ? (
+                    {isValidImageUrl(m.photoUrl) ? (
                       <Image
                         src={m.photoUrl}
                         alt={m.fullName}
@@ -583,7 +618,7 @@ export function ActivityAttendanceDetailClient({
                     <td className="p-4 align-middle">
                       <div className="flex items-center gap-3">
                         <div className="relative h-9 w-9 rounded-full border border-slate-200 dark:border-slate-700 overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0 flex items-center justify-center">
-                          {m.photoUrl ? (
+                          {isValidImageUrl(m.photoUrl) ? (
                             <Image
                               src={m.photoUrl}
                               alt={m.fullName}
@@ -737,25 +772,122 @@ export function ActivityAttendanceDetailClient({
                 <select
                   id="manual-status-select"
                   value={manualStatus}
-                  onChange={(e) =>
-                    setManualStatus(
-                      e.target.value as
-                        | "hadir"
-                        | "telat"
-                        | "izin"
-                        | "sakit"
-                        | "alfa",
-                    )
-                  }
+                  onChange={(e) => {
+                    const newStatus = e.target.value as
+                      | "hadir"
+                      | "telat"
+                      | "izin"
+                      | "sakit"
+                      | "alfa"
+                      | "magang";
+                    setManualStatus(newStatus);
+                    if (newStatus === "hadir") {
+                      setManualPoints(0);
+                      setManualNotes("");
+                    } else if (newStatus === "telat") {
+                      setManualPoints(0);
+                      setManualNotes(
+                        "Terlambat < 1 jam (Sanksi fisik di tempat)",
+                      );
+                    } else if (newStatus === "izin" || newStatus === "sakit") {
+                      setManualPoints(5);
+                    } else if (newStatus === "alfa") {
+                      setManualPoints(15);
+                    } else if (newStatus === "magang") {
+                      setManualPoints(0);
+                      setManualNotes("Sedang melaksanakan Magang Luar / PKL");
+                    }
+                  }}
                   className="h-10 w-full bg-background px-3 rounded-lg border border-border text-foreground focus:outline-hidden focus:border-primary"
                 >
                   <option value="hadir">Hadir (Tepat Waktu)</option>
                   <option value="telat">Telat</option>
-                  <option value="izin">Izin</option>
-                  <option value="sakit">Sakit</option>
-                  <option value="alfa">Alfa</option>
+                  <option value="izin">Izin (5 Poin)</option>
+                  <option value="sakit">Sakit (5 Poin)</option>
+                  <option value="magang">Magang / PKL (0 Poin)</option>
+                  <option value="alfa">Alfa (15 Poin)</option>
                 </select>
               </div>
+
+              {/* Preset Opsi Sanksi Keterlambatan (SOP Komdis) */}
+              {manualStatus === "telat" && (
+                <div className="flex flex-col gap-2 p-3 bg-amber-50/80 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-xl">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-900 dark:text-amber-300">
+                      ⚡ PRESET SANKSI KETERLAMBATAN (SOP KOMDIS)
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-1 gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setManualPoints(0);
+                        setManualNotes(
+                          "Terlambat < 1 jam (Sanksi fisik di tempat)",
+                        );
+                      }}
+                      className={`text-left px-3 py-2 rounded-lg border font-mono text-[11px] transition-all cursor-pointer flex items-center justify-between ${
+                        manualPoints === 0
+                          ? "bg-amber-100 dark:bg-amber-900/60 border-amber-400 dark:border-amber-600 text-amber-950 dark:text-amber-100 font-bold shadow-2xs"
+                          : "bg-white dark:bg-slate-900 border-amber-200/70 dark:border-amber-900/40 text-slate-700 dark:text-slate-300 hover:bg-amber-50 dark:hover:bg-amber-950/60"
+                      }`}
+                    >
+                      <span>
+                        🏃 <strong>Sanksi Fisik Saja</strong> (Telat &lt; 1 Jam)
+                      </span>
+                      <span className="text-amber-700 dark:text-amber-300 font-bold shrink-0 ml-2">
+                        0 PTS
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setManualPoints(3);
+                        setManualNotes(
+                          "Terlambat > 1 jam (Izin diterima - sanksi fisik + 3 poin)",
+                        );
+                      }}
+                      className={`text-left px-3 py-2 rounded-lg border font-mono text-[11px] transition-all cursor-pointer flex items-center justify-between ${
+                        manualPoints === 3
+                          ? "bg-amber-100 dark:bg-amber-900/60 border-amber-400 dark:border-amber-600 text-amber-950 dark:text-amber-100 font-bold shadow-2xs"
+                          : "bg-white dark:bg-slate-900 border-amber-200/70 dark:border-amber-900/40 text-slate-700 dark:text-slate-300 hover:bg-amber-50 dark:hover:bg-amber-950/60"
+                      }`}
+                    >
+                      <span>
+                        📋 <strong>Fisik + Poin (Izin Diterima)</strong> (Telat
+                        &gt; 1 Jam)
+                      </span>
+                      <span className="text-amber-700 dark:text-amber-300 font-bold shrink-0 ml-2">
+                        +3 PTS
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setManualPoints(5);
+                        setManualNotes(
+                          "Terlambat > 1 jam (Izin ditolak/tanpa izin - sanksi fisik + 5 poin)",
+                        );
+                      }}
+                      className={`text-left px-3 py-2 rounded-lg border font-mono text-[11px] transition-all cursor-pointer flex items-center justify-between ${
+                        manualPoints === 5
+                          ? "bg-amber-100 dark:bg-amber-900/60 border-amber-400 dark:border-amber-600 text-amber-950 dark:text-amber-100 font-bold shadow-2xs"
+                          : "bg-white dark:bg-slate-900 border-amber-200/70 dark:border-amber-900/40 text-slate-700 dark:text-slate-300 hover:bg-amber-50 dark:hover:bg-amber-950/60"
+                      }`}
+                    >
+                      <span>
+                        ⚠️ <strong>Fisik + Poin (Izin Ditolak)</strong> (Telat
+                        &gt; 1 Jam)
+                      </span>
+                      <span className="text-red-600 dark:text-red-400 font-bold shrink-0 ml-2">
+                        +5 PTS
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <div className="flex flex-col gap-1.5">
                 <label
@@ -767,9 +899,10 @@ export function ActivityAttendanceDetailClient({
                 <Input
                   id="manual-points-input"
                   type="number"
+                  min={0}
                   value={manualPoints}
                   onChange={(e) => setManualPoints(Number(e.target.value))}
-                  className="h-10 bg-background font-mono text-xs border-border"
+                  className="h-10 bg-background font-mono text-xs border-border font-bold text-amber-600 dark:text-amber-400"
                 />
               </div>
 
@@ -778,11 +911,11 @@ export function ActivityAttendanceDetailClient({
                   htmlFor="manual-notes-input"
                   className="text-xs font-semibold text-foreground uppercase tracking-wider block"
                 >
-                  Catatan / Keterangan (Opsional)
+                  Catatan / Keterangan Sanksi
                 </label>
                 <Input
                   id="manual-notes-input"
-                  placeholder="Misal: Izin keperluan akademik kampus..."
+                  placeholder="Misal: Terlambat 1 jam 15 menit (izin diterima)..."
                   value={manualNotes}
                   onChange={(e) => setManualNotes(e.target.value)}
                   className="h-10 bg-background font-mono text-xs border-border placeholder:text-muted-foreground"

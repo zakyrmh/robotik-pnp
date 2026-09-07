@@ -25,17 +25,29 @@ interface StepPersonalProps {
   initialData?: OnboardingInitialPersonal | null;
 }
 
-export function StepPersonal({ onNext, onPrev, initialData }: StepPersonalProps) {
+export function StepPersonal({
+  onNext,
+  onPrev,
+  initialData,
+}: StepPersonalProps) {
   const [isPending, startTransition] = useTransition();
 
   const [fullName, setFullName] = useState(initialData?.fullName ?? "");
   const [nickname, setNickname] = useState(initialData?.nickname ?? "");
-  const [gender, setGender] = useState<"L" | "P" | "">(initialData?.gender ?? "");
-  const [phoneNumber, setPhoneNumber] = useState(initialData?.phoneNumber ?? "");
+  const [gender, setGender] = useState<"L" | "P" | "">(
+    initialData?.gender ?? "",
+  );
+  const [phoneNumber, setPhoneNumber] = useState(
+    initialData?.phoneNumber ?? "",
+  );
   const [pob, setPob] = useState(initialData?.pob ?? "");
   const [dob, setDob] = useState(initialData?.dob ?? "");
-  const [originAddress, setOriginAddress] = useState(initialData?.originAddress ?? "");
-  const [domicileAddress, setDomicileAddress] = useState(initialData?.domicileAddress ?? "");
+  const [originAddress, setOriginAddress] = useState(
+    initialData?.originAddress ?? "",
+  );
+  const [domicileAddress, setDomicileAddress] = useState(
+    initialData?.domicileAddress ?? "",
+  );
 
   const handleNext = () => {
     // Validasi field wajib (sebelum masuk transition)

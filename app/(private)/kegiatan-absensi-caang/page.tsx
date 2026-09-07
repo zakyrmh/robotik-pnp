@@ -56,8 +56,6 @@ export default async function KegiatanAbsensiCaangPage() {
     <KegiatanClient
       variant="caang-recruitment"
       initialActivities={activities}
-      initialActivitiesForSummary={summaryData.activities}
-      initialSummary={summaryData.summary}
       userRole={rawProfile.role}
     />
   );

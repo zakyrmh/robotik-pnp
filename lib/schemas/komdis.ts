@@ -35,7 +35,7 @@ export type ReviewLeaveInput = z.infer<typeof ReviewLeaveSchema>;
 export const ManualAttendanceSchema = z.object({
   activityId: z.string().uuid("ID kegiatan tidak valid"),
   profileId: z.string().uuid("ID profil tidak valid"),
-  status: z.enum(["hadir", "telat", "izin", "sakit", "alfa"]),
+  status: z.enum(["hadir", "telat", "izin", "sakit", "alfa", "magang"]),
   pointsAwarded: z.number().int().nonnegative().default(0),
   notes: z.string().optional(),
 });
@@ -50,6 +50,21 @@ export const LogPointReductionSchema = z.object({
 });
 
 export type LogPointReductionInput = z.infer<typeof LogPointReductionSchema>;
+
+export const LogLegacyDisciplinePointSchema = z.object({
+  profileId: z.string().uuid("ID profil tidak valid"),
+  category: z.enum([
+    "poin_awal_periode20",
+    "transfer_periode",
+    "penyesuaian_komdis",
+  ]),
+  points: z.number().int().positive("Poin sanksi awal harus bernilai positif"),
+  description: z.string().min(5, "Deskripsi/keterangan poin awal wajib diisi"),
+});
+
+export type LogLegacyDisciplinePointInput = z.infer<
+  typeof LogLegacyDisciplinePointSchema
+>;
 
 export const IssueSanctionSchema = z.object({
   profileId: z.string().uuid("ID profil tidak valid"),

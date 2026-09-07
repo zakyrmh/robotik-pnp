@@ -14,7 +14,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { deleteCaang, updateCaang } from "@/lib/actions/caang";
 import Image from "next/image";
@@ -55,6 +62,25 @@ interface CaangItem {
 
 interface CaangClientProps {
   initialCaang: CaangItem[];
+}
+
+function isValidImageUrl(url: string | null | undefined): url is string {
+  if (!url || typeof url !== "string") return false;
+  const trimmed = url.trim();
+  if (
+    !trimmed ||
+    trimmed === "Belum Diisi" ||
+    trimmed === "null" ||
+    trimmed === "undefined" ||
+    trimmed === "-"
+  ) {
+    return false;
+  }
+  return (
+    trimmed.startsWith("http://") ||
+    trimmed.startsWith("https://") ||
+    trimmed.startsWith("/")
+  );
 }
 
 export function CaangClient({ initialCaang }: CaangClientProps) {
@@ -150,8 +176,10 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
         item.nim.toLowerCase().includes(search.toLowerCase()) ||
         item.email.toLowerCase().includes(search.toLowerCase());
 
-      const matchMajor = selectedMajor === "all" || item.majorName === selectedMajor;
-      const matchStatus = selectedStatus === "all" || item.status === selectedStatus;
+      const matchMajor =
+        selectedMajor === "all" || item.majorName === selectedMajor;
+      const matchStatus =
+        selectedStatus === "all" || item.status === selectedStatus;
 
       return matchSearch && matchMajor && matchStatus;
     });
@@ -273,12 +301,14 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
     if (selectedIds.length === 0) return;
 
     const confirmed = confirm(
-      `Apakah Anda yakin ingin menghapus ${selectedIds.length} Caang terpilih? Tindakan ini tidak dapat dibatalkan.`
+      `Apakah Anda yakin ingin menghapus ${selectedIds.length} Caang terpilih? Tindakan ini tidak dapat dibatalkan.`,
     );
     if (!confirmed) return;
 
     setIsBulkDeleting(true);
-    const toastId = toast.loading(`Menghapus ${selectedIds.length} akun Caang...`);
+    const toastId = toast.loading(
+      `Menghapus ${selectedIds.length} akun Caang...`,
+    );
 
     let successCount = 0;
     let failCount = 0;
@@ -345,18 +375,22 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
       <div className="relative border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-6 rounded-none shadow-sm overflow-hidden">
         {/* Tricolor Tech Stripe at Top */}
         <div className="absolute top-0 left-0 right-0 h-[3px] bg-linear-to-r from-[#0066b1] via-[#1c69d4] to-[#e22718]" />
-        
+
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-xl font-bold uppercase tracking-widest text-zinc-900 dark:text-zinc-50 font-sans flex items-center gap-2">
-              <HugeiconsIcon icon={UserGroupIcon} size={22} className="text-[#1c69d4] dark:text-[#0066b1]" />
+              <HugeiconsIcon
+                icon={UserGroupIcon}
+                size={22}
+                className="text-[#1c69d4] dark:text-[#0066b1]"
+              />
               Manajemen Calon Anggota (Caang)
             </h1>
             <p className="text-xs font-mono uppercase tracking-wider text-zinc-500 mt-1">
               Data Penerimaan Anggota Baru UKM Robotik Politeknik Negeri Padang
             </p>
           </div>
-          
+
           <div className="flex items-center gap-2">
             {selectedIds.length > 0 && (
               <Button
@@ -369,7 +403,7 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                 Hapus Terpilih ({selectedIds.length})
               </Button>
             )}
-            
+
             <Badge className="bg-zinc-100 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800 px-3 py-1.5 rounded-none font-mono text-[10px] uppercase tracking-wider">
               TOTAL CAANG: {initialCaang.length}
             </Badge>
@@ -386,23 +420,41 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
           <div>
             <h3 className="font-mono text-[10px] font-medium uppercase tracking-widest text-zinc-500 flex items-center justify-between">
               <span>GENDER TELEMETRY</span>
-              <span className="text-[9px] bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 px-1.5 py-0.5 rounded-none font-bold">TOTAL: {stats.total}</span>
+              <span className="text-[9px] bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 px-1.5 py-0.5 rounded-none font-bold">
+                TOTAL: {stats.total}
+              </span>
             </h3>
-            
+
             <div className="grid grid-cols-2 gap-4 mt-4">
               <div className="space-y-1">
-                <span className="font-mono text-[9px] uppercase tracking-wider text-zinc-400 block">LAKI-LAKI (L)</span>
+                <span className="font-mono text-[9px] uppercase tracking-wider text-zinc-400 block">
+                  LAKI-LAKI (L)
+                </span>
                 <span className="font-sans text-2xl font-extrabold text-zinc-900 dark:text-zinc-100 tracking-tight flex items-baseline gap-1">
                   {stats.male}
-                  <span className="font-mono text-[10px] text-zinc-500 font-medium">({stats.total > 0 ? Math.round((stats.male / stats.total) * 100) : 0}%)</span>
+                  <span className="font-mono text-[10px] text-zinc-500 font-medium">
+                    (
+                    {stats.total > 0
+                      ? Math.round((stats.male / stats.total) * 100)
+                      : 0}
+                    %)
+                  </span>
                 </span>
               </div>
-              
+
               <div className="space-y-1">
-                <span className="font-mono text-[9px] uppercase tracking-wider text-zinc-400 block">PEREMPUAN (P)</span>
+                <span className="font-mono text-[9px] uppercase tracking-wider text-zinc-400 block">
+                  PEREMPUAN (P)
+                </span>
                 <span className="font-sans text-2xl font-extrabold text-zinc-900 dark:text-zinc-100 tracking-tight flex items-baseline gap-1">
                   {stats.female}
-                  <span className="font-mono text-[10px] text-zinc-500 font-medium">({stats.total > 0 ? Math.round((stats.female / stats.total) * 100) : 0}%)</span>
+                  <span className="font-mono text-[10px] text-zinc-500 font-medium">
+                    (
+                    {stats.total > 0
+                      ? Math.round((stats.female / stats.total) * 100)
+                      : 0}
+                    %)
+                  </span>
                 </span>
               </div>
             </div>
@@ -411,21 +463,29 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
           <div className="space-y-2 mt-4">
             <div className="h-2 w-full bg-zinc-100 dark:bg-zinc-900 rounded-none overflow-hidden flex">
               {stats.male > 0 && (
-                <div 
-                  className="h-full bg-[#0066b1]" 
-                  style={{ width: `${stats.total > 0 ? (stats.male / stats.total) * 100 : 0}%` }}
+                <div
+                  className="h-full bg-[#0066b1]"
+                  style={{
+                    width: `${stats.total > 0 ? (stats.male / stats.total) * 100 : 0}%`,
+                  }}
                 />
               )}
               {stats.female > 0 && (
-                <div 
-                  className="h-full bg-[#1c69d4]" 
-                  style={{ width: `${stats.total > 0 ? (stats.female / stats.total) * 100 : 0}%` }}
+                <div
+                  className="h-full bg-[#1c69d4]"
+                  style={{
+                    width: `${stats.total > 0 ? (stats.female / stats.total) * 100 : 0}%`,
+                  }}
                 />
               )}
             </div>
             <div className="flex justify-between text-[9px] font-mono text-zinc-400">
-              <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-[#0066b1]" /> MALE</span>
-              <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 bg-[#1c69d4]" /> FEMALE</span>
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-[#0066b1]" /> MALE
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-[#1c69d4]" /> FEMALE
+              </span>
             </div>
           </div>
         </div>
@@ -437,25 +497,34 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
           <div>
             <h3 className="font-mono text-[10px] font-medium uppercase tracking-widest text-zinc-500 flex items-center justify-between mb-3">
               <span>DEPARTMENT DISTRIBUTION</span>
-              <span className="text-[9px] bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 px-1.5 py-0.5 rounded-none font-bold">MAJORS: {stats.majors.length}</span>
+              <span className="text-[9px] bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 px-1.5 py-0.5 rounded-none font-bold">
+                MAJORS: {stats.majors.length}
+              </span>
             </h3>
-            
+
             <div className="space-y-2.5 max-h-[110px] overflow-y-auto pr-1">
               {stats.majors.length === 0 ? (
-                <p className="text-[10px] font-mono text-zinc-400 uppercase py-2">Tidak ada data jurusan</p>
+                <p className="text-[10px] font-mono text-zinc-400 uppercase py-2">
+                  Tidak ada data jurusan
+                </p>
               ) : (
                 stats.majors.map(([major, count]) => {
-                  const percentage = stats.total > 0 ? (count / stats.total) * 100 : 0;
+                  const percentage =
+                    stats.total > 0 ? (count / stats.total) * 100 : 0;
                   return (
                     <div key={major} className="space-y-1">
                       <div className="flex justify-between text-[10px] font-mono">
-                        <span className="truncate max-w-[170px] uppercase text-zinc-600 dark:text-zinc-400 font-semibold">{major}</span>
-                        <span className="font-bold text-zinc-900 dark:text-zinc-100">{count} ({Math.round(percentage)}%)</span>
+                        <span className="truncate max-w-[170px] uppercase text-zinc-600 dark:text-zinc-400 font-semibold">
+                          {major}
+                        </span>
+                        <span className="font-bold text-zinc-900 dark:text-zinc-100">
+                          {count} ({Math.round(percentage)}%)
+                        </span>
                       </div>
                       <div className="h-1.5 w-full bg-zinc-100 dark:bg-zinc-900 rounded-none overflow-hidden">
-                        <div 
-                          className="h-full bg-zinc-400 dark:bg-zinc-600" 
-                          style={{ width: `${percentage}%` }} 
+                        <div
+                          className="h-full bg-zinc-400 dark:bg-zinc-600"
+                          style={{ width: `${percentage}%` }}
                         />
                       </div>
                     </div>
@@ -474,36 +543,44 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
             <h3 className="font-mono text-[10px] font-medium uppercase tracking-widest text-zinc-500 mb-3">
               REGISTRATION STATUS
             </h3>
-            
+
             {/* Segmented Progress Bar */}
             <div className="h-3 w-full bg-zinc-100 dark:bg-zinc-900 rounded-none overflow-hidden flex">
               {stats.total > 0 ? (
                 <>
                   {stats.status.verified > 0 && (
-                    <div 
-                      className="h-full bg-[#10b981]" 
-                      style={{ width: `${(stats.status.verified / stats.total) * 100}%` }} 
+                    <div
+                      className="h-full bg-[#10b981]"
+                      style={{
+                        width: `${(stats.status.verified / stats.total) * 100}%`,
+                      }}
                       title={`Verified: ${stats.status.verified}`}
                     />
                   )}
                   {stats.status.process > 0 && (
-                    <div 
-                      className="h-full bg-zinc-400 dark:bg-zinc-600" 
-                      style={{ width: `${(stats.status.process / stats.total) * 100}%` }} 
+                    <div
+                      className="h-full bg-zinc-400 dark:bg-zinc-600"
+                      style={{
+                        width: `${(stats.status.process / stats.total) * 100}%`,
+                      }}
                       title={`Process: ${stats.status.process}`}
                     />
                   )}
                   {stats.status.pending > 0 && (
-                    <div 
-                      className="h-full bg-amber-500" 
-                      style={{ width: `${(stats.status.pending / stats.total) * 100}%` }} 
+                    <div
+                      className="h-full bg-amber-500"
+                      style={{
+                        width: `${(stats.status.pending / stats.total) * 100}%`,
+                      }}
                       title={`Pending: ${stats.status.pending}`}
                     />
                   )}
                   {stats.status.rejected > 0 && (
-                    <div 
-                      className="h-full bg-[#e22718]" 
-                      style={{ width: `${(stats.status.rejected / stats.total) * 100}%` }} 
+                    <div
+                      className="h-full bg-[#e22718]"
+                      style={{
+                        width: `${(stats.status.rejected / stats.total) * 100}%`,
+                      }}
                       title={`Rejected: ${stats.status.rejected}`}
                     />
                   )}
@@ -512,39 +589,55 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                 <div className="h-full w-full bg-zinc-200 dark:bg-zinc-800" />
               )}
             </div>
-            
+
             {/* Legend Grid */}
             <div className="grid grid-cols-2 gap-x-3 gap-y-2 mt-4 text-[9px] font-mono">
               <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-900 pb-1">
                 <div className="flex items-center gap-1">
                   <span className="w-1.5 h-1.5 bg-[#10b981] inline-block" />
-                  <span className="text-zinc-600 dark:text-zinc-400">VERIFIED</span>
+                  <span className="text-zinc-600 dark:text-zinc-400">
+                    VERIFIED
+                  </span>
                 </div>
-                <span className="font-bold text-zinc-900 dark:text-zinc-100">{stats.status.verified}</span>
+                <span className="font-bold text-zinc-900 dark:text-zinc-100">
+                  {stats.status.verified}
+                </span>
               </div>
-              
+
               <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-900 pb-1">
                 <div className="flex items-center gap-1">
                   <span className="w-1.5 h-1.5 bg-zinc-400 dark:bg-zinc-600 inline-block" />
-                  <span className="text-zinc-600 dark:text-zinc-400">PROCESS</span>
+                  <span className="text-zinc-600 dark:text-zinc-400">
+                    PROCESS
+                  </span>
                 </div>
-                <span className="font-bold text-zinc-900 dark:text-zinc-100">{stats.status.process}</span>
+                <span className="font-bold text-zinc-900 dark:text-zinc-100">
+                  {stats.status.process}
+                </span>
               </div>
-              
+
               <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-900 pb-1">
                 <div className="flex items-center gap-1">
                   <span className="w-1.5 h-1.5 bg-amber-500 inline-block" />
-                  <span className="text-zinc-600 dark:text-zinc-400">PENDING</span>
+                  <span className="text-zinc-600 dark:text-zinc-400">
+                    PENDING
+                  </span>
                 </div>
-                <span className="font-bold text-zinc-900 dark:text-zinc-100">{stats.status.pending}</span>
+                <span className="font-bold text-zinc-900 dark:text-zinc-100">
+                  {stats.status.pending}
+                </span>
               </div>
-              
+
               <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-900 pb-1">
                 <div className="flex items-center gap-1">
                   <span className="w-1.5 h-1.5 bg-[#e22718] inline-block" />
-                  <span className="text-zinc-600 dark:text-zinc-400">REJECTED</span>
+                  <span className="text-zinc-600 dark:text-zinc-400">
+                    REJECTED
+                  </span>
                 </div>
-                <span className="font-bold text-zinc-900 dark:text-zinc-100">{stats.status.rejected}</span>
+                <span className="font-bold text-zinc-900 dark:text-zinc-100">
+                  {stats.status.rejected}
+                </span>
               </div>
             </div>
           </div>
@@ -602,7 +695,11 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
       {/* Main Content Area */}
       {filteredCaang.length === 0 ? (
         <div className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-12 text-center rounded-none">
-          <HugeiconsIcon icon={UserGroupIcon} size={40} className="mx-auto text-zinc-400 dark:text-zinc-600 mb-3" />
+          <HugeiconsIcon
+            icon={UserGroupIcon}
+            size={40}
+            className="mx-auto text-zinc-400 dark:text-zinc-600 mb-3"
+          />
           <p className="font-mono text-xs uppercase tracking-widest text-zinc-600 dark:text-zinc-400">
             Tidak ada data Calon Anggota ditemukan.
           </p>
@@ -664,7 +761,9 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                         <input
                           type="checkbox"
                           checked={isChecked}
-                          onChange={(e) => handleSelectRow(item.profileId, e.target.checked)}
+                          onChange={(e) =>
+                            handleSelectRow(item.profileId, e.target.checked)
+                          }
                           className="h-4 w-4 rounded-none accent-[#1c69d4] cursor-pointer"
                         />
                       </td>
@@ -672,7 +771,7 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                       {/* Avatar Cell */}
                       <td className="p-4 align-middle text-center">
                         <div className="relative h-10 w-10 mx-auto rounded-none border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 overflow-hidden flex items-center justify-center">
-                          {item.photoUrl ? (
+                          {isValidImageUrl(item.photoUrl) ? (
                             <Image
                               src={item.photoUrl}
                               alt={item.fullName}
@@ -691,7 +790,10 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
 
                       {/* Name / NIM Cell */}
                       <td className="p-4 align-middle">
-                        <div className="font-semibold text-zinc-900 dark:text-zinc-100 truncate max-w-[200px]" title={item.fullName}>
+                        <div
+                          className="font-semibold text-zinc-900 dark:text-zinc-100 truncate max-w-[200px]"
+                          title={item.fullName}
+                        >
                           {item.fullName}
                         </div>
                         <div className="font-mono text-[10px] text-zinc-500 mt-0.5 tracking-wider">
@@ -701,7 +803,10 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
 
                       {/* Email / No HP Cell */}
                       <td className="p-4 align-middle">
-                        <div className="text-zinc-800 dark:text-zinc-300 text-xs truncate max-w-[200px]" title={item.email}>
+                        <div
+                          className="text-zinc-800 dark:text-zinc-300 text-xs truncate max-w-[200px]"
+                          title={item.email}
+                        >
                           {item.email}
                         </div>
                         <div className="font-mono text-[10px] text-zinc-500 mt-0.5">
@@ -711,7 +816,10 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
 
                       {/* Prodi / Jurusan Cell */}
                       <td className="p-4 align-middle">
-                        <div className="text-zinc-800 dark:text-zinc-300 text-xs truncate max-w-[200px]" title={item.studyProgramName}>
+                        <div
+                          className="text-zinc-800 dark:text-zinc-300 text-xs truncate max-w-[200px]"
+                          title={item.studyProgramName}
+                        >
                           {item.studyProgramName || "BELUM MEMILIH"}
                         </div>
                         <div className="font-mono text-[10px] text-zinc-500 mt-0.5 uppercase tracking-wider">
@@ -736,7 +844,7 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                           >
                             <HugeiconsIcon icon={EyeIcon} size={16} />
                           </Button>
-                          
+
                           <Button
                             variant="ghost"
                             size="icon"
@@ -746,7 +854,7 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                           >
                             <HugeiconsIcon icon={Edit02Icon} size={16} />
                           </Button>
-                          
+
                           <Button
                             variant="ghost"
                             size="icon"
@@ -785,11 +893,13 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                       <input
                         type="checkbox"
                         checked={isChecked}
-                        onChange={(e) => handleSelectRow(item.profileId, e.target.checked)}
+                        onChange={(e) =>
+                          handleSelectRow(item.profileId, e.target.checked)
+                        }
                         className="h-4 w-4 rounded-none accent-[#1c69d4] cursor-pointer"
                       />
                       <div className="relative h-10 w-10 rounded-none border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 overflow-hidden flex items-center justify-center">
-                        {item.photoUrl ? (
+                        {isValidImageUrl(item.photoUrl) ? (
                           <Image
                             src={item.photoUrl}
                             alt={item.fullName}
@@ -812,28 +922,48 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                   <div className="space-y-2 pt-1 font-sans">
                     {/* Nama & NIM */}
                     <div>
-                      <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest block">Nama / NIM</span>
-                      <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{item.fullName}</span>
-                      <span className="font-mono text-[10px] text-zinc-500 ml-2">({item.nim || "NIM -"})</span>
+                      <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest block">
+                        Nama / NIM
+                      </span>
+                      <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
+                        {item.fullName}
+                      </span>
+                      <span className="font-mono text-[10px] text-zinc-500 ml-2">
+                        ({item.nim || "NIM -"})
+                      </span>
                     </div>
 
                     {/* Email & No. HP */}
                     <div className="grid grid-cols-2 gap-2 border-t border-zinc-100 dark:border-zinc-900 pt-2">
                       <div>
-                        <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest block">Email</span>
-                        <span className="text-xs text-zinc-700 dark:text-zinc-300 break-all">{item.email}</span>
+                        <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest block">
+                          Email
+                        </span>
+                        <span className="text-xs text-zinc-700 dark:text-zinc-300 break-all">
+                          {item.email}
+                        </span>
                       </div>
                       <div>
-                        <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest block">No. HP</span>
-                        <span className="text-xs text-zinc-700 dark:text-zinc-300 font-mono">{item.phoneNumber || "-"}</span>
+                        <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest block">
+                          No. HP
+                        </span>
+                        <span className="text-xs text-zinc-700 dark:text-zinc-300 font-mono">
+                          {item.phoneNumber || "-"}
+                        </span>
                       </div>
                     </div>
 
                     {/* Prodi & Jurusan */}
                     <div className="border-t border-zinc-100 dark:border-zinc-900 pt-2">
-                      <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest block">Prodi / Jurusan</span>
-                      <span className="text-xs text-zinc-700 dark:text-zinc-300">{item.studyProgramName || "Belum Memilih"}</span>
-                      <span className="font-mono text-[10px] text-zinc-500 block uppercase mt-0.5">{item.majorName || "Belum Memilih"}</span>
+                      <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest block">
+                        Prodi / Jurusan
+                      </span>
+                      <span className="text-xs text-zinc-700 dark:text-zinc-300">
+                        {item.studyProgramName || "Belum Memilih"}
+                      </span>
+                      <span className="font-mono text-[10px] text-zinc-500 block uppercase mt-0.5">
+                        {item.majorName || "Belum Memilih"}
+                      </span>
                     </div>
                   </div>
 
@@ -845,20 +975,28 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                       onClick={() => setViewingCaang(item)}
                       className="rounded-none border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 font-mono text-[10px] uppercase tracking-wider px-3 h-8 hover:bg-zinc-100 dark:hover:bg-zinc-900"
                     >
-                      <HugeiconsIcon icon={EyeIcon} size={14} className="mr-1.5" />
+                      <HugeiconsIcon
+                        icon={EyeIcon}
+                        size={14}
+                        className="mr-1.5"
+                      />
                       Detail
                     </Button>
-                    
+
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => openEditModal(item)}
                       className="rounded-none border border-zinc-200 dark:border-zinc-800 text-[#1c69d4] dark:text-[#0066b1] font-mono text-[10px] uppercase tracking-wider px-3 h-8 hover:bg-zinc-100 dark:hover:bg-zinc-900"
                     >
-                      <HugeiconsIcon icon={Edit02Icon} size={14} className="mr-1.5" />
+                      <HugeiconsIcon
+                        icon={Edit02Icon}
+                        size={14}
+                        className="mr-1.5"
+                      />
                       Edit
                     </Button>
-                    
+
                     <Button
                       variant="ghost"
                       size="sm"
@@ -868,7 +1006,11 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                       }}
                       className="rounded-none border border-zinc-200 dark:border-zinc-800 text-[#e22718] font-mono text-[10px] uppercase tracking-wider px-3 h-8 hover:bg-zinc-100 dark:hover:bg-zinc-900"
                     >
-                      <HugeiconsIcon icon={Delete01Icon} size={14} className="mr-1.5" />
+                      <HugeiconsIcon
+                        icon={Delete01Icon}
+                        size={14}
+                        className="mr-1.5"
+                      />
                       Hapus
                     </Button>
                   </div>
@@ -882,7 +1024,10 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
       {/* =======================================================
           MODAL: VIEW CAANG DETAIL
           ======================================================= */}
-      <Dialog open={!!viewingCaang} onOpenChange={(open) => !open && setViewingCaang(null)}>
+      <Dialog
+        open={!!viewingCaang}
+        onOpenChange={(open) => !open && setViewingCaang(null)}
+      >
         <DialogContent className="rounded-none max-w-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 overflow-y-auto max-h-[90vh]">
           {viewingCaang && (
             <>
@@ -900,7 +1045,7 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                 {/* Section 1: Utama & Foto */}
                 <div className="flex flex-col sm:flex-row gap-4 items-start pb-4 border-b border-zinc-100 dark:border-zinc-900">
                   <div className="relative h-28 w-24 shrink-0 rounded-none border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 overflow-hidden flex items-center justify-center">
-                    {viewingCaang.photoUrl ? (
+                    {isValidImageUrl(viewingCaang.photoUrl) ? (
                       <Image
                         src={viewingCaang.photoUrl}
                         alt={viewingCaang.fullName}
@@ -915,21 +1060,31 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                       </span>
                     )}
                   </div>
-                  
+
                   <div className="space-y-1.5 flex-1 min-w-0">
                     <h3 className="font-bold text-lg text-zinc-900 dark:text-zinc-50 tracking-tight leading-none uppercase">
                       {viewingCaang.fullName}
                     </h3>
                     <p className="text-xs font-mono font-bold text-zinc-500">
-                      NIM: <span className="text-[#1c69d4] dark:text-[#0066b1]">{viewingCaang.nim || "NIM TIDAK ADA"}</span>
+                      NIM:{" "}
+                      <span className="text-[#1c69d4] dark:text-[#0066b1]">
+                        {viewingCaang.nim || "NIM TIDAK ADA"}
+                      </span>
                     </p>
                     <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                      Panggilan: {viewingCaang.nickname || "-"} | Gender: {viewingCaang.gender === "L" ? "Laki-laki" : viewingCaang.gender === "P" ? "Perempuan" : "-"}
+                      Panggilan: {viewingCaang.nickname || "-"} | Gender:{" "}
+                      {viewingCaang.gender === "L"
+                        ? "Laki-laki"
+                        : viewingCaang.gender === "P"
+                          ? "Perempuan"
+                          : "-"}
                     </p>
                     <p className="text-xs text-zinc-600 dark:text-zinc-400">
                       TTL: {viewingCaang.pob || "-"}, {viewingCaang.dob || "-"}
                     </p>
-                    <p className="pt-1.5">{getStatusBadge(viewingCaang.status)}</p>
+                    <p className="pt-1.5">
+                      {getStatusBadge(viewingCaang.status)}
+                    </p>
                   </div>
                 </div>
 
@@ -940,20 +1095,36 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                   </h4>
                   <div className="grid grid-cols-2 gap-4 bg-zinc-50 dark:bg-zinc-900/30 p-3 border border-zinc-150 dark:border-zinc-900">
                     <div>
-                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">Program Studi</span>
-                      <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">{viewingCaang.studyProgramName || "Belum Memilih"}</span>
+                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
+                        Program Studi
+                      </span>
+                      <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+                        {viewingCaang.studyProgramName || "Belum Memilih"}
+                      </span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">Jurusan</span>
-                      <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">{viewingCaang.majorName || "Belum Memilih"}</span>
+                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
+                        Jurusan
+                      </span>
+                      <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+                        {viewingCaang.majorName || "Belum Memilih"}
+                      </span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">Sekolah Asal</span>
-                      <span className="text-xs text-zinc-800 dark:text-zinc-200">{viewingCaang.highSchool || "-"}</span>
+                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
+                        Sekolah Asal
+                      </span>
+                      <span className="text-xs text-zinc-800 dark:text-zinc-200">
+                        {viewingCaang.highSchool || "-"}
+                      </span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">Kelas Sekarang</span>
-                      <span className="text-xs text-zinc-800 dark:text-zinc-200">{viewingCaang.currentClass || "-"}</span>
+                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
+                        Kelas Sekarang
+                      </span>
+                      <span className="text-xs text-zinc-800 dark:text-zinc-200">
+                        {viewingCaang.currentClass || "-"}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -965,20 +1136,36 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                   </h4>
                   <div className="grid grid-cols-2 gap-4 bg-zinc-50 dark:bg-zinc-900/30 p-3 border border-zinc-150 dark:border-zinc-900">
                     <div>
-                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">Email</span>
-                      <span className="text-xs text-zinc-800 dark:text-zinc-200 break-all">{viewingCaang.email}</span>
+                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
+                        Email
+                      </span>
+                      <span className="text-xs text-zinc-800 dark:text-zinc-200 break-all">
+                        {viewingCaang.email}
+                      </span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">No. Telepon / WA</span>
-                      <span className="text-xs text-zinc-800 dark:text-zinc-200 font-mono">{viewingCaang.phoneNumber || "-"}</span>
+                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
+                        No. Telepon / WA
+                      </span>
+                      <span className="text-xs text-zinc-800 dark:text-zinc-200 font-mono">
+                        {viewingCaang.phoneNumber || "-"}
+                      </span>
                     </div>
                     <div className="col-span-2">
-                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">Alamat Asal</span>
-                      <span className="text-xs text-zinc-800 dark:text-zinc-200">{viewingCaang.originAddress || "-"}</span>
+                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
+                        Alamat Asal
+                      </span>
+                      <span className="text-xs text-zinc-800 dark:text-zinc-200">
+                        {viewingCaang.originAddress || "-"}
+                      </span>
                     </div>
                     <div className="col-span-2">
-                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">Alamat Domisili</span>
-                      <span className="text-xs text-zinc-800 dark:text-zinc-200">{viewingCaang.domicileAddress || "-"}</span>
+                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
+                        Alamat Domisili
+                      </span>
+                      <span className="text-xs text-zinc-800 dark:text-zinc-200">
+                        {viewingCaang.domicileAddress || "-"}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -990,16 +1177,28 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                   </h4>
                   <div className="space-y-3">
                     <div className="bg-zinc-50 dark:bg-zinc-900/30 p-3 border border-zinc-150 dark:border-zinc-900">
-                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">Motivasi</span>
-                      <p className="text-xs text-zinc-700 dark:text-zinc-300 mt-1 whitespace-pre-wrap">{viewingCaang.motivation || "Tidak diisi"}</p>
+                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
+                        Motivasi
+                      </span>
+                      <p className="text-xs text-zinc-700 dark:text-zinc-300 mt-1 whitespace-pre-wrap">
+                        {viewingCaang.motivation || "Tidak diisi"}
+                      </p>
                     </div>
                     <div className="bg-zinc-50 dark:bg-zinc-900/30 p-3 border border-zinc-150 dark:border-zinc-900">
-                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">Pengalaman Organisasi</span>
-                      <p className="text-xs text-zinc-700 dark:text-zinc-300 mt-1 whitespace-pre-wrap">{viewingCaang.orgExperience || "Tidak ada"}</p>
+                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
+                        Pengalaman Organisasi
+                      </span>
+                      <p className="text-xs text-zinc-700 dark:text-zinc-300 mt-1 whitespace-pre-wrap">
+                        {viewingCaang.orgExperience || "Tidak ada"}
+                      </p>
                     </div>
                     <div className="bg-zinc-50 dark:bg-zinc-900/30 p-3 border border-zinc-150 dark:border-zinc-900">
-                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">Prestasi / Penghargaan</span>
-                      <p className="text-xs text-zinc-700 dark:text-zinc-300 mt-1 whitespace-pre-wrap">{viewingCaang.achievements || "Tidak ada"}</p>
+                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
+                        Prestasi / Penghargaan
+                      </span>
+                      <p className="text-xs text-zinc-700 dark:text-zinc-300 mt-1 whitespace-pre-wrap">
+                        {viewingCaang.achievements || "Tidak ada"}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -1013,7 +1212,9 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                     {/* KTM */}
                     <div className="bg-zinc-50 dark:bg-zinc-900/30 p-3 border border-zinc-150 dark:border-zinc-900 flex flex-col justify-between">
                       <div>
-                        <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">Bukti KTM / Identitas</span>
+                        <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
+                          Bukti KTM / Identitas
+                        </span>
                         {viewingCaang.ktmUrl ? (
                           <div className="relative h-32 w-full mt-2 border border-zinc-200 dark:border-zinc-850 overflow-hidden bg-black/10">
                             <Image
@@ -1025,7 +1226,9 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                             />
                           </div>
                         ) : (
-                          <p className="text-xs text-zinc-500 italic mt-2">Tidak diunggah</p>
+                          <p className="text-xs text-zinc-500 italic mt-2">
+                            Tidak diunggah
+                          </p>
                         )}
                       </div>
                       {viewingCaang.ktmUrl && (
@@ -1043,8 +1246,13 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                     {/* Bukti Bayar */}
                     <div className="bg-zinc-50 dark:bg-zinc-900/30 p-3 border border-zinc-150 dark:border-zinc-900 flex flex-col justify-between">
                       <div>
-                        <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">Bukti Pembayaran</span>
-                        <p className="text-[10px] text-zinc-500 mt-1 font-mono uppercase">Metode: {viewingCaang.paymentMethod || "Tidak diketahui"}</p>
+                        <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
+                          Bukti Pembayaran
+                        </span>
+                        <p className="text-[10px] text-zinc-500 mt-1 font-mono uppercase">
+                          Metode:{" "}
+                          {viewingCaang.paymentMethod || "Tidak diketahui"}
+                        </p>
                         {viewingCaang.paymentProofUrl ? (
                           <div className="relative h-32 w-full mt-2 border border-zinc-200 dark:border-zinc-850 overflow-hidden bg-black/10">
                             <Image
@@ -1056,7 +1264,9 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                             />
                           </div>
                         ) : (
-                          <p className="text-xs text-zinc-500 italic mt-2">Tidak diunggah</p>
+                          <p className="text-xs text-zinc-500 italic mt-2">
+                            Tidak diunggah
+                          </p>
                         )}
                       </div>
                       {viewingCaang.paymentProofUrl && (
@@ -1066,7 +1276,7 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                           rel="noreferrer"
                           className="mt-3 block text-center font-mono text-[10px] font-bold uppercase text-[#1c69d4] hover:underline"
                         >
-                          Buka Gambar Penuh 
+                          Buka Gambar Penuh
                         </a>
                       )}
                     </div>
@@ -1082,7 +1292,9 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                     {/* Follow Robotik PNP */}
                     <div className="bg-zinc-50 dark:bg-zinc-900/30 p-3 border border-zinc-150 dark:border-zinc-900 flex flex-col justify-between">
                       <div>
-                        <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">Follow IG Robotik PNP</span>
+                        <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
+                          Follow IG Robotik PNP
+                        </span>
                         {viewingCaang.proofFollowRobotik ? (
                           <div className="relative h-32 w-full mt-2 border border-zinc-200 dark:border-zinc-850 overflow-hidden bg-black/10">
                             <Image
@@ -1094,7 +1306,9 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                             />
                           </div>
                         ) : (
-                          <p className="text-xs text-zinc-500 italic mt-2">Tidak diunggah</p>
+                          <p className="text-xs text-zinc-500 italic mt-2">
+                            Tidak diunggah
+                          </p>
                         )}
                       </div>
                       {viewingCaang.proofFollowRobotik && (
@@ -1112,7 +1326,9 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                     {/* Follow MRC */}
                     <div className="bg-zinc-50 dark:bg-zinc-900/30 p-3 border border-zinc-150 dark:border-zinc-900 flex flex-col justify-between">
                       <div>
-                        <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">Follow IG Minangkabau Robo</span>
+                        <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
+                          Follow IG Minangkabau Robo
+                        </span>
                         {viewingCaang.proofFollowMrc ? (
                           <div className="relative h-32 w-full mt-2 border border-zinc-200 dark:border-zinc-850 overflow-hidden bg-black/10">
                             <Image
@@ -1124,7 +1340,9 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                             />
                           </div>
                         ) : (
-                          <p className="text-xs text-zinc-500 italic mt-2">Tidak diunggah</p>
+                          <p className="text-xs text-zinc-500 italic mt-2">
+                            Tidak diunggah
+                          </p>
                         )}
                       </div>
                       {viewingCaang.proofFollowMrc && (
@@ -1142,7 +1360,9 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                     {/* Subscribe YouTube */}
                     <div className="bg-zinc-50 dark:bg-zinc-900/30 p-3 border border-zinc-150 dark:border-zinc-900 flex flex-col justify-between">
                       <div>
-                        <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">Subscribe YouTube UKM</span>
+                        <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
+                          Subscribe YouTube UKM
+                        </span>
                         {viewingCaang.proofSubYt ? (
                           <div className="relative h-32 w-full mt-2 border border-zinc-200 dark:border-zinc-850 overflow-hidden bg-black/10">
                             <Image
@@ -1154,7 +1374,9 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                             />
                           </div>
                         ) : (
-                          <p className="text-xs text-zinc-500 italic mt-2">Tidak diunggah</p>
+                          <p className="text-xs text-zinc-500 italic mt-2">
+                            Tidak diunggah
+                          </p>
                         )}
                       </div>
                       {viewingCaang.proofSubYt && (
@@ -1188,7 +1410,10 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
       {/* =======================================================
           MODAL: EDIT CAANG
           ======================================================= */}
-      <Dialog open={!!editingCaang} onOpenChange={(open) => !open && setEditingCaang(null)}>
+      <Dialog
+        open={!!editingCaang}
+        onOpenChange={(open) => !open && setEditingCaang(null)}
+      >
         <DialogContent className="rounded-none max-w-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 overflow-y-auto max-h-[90vh]">
           {editingCaang && (
             <form onSubmit={handleEditSubmit}>
@@ -1204,132 +1429,252 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4 font-sans">
                 {/* Full Name */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="edit-name" className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Nama Lengkap *</Label>
+                  <Label
+                    htmlFor="edit-name"
+                    className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500"
+                  >
+                    Nama Lengkap *
+                  </Label>
                   <Input
                     id="edit-name"
                     value={editForm.fullName}
-                    onChange={(e) => setEditForm((prev) => ({ ...prev, fullName: e.target.value }))}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        fullName: e.target.value,
+                      }))
+                    }
                     className="rounded-none border border-zinc-200 dark:border-zinc-800 text-sm h-10 focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600"
                   />
                 </div>
 
                 {/* Nickname */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="edit-nickname" className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Nama Panggilan *</Label>
+                  <Label
+                    htmlFor="edit-nickname"
+                    className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500"
+                  >
+                    Nama Panggilan *
+                  </Label>
                   <Input
                     id="edit-nickname"
                     value={editForm.nickname}
-                    onChange={(e) => setEditForm((prev) => ({ ...prev, nickname: e.target.value }))}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        nickname: e.target.value,
+                      }))
+                    }
                     className="rounded-none border border-zinc-200 dark:border-zinc-800 text-sm h-10 focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600"
                   />
                 </div>
 
                 {/* Gender */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="edit-gender" className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Jenis Kelamin *</Label>
+                  <Label
+                    htmlFor="edit-gender"
+                    className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500"
+                  >
+                    Jenis Kelamin *
+                  </Label>
                   <select
                     id="edit-gender"
                     value={editForm.gender}
-                    onChange={(e) => setEditForm((prev) => ({ ...prev, gender: e.target.value }))}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        gender: e.target.value,
+                      }))
+                    }
                     className="h-10 w-full bg-transparent px-3 rounded-none border border-zinc-200 dark:border-zinc-800 text-sm text-zinc-900 dark:text-zinc-50 focus:outline-hidden focus:border-zinc-400 dark:focus:border-zinc-600"
                   >
-                    <option value="" disabled className="dark:bg-zinc-950">Pilih Jenis Kelamin</option>
-                    <option value="L" className="dark:bg-zinc-950">Laki-laki (L)</option>
-                    <option value="P" className="dark:bg-zinc-950">Perempuan (P)</option>
+                    <option value="" disabled className="dark:bg-zinc-950">
+                      Pilih Jenis Kelamin
+                    </option>
+                    <option value="L" className="dark:bg-zinc-950">
+                      Laki-laki (L)
+                    </option>
+                    <option value="P" className="dark:bg-zinc-950">
+                      Perempuan (P)
+                    </option>
                   </select>
                 </div>
 
                 {/* Phone */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="edit-phone" className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">No. Telepon / WA *</Label>
+                  <Label
+                    htmlFor="edit-phone"
+                    className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500"
+                  >
+                    No. Telepon / WA *
+                  </Label>
                   <Input
                     id="edit-phone"
                     value={editForm.phoneNumber}
-                    onChange={(e) => setEditForm((prev) => ({ ...prev, phoneNumber: e.target.value }))}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        phoneNumber: e.target.value,
+                      }))
+                    }
                     className="rounded-none border border-zinc-200 dark:border-zinc-800 text-sm h-10 font-mono focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600"
                   />
                 </div>
 
                 {/* Tempat Lahir */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="edit-pob" className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Tempat Lahir *</Label>
+                  <Label
+                    htmlFor="edit-pob"
+                    className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500"
+                  >
+                    Tempat Lahir *
+                  </Label>
                   <Input
                     id="edit-pob"
                     value={editForm.pob}
-                    onChange={(e) => setEditForm((prev) => ({ ...prev, pob: e.target.value }))}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({ ...prev, pob: e.target.value }))
+                    }
                     className="rounded-none border border-zinc-200 dark:border-zinc-800 text-sm h-10 focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600"
                   />
                 </div>
 
                 {/* Tanggal Lahir */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="edit-dob" className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Tanggal Lahir *</Label>
+                  <Label
+                    htmlFor="edit-dob"
+                    className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500"
+                  >
+                    Tanggal Lahir *
+                  </Label>
                   <Input
                     id="edit-dob"
                     type="date"
                     value={editForm.dob}
-                    onChange={(e) => setEditForm((prev) => ({ ...prev, dob: e.target.value }))}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({ ...prev, dob: e.target.value }))
+                    }
                     className="rounded-none border border-zinc-200 dark:border-zinc-800 text-sm h-10 font-mono focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600"
                   />
                 </div>
 
                 {/* Sekolah Asal */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="edit-highschool" className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Sekolah Asal</Label>
+                  <Label
+                    htmlFor="edit-highschool"
+                    className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500"
+                  >
+                    Sekolah Asal
+                  </Label>
                   <Input
                     id="edit-highschool"
                     value={editForm.highSchool}
-                    onChange={(e) => setEditForm((prev) => ({ ...prev, highSchool: e.target.value }))}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        highSchool: e.target.value,
+                      }))
+                    }
                     className="rounded-none border border-zinc-200 dark:border-zinc-800 text-sm h-10 focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600"
                   />
                 </div>
 
                 {/* Kelas Sekarang */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="edit-class" className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Kelas Sekarang</Label>
+                  <Label
+                    htmlFor="edit-class"
+                    className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500"
+                  >
+                    Kelas Sekarang
+                  </Label>
                   <Input
                     id="edit-class"
                     value={editForm.currentClass}
-                    onChange={(e) => setEditForm((prev) => ({ ...prev, currentClass: e.target.value }))}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        currentClass: e.target.value,
+                      }))
+                    }
                     className="rounded-none border border-zinc-200 dark:border-zinc-800 text-sm h-10 focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600"
                   />
                 </div>
 
                 {/* entry_year */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="edit-entryyear" className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Tahun Masuk *</Label>
+                  <Label
+                    htmlFor="edit-entryyear"
+                    className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500"
+                  >
+                    Tahun Masuk *
+                  </Label>
                   <Input
                     id="edit-entryyear"
                     type="number"
                     value={editForm.entryYear || ""}
-                    onChange={(e) => setEditForm((prev) => ({ ...prev, entryYear: e.target.value ? parseInt(e.target.value) : 0 }))}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        entryYear: e.target.value
+                          ? parseInt(e.target.value)
+                          : 0,
+                      }))
+                    }
                     className="rounded-none border border-zinc-200 dark:border-zinc-800 text-sm h-10 font-mono focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600"
                   />
                 </div>
 
                 {/* Status */}
                 <div className="space-y-1.5">
-                  <Label htmlFor="edit-status" className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Status Pendaftaran *</Label>
+                  <Label
+                    htmlFor="edit-status"
+                    className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500"
+                  >
+                    Status Pendaftaran *
+                  </Label>
                   <select
                     id="edit-status"
                     value={editForm.status}
-                    onChange={(e) => setEditForm((prev) => ({ ...prev, status: e.target.value }))}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        status: e.target.value,
+                      }))
+                    }
                     className="h-10 w-full bg-transparent px-3 rounded-none border border-zinc-200 dark:border-zinc-800 text-sm text-zinc-900 dark:text-zinc-50 focus:outline-hidden focus:border-zinc-400 dark:focus:border-zinc-600"
                   >
-                    <option value="process" className="dark:bg-zinc-950">PROCESS</option>
-                    <option value="pending" className="dark:bg-zinc-950">PENDING</option>
-                    <option value="verified" className="dark:bg-zinc-950">VERIFIED</option>
-                    <option value="rejected" className="dark:bg-zinc-950">REJECTED</option>
+                    <option value="process" className="dark:bg-zinc-950">
+                      PROCESS
+                    </option>
+                    <option value="pending" className="dark:bg-zinc-950">
+                      PENDING
+                    </option>
+                    <option value="verified" className="dark:bg-zinc-950">
+                      VERIFIED
+                    </option>
+                    <option value="rejected" className="dark:bg-zinc-950">
+                      REJECTED
+                    </option>
                   </select>
                 </div>
 
                 {/* Alamat Asal */}
                 <div className="space-y-1.5 sm:col-span-2">
-                  <Label htmlFor="edit-origin" className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Alamat Asal *</Label>
+                  <Label
+                    htmlFor="edit-origin"
+                    className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500"
+                  >
+                    Alamat Asal *
+                  </Label>
                   <textarea
                     id="edit-origin"
                     value={editForm.originAddress}
-                    onChange={(e) => setEditForm((prev) => ({ ...prev, originAddress: e.target.value }))}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        originAddress: e.target.value,
+                      }))
+                    }
                     rows={2}
                     className="w-full bg-transparent p-2.5 rounded-none border border-zinc-200 dark:border-zinc-800 text-sm text-zinc-900 dark:text-zinc-50 focus:outline-hidden focus:border-zinc-400 dark:focus:border-zinc-600"
                   />
@@ -1337,11 +1682,21 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
 
                 {/* Alamat Domisili */}
                 <div className="space-y-1.5 sm:col-span-2">
-                  <Label htmlFor="edit-domicile" className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Alamat Domisili *</Label>
+                  <Label
+                    htmlFor="edit-domicile"
+                    className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500"
+                  >
+                    Alamat Domisili *
+                  </Label>
                   <textarea
                     id="edit-domicile"
                     value={editForm.domicileAddress}
-                    onChange={(e) => setEditForm((prev) => ({ ...prev, domicileAddress: e.target.value }))}
+                    onChange={(e) =>
+                      setEditForm((prev) => ({
+                        ...prev,
+                        domicileAddress: e.target.value,
+                      }))
+                    }
                     rows={2}
                     className="w-full bg-transparent p-2.5 rounded-none border border-zinc-200 dark:border-zinc-800 text-sm text-zinc-900 dark:text-zinc-50 focus:outline-hidden focus:border-zinc-400 dark:focus:border-zinc-600"
                   />
@@ -1373,7 +1728,10 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
       {/* =======================================================
           MODAL: DELETE CONFIRMATION (SOFT DELETE)
           ======================================================= */}
-      <Dialog open={!!deletingCaangId} onOpenChange={(open) => !open && setDeletingCaangId(null)}>
+      <Dialog
+        open={!!deletingCaangId}
+        onOpenChange={(open) => !open && setDeletingCaangId(null)}
+      >
         <DialogContent className="rounded-none max-w-md bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800">
           <form onSubmit={handleDeleteConfirm}>
             <DialogHeader className="border-b border-zinc-200 dark:border-zinc-800 pb-3">
@@ -1384,11 +1742,18 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
 
             <div className="py-4 space-y-4 font-sans text-xs">
               <p className="text-zinc-600 dark:text-zinc-400">
-                Apakah Anda yakin ingin menonaktifkan data calon anggota ini? Tindakan ini akan menyembunyikan data dari daftar pendaftaran aktif.
+                Apakah Anda yakin ingin menonaktifkan data calon anggota ini?
+                Tindakan ini akan menyembunyikan data dari daftar pendaftaran
+                aktif.
               </p>
-              
+
               <div className="space-y-1.5">
-                <Label htmlFor="delete-reason" className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500">Alasan Penghapusan *</Label>
+                <Label
+                  htmlFor="delete-reason"
+                  className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500"
+                >
+                  Alasan Penghapusan *
+                </Label>
                 <textarea
                   id="delete-reason"
                   placeholder="Tulis alasan penonaktifan data di sini..."

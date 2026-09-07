@@ -46,8 +46,7 @@ const STATUS_CONFIG = {
   rejected: {
     icon: Cancel01Icon,
     iconClass: "text-destructive",
-    ringClass:
-      "border-destructive/30 bg-destructive/10 shadow-sm",
+    ringClass: "border-destructive/30 bg-destructive/10 shadow-sm",
     badgeClass:
       "bg-destructive/10 text-destructive border border-destructive/30 font-mono text-[11px] font-semibold uppercase tracking-wider",
     label: "Pendaftaran Ditolak",
@@ -261,7 +260,8 @@ export function WaitingClient({
                 />
                 <p className="leading-relaxed">
                   Halaman ini akan otomatis memperbarui status setiap 60 detik.
-                  Kamu tidak perlu melakukan apa pun — cukup tunggu notifikasi dari pengurus.
+                  Kamu tidak perlu melakukan apa pun — cukup tunggu notifikasi
+                  dari pengurus.
                 </p>
               </div>
             )}
@@ -276,7 +276,11 @@ export function WaitingClient({
                 <HugeiconsIcon
                   icon={ReloadIcon}
                   size={16}
-                  className={isPolling ? "animate-spin text-pnp-orange" : "text-pnp-orange"}
+                  className={
+                    isPolling
+                      ? "animate-spin text-pnp-orange"
+                      : "text-pnp-orange"
+                  }
                 />
                 {isPolling ? "Memeriksa..." : "Periksa Status Sekarang"}
               </button>

@@ -3,14 +3,15 @@
 import { useState } from "react";
 import { saveEventCategoryAction } from "@/lib/actions/event-admin";
 import type { EventCategory } from "@/types/event-registration";
-import { Plus, Edit2, Loader2, Trophy, Users, DollarSign } from "lucide-react";
+import { Plus, Edit2, Loader2, Trophy, Users } from "lucide-react";
 
 interface CategoryManagerProps {
   initialCategories: EventCategory[];
 }
 
 export function CategoryManager({ initialCategories }: CategoryManagerProps) {
-  const [categories, setCategories] = useState<EventCategory[]>(initialCategories);
+  const [categories, setCategories] =
+    useState<EventCategory[]>(initialCategories);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -18,6 +19,8 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [fee, setFee] = useState<number>(0);
+  const [feeBatch1, setFeeBatch1] = useState<number>(0);
+  const [feeBatch2, setFeeBatch2] = useState<number>(0);
   const [maxMembers, setMaxMembers] = useState<number>(3);
   const [quota, setQuota] = useState<number>(32);
   const [isActive, setIsActive] = useState(true);
@@ -31,6 +34,8 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
     setName("");
     setDescription("");
     setFee(0);
+    setFeeBatch1(0);
+    setFeeBatch2(0);
     setMaxMembers(3);
     setQuota(32);
     setIsActive(true);
@@ -44,6 +49,8 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
     setName(cat.name);
     setDescription(cat.description || "");
     setFee(cat.registration_fee);
+    setFeeBatch1(cat.registration_fee_batch1 ?? cat.registration_fee);
+    setFeeBatch2(cat.registration_fee_batch2 ?? cat.registration_fee);
     setMaxMembers(cat.max_team_members);
     setQuota(cat.quota);
     setIsActive(cat.is_active);
@@ -61,6 +68,8 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
       name,
       description,
       registration_fee: fee,
+      registration_fee_batch1: feeBatch1,
+      registration_fee_batch2: feeBatch2,
       max_team_members: maxMembers,
       quota,
       is_active: isActive,
@@ -70,7 +79,9 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
 
     if (res.success) {
       if (editingId) {
-        setCategories(categories.map((c) => (c.id === editingId ? res.data : c)));
+        setCategories(
+          categories.map((c) => (c.id === editingId ? res.data : c)),
+        );
       } else {
         setCategories([...categories, res.data]);
       }
@@ -96,10 +107,15 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {categories.map((cat) => (
-          <div key={cat.id} className="p-4 bg-white border border-slate-200 rounded-xl shadow-sm space-y-3 relative">
+          <div
+            key={cat.id}
+            className="p-4 bg-white border border-slate-200 rounded-xl shadow-sm space-y-3 relative"
+          >
             <div className="flex items-start justify-between">
               <div>
-                <span className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded-full uppercase ${cat.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>
+                <span
+                  className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded-full uppercase ${cat.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}
+                >
                   {cat.is_active ? "Aktif" : "Non-Aktif"}
                 </span>
                 <h3 className="font-bold text-slate-900 mt-1">{cat.name}</h3>
@@ -113,17 +129,33 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
               </button>
             </div>
 
-            <p className="text-xs text-slate-600 line-clamp-2">{cat.description || "Tidak ada deskripsi."}</p>
+            <p className="text-xs text-slate-600 line-clamp-2">
+              {cat.description || "Tidak ada deskripsi."}
+            </p>
 
-            <div className="pt-2 border-t flex items-center justify-between text-xs text-slate-600">
-              <span className="flex items-center gap-1 font-semibold text-slate-800">
-                <DollarSign className="w-3.5 h-3.5 text-emerald-600" />
-                {cat.registration_fee > 0 ? `Rp ${Number(cat.registration_fee).toLocaleString("id-ID")}` : "Gratis"}
-              </span>
-              <span className="flex items-center gap-1">
-                <Users className="w-3.5 h-3.5 text-slate-400" />
-                Quota: {cat.quota} tim (Maks {cat.max_team_members} org/tim)
-              </span>
+            <div className="pt-2 border-t space-y-1.5 text-xs text-slate-600">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Batch 1:</span>
+                <span className="font-semibold text-emerald-700">
+                  {(cat.registration_fee_batch1 ?? cat.registration_fee) > 0
+                    ? `Rp ${Number(cat.registration_fee_batch1 ?? cat.registration_fee).toLocaleString("id-ID")}`
+                    : "Gratis"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500">Batch 2:</span>
+                <span className="font-semibold text-amber-700">
+                  {(cat.registration_fee_batch2 ?? cat.registration_fee) > 0
+                    ? `Rp ${Number(cat.registration_fee_batch2 ?? cat.registration_fee).toLocaleString("id-ID")}`
+                    : "Gratis"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between pt-1 border-t border-dashed">
+                <span className="flex items-center gap-1">
+                  <Users className="w-3.5 h-3.5 text-slate-400" />
+                  Quota: {cat.quota} tim (Maks {cat.max_team_members} org/tim)
+                </span>
+              </div>
             </div>
           </div>
         ))}
@@ -137,26 +169,37 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
               {editingId ? "Edit Kategori Lomba" : "Tambah Kategori Lomba Baru"}
             </h3>
 
-            {errorMsg && <p className="text-xs text-rose-600 font-medium">{errorMsg}</p>}
+            {errorMsg && (
+              <p className="text-xs text-rose-600 font-medium">{errorMsg}</p>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-4 text-sm">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Nama Kategori *</label>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                    Nama Kategori *
+                  </label>
                   <input
                     type="text"
                     required
                     value={name}
                     onChange={(e) => {
                       setName(e.target.value);
-                      if (!editingId) setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9]+/g, "-"));
+                      if (!editingId)
+                        setSlug(
+                          e.target.value
+                            .toLowerCase()
+                            .replace(/[^a-z0-9]+/g, "-"),
+                        );
                     }}
                     className="w-full px-3 py-2 border rounded-lg"
                     placeholder="Robot Soccer"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Slug URL *</label>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                    Slug URL *
+                  </label>
                   <input
                     type="text"
                     required
@@ -169,7 +212,9 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Deskripsi Lomba</label>
+                <label className="block text-xs font-medium text-slate-700 mb-1">
+                  Deskripsi Lomba
+                </label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
@@ -178,9 +223,42 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
                 />
               </div>
 
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                    Biaya Batch 1 (Rp) *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min={0}
+                    value={feeBatch1}
+                    onChange={(e) => setFeeBatch1(Number(e.target.value))}
+                    className="w-full px-3 py-2 border rounded-lg"
+                    placeholder="150000"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                    Biaya Batch 2 (Rp) *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min={0}
+                    value={feeBatch2}
+                    onChange={(e) => setFeeBatch2(Number(e.target.value))}
+                    className="w-full px-3 py-2 border rounded-lg"
+                    placeholder="200000"
+                  />
+                </div>
+              </div>
+
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Biaya (Rp) *</label>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                    Biaya Default (Rp) *
+                  </label>
                   <input
                     type="number"
                     required
@@ -188,9 +266,14 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
                     onChange={(e) => setFee(Number(e.target.value))}
                     className="w-full px-3 py-2 border rounded-lg"
                   />
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    Fallback bila batch belum diatur.
+                  </p>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Kuota Tim *</label>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                    Kuota Tim *
+                  </label>
                   <input
                     type="number"
                     required
@@ -200,7 +283,9 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">Maks Anggota *</label>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                    Maks Anggota *
+                  </label>
                   <input
                     type="number"
                     required
@@ -218,7 +303,9 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
                   onChange={(e) => setIsActive(e.target.checked)}
                   className="rounded text-[#3b5b84]"
                 />
-                <span className="text-xs text-slate-700 font-medium">Status Kategori Aktif</span>
+                <span className="text-xs text-slate-700 font-medium">
+                  Status Kategori Aktif
+                </span>
               </label>
 
               <div className="flex items-center justify-end gap-2 pt-2 border-t">
@@ -234,7 +321,11 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
                   disabled={isSubmitting}
                   className="px-4 py-2 bg-[#3b5b84] text-white text-xs font-semibold rounded-lg hover:bg-[#2f4a6d]"
                 >
-                  {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Simpan"}
+                  {isSubmitting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    "Simpan"
+                  )}
                 </button>
               </div>
             </form>
