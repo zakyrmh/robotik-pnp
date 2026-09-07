@@ -33,7 +33,8 @@ export async function getAchievements() {
 
   const { data, error } = await supabase
     .from("achievements")
-    .select(`
+    .select(
+      `
       id,
       title,
       description,
@@ -46,7 +47,8 @@ export async function getAchievements() {
         slug,
         badge_color
       )
-    `)
+    `,
+    )
     .order("year", { ascending: false });
 
   if (error) {

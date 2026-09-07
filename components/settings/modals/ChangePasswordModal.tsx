@@ -82,7 +82,8 @@ export function ChangePasswordModal({
             </DialogTitle>
           </div>
           <DialogDescription className="text-xs text-slate-500 dark:text-slate-400">
-            Pastikan kata sandi baru Anda memiliki minimal 8 karakter dan susah ditebak orang lain.
+            Pastikan kata sandi baru Anda memiliki minimal 8 karakter dan susah
+            ditebak orang lain.
           </DialogDescription>
         </DialogHeader>
 

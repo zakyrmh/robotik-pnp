@@ -46,12 +46,14 @@ export function UnifiedActivityPresensiClient({
   activityDetailData,
   activityInfo,
 }: UnifiedActivityPresensiClientProps) {
-  const [managerView, setManagerView] = useState<
-    "scanner" | "rekap" | "my_qr"
-  >("scanner");
+  const [managerView, setManagerView] = useState<"scanner" | "rekap" | "my_qr">(
+    "scanner",
+  );
 
   const title =
-    activityDetailData?.activity.title || activityInfo?.title || "Detail Presensi Kegiatan";
+    activityDetailData?.activity.title ||
+    activityInfo?.title ||
+    "Detail Presensi Kegiatan";
   const startDate =
     activityDetailData?.activity.startDate || activityInfo?.start_date;
   const endDate =
@@ -77,7 +79,9 @@ export function UnifiedActivityPresensiClient({
           </Button>
           <div>
             <span className="text-micro font-mono font-bold uppercase tracking-wider text-primary block">
-              {canManage ? "MODUL PRESENSI PANITIA / KOMDIS" : "PRESENSI KEGIATAN"}
+              {canManage
+                ? "MODUL PRESENSI PANITIA / KOMDIS"
+                : "PRESENSI KEGIATAN"}
             </span>
             <h1 className="text-lg sm:text-xl font-display font-semibold tracking-tight text-foreground">
               {title}

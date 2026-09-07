@@ -26,7 +26,11 @@ interface StepAcademicProps {
   initialData?: OnboardingInitialAcademic | null;
 }
 
-export function StepAcademic({ onNext, onPrev, initialData }: StepAcademicProps) {
+export function StepAcademic({
+  onNext,
+  onPrev,
+  initialData,
+}: StepAcademicProps) {
   const [majors, setMajors] = useState<{ id: string; name: string }[]>([]);
   const [prodis, setProdis] = useState<
     { id: string; name: string; degree: string }[]
@@ -36,11 +40,19 @@ export function StepAcademic({ onNext, onPrev, initialData }: StepAcademicProps)
 
   // State untuk data akademik — diinisialisasi dari initialData jika ada
   const [highSchool, setHighSchool] = useState(initialData?.highSchool ?? "");
-  const [selectedMajor, setSelectedMajor] = useState(initialData?.majorId ?? "");
+  const [selectedMajor, setSelectedMajor] = useState(
+    initialData?.majorId ?? "",
+  );
   const [selectedProdi, setSelectedProdi] = useState(""); // Diisi setelah prodis di-load
-  const [currentClass, setCurrentClass] = useState(initialData?.currentClass ?? "");
-  const [orgExperience, setOrgExperience] = useState(initialData?.orgExperience ?? "");
-  const [achievements, setAchievements] = useState(initialData?.achievements ?? "");
+  const [currentClass, setCurrentClass] = useState(
+    initialData?.currentClass ?? "",
+  );
+  const [orgExperience, setOrgExperience] = useState(
+    initialData?.orgExperience ?? "",
+  );
+  const [achievements, setAchievements] = useState(
+    initialData?.achievements ?? "",
+  );
 
   // userChangedMajor: true hanya jika user SECARA EKSPLISIT memilih jurusan baru.
   // Berbeda dengan isInitialLoad — ref ini di-reset ke false saat StrictMode remount,
@@ -94,20 +106,32 @@ export function StepAcademic({ onNext, onPrev, initialData }: StepAcademicProps)
 
   const handleNext = () => {
     // Validasi field wajib (sebelum masuk transition)
-    if (!highSchool.trim()) { toast.error("Asal sekolah wajib diisi."); return; }
-    if (!selectedMajor) { toast.error("Jurusan wajib dipilih."); return; }
-    if (!selectedProdi) { toast.error("Program studi wajib dipilih."); return; }
-    if (!currentClass.trim()) { toast.error("Kelas saat ini wajib diisi."); return; }
+    if (!highSchool.trim()) {
+      toast.error("Asal sekolah wajib diisi.");
+      return;
+    }
+    if (!selectedMajor) {
+      toast.error("Jurusan wajib dipilih.");
+      return;
+    }
+    if (!selectedProdi) {
+      toast.error("Program studi wajib dipilih.");
+      return;
+    }
+    if (!currentClass.trim()) {
+      toast.error("Kelas saat ini wajib diisi.");
+      return;
+    }
 
     startTransition(async () => {
       try {
         const result = await saveAcademicData({
-            highSchool: highSchool.trim(),
-            studyProgramId: selectedProdi,
-            currentClass: currentClass.trim(),
-            orgExperience: orgExperience.trim() || undefined,
-            achievements: achievements.trim() || undefined,
-          });
+          highSchool: highSchool.trim(),
+          studyProgramId: selectedProdi,
+          currentClass: currentClass.trim(),
+          orgExperience: orgExperience.trim() || undefined,
+          achievements: achievements.trim() || undefined,
+        });
 
         if (!result.success) {
           toast.error(result.error || "Gagal menyimpan data akademik.");

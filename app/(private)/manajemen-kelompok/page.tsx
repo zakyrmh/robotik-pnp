@@ -97,7 +97,7 @@ export default async function ManajemenKelompokPage() {
           )
         )
       )
-    `
+    `,
     )
     .order("name", { ascending: true });
 
@@ -142,18 +142,17 @@ export default async function ManajemenKelompokPage() {
       registrations (
         full_name
       )
-    `
+    `,
     )
     .eq("role", "caang")
     .order("nim", { ascending: true });
 
-  const rawCaangs = (
-    allCaangProfiles as unknown as {
+  const rawCaangs =
+    (allCaangProfiles as unknown as {
       id: string;
       nim: string | null;
       registrations: { full_name: string } | null;
-    }[]
-  ) || [];
+    }[]) || [];
 
   // Collect all profile_ids that are already in a sub group
   const assignedProfileIds = new Set<string>();

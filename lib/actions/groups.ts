@@ -42,7 +42,7 @@ async function verifyAdmin(supabase: Awaited<ReturnType<typeof createClient>>) {
 // ACT-GRP-01: Create Parent Group
 // ============================================================
 export async function createParentGroup(
-  name: string
+  name: string,
 ): Promise<ServerActionResponse> {
   try {
     const supabase = await createClient();
@@ -98,7 +98,7 @@ export async function createParentGroup(
 // ============================================================
 export async function createSubGroup(
   parentId: string,
-  name: string
+  name: string,
 ): Promise<ServerActionResponse> {
   try {
     const supabase = await createClient();
@@ -150,7 +150,7 @@ export async function createSubGroup(
 // ACT-GRP-03: Delete a Group (parent or sub)
 // ============================================================
 export async function deleteGroup(
-  groupId: string
+  groupId: string,
 ): Promise<ServerActionResponse> {
   try {
     const supabase = await createClient();
@@ -200,7 +200,7 @@ export async function deleteGroup(
 // ============================================================
 export async function addMemberManually(
   subGroupId: string,
-  profileId: string
+  profileId: string,
 ): Promise<ServerActionResponse> {
   try {
     const supabase = await createClient();
@@ -256,7 +256,7 @@ export async function addMemberManually(
 // ============================================================
 export async function removeMember(
   subGroupId: string,
-  profileId: string
+  profileId: string,
 ): Promise<ServerActionResponse> {
   try {
     const supabase = await createClient();
@@ -291,7 +291,10 @@ export async function removeMember(
         error: { code: "DATABASE_ERROR", details: error.message },
       };
 
-    return { success: true, message: "Anggota berhasil dihapus dari kelompok." };
+    return {
+      success: true,
+      message: "Anggota berhasil dihapus dari kelompok.",
+    };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     return {
@@ -307,7 +310,7 @@ export async function removeMember(
 // ============================================================
 export async function updateGroupName(
   groupId: string,
-  name: string
+  name: string,
 ): Promise<ServerActionResponse> {
   try {
     const supabase = await createClient();
@@ -342,7 +345,10 @@ export async function updateGroupName(
         error: { code: "DATABASE_ERROR", details: error.message },
       };
 
-    return { success: true, message: `Nama kelompok diubah menjadi "${trimmed}".` };
+    return {
+      success: true,
+      message: `Nama kelompok diubah menjadi "${trimmed}".`,
+    };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     return {
@@ -359,7 +365,7 @@ export async function updateGroupName(
 export async function generateGroupsAlgorithmic(
   parentGroupId: string,
   totalSubGroups: number,
-  strategy: "random" | "score"
+  strategy: "random" | "score",
 ): Promise<ServerActionResponse> {
   try {
     const supabase = await createClient();
@@ -493,18 +499,23 @@ export async function generateGroupsAlgorithmic(
             ? attScores.reduce((sum, s) => sum + s, 0) / attScores.length
             : 100;
 
-        caangList.push({ id: caang.id, totalScore: regScore + taskScore + attScore });
+        caangList.push({
+          id: caang.id,
+          totalScore: regScore + taskScore + attScore,
+        });
       });
 
       caangList.sort((a, b) => b.totalScore - a.totalScore);
     } else {
-      caangs.forEach((caang) => caangList.push({ id: caang.id, totalScore: 0 }));
+      caangs.forEach((caang) =>
+        caangList.push({ id: caang.id, totalScore: 0 }),
+      );
     }
 
     // 4. Distribute into sub groups
     const distributedGroups: string[][] = Array.from(
       { length: totalSubGroups },
-      () => []
+      () => [],
     );
 
     if (strategy === "score") {
@@ -543,10 +554,13 @@ export async function generateGroupsAlgorithmic(
     }
 
     // 6. Insert new sub groups
-    const subGroupsToInsert = Array.from({ length: totalSubGroups }, (_, i) => ({
-      name: `Kelompok ${i + 1}`,
-      parent_id: parentGroupId,
-    }));
+    const subGroupsToInsert = Array.from(
+      { length: totalSubGroups },
+      (_, i) => ({
+        name: `Kelompok ${i + 1}`,
+        parent_id: parentGroupId,
+      }),
+    );
 
     const { data: insertedSubGroups, error: insertGroupsError } = await supabase
       .from("caang_groups")
@@ -589,7 +603,10 @@ export async function generateGroupsAlgorithmic(
         return {
           success: false,
           message: "Gagal menyimpan anggota sub kelompok baru.",
-          error: { code: "DATABASE_ERROR", details: insertMembersError.message },
+          error: {
+            code: "DATABASE_ERROR",
+            details: insertMembersError.message,
+          },
         };
     }
 

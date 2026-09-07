@@ -1,13 +1,20 @@
 import { redirect } from "next/navigation";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { getEventCategoriesAction, getEventRegistrationsAction } from "@/lib/actions/event-admin";
+import {
+  getEventCategoriesAction,
+  getEventRegistrationsAction,
+  getEventSettingsAction,
+} from "@/lib/actions/event-admin";
 import { CategoryManager } from "@/components/event/category-manager";
+import { EventSettingsForm } from "@/components/event/event-settings-form";
 import { RegistrationTable } from "@/components/event/registration-table";
 import type { RoleEvent } from "@/types/event-registration";
 
 export default async function EventManagementPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) {
     redirect("/login");
@@ -27,7 +34,8 @@ export default async function EventManagementPage() {
       <div className="p-8 text-center max-w-md mx-auto space-y-3">
         <h2 className="text-xl font-bold text-slate-800">Akses Terbatas</h2>
         <p className="text-sm text-slate-600">
-          Akun Anda tidak terdaftar dalam kepanitiaan Minangkabau Robot Contest (`role_event`).
+          Akun Anda tidak terdaftar dalam kepanitiaan Minangkabau Robot Contest
+          (`role_event`).
         </p>
       </div>
     );
@@ -35,6 +43,7 @@ export default async function EventManagementPage() {
 
   const categoriesRes = await getEventCategoriesAction();
   const registrationsRes = await getEventRegistrationsAction();
+  const settingsRes = await getEventSettingsAction();
 
   return (
     <div className="space-y-8 p-6 max-w-7xl mx-auto">
@@ -46,22 +55,40 @@ export default async function EventManagementPage() {
           Dashboard Panitia Minangkabau Robot Contest
         </h1>
         <p className="text-xs text-slate-500 mt-1">
-          Role Anda: <strong className="text-slate-800">{roleEvent || "super-admin"}</strong>
+          Role Anda:{" "}
+          <strong className="text-slate-800">
+            {roleEvent || "super-admin"}
+          </strong>
         </p>
       </div>
+
+      {/* Event Settings: rentang Batch 1 / Batch 2 / Acara (Only panitia-pendaftaran & super-admin) */}
+      {(isSuperAdmin || roleEvent === "panitia-pendaftaran") && (
+        <section className="space-y-4">
+          <EventSettingsForm
+            initialSettings={settingsRes.success ? settingsRes.data : null}
+          />
+        </section>
+      )}
 
       {/* Category CRUD Section (Only panitia-pendaftaran & super-admin) */}
       {(isSuperAdmin || roleEvent === "panitia-pendaftaran") && (
         <section className="space-y-4">
-          <CategoryManager initialCategories={categoriesRes.success ? categoriesRes.data : []} />
+          <CategoryManager
+            initialCategories={categoriesRes.success ? categoriesRes.data : []}
+          />
         </section>
       )}
 
       {/* Registration Table Section */}
       <section className="space-y-4">
-        <h2 className="text-lg font-bold text-slate-800">Daftar Pendaftaran & Pembayaran Tim</h2>
+        <h2 className="text-lg font-bold text-slate-800">
+          Daftar Pendaftaran & Pembayaran Tim
+        </h2>
         <RegistrationTable
-          initialRegistrations={registrationsRes.success ? registrationsRes.data : []}
+          initialRegistrations={
+            registrationsRes.success ? registrationsRes.data : []
+          }
           isSuperAdmin={isSuperAdmin}
         />
       </section>

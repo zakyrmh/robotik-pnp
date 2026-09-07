@@ -44,17 +44,22 @@ const SETTINGS_ID = "00000000-0000-0000-0000-000000000000";
  * Fetch OR Settings.
  * Accessible by any authenticated user (e.g. Caang needs registration info).
  */
-export async function getOrSettings(): Promise<ServerActionResponse<OrSettingsData>> {
+export async function getOrSettings(): Promise<
+  ServerActionResponse<OrSettingsData>
+> {
   try {
     const supabase = await createClient();
 
     // Verify session
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
       return {
         success: false,
         message: "Sesi tidak ditemukan. Silakan login kembali.",
-        error: { code: "UNAUTHORIZED", details: "User is not logged in" }
+        error: { code: "UNAUTHORIZED", details: "User is not logged in" },
       };
     }
 
@@ -68,7 +73,7 @@ export async function getOrSettings(): Promise<ServerActionResponse<OrSettingsDa
       return {
         success: false,
         message: "Gagal mengambil pengaturan OR dari database.",
-        error: { code: "DATABASE_ERROR", details: error.message }
+        error: { code: "DATABASE_ERROR", details: error.message },
       };
     }
 
@@ -84,15 +89,15 @@ export async function getOrSettings(): Promise<ServerActionResponse<OrSettingsDa
         rekening_penerima: data.rekening_penerima as BankAccount[],
         kontak_panitia: data.kontak_panitia as PanitiaContact[],
         link_komunitas: data.link_komunitas as CommunityLinks,
-        timeline: data.timeline as TimelineEvent[]
-      }
+        timeline: data.timeline as TimelineEvent[],
+      },
     };
   } catch (err: unknown) {
     const errMsg = err instanceof Error ? err.message : String(err);
     return {
       success: false,
       message: "Terjadi kesalahan sistem saat mengambil pengaturan OR.",
-      error: { code: "SERVER_ERROR", details: errMsg }
+      error: { code: "SERVER_ERROR", details: errMsg },
     };
   }
 }
@@ -102,18 +107,21 @@ export async function getOrSettings(): Promise<ServerActionResponse<OrSettingsDa
  * Accessible only by Admin OR or Super Admin.
  */
 export async function saveOrSettings(
-  data: Partial<OrSettingsData>
+  data: Partial<OrSettingsData>,
 ): Promise<ServerActionResponse<OrSettingsData>> {
   try {
     const supabase = await createClient();
 
     // 1. Authenticate user
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
     if (authError || !user) {
       return {
         success: false,
         message: "Sesi tidak ditemukan. Silakan login kembali.",
-        error: { code: "UNAUTHORIZED", details: "User is not logged in" }
+        error: { code: "UNAUTHORIZED", details: "User is not logged in" },
       };
     }
 
@@ -128,7 +136,7 @@ export async function saveOrSettings(
       return {
         success: false,
         message: "Profil tidak ditemukan.",
-        error: { code: "NOT_FOUND", details: "Profile not found" }
+        error: { code: "NOT_FOUND", details: "Profile not found" },
       };
     }
 
@@ -136,17 +144,21 @@ export async function saveOrSettings(
     if (!allowedRoles.includes(profile.role)) {
       return {
         success: false,
-        message: "Hanya Admin OR atau Super Admin yang dapat mengubah pengaturan OR.",
-        error: { code: "FORBIDDEN", details: "User role is not authorized" }
+        message:
+          "Hanya Admin OR atau Super Admin yang dapat mengubah pengaturan OR.",
+        error: { code: "FORBIDDEN", details: "User role is not authorized" },
       };
     }
 
     // 3. Validation
-    if (data.periode_recruitment !== undefined && !data.periode_recruitment.trim()) {
+    if (
+      data.periode_recruitment !== undefined &&
+      !data.periode_recruitment.trim()
+    ) {
       return {
         success: false,
         message: "Periode recruitment tidak boleh kosong.",
-        error: { code: "BAD_REQUEST", details: "periode_recruitment is empty" }
+        error: { code: "BAD_REQUEST", details: "periode_recruitment is empty" },
       };
     }
 
@@ -154,17 +166,21 @@ export async function saveOrSettings(
       return {
         success: false,
         message: "Biaya pendaftaran tidak boleh negatif.",
-        error: { code: "BAD_REQUEST", details: "biaya_pendaftaran < 0" }
+        error: { code: "BAD_REQUEST", details: "biaya_pendaftaran < 0" },
       };
     }
 
     if (data.rekening_penerima !== undefined) {
       for (const account of data.rekening_penerima) {
-        if (!account.bank_name.trim() || !account.account_number.trim() || !account.account_holder.trim()) {
+        if (
+          !account.bank_name.trim() ||
+          !account.account_number.trim() ||
+          !account.account_holder.trim()
+        ) {
           return {
             success: false,
             message: "Data rekening penerima tidak lengkap.",
-            error: { code: "BAD_REQUEST", details: "Invalid account entry" }
+            error: { code: "BAD_REQUEST", details: "Invalid account entry" },
           };
         }
       }
@@ -176,7 +192,7 @@ export async function saveOrSettings(
           return {
             success: false,
             message: "Data kontak panitia tidak lengkap.",
-            error: { code: "BAD_REQUEST", details: "Invalid contact entry" }
+            error: { code: "BAD_REQUEST", details: "Invalid contact entry" },
           };
         }
       }
@@ -188,7 +204,7 @@ export async function saveOrSettings(
           return {
             success: false,
             message: "Data timeline tidak lengkap.",
-            error: { code: "BAD_REQUEST", details: "Invalid timeline event" }
+            error: { code: "BAD_REQUEST", details: "Invalid timeline event" },
           };
         }
       }
@@ -196,17 +212,25 @@ export async function saveOrSettings(
 
     // Prepare update payload
     const updatePayload: Record<string, unknown> = {
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     };
 
-    if (data.periode_recruitment !== undefined) updatePayload.periode_recruitment = data.periode_recruitment;
-    if (data.status_pendaftaran !== undefined) updatePayload.status_pendaftaran = data.status_pendaftaran;
-    if (data.tanggal_mulai !== undefined) updatePayload.tanggal_mulai = data.tanggal_mulai;
-    if (data.tanggal_selesai !== undefined) updatePayload.tanggal_selesai = data.tanggal_selesai;
-    if (data.biaya_pendaftaran !== undefined) updatePayload.biaya_pendaftaran = data.biaya_pendaftaran;
-    if (data.rekening_penerima !== undefined) updatePayload.rekening_penerima = data.rekening_penerima;
-    if (data.kontak_panitia !== undefined) updatePayload.kontak_panitia = data.kontak_panitia;
-    if (data.link_komunitas !== undefined) updatePayload.link_komunitas = data.link_komunitas;
+    if (data.periode_recruitment !== undefined)
+      updatePayload.periode_recruitment = data.periode_recruitment;
+    if (data.status_pendaftaran !== undefined)
+      updatePayload.status_pendaftaran = data.status_pendaftaran;
+    if (data.tanggal_mulai !== undefined)
+      updatePayload.tanggal_mulai = data.tanggal_mulai;
+    if (data.tanggal_selesai !== undefined)
+      updatePayload.tanggal_selesai = data.tanggal_selesai;
+    if (data.biaya_pendaftaran !== undefined)
+      updatePayload.biaya_pendaftaran = data.biaya_pendaftaran;
+    if (data.rekening_penerima !== undefined)
+      updatePayload.rekening_penerima = data.rekening_penerima;
+    if (data.kontak_panitia !== undefined)
+      updatePayload.kontak_panitia = data.kontak_panitia;
+    if (data.link_komunitas !== undefined)
+      updatePayload.link_komunitas = data.link_komunitas;
     if (data.timeline !== undefined) updatePayload.timeline = data.timeline;
 
     // 4. Update Database
@@ -221,7 +245,10 @@ export async function saveOrSettings(
       return {
         success: false,
         message: "Gagal memperbarui pengaturan OR ke database.",
-        error: { code: "DATABASE_ERROR", details: updateError?.message || "Returned null" }
+        error: {
+          code: "DATABASE_ERROR",
+          details: updateError?.message || "Returned null",
+        },
       };
     }
 
@@ -237,15 +264,15 @@ export async function saveOrSettings(
         rekening_penerima: updatedData.rekening_penerima as BankAccount[],
         kontak_panitia: updatedData.kontak_panitia as PanitiaContact[],
         link_komunitas: updatedData.link_komunitas as CommunityLinks,
-        timeline: updatedData.timeline as TimelineEvent[]
-      }
+        timeline: updatedData.timeline as TimelineEvent[],
+      },
     };
   } catch (err: unknown) {
     const errMsg = err instanceof Error ? err.message : String(err);
     return {
       success: false,
       message: "Terjadi kesalahan sistem saat memperbarui pengaturan OR.",
-      error: { code: "SERVER_ERROR", details: errMsg }
+      error: { code: "SERVER_ERROR", details: errMsg },
     };
   }
 }

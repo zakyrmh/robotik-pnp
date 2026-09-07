@@ -94,7 +94,8 @@ export function LegacyPointDialog({
             </DialogTitle>
           </div>
           <DialogDescription className="text-xs font-mono text-slate-500 dark:text-slate-400">
-            Input poin sanksi awal dari Periode 20 yang belum tercatat di sistem digital untuk anggota{" "}
+            Input poin sanksi awal dari Periode 20 yang belum tercatat di sistem
+            digital untuk anggota{" "}
             <span className="font-bold text-[#0a192f] dark:text-slate-200">
               {profileName}
             </span>

@@ -406,7 +406,6 @@ export default async function MemberProfilePage({
                 </div>
               )}
             </div>
-
           </div>
         </div>
       </div>

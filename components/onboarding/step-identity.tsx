@@ -66,9 +66,13 @@ export function StepIdentity({
             className="mt-0.5 shrink-0 text-[#e22718]"
           />
           <div>
-            <p className="font-bold font-mono text-xs uppercase tracking-wider text-[#e22718]">Pendaftaran Ditutup</p>
+            <p className="font-bold font-mono text-xs uppercase tracking-wider text-[#e22718]">
+              Pendaftaran Ditutup
+            </p>
             <p className="mt-1 text-xs leading-relaxed">{closedError}</p>
-            <p className="mt-2 text-[10px] font-mono uppercase tracking-wider text-neutral-400">Silakan tunggu pendaftaran selanjutnya.</p>
+            <p className="mt-2 text-[10px] font-mono uppercase tracking-wider text-neutral-400">
+              Silakan tunggu pendaftaran selanjutnya.
+            </p>
           </div>
         </div>
       )}

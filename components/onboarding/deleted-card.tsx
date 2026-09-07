@@ -2,7 +2,10 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Delete01Icon, InformationCircleIcon } from "@hugeicons/core-free-icons";
+import {
+  Delete01Icon,
+  InformationCircleIcon,
+} from "@hugeicons/core-free-icons";
 
 interface DeletedCardProps {
   formattedDate: string;
@@ -37,7 +40,8 @@ export function DeletedCard({ formattedDate, deleteReason }: DeletedCardProps) {
 
           <CardContent className="space-y-5 pb-8 px-5 sm:px-6">
             <p className="text-xs sm:text-sm text-muted-foreground font-sans leading-relaxed">
-              Maaf, data pendaftaran Anda sebagai Calon Anggota UKM Robotik Politeknik Negeri Padang telah dinonaktifkan dari sistem.
+              Maaf, data pendaftaran Anda sebagai Calon Anggota UKM Robotik
+              Politeknik Negeri Padang telah dinonaktifkan dari sistem.
             </p>
 
             <div className="bg-muted/40 p-4 border border-border rounded-lg text-left space-y-2">

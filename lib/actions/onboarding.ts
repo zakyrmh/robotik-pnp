@@ -131,22 +131,29 @@ export async function checkLegacyMember(nim: string) {
       console.error("Error fetching OR settings:", settingsError);
       return {
         success: false,
-        error: "Gagal memproses pendaftaran. Pengaturan pendaftaran tidak ditemukan.",
+        error:
+          "Gagal memproses pendaftaran. Pengaturan pendaftaran tidak ditemukan.",
       };
     }
 
     const now = new Date();
     const isStatusOpen = orSettings.status_pendaftaran === true;
-    const startDate = orSettings.tanggal_mulai ? new Date(orSettings.tanggal_mulai) : null;
-    const endDate = orSettings.tanggal_selesai ? new Date(orSettings.tanggal_selesai) : null;
+    const startDate = orSettings.tanggal_mulai
+      ? new Date(orSettings.tanggal_mulai)
+      : null;
+    const endDate = orSettings.tanggal_selesai
+      ? new Date(orSettings.tanggal_selesai)
+      : null;
 
-    const isWithinRange = (!startDate || now >= startDate) && (!endDate || now <= endDate);
+    const isWithinRange =
+      (!startDate || now >= startDate) && (!endDate || now <= endDate);
 
     if (!isStatusOpen || !isWithinRange) {
       return {
         success: false,
         isClosed: true,
-        error: "Pendaftaran calon anggota baru saat ini ditutup. Silakan tunggu pembukaan pendaftaran selanjutnya.",
+        error:
+          "Pendaftaran calon anggota baru saat ini ditutup. Silakan tunggu pembukaan pendaftaran selanjutnya.",
       };
     }
 
@@ -208,7 +215,7 @@ export async function getOnboardingProgress(): Promise<OnboardingProgress> {
     supabase
       .from("registrations")
       .select(
-        "full_name, nickname, gender, pob, dob, phone_number, origin_address, domicile_address, high_school, study_program_id, current_class, org_experience, achievements, motivation, proof_follow_robotik, proof_follow_mrc, proof_sub_yt, payment_method"
+        "full_name, nickname, gender, pob, dob, phone_number, origin_address, domicile_address, high_school, study_program_id, current_class, org_experience, achievements, motivation, proof_follow_robotik, proof_follow_mrc, proof_sub_yt, payment_method",
       )
       .eq("profile_id", user.id)
       .maybeSingle(),
@@ -222,8 +229,14 @@ export async function getOnboardingProgress(): Promise<OnboardingProgress> {
   // ── Step 2: Cek kelengkapan data pribadi ──────────────────
   const p = reg;
   const personalComplete =
-    p?.full_name && p?.nickname && p?.gender && p?.pob &&
-    p?.dob && p?.phone_number && p?.origin_address && p?.domicile_address;
+    p?.full_name &&
+    p?.nickname &&
+    p?.gender &&
+    p?.pob &&
+    p?.dob &&
+    p?.phone_number &&
+    p?.origin_address &&
+    p?.domicile_address;
 
   const personal: OnboardingInitialPersonal | null = p
     ? {
@@ -239,7 +252,14 @@ export async function getOnboardingProgress(): Promise<OnboardingProgress> {
     : null;
 
   if (!personalComplete) {
-    return { nim, startStep: 2, personal, academic: null, commitment: null, paymentMethod: p?.payment_method ?? null };
+    return {
+      nim,
+      startStep: 2,
+      personal,
+      academic: null,
+      commitment: null,
+      paymentMethod: p?.payment_method ?? null,
+    };
   }
 
   // ── Step 3: Cek kelengkapan data akademik ─────────────────
@@ -266,7 +286,14 @@ export async function getOnboardingProgress(): Promise<OnboardingProgress> {
   }
 
   if (!academicComplete) {
-    return { nim, startStep: 3, personal, academic, commitment: null, paymentMethod: p?.payment_method ?? null };
+    return {
+      nim,
+      startStep: 3,
+      personal,
+      academic,
+      commitment: null,
+      paymentMethod: p?.payment_method ?? null,
+    };
   }
 
   // ── Step 4: Cek kelengkapan data komitmen ────────────────
@@ -282,9 +309,23 @@ export async function getOnboardingProgress(): Promise<OnboardingProgress> {
     : null;
 
   if (!commitmentComplete) {
-    return { nim, startStep: 4, personal, academic, commitment, paymentMethod: p?.payment_method ?? null };
+    return {
+      nim,
+      startStep: 4,
+      personal,
+      academic,
+      commitment,
+      paymentMethod: p?.payment_method ?? null,
+    };
   }
 
   // ── Step 5: Semua data teks lengkap, tinggal upload berkas ─
-  return { nim, startStep: 5, personal, academic, commitment, paymentMethod: p?.payment_method ?? null };
+  return {
+    nim,
+    startStep: 5,
+    personal,
+    academic,
+    commitment,
+    paymentMethod: p?.payment_method ?? null,
+  };
 }

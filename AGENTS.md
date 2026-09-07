@@ -271,3 +271,69 @@ AI Agents should reference and execute the specialized skills installed in `.age
 | Hardcoding secrets or using `NEXT_PUBLIC_` for service keys.                      | Store secrets in `.env.local` without `NEXT_PUBLIC_` prefix; never commit to Git. |
 | Using TypeScript `any` type.                                                      | Use strict interfaces, generics, or `unknown` with runtime type narrowing.        |
 | Emitting incomplete code with `// TODO: implement later` or placeholder comments. | Provide complete, production-ready, fully implemented code blocks.                |
+
+---
+
+# 11. Integrasi Memori Jangka Panjang (Obsidian Vault & Antigravity)
+
+Untuk mempertahankan _context awareness_ lintas sesi terminal, AI Agent diinstruksikan untuk menggunakan **Obsidian Vault** sebagai media penyimpanan memori jangka panjang (_Long-term Memory_).
+
+### 11.1 Lokasi Direktori Vault
+
+- **Path Utama (Absolute):** `~/Documents/Antigravity_Brain/`
+- **Sub-folder Memori:** `~/Documents/Antigravity_Brain/02_Agent_Memory/`
+- **Sub-folder Referensi/Knowledge:** `~/Documents/Antigravity_Brain/01_Knowledge/`
+
+_(Catatan: Jika terdapat symlink `./.brain/` di root proyek, agen diizinkan membaca/menulis langsung melalui `./.brain/`)_.
+
+### 11.2 Protokol Membaca Memori (Read Protocol)
+
+Sebelum mengerjakan tugas yang melibatkan:
+
+1. Refactoring arsitektur atau state global (`MedicalProfileContext`).
+2. Debugging masalah hardware (WebRTC camera stream, Web Audio API, MediaPipe pose detection).
+3. Modifikasi rumus kinematika atau batasan klinis OA.
+
+**AI Agent WAJIB memeriksa catatan terdahulu** di `~/Documents/Antigravity_Brain/02_Agent_Memory/` untuk melihat apakah ada keputusan teknis, gotchas, atau solusi bug serupa yang pernah dicatat sebelumnya.
+
+### 11.3 Protokol Menulis Memori (Write Protocol)
+
+AI Agent **WAJIB membuat catatan baru** ketika:
+
+1. Menemukan dan menyelesaikan _subtle bug_ atau _quirk_ khusus browser (misal: autoplay audio policy, mobile camera orientation).
+2. Mengambil keputusan arsitektur baru (_Architectural Decision Record_ / ADR).
+3. Menyelesaikan optimasi performa komputasi atau bundler.
+
+#### Format Standar File Memori:
+
+- **Lokasi Simpan:** `~/Documents/Antigravity_Brain/02_Agent_Memory/oa-motion-<kategori>-<topik-singkat>.md`
+- **Struktur Markdown & YAML Frontmatter:**
+
+```markdown
+---
+title: "Deskripsi Singkat Solusi / Keputusan"
+project: "oa-motion"
+date: YYYY-MM-DD
+type: "bugfix" # Pilihan: bugfix | adr | gotcha | optimization
+tags:
+  - oa-motion
+  - kinematics # sesuaikan topik (misal: webrtc, audio, react19, styling)
+  - agent-memory
+---
+
+## 1. Konteks Masalah / Latar Belakang
+
+Penjelasan ringkas tentang kendala yang dihadapi atau keputusan yang perlu dibuat.
+
+## 2. Analisis Akar Masalah (Root Cause)
+
+Mengapa masalah tersebut terjadi atau alasan pemilihan pendekatan tertentu.
+
+## 3. Solusi Teknis & Implementasi
+
+Rincian perubahan kode, file yang terpengaruh, atau snippet penting.
+
+## 4. Pelajaran Penting (Gotchas untuk Sesi Mendatang)
+
+Poin penting yang harus diingat agen di sesi berikutnya agar tidak mengulangi kesalahan yang sama.
+```
