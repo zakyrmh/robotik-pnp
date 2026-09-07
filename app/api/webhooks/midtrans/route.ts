@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
 import { createAdminClient } from "@/lib/supabase/server";
+import { untypedFrom } from "@/lib/supabase/untyped";
 import { sendETicketEmail } from "@/lib/services/resend";
 import type { EventRegistration } from "@/types/event-registration";
 
@@ -23,12 +24,15 @@ export async function POST(request: Request) {
     // 1. Verify SHA-512 Signature
     if (serverKey) {
       const hashInput = `${order_id}${status_code}${gross_amount}${serverKey}`;
-      const expectedSignature = crypto.createHash("sha512").update(hashInput).digest("hex");
+      const expectedSignature = crypto
+        .createHash("sha512")
+        .update(hashInput)
+        .digest("hex");
 
       if (signature_key !== expectedSignature) {
         return NextResponse.json(
           { success: false, message: "Invalid signature" },
-          { status: 403 }
+          { status: 403 },
         );
       }
     }
@@ -36,28 +40,39 @@ export async function POST(request: Request) {
     const adminSupabase = createAdminClient();
 
     // 2. Fetch existing registration
-    const { data: reg, error: fetchError } = await (adminSupabase
-      .from("event_registrations" as any)
-      .select(`
+    const { data: reg, error: fetchError } = await (untypedFrom(
+      adminSupabase,
+      "event_registrations",
+    )
+      .select(
+        `
         *,
         category:event_categories(*)
-      `)
+      `,
+      )
       .eq("midtrans_order_id", order_id)
-      .single() as unknown as Promise<{ data: EventRegistration | null; error: unknown }>);
+      .single() as unknown as Promise<{
+      data: EventRegistration | null;
+      error: unknown;
+    }>);
 
     if (fetchError || !reg) {
       return NextResponse.json(
         { success: false, message: "Registration record not found" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     // 3. Idempotent check: skip if already paid
     if (reg.payment_status === "paid") {
-      return NextResponse.json({ success: true, message: "Transaction already processed as paid" });
+      return NextResponse.json({
+        success: true,
+        message: "Transaction already processed as paid",
+      });
     }
 
-    let newStatus: "pending" | "paid" | "expired" | "failed" = reg.payment_status;
+    let newStatus: "pending" | "paid" | "expired" | "failed" =
+      reg.payment_status;
 
     if (transaction_status === "capture") {
       if (fraud_status === "challenge") {
@@ -67,7 +82,10 @@ export async function POST(request: Request) {
       }
     } else if (transaction_status === "settlement") {
       newStatus = "paid";
-    } else if (transaction_status === "cancel" || transaction_status === "deny") {
+    } else if (
+      transaction_status === "cancel" ||
+      transaction_status === "deny"
+    ) {
       newStatus = "failed";
     } else if (transaction_status === "expire") {
       newStatus = "expired";
@@ -86,10 +104,9 @@ export async function POST(request: Request) {
       updatePayload.paid_at = new Date().toISOString();
     }
 
-    await (adminSupabase
-      .from("event_registrations" as any)
+    await untypedFrom(adminSupabase, "event_registrations")
       .update(updatePayload)
-      .eq("id", reg.id));
+      .eq("id", reg.id);
 
     // Send E-Ticket if transition to paid
     if (newStatus === "paid") {
@@ -101,6 +118,7 @@ export async function POST(request: Request) {
         categoryName: reg.category?.name || "Minangkabau Robot Contest",
         accessToken: reg.access_token,
         appBaseUrl: appUrl,
+        paymentStatus: "paid",
       });
     }
 
@@ -112,7 +130,7 @@ export async function POST(request: Request) {
     console.error("Error handling Midtrans webhook:", err);
     return NextResponse.json(
       { success: false, error: (err as Error).message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

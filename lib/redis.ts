@@ -63,3 +63,14 @@ export const forgotPasswordRateLimiter =
         prefix: "@upstash/ratelimit/forgot-password",
       })
     : createDummyLimiter(3, 15 * 60 * 1000);
+
+// 4. Rate Limiter untuk Upload Foto MRC (endpoint publik tanpa auth) - 30 req per 10m
+export const mrcUploadRateLimiter =
+  isConfigured && redis
+    ? new Ratelimit({
+        redis,
+        limiter: Ratelimit.slidingWindow(30, "10 m"),
+        analytics: true,
+        prefix: "@upstash/ratelimit/mrc-upload",
+      })
+    : createDummyLimiter(30, 10 * 60 * 1000);

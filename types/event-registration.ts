@@ -5,7 +5,10 @@ export type ActionResult<T = unknown> =
 export type PaymentStatus = "pending" | "paid" | "expired" | "failed";
 export type MemberVerificationStatus = "pending" | "verified" | "mismatch";
 export type ViolationStatus = "active" | "dq_confirmed" | "appealed";
-export type RoleEvent = "panitia-pendaftaran" | "panitia-verifikasi" | "panitia-pertandingan";
+export type RoleEvent =
+  | "panitia-pendaftaran"
+  | "panitia-verifikasi"
+  | "panitia-pertandingan";
 
 export interface EventCategory {
   id: string;
@@ -13,9 +16,27 @@ export interface EventCategory {
   name: string;
   description: string | null;
   registration_fee: number;
+  /** Biaya pendaftaran gelombang 1 (fallback ke registration_fee bila null). */
+  registration_fee_batch1: number | null;
+  /** Biaya pendaftaran gelombang 2 (fallback ke registration_fee bila null). */
+  registration_fee_batch2: number | null;
   max_team_members: number;
   quota: number;
   is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export type RegistrationBatch = "batch1" | "batch2";
+
+export interface EventSettings {
+  id: number;
+  batch1_start: string | null;
+  batch1_end: string | null;
+  batch2_start: string | null;
+  batch2_end: string | null;
+  event_start: string | null;
+  event_end: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -42,11 +63,14 @@ export interface EventRegistration {
   total_amount: number;
   midtrans_order_id: string | null;
   midtrans_snap_token: string | null;
+  midtrans_qr_url: string | null;
+  midtrans_qr_expiry: string | null;
   midtrans_payment_type: string | null;
   paid_at: string | null;
   manual_payment_proof_url: string | null;
   rules_version_id: string | null;
   rules_accepted_at: string | null;
+  registration_batch: RegistrationBatch | null;
   access_token: string;
   created_at: string;
   updated_at: string;
@@ -59,6 +83,7 @@ export interface EventTeamMember {
   registration_id: string;
   full_name: string;
   photo_url: string;
+  identity_card_url?: string | null;
   member_qr_token: string;
   verification_status: MemberVerificationStatus;
   role_in_team: string;
