@@ -235,11 +235,11 @@ export function MrcHero({ settings }: MrcHeroProps) {
           )}
 
           <a
-            href="#rulebook"
+            href="#faq"
             className="w-full sm:w-auto min-h-[44px] inline-flex items-center justify-center gap-2 font-body text-sm font-medium px-5 py-3 rounded-md border border-border bg-card hover:bg-muted text-foreground transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <FileText className="size-4 text-muted-foreground" />
-            <span>Unduh Rulebook & FAQ</span>
+            <span>FAQ & Pertanyaan Umum</span>
           </a>
         </motion.div>
       </div>
