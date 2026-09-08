@@ -62,6 +62,11 @@ export const eventCategorySchema = z.object({
   max_team_members: z.number().min(1, "Maksimal anggota minimal 1"),
   quota: z.number().min(1, "Kuota minimal 1"),
   is_active: z.boolean().default(true),
+  whatsapp_group_url: z
+    .string()
+    .url("Link grup WhatsApp tidak valid")
+    .or(z.literal(""))
+    .optional(),
 });
 
 export const manualPaymentVerificationSchema = z.object({
@@ -105,6 +110,10 @@ export const eventSettingsSchema = z
     technical_meeting_end: optionalDatetime,
     event_start: optionalDatetime,
     event_end: optionalDatetime,
+    payment_mode: z.enum(["midtrans", "manual_bank"]).default("midtrans"),
+    bank_name: z.string().optional(),
+    bank_account_number: z.string().optional(),
+    bank_account_holder: z.string().optional(),
   })
   .superRefine((v, ctx) => {
     const pairs: [unknown, unknown, string][] = [
@@ -144,6 +153,29 @@ export const eventSettingsSchema = z
         code: "custom",
         message: "Pendaftaran Batch 2 harus selesai sebelum acara dimulai.",
       });
+    }
+    if (v.payment_mode === "manual_bank") {
+      if (!v.bank_name || v.bank_name.trim().length === 0) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["bank_name"],
+          message: "Nama bank wajib diisi untuk pembayaran manual bank.",
+        });
+      }
+      if (!v.bank_account_number || v.bank_account_number.trim().length === 0) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["bank_account_number"],
+          message: "Nomor rekening wajib diisi untuk pembayaran manual bank.",
+        });
+      }
+      if (!v.bank_account_holder || v.bank_account_holder.trim().length === 0) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["bank_account_holder"],
+          message: "Nama pemilik rekening wajib diisi untuk pembayaran manual bank.",
+        });
+      }
     }
   });
 

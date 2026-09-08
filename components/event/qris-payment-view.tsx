@@ -5,8 +5,10 @@ import Image from "next/image";
 import {
   getRegistrationByAccessTokenAction,
   refreshQrisChargeAction,
+  submitManualPaymentProofAction,
+  uploadPaymentProofAction,
 } from "@/lib/actions/event-registration";
-import type { EventRegistration } from "@/types/event-registration";
+import type { EventRegistration, EventSettings } from "@/types/event-registration";
 import {
   CheckCircle2,
   Clock,
@@ -15,6 +17,13 @@ import {
   RefreshCw,
   AlertTriangle,
   Info,
+  Building2,
+  Upload,
+  Copy,
+  Check,
+  FileText,
+  AlertCircle,
+  MessageSquare,
 } from "lucide-react";
 
 function formatRupiah(amount: number): string {
@@ -26,34 +35,32 @@ function formatRupiah(amount: number): string {
   }).format(amount);
 }
 
-/** expiry_time Midtrans "YYYY-MM-DD HH:mm:ss" (WIB) → epoch ms. */
-function parseMidtransExpiry(value: string | null): number | null {
-  if (!value) return null;
-  const iso = value.includes("T") ? value : `${value.replace(" ", "T")}+07:00`;
-  const t = Date.parse(iso);
-  return Number.isNaN(t) ? null : t;
-}
-
-function formatCountdown(ms: number): string {
-  const total = Math.max(0, Math.floor(ms / 1000));
-  const m = Math.floor(total / 60);
-  const s = total % 60;
-  if (m <= 0) return `${s} dtk`;
-  return `${m} mnt ${String(s).padStart(2, "0")} dtk`;
-}
-
 export function QrisPaymentView({
   initialRegistration,
+  eventSettings,
 }: {
   initialRegistration: EventRegistration;
+  eventSettings?: EventSettings | null;
 }) {
   const [reg, setReg] = useState<EventRegistration>(initialRegistration);
   const [refreshing, setRefreshing] = useState(false);
   const [refreshError, setRefreshError] = useState<string | null>(null);
+
+  // State Manual Payment Upload
+  const [proofUrl, setProofUrl] = useState(reg.manual_payment_proof_url || "");
+  const [isUploadingProof, setIsUploadingProof] = useState(false);
+  const [uploadProofError, setUploadProofError] = useState<string | null>(null);
+  const [isSubmittingProof, setIsSubmittingProof] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [copiedBank, setCopiedBank] = useState(false);
+
   const tickRef = useRef(0);
 
-  // Load Midtrans Snap script (sandbox / production dynamically)
+  const isManualBankMode = eventSettings?.payment_mode === "manual_bank";
+
+  // Load Midtrans Snap script bila menggunakan mode midtrans
   useEffect(() => {
+    if (isManualBankMode) return;
     const clientKey = process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY || "";
     const isProduction =
       process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION === "true";
@@ -70,11 +77,11 @@ export function QrisPaymentView({
       script.async = true;
       document.body.appendChild(script);
     }
-  }, []);
+  }, [isManualBankMode]);
 
-  // Polling status tiap 5 detik selama pending.
+  // Polling status tiap 5 detik selama pending / pending_verification / unpaid
   useEffect(() => {
-    if (reg.payment_status !== "pending") return;
+    if (reg.payment_status === "paid") return;
     let cancelled = false;
     const id = setInterval(async () => {
       if (cancelled) return;
@@ -110,7 +117,7 @@ export function QrisPaymentView({
           window.location.href = `/mrc/tiket/${reg.access_token}`;
         },
         onPending: () => {
-          // Status pending, polling akan terus mengecek
+          // Status pending, polling akan mengecek
         },
         onError: () => {
           setRefreshError("Pembayaran gagal. Silakan coba lagi.");
@@ -159,6 +166,57 @@ export function QrisPaymentView({
     }
   };
 
+  const handleProofFileUpload = async (file: File) => {
+    setIsUploadingProof(true);
+    setUploadProofError(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const res = await uploadPaymentProofAction(formData);
+      if (res.success) {
+        setProofUrl(res.data);
+      } else {
+        setUploadProofError(res.error || "Gagal mengunggah bukti pembayaran.");
+      }
+    } catch (err: unknown) {
+      setUploadProofError((err as Error).message || "Gagal memproses file.");
+    } finally {
+      setIsUploadingProof(false);
+    }
+  };
+
+  const handleSubmitProof = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!proofUrl) {
+      setUploadProofError("Silakan upload gambar bukti transfer terlebih dahulu.");
+      return;
+    }
+
+    setIsSubmittingProof(true);
+    setUploadProofError(null);
+
+    const res = await submitManualPaymentProofAction(reg.id, proofUrl);
+    setIsSubmittingProof(false);
+
+    if (res.success) {
+      setSubmitSuccess(true);
+      const fresh = await getRegistrationByAccessTokenAction(reg.access_token);
+      if (fresh.success && fresh.data) {
+        setReg(fresh.data);
+      }
+    } else {
+      setUploadProofError(res.error || "Gagal mengirimkan bukti pembayaran.");
+    }
+  };
+
+  const copyBankNumber = (num: string) => {
+    navigator.clipboard.writeText(num);
+    setCopiedBank(true);
+    setTimeout(() => setCopiedBank(false), 2000);
+  };
+
   // ---- Status LUNAS ----
   if (reg.payment_status === "paid") {
     return (
@@ -166,17 +224,38 @@ export function QrisPaymentView({
         <div className="inline-flex p-3 bg-success/15 text-success rounded-full">
           <CheckCircle2 className="w-10 h-10" />
         </div>
-        <h2 className="text-balance">Pembayaran Lunas</h2>
+        <h2 className="text-balance">Pembayaran Terverifikasi & Lunas!</h2>
         <p className="text-sm text-muted-foreground">
-          Pembayaran tim <strong>{reg.team_name}</strong> telah dikonfirmasi.
-          Mengalihkan ke E-Tiket…
+          Pembayaran pendaftaran tim <strong>{reg.team_name}</strong> telah dikonfirmasi oleh panitia.
         </p>
-        <a
-          href={`/mrc/tiket/${reg.access_token}`}
-          className="inline-flex min-h-[44px] items-center justify-center px-5 py-2.5 bg-primary hover:bg-primary-hover text-primary-foreground text-sm font-semibold rounded-md transition-colors"
-        >
-          Buka E-Tiket Sekarang
-        </a>
+
+        {reg.category?.whatsapp_group_url && (
+          <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg max-w-md mx-auto space-y-2">
+            <span className="text-xs font-bold text-emerald-800 flex items-center justify-center gap-1.5">
+              <MessageSquare className="w-4 h-4 text-emerald-600" /> Grup WhatsApp Official {reg.category.name}
+            </span>
+            <p className="text-xs text-emerald-700">
+              Silakan bergabung ke grup WhatsApp untuk mendapatkan informasi teknis perlombaan:
+            </p>
+            <a
+              href={reg.category.whatsapp_group_url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-block px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-md transition-colors"
+            >
+              Bergabung ke Grup WhatsApp
+            </a>
+          </div>
+        )}
+
+        <div className="pt-2">
+          <a
+            href={`/mrc/tiket/${reg.access_token}`}
+            className="inline-flex min-h-[44px] items-center justify-center px-5 py-2.5 bg-primary hover:bg-primary-hover text-primary-foreground text-sm font-semibold rounded-md transition-colors"
+          >
+            Buka E-Tiket & QR Kokarde Sekarang
+          </a>
+        </div>
       </div>
     );
   }
@@ -189,8 +268,7 @@ export function QrisPaymentView({
           <Info className="w-8 h-8" />
         </div>
         <p className="text-sm text-muted-foreground">
-          Pendaftaran ini <strong>GRATIS</strong>, tidak ada pembayaran yang
-          diperlukan.
+          Pendaftaran ini <strong>GRATIS</strong>, tidak ada pembayaran yang diperlukan.
         </p>
         <a
           href={`/mrc/tiket/${reg.access_token}`}
@@ -202,7 +280,205 @@ export function QrisPaymentView({
     );
   }
 
-  // ---- KEDALUWARSA / GAGAL ----
+  // ---- OPSI 2: TRANSFER BANK MANUAL VIEW ----
+  if (isManualBankMode) {
+    const isPendingVerification = reg.payment_status === "pending_verification";
+    const isRejected = reg.payment_status === "rejected";
+
+    return (
+      <div className="bg-card rounded-xl border border-border shadow-soft p-6 sm:p-8 space-y-6">
+        <div className="text-center space-y-1">
+          <p className="text-xs text-muted-foreground font-medium">Total Biaya Pendaftaran</p>
+          <p className="font-mono text-3xl font-extrabold text-foreground tracking-tight">
+            {formatRupiah(reg.total_amount)}
+          </p>
+          <p className="font-mono text-[11px] text-muted-foreground">
+            Kode: {reg.registration_code} • Tim {reg.team_name}
+          </p>
+        </div>
+
+        {/* STATUS BADGE SUMMARY */}
+        {isPendingVerification && (
+          <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-center space-y-2">
+            <div className="inline-flex p-2 bg-amber-100 text-amber-700 rounded-full">
+              <Clock className="w-6 h-6 animate-spin" />
+            </div>
+            <h3 className="text-sm font-bold text-amber-900">
+              Menunggu Verifikasi Pembayaran Admin
+            </h3>
+            <p className="text-xs text-amber-700 max-w-md mx-auto">
+              Bukti transfer bank telah berhasil dikirim. Panitia sedang melakukan pengecekan mutasi rekening. Anda akan menerima email begitu pembayaran disetujui.
+            </p>
+          </div>
+        )}
+
+        {isRejected && (
+          <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-center space-y-2">
+            <div className="inline-flex p-2 bg-rose-100 text-rose-700 rounded-full">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+            <h3 className="text-sm font-bold text-rose-900">
+              Bukti Pembayaran Ditolak Admin
+            </h3>
+            {reg.rejection_reason && (
+              <p className="text-xs font-semibold text-rose-800 bg-rose-100/80 p-2.5 rounded-lg max-w-md mx-auto">
+                Alasan: "{reg.rejection_reason}"
+              </p>
+            )}
+            <p className="text-xs text-rose-700 max-w-md mx-auto">
+              Silakan lakukan transfer sesuai nominal dan unggah ulang gambar bukti transfer yang benar di bawah ini.
+            </p>
+          </div>
+        )}
+
+        {/* DETAILS REKENING BANK PANITIA */}
+        <div className="bg-muted/40 border border-border rounded-xl p-5 space-y-3">
+          <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+            <Building2 className="w-4 h-4 text-primary" /> Rekening Bank Tujuan Transfer
+          </h3>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs bg-background p-3.5 rounded-lg border border-border">
+            <div>
+              <span className="text-muted-foreground block text-[11px]">Nama Bank</span>
+              <strong className="text-foreground font-semibold text-sm">
+                {eventSettings?.bank_name || "Bank Nagari / BNI"}
+              </strong>
+            </div>
+
+            <div>
+              <span className="text-muted-foreground block text-[11px]">Nomor Rekening</span>
+              <div className="flex items-center gap-2 mt-0.5">
+                <strong className="text-primary font-mono text-base">
+                  {eventSettings?.bank_account_number || "1234567890"}
+                </strong>
+                {eventSettings?.bank_account_number && (
+                  <button
+                    type="button"
+                    onClick={() => copyBankNumber(eventSettings.bank_account_number!)}
+                    className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground transition-colors"
+                    title="Salin Nomor Rekening"
+                  >
+                    {copiedBank ? <Check className="w-3.5 h-3.5 text-success" /> : <Copy className="w-3.5 h-3.5" />}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <span className="text-muted-foreground block text-[11px]">Atas Nama</span>
+              <strong className="text-foreground font-semibold text-sm">
+                {eventSettings?.bank_account_holder || "UKM Robotik PNP"}
+              </strong>
+            </div>
+          </div>
+        </div>
+
+        {/* FORM UPLOAD BUKTI TRANSFER */}
+        {(!isPendingVerification || isRejected) && (
+          <form onSubmit={handleSubmitProof} className="space-y-4 pt-2 border-t border-border">
+            <div>
+              <h3 className="text-sm font-bold text-foreground">
+                Unggah Bukti Pembayaran Transfer Bank
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Format gambar JPG, PNG, WebP, HEIC (Maksimal 5MB).
+              </p>
+            </div>
+
+            {uploadProofError && (
+              <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-md text-xs text-destructive">
+                {uploadProofError}
+              </div>
+            )}
+
+            {proofUrl ? (
+              <div className="space-y-3">
+                <div className="relative border border-border rounded-lg overflow-hidden bg-muted aspect-video max-w-sm mx-auto flex items-center justify-center">
+                  <Image
+                    src={proofUrl}
+                    alt="Bukti Transfer"
+                    fill
+                    className="object-contain"
+                  />
+                </div>
+                <div className="flex items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setProofUrl("")}
+                    className="text-xs text-muted-foreground hover:underline hover:text-foreground"
+                  >
+                    Ganti Gambar Bukti
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="relative">
+                <input
+                  type="file"
+                  accept="image/*,.heic,.heif"
+                  disabled={isUploadingProof}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleProofFileUpload(file);
+                  }}
+                  className="hidden"
+                  id="payment-proof-input"
+                />
+                <label
+                  htmlFor="payment-proof-input"
+                  className="flex flex-col items-center justify-center gap-2 p-6 border-2 border-dashed border-input rounded-xl bg-muted/30 cursor-pointer hover:bg-muted/60 transition-colors text-center"
+                >
+                  {isUploadingProof ? (
+                    <>
+                      <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                      <span className="text-xs font-semibold text-muted-foreground">
+                        Mengompres & Uploading Bukti...
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-6 h-6 text-muted-foreground" />
+                      <span className="text-xs font-bold text-foreground">
+                        Klik untuk Pilih Foto / Screenshot Bukti Transfer
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        Pastikan tanggal, nominal, & nama pengirim terlihat jelas.
+                      </span>
+                    </>
+                  )}
+                </label>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={isSubmittingProof || !proofUrl || isUploadingProof}
+              className="w-full min-h-[44px] bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+            >
+              {isSubmittingProof ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" /> Mengirimkan...
+                </>
+              ) : (
+                "Kirim Bukti Pembayaran untuk Verifikasi"
+              )}
+            </button>
+          </form>
+        )}
+
+        <div className="text-center pt-2">
+          <a
+            href={`/mrc/tiket/${reg.access_token}`}
+            className="text-xs text-primary hover:underline font-semibold"
+          >
+            Lihat Status E-Tiket Pendaftaran Tim
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  // ---- OPSI 1: KEDALUWARSA / GAGAL (Midtrans Mode) ----
   if (reg.payment_status === "expired" || reg.payment_status === "failed") {
     return (
       <div className="bg-card p-8 rounded-lg border border-border shadow-soft text-center space-y-4">
@@ -215,11 +491,8 @@ export function QrisPaymentView({
             : "Pembayaran Gagal"}
         </h2>
         <p className="text-sm text-muted-foreground max-w-md mx-auto">
-          Sesi pembayaran sebelumnya sudah tidak berlaku. Klik tombol di bawah
-          untuk membuka pembayaran baru dengan nominal yang sama (
-          <span className="font-mono font-bold">
-            {formatRupiah(reg.total_amount)}
-          </span>
+          Sesi pembayaran sebelumnya sudah tidak berlaku. Klik tombol di bawah untuk membuka pembayaran baru dengan nominal yang sama (
+          <span className="font-mono font-bold">{formatRupiah(reg.total_amount)}</span>
           ).
         </p>
         {refreshError && (
@@ -255,7 +528,7 @@ export function QrisPaymentView({
     );
   }
 
-  // ---- PEMBAYARAN AKTIF (pending) ----
+  // ---- OPSI 1: PEMBAYARAN MIDTRANS AKTIF (pending) ----
   return (
     <div className="bg-card rounded-lg border border-border shadow-soft overflow-hidden">
       <div className="p-6 sm:p-8 space-y-6 text-center">

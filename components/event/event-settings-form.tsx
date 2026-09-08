@@ -3,8 +3,8 @@
 import { useMemo, useState } from "react";
 import { updateEventSettingsAction } from "@/lib/actions/event-admin";
 import { getBatchPhase, PHASE_LABELS } from "@/lib/event-batch";
-import type { EventSettings } from "@/types/event-registration";
-import { CalendarRange, Loader2, Save, Info } from "lucide-react";
+import type { EventSettings, PaymentMode } from "@/types/event-registration";
+import { CalendarRange, Loader2, Save, Info, CreditCard, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface EventSettingsFormProps {
@@ -56,6 +56,17 @@ export function EventSettingsForm({ initialSettings }: EventSettingsFormProps) {
   );
   const [eventEnd, setEventEnd] = useState(() =>
     toInputValue(initialSettings?.event_end ?? null),
+  );
+
+  const [paymentMode, setPaymentMode] = useState<PaymentMode>(
+    initialSettings?.payment_mode ?? "midtrans",
+  );
+  const [bankName, setBankName] = useState(initialSettings?.bank_name ?? "");
+  const [bankAccountNumber, setBankAccountNumber] = useState(
+    initialSettings?.bank_account_number ?? "",
+  );
+  const [bankAccountHolder, setBankAccountHolder] = useState(
+    initialSettings?.bank_account_holder ?? "",
   );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -110,6 +121,10 @@ export function EventSettingsForm({ initialSettings }: EventSettingsFormProps) {
       technical_meeting_end: fromInputValue(techMeetingEnd),
       event_start: fromInputValue(eventStart),
       event_end: fromInputValue(eventEnd),
+      payment_mode: paymentMode,
+      bank_name: bankName,
+      bank_account_number: bankAccountNumber,
+      bank_account_holder: bankAccountHolder,
     });
 
     setIsSubmitting(false);
@@ -164,11 +179,11 @@ export function EventSettingsForm({ initialSettings }: EventSettingsFormProps) {
   ];
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-5 sm:p-6 space-y-5">
+    <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-5 sm:p-6 space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-          <CalendarRange className="w-5 h-5 text-[#3b5b84]" /> Pengaturan Jadwal
-          & Batch
+          <CalendarRange className="w-5 h-5 text-[#3b5b84]" /> Pengaturan Event &
+          Metode Pembayaran
         </h2>
         <span
           className={cn(
@@ -184,29 +199,6 @@ export function EventSettingsForm({ initialSettings }: EventSettingsFormProps) {
         </span>
       </div>
 
-      <p className="flex items-start gap-2 text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-lg p-3">
-        <Info className="w-4 h-4 shrink-0 mt-0.5 text-[#3b5b84]" />
-        Aturan Bisnis Timeline: Sebelum tanggal Rilis Timeline reached, halaman publik{" "}
-        <span className="font-mono font-semibold text-slate-700">/mrc</span> menampilkan "Coming Soon".
-        Batch 2 disembunyikan sepenuhnya sampai Batch 1 berakhir.
-      </p>
-
-      {/* Tanggal Rilis Timeline Single Field */}
-      <div className="bg-slate-50/80 border border-slate-200 border-l-4 border-l-blue-500 rounded-lg p-4 space-y-2">
-        <label className="block text-sm font-bold text-slate-800">
-          Tanggal Rilis Timeline ke Publik
-        </label>
-        <p className="text-[11px] text-slate-500">
-          Sebelum tanggal ini, timeline publik di halaman /mrc akan berstatus "Coming Soon".
-        </p>
-        <input
-          type="datetime-local"
-          value={timelineReleaseDate}
-          onChange={(e) => setTimelineReleaseDate(e.target.value)}
-          className={inputClass}
-        />
-      </div>
-
       {errorMsg && (
         <p className="text-xs font-medium text-rose-600 bg-rose-50 border border-rose-200 rounded-lg p-3">
           {errorMsg}
@@ -218,7 +210,149 @@ export function EventSettingsForm({ initialSettings }: EventSettingsFormProps) {
         </p>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* METODE PEMBAYARAN SECTION */}
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-4">
+          <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
+            <CreditCard className="w-5 h-5 text-[#3b5b84]" />
+            <div>
+              <h3 className="text-sm font-bold text-slate-800">
+                Opsi & Metode Pembayaran Global
+              </h3>
+              <p className="text-xs text-slate-500">
+                Pilih apakah pendaftaran menggunakan Midtrans Payment Gateway atau Transfer Bank Manual.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <label
+              className={cn(
+                "flex items-start gap-3 p-4 border rounded-xl cursor-pointer transition-all bg-white",
+                paymentMode === "midtrans"
+                  ? "border-[#3b5b84] ring-2 ring-[#3b5b84]/20 bg-blue-50/20"
+                  : "border-slate-200 hover:border-slate-300",
+              )}
+            >
+              <input
+                type="radio"
+                name="payment_mode"
+                value="midtrans"
+                checked={paymentMode === "midtrans"}
+                onChange={() => setPaymentMode("midtrans")}
+                className="mt-1 text-[#3b5b84] focus:ring-[#3b5b84]"
+              />
+              <div>
+                <span className="text-sm font-bold text-slate-800 block">
+                  Opsi 1: Payment Gateway (Midtrans)
+                </span>
+                <p className="text-xs text-slate-500 mt-1">
+                  Peserta bayar via Midtrans (Snap/QRIS). Verifikasi otomatis oleh sistem, admin tidak perlu cek manual.
+                </p>
+              </div>
+            </label>
+
+            <label
+              className={cn(
+                "flex items-start gap-3 p-4 border rounded-xl cursor-pointer transition-all bg-white",
+                paymentMode === "manual_bank"
+                  ? "border-[#3b5b84] ring-2 ring-[#3b5b84]/20 bg-blue-50/20"
+                  : "border-slate-200 hover:border-slate-300",
+              )}
+            >
+              <input
+                type="radio"
+                name="payment_mode"
+                value="manual_bank"
+                checked={paymentMode === "manual_bank"}
+                onChange={() => setPaymentMode("manual_bank")}
+                className="mt-1 text-[#3b5b84] focus:ring-[#3b5b84]"
+              />
+              <div>
+                <span className="text-sm font-bold text-slate-800 block">
+                  Opsi 2: Transfer Bank Manual
+                </span>
+                <p className="text-xs text-slate-500 mt-1">
+                  Peserta mentransfer biaya ke rekening bank panitia dan mengunggah bukti pembayaran untuk diverifikasi admin.
+                </p>
+              </div>
+            </label>
+          </div>
+
+          {paymentMode === "manual_bank" && (
+            <div className="bg-white border border-slate-200 rounded-lg p-4 space-y-3 pt-4 border-l-4 border-l-[#3b5b84]">
+              <h4 className="text-xs font-bold text-slate-800 flex items-center gap-1.5 uppercase tracking-wider">
+                <Building2 className="w-4 h-4 text-[#3b5b84]" /> Detail Rekening Bank Panitia
+              </h4>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                    Nama Bank *
+                  </label>
+                  <input
+                    type="text"
+                    required={paymentMode === "manual_bank"}
+                    value={bankName}
+                    onChange={(e) => setBankName(e.target.value)}
+                    placeholder="Contoh: Bank Nagari / BNI"
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                    Nomor Rekening *
+                  </label>
+                  <input
+                    type="text"
+                    required={paymentMode === "manual_bank"}
+                    value={bankAccountNumber}
+                    onChange={(e) => setBankAccountNumber(e.target.value)}
+                    placeholder="Contoh: 1234567890"
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1">
+                    Atas Nama Pemilik Rekening *
+                  </label>
+                  <input
+                    type="text"
+                    required={paymentMode === "manual_bank"}
+                    value={bankAccountHolder}
+                    onChange={(e) => setBankAccountHolder(e.target.value)}
+                    placeholder="Contoh: UKM Robotik PNP"
+                    className={inputClass}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* JADWAL & TIMELINE SECTION */}
+        <p className="flex items-start gap-2 text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-lg p-3">
+          <Info className="w-4 h-4 shrink-0 mt-0.5 text-[#3b5b84]" />
+          Aturan Bisnis Timeline: Sebelum tanggal Rilis Timeline reached, halaman publik{" "}
+          <span className="font-mono font-semibold text-slate-700">/mrc</span> menampilkan "Coming Soon".
+          Batch 2 disembunyikan sepenuhnya sampai Batch 1 berakhir.
+        </p>
+
+        {/* Tanggal Rilis Timeline Single Field */}
+        <div className="bg-slate-50/80 border border-slate-200 border-l-4 border-l-blue-500 rounded-lg p-4 space-y-2">
+          <label className="block text-sm font-bold text-slate-800">
+            Tanggal Rilis Timeline ke Publik
+          </label>
+          <p className="text-[11px] text-slate-500">
+            Sebelum tanggal ini, timeline publik di halaman /mrc akan berstatus "Coming Soon".
+          </p>
+          <input
+            type="datetime-local"
+            value={timelineReleaseDate}
+            onChange={(e) => setTimelineReleaseDate(e.target.value)}
+            className={inputClass}
+          />
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {ranges.map((r) => (
             <fieldset

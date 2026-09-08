@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { saveEventCategoryAction } from "@/lib/actions/event-admin";
 import type { EventCategory } from "@/types/event-registration";
-import { Plus, Edit2, Loader2, Trophy, Users } from "lucide-react";
+import { Plus, Edit2, Loader2, Trophy, Users, MessageSquare } from "lucide-react";
 
 interface CategoryManagerProps {
   initialCategories: EventCategory[];
@@ -24,6 +24,7 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
   const [maxMembers, setMaxMembers] = useState<number>(3);
   const [quota, setQuota] = useState<number>(32);
   const [isActive, setIsActive] = useState(true);
+  const [whatsappGroupUrl, setWhatsappGroupUrl] = useState("");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -39,6 +40,7 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
     setMaxMembers(3);
     setQuota(32);
     setIsActive(true);
+    setWhatsappGroupUrl("");
     setErrorMsg(null);
     setIsModalOpen(true);
   };
@@ -54,6 +56,7 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
     setMaxMembers(cat.max_team_members);
     setQuota(cat.quota);
     setIsActive(cat.is_active);
+    setWhatsappGroupUrl(cat.whatsapp_group_url || "");
     setErrorMsg(null);
     setIsModalOpen(true);
   };
@@ -73,6 +76,7 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
       max_team_members: maxMembers,
       quota,
       is_active: isActive,
+      whatsapp_group_url: whatsappGroupUrl,
     });
 
     setIsSubmitting(false);
@@ -95,7 +99,7 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-          <Trophy className="w-5 h-5 text-[#3b5b84]" /> Kategori Lomba Lomba
+          <Trophy className="w-5 h-5 text-[#3b5b84]" /> Kategori Lomba
         </h2>
         <button
           onClick={openCreateModal}
@@ -150,6 +154,21 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
                     : "Gratis"}
                 </span>
               </div>
+              {cat.whatsapp_group_url && (
+                <div className="flex items-center justify-between text-[11px] text-[#3b5b84] font-medium pt-1 border-t border-slate-100 truncate">
+                  <span className="flex items-center gap-1 shrink-0">
+                    <MessageSquare className="w-3.5 h-3.5 text-emerald-600" /> Grup WA:
+                  </span>
+                  <a
+                    href={cat.whatsapp_group_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="truncate hover:underline text-slate-600 max-w-[160px]"
+                  >
+                    {cat.whatsapp_group_url}
+                  </a>
+                </div>
+              )}
               <div className="flex items-center justify-between pt-1 border-t border-dashed">
                 <span className="flex items-center gap-1">
                   <Users className="w-3.5 h-3.5 text-slate-400" />
@@ -221,6 +240,22 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
                   className="w-full px-3 py-2 border rounded-lg text-xs"
                   rows={2}
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1">
+                  Link Group WhatsApp Official Kategori
+                </label>
+                <input
+                  type="url"
+                  value={whatsappGroupUrl}
+                  onChange={(e) => setWhatsappGroupUrl(e.target.value)}
+                  placeholder="https://chat.whatsapp.com/..."
+                  className="w-full px-3 py-2 border rounded-lg text-xs"
+                />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Link grup ini akan otomatis dikirim via email & ditampilkan saat pendaftaran lunas.
+                </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">

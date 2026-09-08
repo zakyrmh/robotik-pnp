@@ -2,7 +2,17 @@ export type ActionResult<T = unknown> =
   | { success: true; data: T; message?: string }
   | { success: false; error: string; fieldErrors?: Record<string, string[]> };
 
-export type PaymentStatus = "pending" | "paid" | "expired" | "failed";
+export type PaymentStatus =
+  | "unpaid"
+  | "pending"
+  | "pending_verification"
+  | "paid"
+  | "rejected"
+  | "expired"
+  | "failed";
+
+export type PaymentMode = "midtrans" | "manual_bank";
+
 export type MemberVerificationStatus = "pending" | "verified" | "mismatch";
 export type ViolationStatus = "active" | "dq_confirmed" | "appealed";
 export type RoleEvent =
@@ -23,6 +33,7 @@ export interface EventCategory {
   max_team_members: number;
   quota: number;
   is_active: boolean;
+  whatsapp_group_url: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -40,6 +51,10 @@ export interface EventSettings {
   technical_meeting_end: string | null;
   event_start: string | null;
   event_end: string | null;
+  payment_mode: PaymentMode;
+  bank_name: string | null;
+  bank_account_number: string | null;
+  bank_account_holder: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -71,6 +86,7 @@ export interface EventRegistration {
   midtrans_payment_type: string | null;
   paid_at: string | null;
   manual_payment_proof_url: string | null;
+  rejection_reason: string | null;
   rules_version_id: string | null;
   rules_accepted_at: string | null;
   registration_batch: RegistrationBatch | null;
