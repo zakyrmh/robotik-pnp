@@ -127,6 +127,7 @@ export async function updateEventSettingsAction(
     bank_name: validated.data.bank_name || null,
     bank_account_number: validated.data.bank_account_number || null,
     bank_account_holder: validated.data.bank_account_holder || null,
+    bank_accounts: validated.data.bank_accounts || null,
     updated_at: new Date().toISOString(),
   };
 

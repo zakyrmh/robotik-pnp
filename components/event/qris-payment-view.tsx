@@ -8,7 +8,7 @@ import {
   submitManualPaymentProofAction,
   uploadPaymentProofAction,
 } from "@/lib/actions/event-registration";
-import type { EventRegistration, EventSettings } from "@/types/event-registration";
+import type { EventRegistration, EventSettings, BankAccount } from "@/types/event-registration";
 import {
   CheckCircle2,
   Clock,
@@ -21,7 +21,6 @@ import {
   Upload,
   Copy,
   Check,
-  FileText,
   AlertCircle,
   MessageSquare,
 } from "lucide-react";
@@ -51,12 +50,38 @@ export function QrisPaymentView({
   const [isUploadingProof, setIsUploadingProof] = useState(false);
   const [uploadProofError, setUploadProofError] = useState<string | null>(null);
   const [isSubmittingProof, setIsSubmittingProof] = useState(false);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [copiedBank, setCopiedBank] = useState(false);
+  const [copiedBankIndex, setCopiedBankIndex] = useState<number | null>(null);
 
   const tickRef = useRef(0);
 
   const isManualBankMode = eventSettings?.payment_mode === "manual_bank";
+
+  // Build List of Bank Accounts
+  const availableBankAccounts: BankAccount[] = (() => {
+    if (eventSettings?.bank_accounts && eventSettings.bank_accounts.length > 0) {
+      return eventSettings.bank_accounts;
+    }
+    if (
+      eventSettings?.bank_name ||
+      eventSettings?.bank_account_number ||
+      eventSettings?.bank_account_holder
+    ) {
+      return [
+        {
+          bank_name: eventSettings.bank_name || "Bank Nagari / BNI",
+          account_number: eventSettings.bank_account_number || "",
+          account_holder: eventSettings.bank_account_holder || "UKM Robotik PNP",
+        },
+      ];
+    }
+    return [
+      {
+        bank_name: "Bank Nagari / BNI",
+        account_number: "1234567890",
+        account_holder: "UKM Robotik PNP",
+      },
+    ];
+  })();
 
   // Load Midtrans Snap script bila menggunakan mode midtrans
   useEffect(() => {
@@ -201,7 +226,6 @@ export function QrisPaymentView({
     setIsSubmittingProof(false);
 
     if (res.success) {
-      setSubmitSuccess(true);
       const fresh = await getRegistrationByAccessTokenAction(reg.access_token);
       if (fresh.success && fresh.data) {
         setReg(fresh.data);
@@ -211,10 +235,10 @@ export function QrisPaymentView({
     }
   };
 
-  const copyBankNumber = (num: string) => {
+  const copyBankNumber = (num: string, index: number) => {
     navigator.clipboard.writeText(num);
-    setCopiedBank(true);
-    setTimeout(() => setCopiedBank(false), 2000);
+    setCopiedBankIndex(index);
+    setTimeout(() => setCopiedBankIndex(null), 2000);
   };
 
   // ---- Status LUNAS ----
@@ -331,45 +355,54 @@ export function QrisPaymentView({
           </div>
         )}
 
-        {/* DETAILS REKENING BANK PANITIA */}
+        {/* DETAILS DAFTAR REKENING BANK PANITIA */}
         <div className="bg-muted/40 border border-border rounded-xl p-5 space-y-3">
           <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-            <Building2 className="w-4 h-4 text-primary" /> Rekening Bank Tujuan Transfer
+            <Building2 className="w-4 h-4 text-primary" /> Opsi Rekening Bank Tujuan Transfer
           </h3>
+          <p className="text-xs text-muted-foreground">
+            Anda dapat mentransfer biaya pendaftaran ke salah satu rekening bank berikut:
+          </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs bg-background p-3.5 rounded-lg border border-border">
-            <div>
-              <span className="text-muted-foreground block text-[11px]">Nama Bank</span>
-              <strong className="text-foreground font-semibold text-sm">
-                {eventSettings?.bank_name || "Bank Nagari / BNI"}
-              </strong>
-            </div>
+          <div className="grid grid-cols-1 gap-3 pt-1">
+            {availableBankAccounts.map((acc, idx) => (
+              <div
+                key={idx}
+                className="p-3.5 bg-background rounded-lg border border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs"
+              >
+                <div>
+                  <span className="text-[10px] font-bold text-primary uppercase tracking-wider block">
+                    {acc.bank_name}
+                  </span>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <strong className="text-foreground font-mono text-base tracking-wide">
+                      {acc.account_number}
+                    </strong>
+                    <button
+                      type="button"
+                      onClick={() => copyBankNumber(acc.account_number, idx)}
+                      className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground transition-colors"
+                      title="Salin Nomor Rekening"
+                    >
+                      {copiedBankIndex === idx ? (
+                        <Check className="w-4 h-4 text-success" />
+                      ) : (
+                        <Copy className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                  <span className="text-xs text-muted-foreground block mt-0.5">
+                    a.n {acc.account_holder}
+                  </span>
+                </div>
 
-            <div>
-              <span className="text-muted-foreground block text-[11px]">Nomor Rekening</span>
-              <div className="flex items-center gap-2 mt-0.5">
-                <strong className="text-primary font-mono text-base">
-                  {eventSettings?.bank_account_number || "1234567890"}
-                </strong>
-                {eventSettings?.bank_account_number && (
-                  <button
-                    type="button"
-                    onClick={() => copyBankNumber(eventSettings.bank_account_number!)}
-                    className="p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground transition-colors"
-                    title="Salin Nomor Rekening"
-                  >
-                    {copiedBank ? <Check className="w-3.5 h-3.5 text-success" /> : <Copy className="w-3.5 h-3.5" />}
-                  </button>
-                )}
+                <div className="text-right sm:text-right shrink-0">
+                  <span className="inline-block px-2.5 py-1 bg-primary/10 text-primary rounded-full text-[11px] font-bold">
+                    Pilihan Rekening #{idx + 1}
+                  </span>
+                </div>
               </div>
-            </div>
-
-            <div>
-              <span className="text-muted-foreground block text-[11px]">Atas Nama</span>
-              <strong className="text-foreground font-semibold text-sm">
-                {eventSettings?.bank_account_holder || "UKM Robotik PNP"}
-              </strong>
-            </div>
+            ))}
           </div>
         </div>
 

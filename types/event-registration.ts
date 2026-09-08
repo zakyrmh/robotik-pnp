@@ -13,6 +13,12 @@ export type PaymentStatus =
 
 export type PaymentMode = "midtrans" | "manual_bank";
 
+export interface BankAccount {
+  bank_name: string;
+  account_number: string;
+  account_holder: string;
+}
+
 export type MemberVerificationStatus = "pending" | "verified" | "mismatch";
 export type ViolationStatus = "active" | "dq_confirmed" | "appealed";
 export type RoleEvent =
@@ -55,6 +61,7 @@ export interface EventSettings {
   bank_name: string | null;
   bank_account_number: string | null;
   bank_account_holder: string | null;
+  bank_accounts: BankAccount[] | null;
   created_at: string;
   updated_at: string;
 }

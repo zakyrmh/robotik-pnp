@@ -8,7 +8,6 @@ import {
   type EventRegistrationInput,
 } from "@/lib/schemas/event-registration";
 import {
-  createMidtransQrisCharge,
   createMidtransSnapTransaction,
   checkMidtransTransactionStatus,
 } from "@/lib/services/midtrans";
@@ -30,6 +29,7 @@ import type {
   EventRegistration,
   EventCategory,
   EventSettings,
+  PaymentStatus,
 } from "@/types/event-registration";
 
 function generateRegistrationCode(): string {
@@ -62,7 +62,6 @@ export async function registerEventAction(
     const hasMemberError = Object.keys(fieldErrors).some((k) =>
       k.startsWith("members"),
     );
-    // Server mencatat detail agar kegagalan validasi bisa ditelusuri dari log.
     console.error(
       "registerEventAction validation failed:",
       JSON.stringify(fieldErrors),
@@ -101,7 +100,7 @@ export async function registerEventAction(
     };
   }
 
-  // Tentukan batch aktif dari settings global → biaya batch 1 / batch 2
+  // Tentukan batch aktif dari settings global
   const { data: settings } = await (untypedFrom(adminSupabase, "event_settings")
     .select("*")
     .eq("id", 1)
@@ -165,7 +164,6 @@ export async function registerEventAction(
 
     const orderId = generateOrderId(regCode);
     let currentRegRecord: EventRegistration | null = null;
-    const qrUrl: string | null = null;
 
     const isManualBank = settings?.payment_mode === "manual_bank";
 
@@ -192,6 +190,17 @@ export async function registerEventAction(
             process.env.SITE_URL ||
             process.env.NEXT_PUBLIC_SITE_URL ||
             "http://localhost:3000";
+
+          const bankAccounts = settings?.bank_accounts && settings.bank_accounts.length > 0
+            ? settings.bank_accounts
+            : settings?.bank_name
+            ? [{
+                bank_name: settings.bank_name,
+                account_number: settings.bank_account_number || "",
+                account_holder: settings.bank_account_holder || "",
+              }]
+            : [];
+
           await sendETicketEmail({
             toEmail: currentRegRecord.team_email,
             teamName: currentRegRecord.team_name,
@@ -201,16 +210,7 @@ export async function registerEventAction(
             appBaseUrl: appUrl,
             paymentStatus: "unpaid",
             paymentMode: "manual_bank",
-            bankDetails:
-              settings?.bank_name &&
-              settings?.bank_account_number &&
-              settings?.bank_account_holder
-                ? {
-                    bankName: settings.bank_name,
-                    accountNumber: settings.bank_account_number,
-                    accountHolder: settings.bank_account_holder,
-                  }
-                : undefined,
+            bankAccounts,
           });
         }
       } else {
@@ -313,7 +313,7 @@ export async function registerEventAction(
         registrationId: regId,
         registrationCode: regCode,
         accessToken: currentRegRecord?.access_token || "",
-        qrUrl,
+        qrUrl: null,
       },
       message: "Pendaftaran berhasil disimpan.",
     };
@@ -326,10 +326,6 @@ export async function registerEventAction(
   }
 }
 
-/**
- * Menerbitkan ulang QRIS dinamis untuk pendaftaran yang QR-nya kedaluwarsa
- * atau gagal. Making order_id baru.
- */
 export async function refreshQrisChargeAction(
   accessToken: string,
 ): Promise<ActionResult<{ qrUrl: string | null }>> {
@@ -565,7 +561,6 @@ export async function submitManualPaymentProofAction(
     process.env.NEXT_PUBLIC_SITE_URL ||
     "http://localhost:3000";
 
-  // Kirim email pemberitahuan bahwa bukti pembayaran sudah diunggah dan sedang diproses admin
   await sendETicketEmail({
     toEmail: updatedReg.team_email,
     teamName: updatedReg.team_name,
@@ -595,10 +590,6 @@ async function getUploadClientIp(): Promise<string> {
   );
 }
 
-/**
- * Jalur upload gambar MRC bersama: rate-limit → validasi magic bytes
- * (`file-type`) → normalisasi WebP via `sharp` → simpan ke Cloudflare R2.
- */
 async function handleMrcImageUpload(
   formData: FormData,
   kind: MrcImageKind,
@@ -653,5 +644,5 @@ export async function uploadMemberIdentityCardAction(
 export async function uploadPaymentProofAction(
   formData: FormData,
 ): Promise<ActionResult<string>> {
-  return handleMrcImageUpload(formData, "identityCard"); // Menggunakan batas & pengolahan yang sama seperti identity card/dokumen
+  return handleMrcImageUpload(formData, "identityCard");
 }

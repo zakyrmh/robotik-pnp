@@ -2,9 +2,6 @@ import { z } from "zod";
 
 /**
  * URL gambar MRC: absolut `http(s)` ATAU relatif via proxy internal `/api/r2/...`.
- * `uploadToR2` mengembalikan path relatif bila `CLOUDFLARE_R2_PUBLIC_URL` tidak
- * diset, sehingga `z.string().url()` murni akan menolak URL sah hasil upload
- * server sendiri dan menggagalkan seluruh pendaftaran.
  */
 function isMrcImageUrl(value: string): boolean {
   if (value.startsWith("/api/r2/")) {
@@ -69,6 +66,12 @@ export const eventCategorySchema = z.object({
     .optional(),
 });
 
+export const bankAccountSchema = z.object({
+  bank_name: z.string().min(1, "Nama bank wajib diisi"),
+  account_number: z.string().min(1, "Nomor rekening wajib diisi"),
+  account_holder: z.string().min(1, "Nama pemilik rekening wajib diisi"),
+});
+
 export const manualPaymentVerificationSchema = z.object({
   registration_id: z.string().uuid("ID Pendaftaran tidak valid"),
   manual_payment_proof_url: z.string().url("URL bukti pembayaran harus valid"),
@@ -94,11 +97,6 @@ const optionalDatetime = z
   .refine((v) => !Number.isNaN(Date.parse(v)), "Format tanggal tidak valid")
   .nullish();
 
-/**
- * Rentang tanggal batch 1, batch 2, dan acara (global, singleton event_settings).
- * Urutan wajib: batch1 < batch2 < acara. Semua field opsional agar panitia
- * bisa menyimpan bertahap, tapi tiap rentang yang diisi harus start < end.
- */
 export const eventSettingsSchema = z
   .object({
     timeline_release_date: optionalDatetime,
@@ -114,6 +112,7 @@ export const eventSettingsSchema = z
     bank_name: z.string().optional(),
     bank_account_number: z.string().optional(),
     bank_account_holder: z.string().optional(),
+    bank_accounts: z.array(bankAccountSchema).optional(),
   })
   .superRefine((v, ctx) => {
     const pairs: [unknown, unknown, string][] = [
@@ -155,26 +154,14 @@ export const eventSettingsSchema = z
       });
     }
     if (v.payment_mode === "manual_bank") {
-      if (!v.bank_name || v.bank_name.trim().length === 0) {
-        ctx.addIssue({
-          code: "custom",
-          path: ["bank_name"],
-          message: "Nama bank wajib diisi untuk pembayaran manual bank.",
-        });
-      }
-      if (!v.bank_account_number || v.bank_account_number.trim().length === 0) {
-        ctx.addIssue({
-          code: "custom",
-          path: ["bank_account_number"],
-          message: "Nomor rekening wajib diisi untuk pembayaran manual bank.",
-        });
-      }
-      if (!v.bank_account_holder || v.bank_account_holder.trim().length === 0) {
-        ctx.addIssue({
-          code: "custom",
-          path: ["bank_account_holder"],
-          message: "Nama pemilik rekening wajib diisi untuk pembayaran manual bank.",
-        });
+      if (!v.bank_accounts || v.bank_accounts.length === 0) {
+        if (!v.bank_name || v.bank_name.trim().length === 0) {
+          ctx.addIssue({
+            code: "custom",
+            path: ["bank_name"],
+            message: "Minimal 1 rekening bank penerima wajib diisi untuk pembayaran manual bank.",
+          });
+        }
       }
     }
   });
@@ -183,6 +170,7 @@ export type EventRegistrationInput = z.infer<typeof eventRegistrationSchema>;
 export type EventMemberInput = z.infer<typeof eventMemberSchema>;
 export type EventCategoryInput = z.infer<typeof eventCategorySchema>;
 export type EventSettingsInput = z.infer<typeof eventSettingsSchema>;
+export type BankAccountInput = z.infer<typeof bankAccountSchema>;
 export type ManualPaymentVerificationInput = z.infer<
   typeof manualPaymentVerificationSchema
 >;

@@ -1,5 +1,6 @@
 import { Resend } from "resend";
 import nodemailer from "nodemailer";
+import type { BankAccount } from "@/types/event-registration";
 
 export interface SendETicketEmailParams {
   toEmail: string;
@@ -15,6 +16,7 @@ export interface SendETicketEmailParams {
     accountNumber: string;
     accountHolder: string;
   };
+  bankAccounts?: BankAccount[] | null;
   whatsappGroupUrl?: string | null;
   rejectionReason?: string | null;
 }
@@ -56,15 +58,34 @@ export async function sendETicketEmail(params: SendETicketEmailParams) {
 
   // Rekening Bank Info
   let bankInfoHtml = "";
-  if (params.paymentMode === "manual_bank" && params.bankDetails && status !== "paid") {
-    bankInfoHtml = `
-      <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 16px; margin: 20px 0;">
-        <h4 style="margin: 0 0 8px 0; color: #1e40af; font-size: 14px;">Instruksi Transfer Bank:</h4>
-        <p style="margin: 4px 0; font-size: 13px; color: #1e3a8a;"><strong>Nama Bank:</strong> ${params.bankDetails.bankName}</p>
-        <p style="margin: 4px 0; font-size: 13px; color: #1e3a8a;"><strong>Nomor Rekening:</strong> <span style="font-family: monospace; font-size: 15px; font-weight: bold;">${params.bankDetails.accountNumber}</span></p>
-        <p style="margin: 4px 0; font-size: 13px; color: #1e3a8a;"><strong>Atas Nama:</strong> ${params.bankDetails.accountHolder}</p>
-      </div>
-    `;
+  if (params.paymentMode === "manual_bank" && status !== "paid") {
+    const list = params.bankAccounts && params.bankAccounts.length > 0
+      ? params.bankAccounts
+      : params.bankDetails
+      ? [{ bank_name: params.bankDetails.bankName, account_number: params.bankDetails.accountNumber, account_holder: params.bankDetails.accountHolder }]
+      : [];
+
+    if (list.length > 0) {
+      const bankItems = list
+        .map(
+          (b) => `
+          <div style="background-color: #ffffff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 10px 12px; margin-top: 8px;">
+            <p style="margin: 0; font-size: 13px; color: #1e3a8a;"><strong>Bank:</strong> ${b.bank_name}</p>
+            <p style="margin: 2px 0; font-size: 13px; color: #1e3a8a;"><strong>No. Rekening:</strong> <span style="font-family: monospace; font-size: 15px; font-weight: bold;">${b.account_number}</span></p>
+            <p style="margin: 0; font-size: 12px; color: #1e3a8a;"><strong>Atas Nama:</strong> ${b.account_holder}</p>
+          </div>
+        `,
+        )
+        .join("");
+
+      bankInfoHtml = `
+        <div style="background-color: #eff6ff; border: 1px solid #bfdbfe; border-radius: 6px; padding: 16px; margin: 20px 0;">
+          <h4 style="margin: 0 0 4px 0; color: #1e40af; font-size: 14px;">Daftar Rekening Bank Tujuan Transfer:</h4>
+          <p style="margin: 0 0 8px 0; font-size: 12px; color: #3b82f6;">Anda dapat memilih salah satu rekening bank di bawah ini untuk transfer biaya pendaftaran:</p>
+          ${bankItems}
+        </div>
+      `;
+    }
   }
 
   // WhatsApp Group Info
@@ -143,7 +164,7 @@ export async function sendETicketEmail(params: SendETicketEmailParams) {
     }
   }
 
-  // 2. Try Mailpit REST API (Supabase Local Docker UI port 54324)
+  // 2. Try Mailpit REST API
   const mailpitWebUrl = process.env.MAILPIT_WEB_URL || "http://127.0.0.1:54324";
   try {
     const mailpitRes = await fetch(`${mailpitWebUrl}/api/v1/send`, {
@@ -167,10 +188,10 @@ export async function sendETicketEmail(params: SendETicketEmailParams) {
       return { success: true, provider: "mailpit-rest" };
     }
   } catch (_err: unknown) {
-    // Mailpit REST API not reachable, proceed to SMTP fallback
+    // Mailpit REST API not reachable
   }
 
-  // 3. Fallback to Mailpit / Local SMTP if configured or default local port 1025
+  // 3. Fallback to Mailpit / Local SMTP
   const smtpHost = process.env.SMTP_HOST || "127.0.0.1";
   const smtpPort = Number(process.env.SMTP_PORT || 1025);
 
