@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.3] - 2026-09-08
+
+### Added
+
+- **Tanggal Rilis Timeline MRC (`supabase/migrations/20260910000000_add_timeline_release_and_technical_meeting.sql`)**: Menambahkan kolom `timeline_release_date`, `technical_meeting_start`, dan `technical_meeting_end` pada tabel `event_settings` beserta constraint rentang tanggal.
+- **Aturan Visibilitas Progresif Batch 2 & Timeline (`lib/event-batch.ts`, `lib/schemas/event-registration.ts`)**:
+  - Deteksi fase `coming-soon` sebelum `timeline_release_date`.
+  - Helper `isTimelineReleased()` dan `isBatch2Visible()` untuk menyembunyikan jadwal dan nominal Batch 2 hingga Batch 1 selesai atau Batch 2 dibuka.
+- **Pembaruan FAQ Pendaftaran MRC (`components/event/mrc-faq.tsx`)**: Menyinkronkan daftar FAQ MRC dengan aturan registrasi, alur verifikasi, dan jadwal pelaksanaan terbaru.
+
+### Changed
+
+- **Penyembunyian Informasi Sebelum Timeline Release (`app/(marketing)/mrc/page.tsx`)**: Menyesuaikan tampilan halaman MRC untuk menyembunyikan status kuota, biaya Batch 1 & 2, serta timeline detail sebelum tanggal rilis resmi.
+
+### Removed
+
+- **Seksi Unduh Rulebook MRC (`app/(marketing)/mrc/page.tsx`)**: Menghapus tombol/seksi unduh Rulebook pada landing page MRC sesuai skema rilis terbaru.
+
 ## [0.8.2] - 2026-09-08
 
 ### Added

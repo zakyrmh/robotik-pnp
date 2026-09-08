@@ -503,6 +503,372 @@ export type Database = {
         };
         Relationships: [];
       };
+      event_categories: {
+        Row: {
+          created_at: string;
+          description: string | null;
+          id: string;
+          is_active: boolean;
+          max_team_members: number;
+          name: string;
+          quota: number;
+          registration_fee: number;
+          registration_fee_batch1: number | null;
+          registration_fee_batch2: number | null;
+          slug: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          is_active?: boolean;
+          max_team_members?: number;
+          name: string;
+          quota?: number;
+          registration_fee?: number;
+          registration_fee_batch1?: number | null;
+          registration_fee_batch2?: number | null;
+          slug: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          is_active?: boolean;
+          max_team_members?: number;
+          name?: string;
+          quota?: number;
+          registration_fee?: number;
+          registration_fee_batch1?: number | null;
+          registration_fee_batch2?: number | null;
+          slug?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      event_member_verifications: {
+        Row: {
+          id: string;
+          member_id: string;
+          notes: string | null;
+          result: string;
+          scanned_at: string;
+          verified_by: string;
+        };
+        Insert: {
+          id?: string;
+          member_id: string;
+          notes?: string | null;
+          result: string;
+          scanned_at?: string;
+          verified_by: string;
+        };
+        Update: {
+          id?: string;
+          member_id?: string;
+          notes?: string | null;
+          result?: string;
+          scanned_at?: string;
+          verified_by?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "event_member_verifications_member_id_fkey";
+            columns: ["member_id"];
+            isOneToOne: false;
+            referencedRelation: "event_team_members";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "event_member_verifications_verified_by_fkey";
+            columns: ["verified_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "event_member_verifications_verified_by_fkey";
+            columns: ["verified_by"];
+            isOneToOne: false;
+            referencedRelation: "v_user_discipline_summary";
+            referencedColumns: ["profile_id"];
+          },
+        ];
+      };
+      event_registrations: {
+        Row: {
+          access_token: string;
+          advisor_name: string | null;
+          category_id: string;
+          created_at: string;
+          id: string;
+          institution: string;
+          manual_payment_proof_url: string | null;
+          midtrans_order_id: string | null;
+          midtrans_payment_type: string | null;
+          midtrans_qr_expiry: string | null;
+          midtrans_qr_url: string | null;
+          midtrans_snap_token: string | null;
+          origin_city: string | null;
+          paid_at: string | null;
+          payment_status: string;
+          registration_batch: string | null;
+          registration_code: string;
+          rules_accepted_at: string | null;
+          rules_version_id: string | null;
+          team_email: string;
+          team_name: string;
+          team_whatsapp: string;
+          total_amount: number;
+          updated_at: string;
+        };
+        Insert: {
+          access_token?: string;
+          advisor_name?: string | null;
+          category_id: string;
+          created_at?: string;
+          id?: string;
+          institution: string;
+          manual_payment_proof_url?: string | null;
+          midtrans_order_id?: string | null;
+          midtrans_payment_type?: string | null;
+          midtrans_qr_expiry?: string | null;
+          midtrans_qr_url?: string | null;
+          midtrans_snap_token?: string | null;
+          origin_city?: string | null;
+          paid_at?: string | null;
+          payment_status?: string;
+          registration_batch?: string | null;
+          registration_code: string;
+          rules_accepted_at?: string | null;
+          rules_version_id?: string | null;
+          team_email: string;
+          team_name: string;
+          team_whatsapp: string;
+          total_amount: number;
+          updated_at?: string;
+        };
+        Update: {
+          access_token?: string;
+          advisor_name?: string | null;
+          category_id?: string;
+          created_at?: string;
+          id?: string;
+          institution?: string;
+          manual_payment_proof_url?: string | null;
+          midtrans_order_id?: string | null;
+          midtrans_payment_type?: string | null;
+          midtrans_qr_expiry?: string | null;
+          midtrans_qr_url?: string | null;
+          midtrans_snap_token?: string | null;
+          origin_city?: string | null;
+          paid_at?: string | null;
+          payment_status?: string;
+          registration_batch?: string | null;
+          registration_code?: string;
+          rules_accepted_at?: string | null;
+          rules_version_id?: string | null;
+          team_email?: string;
+          team_name?: string;
+          team_whatsapp?: string;
+          total_amount?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "event_registrations_category_id_fkey";
+            columns: ["category_id"];
+            isOneToOne: false;
+            referencedRelation: "event_categories";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "event_registrations_rules_version_id_fkey";
+            columns: ["rules_version_id"];
+            isOneToOne: false;
+            referencedRelation: "event_rules_versions";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      event_rules_versions: {
+        Row: {
+          category_id: string | null;
+          content: string;
+          id: string;
+          published_at: string;
+          version: string;
+        };
+        Insert: {
+          category_id?: string | null;
+          content: string;
+          id?: string;
+          published_at?: string;
+          version: string;
+        };
+        Update: {
+          category_id?: string | null;
+          content?: string;
+          id?: string;
+          published_at?: string;
+          version?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "event_rules_versions_category_id_fkey";
+            columns: ["category_id"];
+            isOneToOne: false;
+            referencedRelation: "event_categories";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      event_settings: {
+        Row: {
+          batch1_end: string | null;
+          batch1_start: string | null;
+          batch2_end: string | null;
+          batch2_start: string | null;
+          created_at: string;
+          event_end: string | null;
+          event_start: string | null;
+          id: number;
+          technical_meeting_end: string | null;
+          technical_meeting_start: string | null;
+          timeline_release_date: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          batch1_end?: string | null;
+          batch1_start?: string | null;
+          batch2_end?: string | null;
+          batch2_start?: string | null;
+          created_at?: string;
+          event_end?: string | null;
+          event_start?: string | null;
+          id?: number;
+          technical_meeting_end?: string | null;
+          technical_meeting_start?: string | null;
+          timeline_release_date?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          batch1_end?: string | null;
+          batch1_start?: string | null;
+          batch2_end?: string | null;
+          batch2_start?: string | null;
+          created_at?: string;
+          event_end?: string | null;
+          event_start?: string | null;
+          id?: number;
+          technical_meeting_end?: string | null;
+          technical_meeting_start?: string | null;
+          timeline_release_date?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      event_team_members: {
+        Row: {
+          created_at: string;
+          full_name: string;
+          id: string;
+          identity_card_url: string | null;
+          member_qr_token: string;
+          photo_url: string;
+          registration_id: string;
+          role_in_team: string | null;
+          verification_status: string;
+        };
+        Insert: {
+          created_at?: string;
+          full_name: string;
+          id?: string;
+          identity_card_url?: string | null;
+          member_qr_token?: string;
+          photo_url: string;
+          registration_id: string;
+          role_in_team?: string | null;
+          verification_status?: string;
+        };
+        Update: {
+          created_at?: string;
+          full_name?: string;
+          id?: string;
+          identity_card_url?: string | null;
+          member_qr_token?: string;
+          photo_url?: string;
+          registration_id?: string;
+          role_in_team?: string | null;
+          verification_status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "event_team_members_registration_id_fkey";
+            columns: ["registration_id"];
+            isOneToOne: false;
+            referencedRelation: "event_registrations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      event_violations: {
+        Row: {
+          created_at: string;
+          description: string | null;
+          id: string;
+          issued_by: string;
+          registration_id: string;
+          status: string;
+          violation_type: string;
+          warning_number: number;
+        };
+        Insert: {
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          issued_by: string;
+          registration_id: string;
+          status?: string;
+          violation_type: string;
+          warning_number: number;
+        };
+        Update: {
+          created_at?: string;
+          description?: string | null;
+          id?: string;
+          issued_by?: string;
+          registration_id?: string;
+          status?: string;
+          violation_type?: string;
+          warning_number?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "event_violations_issued_by_fkey";
+            columns: ["issued_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "event_violations_issued_by_fkey";
+            columns: ["issued_by"];
+            isOneToOne: false;
+            referencedRelation: "v_user_discipline_summary";
+            referencedColumns: ["profile_id"];
+          },
+          {
+            foreignKeyName: "event_violations_registration_id_fkey";
+            columns: ["registration_id"];
+            isOneToOne: false;
+            referencedRelation: "event_registrations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       group_members: {
         Row: {
           group_id: string | null;
@@ -877,6 +1243,7 @@ export type Database = {
           id: string;
           is_verified: boolean | null;
           notes: string;
+          proof_image_before_url: string | null;
           proof_image_url: string;
           reported_by: string | null;
           schedule_id: string | null;
@@ -888,6 +1255,7 @@ export type Database = {
           id?: string;
           is_verified?: boolean | null;
           notes: string;
+          proof_image_before_url?: string | null;
           proof_image_url: string;
           reported_by?: string | null;
           schedule_id?: string | null;
@@ -899,6 +1267,7 @@ export type Database = {
           id?: string;
           is_verified?: boolean | null;
           notes?: string;
+          proof_image_before_url?: string | null;
           proof_image_url?: string;
           reported_by?: string | null;
           schedule_id?: string | null;
@@ -984,19 +1353,28 @@ export type Database = {
       };
       piket_schedules: {
         Row: {
+          academic_period: string;
           created_at: string | null;
-          day: Database["public"]["Enums"]["piket_day"];
+          day: Database["public"]["Enums"]["piket_day"] | null;
           id: string;
+          room_target: string;
+          week_number: number;
         };
         Insert: {
+          academic_period?: string;
           created_at?: string | null;
-          day: Database["public"]["Enums"]["piket_day"];
+          day?: Database["public"]["Enums"]["piket_day"] | null;
           id?: string;
+          room_target?: string;
+          week_number?: number;
         };
         Update: {
+          academic_period?: string;
           created_at?: string | null;
-          day?: Database["public"]["Enums"]["piket_day"];
+          day?: Database["public"]["Enums"]["piket_day"] | null;
           id?: string;
+          room_target?: string;
+          week_number?: number;
         };
         Relationships: [];
       };
@@ -1015,6 +1393,7 @@ export type Database = {
           is_onboarded: boolean;
           nim: string | null;
           role: Database["public"]["Enums"]["user_role"];
+          role_event: string | null;
           updated_at: string;
         };
         Insert: {
@@ -1031,6 +1410,7 @@ export type Database = {
           is_onboarded?: boolean;
           nim?: string | null;
           role?: Database["public"]["Enums"]["user_role"];
+          role_event?: string | null;
           updated_at?: string;
         };
         Update: {
@@ -1047,6 +1427,7 @@ export type Database = {
           is_onboarded?: boolean;
           nim?: string | null;
           role?: Database["public"]["Enums"]["user_role"];
+          role_event?: string | null;
           updated_at?: string;
         };
         Relationships: [];
@@ -1489,6 +1870,22 @@ export type Database = {
       promote_legacy_member_to_anggota: {
         Args: { input_nim: string; user_id: string };
         Returns: boolean;
+      };
+      register_team: {
+        Args: {
+          p_advisor_name: string;
+          p_category_id: string;
+          p_institution: string;
+          p_members: Json;
+          p_origin_city: string;
+          p_registration_code: string;
+          p_rules_version_id: string;
+          p_team_email: string;
+          p_team_name: string;
+          p_team_whatsapp: string;
+          p_total_amount: number;
+        };
+        Returns: string;
       };
       slugify: { Args: { v_text: string }; Returns: string };
     };
