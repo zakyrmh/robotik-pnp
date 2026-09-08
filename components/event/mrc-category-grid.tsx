@@ -14,6 +14,7 @@ import type { PublicCategoryWithQuota } from "@/lib/actions/event-public";
 import {
   getActiveBatch,
   getCategoryBatchFee,
+  isTimelineReleased,
   BATCH_LABELS,
 } from "@/lib/event-batch";
 import type {
@@ -43,6 +44,11 @@ export function MrcCategoryGrid({
   const [now] = useState(() => Date.now());
   const activeBatch: RegistrationBatch | null = useMemo(
     () => getActiveBatch(settings, new Date(now)),
+    [settings, now],
+  );
+
+  const released = useMemo(
+    () => isTimelineReleased(settings, new Date(now)),
     [settings, now],
   );
 
@@ -105,7 +111,12 @@ export function MrcCategoryGrid({
                   </div>
 
                   {/* Quota Status Badge */}
-                  {isFull ? (
+                  {!released ? (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-primary-soft/60 text-primary border border-primary/20">
+                      <Bot className="size-3.5" />
+                      <span>Coming Soon</span>
+                    </span>
+                  ) : isFull ? (
                     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-destructive/10 text-destructive border border-destructive/20">
                       <XCircle className="size-3.5" />
                       <span>Kuota Penuh</span>
@@ -136,7 +147,16 @@ export function MrcCategoryGrid({
 
                 {/* Details Meta (Batch Fees & Max Members) */}
                 <div className="space-y-2 pt-2 border-t border-border/60">
-                  {activeFee !== null && activeBatch ? (
+                  {!released ? (
+                    <div className="flex items-center justify-between text-xs font-medium">
+                      <span className="text-muted-foreground">
+                        Biaya Pendaftaran:
+                      </span>
+                      <span className="font-mono font-semibold text-xs text-muted-foreground">
+                        Diumumkan Menyusul
+                      </span>
+                    </div>
+                  ) : activeFee !== null && activeBatch ? (
                     <>
                       <div className="flex items-center justify-between text-xs font-medium">
                         <span className="text-muted-foreground">
