@@ -14,23 +14,23 @@ const faqItems = [
   {
     question: "Bagaimana cara melakukan pembayaran biaya pendaftaran?",
     answer:
-      "Pembayaran dilakukan secara otomatis melalui Midtrans Gateway saat mengisi form pendaftaran. Anda dapat menggunakan QRIS, Bank Transfer (Virtual Account), atau E-Wallet. Setelah sukses, E-Tiket & Kode Pendaftaran akan dikirimkan otomatis ke email tim Anda.",
+      "Pembayaran dilakukan secara otomatis melalui Payment Gateway dengan menggunakan QRIS Dinamik saat mengisi form pendaftaran. Setelah pembayaran sukses, E-Tiket & Kode Pendaftaran akan dikirimkan secara otomatis ke email tim Anda.",
   },
   {
-    question: "Apakah peserta wajib mengunggah foto saat pendaftaran?",
+    question: "Apakah peserta wajib mengunggah pas foto dan kartu identitas saat pendaftaran?",
     answer:
-      "Ya, setiap anggota tim (Ketua, Anggota, dan Pembina) wajib mengunggah pas foto formal berpakaian rapi. Foto ini akan dicetak otomatis sebagai QR Kokarde Peserta untuk verifikasi fisik di lokasi lomba.",
+      "Setiap anggota tim wajib mengunggah pas foto formal untuk keperluan QR Kokarde Peserta. Khusus pendaftar kategori Line Follower Junior dan Line Follower Senior, peserta wajib mengunggah foto kartu identitas (Kartu Pelajar atau Kartu Keluarga). Untuk kategori Sumo Bot dan Soccer Bot, tidak diperlukan pengunggahan kartu identitas.",
   },
   {
     question:
-      "Bagaimana jika modal pembayaran Midtrans tertutup sebelum bayar?",
+      "Bagaimana jika modal pembayaran tertutup sebelum sempat membayar?",
     answer:
-      "Tidak perlu khawatir. Link E-Tiket unik sudah dikirimkan ke email tim Anda. Buka link tersebut untuk melanjutkan pembayaran atau meminta bantuan Admin via WhatsApp.",
+      "Silakan cek email tim Anda (pastikan juga mengecek folder spam/junk). Link E-Tiket unik pembayaran telah dikirimkan ke email tersebut. Anda dapat membukanya kembali untuk melanjutkan pembayaran atau menghubungi Admin untuk bantuan.",
   },
   {
-    question: "Apakah ada batasan usia atau jenjang pendidikan peserta?",
+    question: "Apakah ada batasan usia untuk peserta perlombaan?",
     answer:
-      "Setiap kategori lomba memiliki ketentuan jenjang terpisah (misal: tingkat SMA/SMK sederajat atau Perguruan Tinggi). Silakan unduh Rulebook resmi masing-masing kategori di bawah ini.",
+      "Batasan usia berlaku khusus untuk kategori Line Follower: Line Follower Junior ditujukan untuk peserta di bawah usia 19 tahun, sedangkan Line Follower Senior ditujukan untuk peserta di atas usia 19 tahun.",
   },
 ];
 
