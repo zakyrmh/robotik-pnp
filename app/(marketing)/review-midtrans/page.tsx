@@ -187,7 +187,7 @@ export default function MidtransReviewPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 antialiased selection:bg-amber-100 selection:text-amber-900">
+    <div className="min-h-screen bg-slate-50 text-slate-900 antialiased selection:bg-amber-100 selection:text-amber-900 pt-16 sm:pt-20">
       {/* Snap JS Script Loader for Midtrans Sandbox */}
       <Script
         src="https://app.sandbox.midtrans.com/snap/snap.js"
@@ -196,7 +196,7 @@ export default function MidtransReviewPage() {
       />
 
       {/* Top Banner Header */}
-      <header className="border-b border-slate-200 bg-white sticky top-0 z-30 shadow-xs">
+      <header className="border-b border-slate-200 bg-white/95 backdrop-blur-md sticky top-16 sm:top-18 z-30 shadow-xs">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-blue-900 text-white rounded-xl shadow-xs">
@@ -329,7 +329,7 @@ export default function MidtransReviewPage() {
 
           {/* Right Column: Registration & Checkout Form */}
           <div className="lg:col-span-5">
-            <div className="bg-white border border-slate-200 rounded-2xl shadow-xs p-6 space-y-6 sticky top-24">
+            <div className="bg-white border border-slate-200 rounded-2xl shadow-xs p-6 space-y-6 sticky top-36">
               <div>
                 <h2 className="font-bold text-slate-900 text-base flex items-center gap-2">
                   <CreditCard className="w-5 h-5 text-blue-900" /> 2. Form Input
