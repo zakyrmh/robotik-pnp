@@ -3,7 +3,10 @@ import crypto from "crypto";
 import { createAdminClient } from "@/lib/supabase/server";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import { sendETicketEmail } from "@/lib/services/resend";
-import type { EventRegistration } from "@/types/event-registration";
+import type {
+  EventRegistration,
+  PaymentStatus,
+} from "@/types/event-registration";
 
 export async function POST(request: Request) {
   try {
@@ -71,8 +74,7 @@ export async function POST(request: Request) {
       });
     }
 
-    let newStatus: "pending" | "paid" | "expired" | "failed" =
-      reg.payment_status;
+    let newStatus: PaymentStatus = reg.payment_status;
 
     if (transaction_status === "capture") {
       if (fraud_status === "challenge") {

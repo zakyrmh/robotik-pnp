@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Opsi Pembayaran Manual Bank Transfer + Verifikasi Admin (`lib/actions/event-registration.ts`, `lib/actions/event-admin.ts`, `components/event/manual-payment-verification-list.tsx`)**: mode pembayaran global (`midtrans` vs `manual_bank`) pada `event_settings`, instruksi transfer + upload bukti pada `/mrc/bayar/[token]`, halaman verifikasi admin pada `/manajemen-event/verifikasi-pembayaran` (setujui/tolak + alasan penolakan), serta notifikasi email instruksi, persetujuan (dengan link grup WA kategori), dan penolakan.
+- **Dukungan Multi Rekening Bank (`components/event/event-settings-form.tsx`, `components/event/qris-payment-view.tsx`, `supabase/migrations/20260912000000_add_multiple_bank_accounts.sql`)**: admin dapat mengonfigurasi beberapa rekening (mis. BRI, BCA, BNI), peserta memilih rekening tujuan, dan email instruksi memuat seluruh daftar rekening.
+
+### Fixed
+
+- **Tipe Status Webhook Midtrans (`app/api/webhooks/midtrans/route.ts`)**: `newStatus` diselaraskan ke tipe global `PaymentStatus` agar `pnpm build` lolos type-check untuk seluruh status (`unpaid`, `pending_verification`, `rejected`, dll.).
+- **Regenerasi Tipe Database (`types/database.types.ts`)**: sinkronisasi hasil `supabase gen types` — kolom `event_categories.whatsapp_group_url`, `event_registrations.rejection_reason`, serta `event_settings.payment_mode`, `bank_name`, `bank_account_number`, `bank_account_holder`.
+- **Fixture Uji `EventSettings` (`lib/event-batch.test.ts`)**: melengkapi field baru (`payment_mode`, `bank_*`, `bank_accounts`) agar `tsc --noEmit` dan pre-commit hook lolos.
+
 ## [0.8.3] - 2026-09-08
 
 ### Added
