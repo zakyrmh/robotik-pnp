@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.4] - 2026-09-10
+
 ### Added
 
 - **Halaman Review Midtrans Tersembunyi untuk Verifikasi Sandbox (`app/(marketing)/review-midtrans/page.tsx`)**: Halaman terisolasi `/review-midtrans` berisi 6 kategori lomba simulasi, form input peserta, dan integrasi skrip Midtrans Snap Sandbox dengan harga fixed Rp100.000 untuk keperluan Tim Verifikator/Business Reviewer Midtrans.
@@ -368,7 +370,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Setup Husky pre-commit hook dan Commitlint.
 - Setup Next.js dengan pnpm.
 
-[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.7.1...HEAD
+[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.8.4...HEAD
+[0.8.4]: https://github.com/zakyrmh/robotik-pnp/compare/v0.8.3...v0.8.4
+[0.8.3]: https://github.com/zakyrmh/robotik-pnp/compare/v0.8.2...v0.8.3
+[0.8.2]: https://github.com/zakyrmh/robotik-pnp/compare/v0.8.0...v0.8.2
 [0.7.1]: https://github.com/zakyrmh/robotik-pnp/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/zakyrmh/robotik-pnp/compare/v0.6.0...v0.6.1
