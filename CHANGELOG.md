@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Versi `20260911000000` dipakai dua file berbeda: `add_payment_mode_and_manual_bank.sql` (sudah terlanjur di-push ke cloud dari feature branch) vs `create_review_midtrans_tables.sql` (di `main`), sehingga tabel `review_registrations`/`review_transactions` tidak pernah dibuat di cloud meski versi tercatat applied.
   - Mengimpor `20260911000000_add_payment_mode_and_manual_bank.sql` dan `20260912000000_add_multiple_bank_accounts.sql` dari branch `feature/mrc-manual-bank-payment` agar riwayat lokal selaras dengan skema cloud (kolom `payment_mode`, `bank_*`, `bank_accounts`, `whatsapp_group_url`, `rejection_reason`).
   - Me-rename migrasi review menjadi `20260913000000_create_review_midtrans_tables.sql` agar menjadi pending dan teraplikasi via `db push`.
+  - **Terverifikasi pasca-push**: `migration list` 32/32 sinkron (termasuk `20260912` & `20260913`); dump katalog remote memuat `review_registrations`/`review_transactions` beserta policy-nya dan kolom `payment_mode`, `bank_*`, `bank_accounts`, `whatsapp_group_url`, `rejection_reason`; sisa diff hanya noise representasi (badan fungsi identik semantik) sehingga tidak di-push.
 
 ## [0.8.4] - 2026-09-10
 
