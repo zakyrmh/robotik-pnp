@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Halaman Review Midtrans Tersembunyi untuk Verifikasi Sandbox (`app/(marketing)/review-midtrans/page.tsx`)**: Halaman terisolasi `/review-midtrans` berisi 6 kategori lomba simulasi, form input peserta, dan integrasi skrip Midtrans Snap Sandbox dengan harga fixed Rp100.000 untuk keperluan Tim Verifikator/Business Reviewer Midtrans.
+- **Isolasi Data & API Review Midtrans**:
+  - **Migrasi database (`supabase/migrations/20260911000000_create_review_midtrans_tables.sql`)**: tabel terisolasi `review_registrations` & `review_transactions` agar data review tidak mencampuri data pendaftaran MRC produksi.
+  - **Helper Midtrans (`lib/midtrans.ts`)**: pembuatan transaksi Snap dan verifikasi signature SHA-512.
+  - **Checkout API (`app/api/review-midtrans/checkout/route.ts`)**: endpoint terisolasi pembuatan transaksi Snap review.
+  - **Webhook notifikasi (`app/api/review-midtrans/notification/route.ts`)**: endpoint notifikasi pembayaran review yang aman.
+  - **Panduan pengujian (`docs/midtrans-review-instructions.md`)**: dokumentasi setup environment dan alur testing Sandbox.
+- **Penyesuaian Offset Sticky Navbar Halaman Review Midtrans (`app/(marketing)/review-midtrans/page.tsx`)**: menambahkan top padding (`pt-16 sm:pt-20`) pada kontainer halaman serta penyesuaian offset sticky header/sidebar agar tidak tertutup `LandingNavbar` yang fixed.
+
+### Changed
+
+- **Pembaruan Desain UI/UX & Dark Mode Halaman Review Midtrans (`app/(marketing)/review-midtrans/page.tsx`)**:
+  - Mengubah seluruh warna hardcoded Tailwind (`bg-slate-50`, `bg-blue-900`, `text-slate-900`, `border-slate-200`) menjadi token semantik `DESIGN.md` (`bg-background`, `bg-card`, `bg-secondary`, `bg-primary`, `text-foreground`, `text-muted-foreground`, `border-border`).
+  - Menyelaraskan mode gelap (Dark Mode) menggunakan _Deep Navy Slate_ (`#0f1b2d`) dan aksen Oranye Soft (`#f0975a`).
+  - Mengoptimalkan responsivitas layout seluler hingga desktop, penyesuaian font tipografi (`font-display` & `font-mono`), serta memastikan target sentuh minimal 44px (`min-h-[44px]`).
+
 ## [0.8.3] - 2026-09-08
 
 ### Added
