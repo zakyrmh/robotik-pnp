@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS public.review_transactions (
 
 -- Enable RLS
 ALTER TABLE public.review_registrations ENABLE ROW LEVEL SECURITY;
+
 ALTER TABLE public.review_transactions ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies allowing unauthenticated review submissions

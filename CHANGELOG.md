@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Mode Pembayaran Manual Transfer Bank (`supabase/migrations/20260911000000_add_payment_mode_and_manual_bank.sql`)**: kolom `payment_mode` (`midtrans`/`manual_bank`) beserta detail rekening (`bank_name`, `bank_account_number`, `bank_account_holder`) pada `event_settings`, kolom `whatsapp_group_url` pada `event_categories`, serta kolom `rejection_reason` dan status pembayaran `pending_verification`/`rejected` pada `event_registrations`.
+- **Dukungan Multi-Rekening Bank (`supabase/migrations/20260912000000_add_multiple_bank_accounts.sql`)**: kolom `bank_accounts` JSONB pada `event_settings` untuk menampung beberapa rekening tujuan pembayaran manual.
+
+### Changed
+
+- **Dev Origin Ngrok (`next.config.ts`)**: menambahkan `allowedDevOrigins` (`*.ngrok-free.dev`, `*.ngrok-free.app`) agar preview tunnel Ngrok dapat memuat dev server Next.js.
+
+### Fixed
+
+- **Resolusi Konflik Timestamp Migrasi Review Midtrans (`supabase/migrations/20260913000000_create_review_midtrans_tables.sql`)**: memindahkan tabel terisolasi `review_registrations` & `review_transactions` dari timestamp `20260911` ke `20260913` karena slot `20260911` dipakai migrasi mode pembayaran manual.
+
 ## [0.8.4] - 2026-09-10
 
 ### Added
