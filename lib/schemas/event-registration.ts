@@ -27,7 +27,17 @@ const mrcImageUrlSchema = (label: string) =>
 export const eventMemberSchema = z.object({
   full_name: z.string().min(2, "Nama anggota minimal 2 karakter"),
   photo_url: mrcImageUrlSchema("foto anggota"),
-  identity_card_url: mrcImageUrlSchema("kartu pelajar / KK"),
+  identity_card_url: z
+    .string()
+    .optional()
+    .refine((val) => !val || isMrcImageUrl(val), "URL kartu pelajar / KK harus valid"),
+  birth_date: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || !Number.isNaN(Date.parse(val)),
+      "Format tanggal lahir tidak valid",
+    ),
   role_in_team: z.string().default("Anggota"),
 });
 

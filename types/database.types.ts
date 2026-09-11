@@ -772,6 +772,7 @@ export type Database = {
       };
       event_team_members: {
         Row: {
+          birth_date: string | null
           created_at: string;
           full_name: string;
           id: string;
@@ -783,6 +784,7 @@ export type Database = {
           verification_status: string;
         };
         Insert: {
+          birth_date?: string | null
           created_at?: string;
           full_name: string;
           id?: string;
@@ -794,6 +796,7 @@ export type Database = {
           verification_status?: string;
         };
         Update: {
+          birth_date?: string | null
           created_at?: string;
           full_name?: string;
           id?: string;

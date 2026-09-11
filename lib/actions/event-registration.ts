@@ -101,6 +101,29 @@ export async function registerEventAction(
     };
   }
 
+  // Validasi khusus kategori Line Follower Junior & Senior (Wajib Foto Kartu Pelajar/KK dan Tanggal Lahir)
+  const isLineFollowerCategory =
+    categoryData.slug === "line-follower-senior" ||
+    categoryData.slug === "line-follower-junior";
+
+  if (isLineFollowerCategory) {
+    for (let i = 0; i < validated.data.members.length; i++) {
+      const member = validated.data.members[i];
+      if (!member.identity_card_url) {
+        return {
+          success: false,
+          error: `Foto Kartu Pelajar / KK untuk anggota #${i + 1} (${member.full_name}) wajib diunggah untuk kategori Line Follower.`,
+        };
+      }
+      if (!member.birth_date) {
+        return {
+          success: false,
+          error: `Tanggal lahir untuk anggota #${i + 1} (${member.full_name}) wajib diisi untuk kategori Line Follower.`,
+        };
+      }
+    }
+  }
+
   // Tentukan batch aktif dari settings global → biaya batch 1 / batch 2
   const { data: settings } = await (untypedFrom(adminSupabase, "event_settings")
     .select("*")

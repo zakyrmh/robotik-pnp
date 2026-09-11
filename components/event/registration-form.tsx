@@ -60,6 +60,7 @@ interface MemberFormState {
   full_name: string;
   photo_url: string;
   identity_card_url: string;
+  birth_date: string;
   role_in_team: string;
   isUploading: boolean;
   uploadError?: string;
@@ -169,11 +170,16 @@ export function RegistrationForm({
   const [teamWhatsapp, setTeamWhatsapp] = useState("");
   const [acceptRules, setAcceptRules] = useState(false);
 
+  const isLineFollower =
+    category.slug === "line-follower-senior" ||
+    category.slug === "line-follower-junior";
+
   const [members, setMembers] = useState<MemberFormState[]>([
     {
       full_name: "",
       photo_url: "",
       identity_card_url: "",
+      birth_date: "",
       role_in_team: "Ketua Tim",
       isUploading: false,
       isUploadingIdCard: false,
@@ -197,6 +203,7 @@ export function RegistrationForm({
         full_name: "",
         photo_url: "",
         identity_card_url: "",
+        birth_date: "",
         role_in_team: "Anggota",
         isUploading: false,
         isUploadingIdCard: false,
@@ -282,7 +289,7 @@ export function RegistrationForm({
     setErrorMessage(null);
     setFieldErrors({});
 
-    // Validate photos and identity cards
+    // Validate photos, identity cards, and birth date
     for (let i = 0; i < members.length; i++) {
       if (!members[i].photo_url) {
         setErrorMessage(
@@ -290,11 +297,19 @@ export function RegistrationForm({
         );
         return;
       }
-      if (!members[i].identity_card_url) {
-        setErrorMessage(
-          `Foto Kartu Pelajar / Kartu Keluarga untuk anggota #${i + 1} (${members[i].full_name || "Anggota"}) wajib diunggah.`,
-        );
-        return;
+      if (isLineFollower) {
+        if (!members[i].identity_card_url) {
+          setErrorMessage(
+            `Foto Kartu Pelajar / Kartu Keluarga untuk anggota #${i + 1} (${members[i].full_name || "Anggota"}) wajib diunggah.`,
+          );
+          return;
+        }
+        if (!members[i].birth_date) {
+          setErrorMessage(
+            `Tanggal lahir untuk anggota #${i + 1} (${members[i].full_name || "Anggota"}) wajib diisi untuk verifikasi umur.`,
+          );
+          return;
+        }
       }
     }
 
@@ -314,7 +329,8 @@ export function RegistrationForm({
         members: members.map((m) => ({
           full_name: m.full_name,
           photo_url: m.photo_url,
-          identity_card_url: m.identity_card_url,
+          identity_card_url: isLineFollower ? m.identity_card_url : undefined,
+          birth_date: isLineFollower ? m.birth_date : undefined,
           role_in_team: m.role_in_team,
         })),
       });
@@ -645,6 +661,28 @@ export function RegistrationForm({
                 </select>
               </div>
 
+              {isLineFollower && (
+                <div>
+                  <label className="block text-xs font-medium text-foreground mb-1">
+                    Tanggal Lahir *
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={member.birth_date}
+                    onChange={(e) =>
+                      updateMember(idx, "birth_date", e.target.value)
+                    }
+                    className="w-full min-h-[44px] px-3 py-2 bg-background border border-input rounded-md text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    {category.slug === "line-follower-junior"
+                      ? "Maksimal 19 tahun"
+                      : "Minimal 19 tahun"}
+                  </p>
+                </div>
+              )}
+
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-xs font-medium text-foreground">
@@ -716,76 +754,81 @@ export function RegistrationForm({
                 )}
               </div>
 
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-medium text-foreground">
-                    Foto Kartu Pelajar / KK *
-                  </label>
-                  <span className="text-[10px] text-muted-foreground">
-                    Kartu Pelajar/KK
-                  </span>
-                </div>
-                {member.identity_card_url ? (
-                  <div className="flex items-center gap-2 min-h-[44px] px-3 py-2 bg-background border border-border rounded-md">
-                    <Image
-                      src={member.identity_card_url}
-                      alt="Kartu Identitas"
-                      width={32}
-                      height={32}
-                      className="w-8 h-8 object-cover rounded-md border"
-                    />
-                    <span className="text-xs text-success font-medium">
-                      Kartu Tersimpan
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => updateMember(idx, "identity_card_url", "")}
-                      className="min-h-[44px] px-1 text-xs text-muted-foreground hover:underline hover:text-foreground ml-auto rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    >
-                      Ubah
-                    </button>
-                  </div>
-                ) : (
-                  <div className="relative">
-                    <input
-                      type="file"
-                      accept={MRC_ACCEPT_ATTR}
-                      disabled={member.isUploadingIdCard}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        e.target.value = "";
-                        if (file) handleIdentityCardUpload(idx, file);
-                      }}
-                      className="hidden"
-                      id={`idcard-upload-${idx}`}
-                    />
-                    <label
-                      htmlFor={`idcard-upload-${idx}`}
-                      className="flex items-center justify-center gap-2 min-h-[44px] px-3 py-2 bg-background border border-dashed border-input rounded-md text-xs font-medium text-muted-foreground cursor-pointer hover:bg-muted transition-colors"
-                    >
-                      {member.isUploadingIdCard ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin text-primary" />{" "}
-                          Mengompres & Upload...
-                        </>
-                      ) : (
-                        <>
-                          <FileText className="w-4 h-4 text-muted-foreground" />{" "}
-                          Upload Kartu Pelajar / KK
-                        </>
-                      )}
+              {isLineFollower && (
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-medium text-foreground">
+                      Foto Kartu Pelajar / KK *
                     </label>
-                    <p className="text-[10px] text-muted-foreground mt-1">
-                      JPG/PNG/WebP/HEIC • maks {mrcMaxRawLabel("identityCard")}
-                    </p>
+                    <span className="text-[10px] text-muted-foreground">
+                      Kartu Pelajar/KK
+                    </span>
                   </div>
-                )}
-                {member.uploadIdCardError && (
-                  <p className="text-xs text-destructive mt-1" role="alert">
-                    {member.uploadIdCardError}
-                  </p>
-                )}
-              </div>
+                  {member.identity_card_url ? (
+                    <div className="flex items-center gap-2 min-h-[44px] px-3 py-2 bg-background border border-border rounded-md">
+                      <Image
+                        src={member.identity_card_url}
+                        alt="Kartu Identitas"
+                        width={32}
+                        height={32}
+                        className="w-8 h-8 object-cover rounded-md border"
+                      />
+                      <span className="text-xs text-success font-medium">
+                        Kartu Tersimpan
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          updateMember(idx, "identity_card_url", "")
+                        }
+                        className="min-h-[44px] px-1 text-xs text-muted-foreground hover:underline hover:text-foreground ml-auto rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        Ubah
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <input
+                        type="file"
+                        accept={MRC_ACCEPT_ATTR}
+                        disabled={member.isUploadingIdCard}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          e.target.value = "";
+                          if (file) handleIdentityCardUpload(idx, file);
+                        }}
+                        className="hidden"
+                        id={`idcard-upload-${idx}`}
+                      />
+                      <label
+                        htmlFor={`idcard-upload-${idx}`}
+                        className="flex items-center justify-center gap-2 min-h-[44px] px-3 py-2 bg-background border border-dashed border-input rounded-md text-xs font-medium text-muted-foreground cursor-pointer hover:bg-muted transition-colors"
+                      >
+                        {member.isUploadingIdCard ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin text-primary" />{" "}
+                            Mengompres & Upload...
+                          </>
+                        ) : (
+                          <>
+                            <FileText className="w-4 h-4 text-muted-foreground" />{" "}
+                            Upload Kartu Pelajar / KK
+                          </>
+                        )}
+                      </label>
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        JPG/PNG/WebP/HEIC • maks{" "}
+                        {mrcMaxRawLabel("identityCard")}
+                      </p>
+                    </div>
+                  )}
+                  {member.uploadIdCardError && (
+                    <p className="text-xs text-destructive mt-1" role="alert">
+                      {member.uploadIdCardError}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         ))}

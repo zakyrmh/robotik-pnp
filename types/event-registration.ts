@@ -87,6 +87,7 @@ export interface EventTeamMember {
   full_name: string;
   photo_url: string;
   identity_card_url?: string | null;
+  birth_date?: string | null;
   member_qr_token: string;
   verification_status: MemberVerificationStatus;
   role_in_team: string;
