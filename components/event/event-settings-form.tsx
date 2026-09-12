@@ -3,8 +3,21 @@
 import { useMemo, useState } from "react";
 import { updateEventSettingsAction } from "@/lib/actions/event-admin";
 import { getBatchPhase, PHASE_LABELS } from "@/lib/event-batch";
-import type { EventSettings } from "@/types/event-registration";
-import { CalendarRange, Loader2, Save, Info } from "lucide-react";
+import type {
+  EventSettings,
+  PaymentMode,
+  BankAccount,
+} from "@/types/event-registration";
+import {
+  CalendarRange,
+  Loader2,
+  Save,
+  Info,
+  CreditCard,
+  Building2,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface EventSettingsFormProps {
@@ -58,6 +71,40 @@ export function EventSettingsForm({ initialSettings }: EventSettingsFormProps) {
     toInputValue(initialSettings?.event_end ?? null),
   );
 
+  const [paymentMode, setPaymentMode] = useState<PaymentMode>(
+    initialSettings?.payment_mode ?? "midtrans",
+  );
+
+  // Initial Bank Accounts
+  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>(() => {
+    if (
+      initialSettings?.bank_accounts &&
+      initialSettings.bank_accounts.length > 0
+    ) {
+      return initialSettings.bank_accounts;
+    }
+    if (
+      initialSettings?.bank_name ||
+      initialSettings?.bank_account_number ||
+      initialSettings?.bank_account_holder
+    ) {
+      return [
+        {
+          bank_name: initialSettings.bank_name || "",
+          account_number: initialSettings.bank_account_number || "",
+          account_holder: initialSettings.bank_account_holder || "",
+        },
+      ];
+    }
+    return [
+      {
+        bank_name: "Bank Nagari / BNI",
+        account_number: "",
+        account_holder: "UKM Robotik PNP",
+      },
+    ];
+  });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -94,11 +141,39 @@ export function EventSettingsForm({ initialSettings }: EventSettingsFormProps) {
     ],
   );
 
+  const handleAddBankAccount = () => {
+    setBankAccounts([
+      ...bankAccounts,
+      { bank_name: "", account_number: "", account_holder: "" },
+    ]);
+  };
+
+  const handleRemoveBankAccount = (index: number) => {
+    if (bankAccounts.length <= 1) return;
+    setBankAccounts(bankAccounts.filter((_, i) => i !== index));
+  };
+
+  const handleUpdateBankAccount = (
+    index: number,
+    field: keyof BankAccount,
+    value: string,
+  ) => {
+    const updated = [...bankAccounts];
+    updated[index] = { ...updated[index], [field]: value };
+    setBankAccounts(updated);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setErrorMsg(null);
     setSuccessMsg(null);
+
+    const primaryBank = bankAccounts[0] || {
+      bank_name: "",
+      account_number: "",
+      account_holder: "",
+    };
 
     const res = await updateEventSettingsAction({
       timeline_release_date: fromInputValue(timelineReleaseDate),
@@ -110,6 +185,11 @@ export function EventSettingsForm({ initialSettings }: EventSettingsFormProps) {
       technical_meeting_end: fromInputValue(techMeetingEnd),
       event_start: fromInputValue(eventStart),
       event_end: fromInputValue(eventEnd),
+      payment_mode: paymentMode,
+      bank_name: primaryBank.bank_name,
+      bank_account_number: primaryBank.account_number,
+      bank_account_holder: primaryBank.account_holder,
+      bank_accounts: bankAccounts,
     });
 
     setIsSubmitting(false);
@@ -151,7 +231,11 @@ export function EventSettingsForm({ initialSettings }: EventSettingsFormProps) {
         value: techMeetingStart,
         set: setTechMeetingStart,
       },
-      end: { label: "Selesai TM", value: techMeetingEnd, set: setTechMeetingEnd },
+      end: {
+        label: "Selesai TM",
+        value: techMeetingEnd,
+        set: setTechMeetingEnd,
+      },
       accent: "border-l-purple-500",
     },
     {
@@ -164,11 +248,11 @@ export function EventSettingsForm({ initialSettings }: EventSettingsFormProps) {
   ];
 
   return (
-    <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-5 sm:p-6 space-y-5">
+    <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-5 sm:p-6 space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-          <CalendarRange className="w-5 h-5 text-[#3b5b84]" /> Pengaturan Jadwal
-          & Batch
+          <CalendarRange className="w-5 h-5 text-[#3b5b84]" /> Pengaturan Event
+          & Metode Pembayaran
         </h2>
         <span
           className={cn(
@@ -184,29 +268,6 @@ export function EventSettingsForm({ initialSettings }: EventSettingsFormProps) {
         </span>
       </div>
 
-      <p className="flex items-start gap-2 text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-lg p-3">
-        <Info className="w-4 h-4 shrink-0 mt-0.5 text-[#3b5b84]" />
-        Aturan Bisnis Timeline: Sebelum tanggal Rilis Timeline reached, halaman publik{" "}
-        <span className="font-mono font-semibold text-slate-700">/mrc</span> menampilkan "Coming Soon".
-        Batch 2 disembunyikan sepenuhnya sampai Batch 1 berakhir.
-      </p>
-
-      {/* Tanggal Rilis Timeline Single Field */}
-      <div className="bg-slate-50/80 border border-slate-200 border-l-4 border-l-blue-500 rounded-lg p-4 space-y-2">
-        <label className="block text-sm font-bold text-slate-800">
-          Tanggal Rilis Timeline ke Publik
-        </label>
-        <p className="text-[11px] text-slate-500">
-          Sebelum tanggal ini, timeline publik di halaman /mrc akan berstatus "Coming Soon".
-        </p>
-        <input
-          type="datetime-local"
-          value={timelineReleaseDate}
-          onChange={(e) => setTimelineReleaseDate(e.target.value)}
-          className={inputClass}
-        />
-      </div>
-
       {errorMsg && (
         <p className="text-xs font-medium text-rose-600 bg-rose-50 border border-rose-200 rounded-lg p-3">
           {errorMsg}
@@ -218,7 +279,209 @@ export function EventSettingsForm({ initialSettings }: EventSettingsFormProps) {
         </p>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* METODE PEMBAYARAN SECTION */}
+        <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-4">
+          <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
+            <CreditCard className="w-5 h-5 text-[#3b5b84]" />
+            <div>
+              <h3 className="text-sm font-bold text-slate-800">
+                Opsi & Metode Pembayaran Global
+              </h3>
+              <p className="text-xs text-slate-500">
+                Pilih apakah pendaftaran menggunakan Midtrans Payment Gateway
+                atau Transfer Bank Manual.
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <label
+              className={cn(
+                "flex items-start gap-3 p-4 border rounded-xl cursor-pointer transition-all bg-white",
+                paymentMode === "midtrans"
+                  ? "border-[#3b5b84] ring-2 ring-[#3b5b84]/20 bg-blue-50/20"
+                  : "border-slate-200 hover:border-slate-300",
+              )}
+            >
+              <input
+                type="radio"
+                name="payment_mode"
+                value="midtrans"
+                checked={paymentMode === "midtrans"}
+                onChange={() => setPaymentMode("midtrans")}
+                className="mt-1 text-[#3b5b84] focus:ring-[#3b5b84]"
+              />
+              <div>
+                <span className="text-sm font-bold text-slate-800 block">
+                  Opsi 1: Payment Gateway (Midtrans)
+                </span>
+                <p className="text-xs text-slate-500 mt-1">
+                  Peserta bayar via Midtrans (Snap/QRIS). Verifikasi otomatis
+                  oleh sistem.
+                </p>
+              </div>
+            </label>
+
+            <label
+              className={cn(
+                "flex items-start gap-3 p-4 border rounded-xl cursor-pointer transition-all bg-white",
+                paymentMode === "manual_bank"
+                  ? "border-[#3b5b84] ring-2 ring-[#3b5b84]/20 bg-blue-50/20"
+                  : "border-slate-200 hover:border-slate-300",
+              )}
+            >
+              <input
+                type="radio"
+                name="payment_mode"
+                value="manual_bank"
+                checked={paymentMode === "manual_bank"}
+                onChange={() => setPaymentMode("manual_bank")}
+                className="mt-1 text-[#3b5b84] focus:ring-[#3b5b84]"
+              />
+              <div>
+                <span className="text-sm font-bold text-slate-800 block">
+                  Opsi 2: Transfer Bank Manual
+                </span>
+                <p className="text-xs text-slate-500 mt-1">
+                  Peserta mentransfer biaya ke rekening bank panitia dan
+                  mengunggah bukti pembayaran untuk diverifikasi admin.
+                </p>
+              </div>
+            </label>
+          </div>
+
+          {paymentMode === "manual_bank" && (
+            <div className="bg-white border border-slate-200 rounded-lg p-4 space-y-4 pt-4 border-l-4 border-l-[#3b5b84]">
+              <div className="flex items-center justify-between border-b pb-2">
+                <h4 className="text-xs font-bold text-slate-800 flex items-center gap-1.5 uppercase tracking-wider">
+                  <Building2 className="w-4 h-4 text-[#3b5b84]" /> Daftar
+                  Rekening Bank Penerima (Bisa Lebih dari 1)
+                </h4>
+                <button
+                  type="button"
+                  onClick={handleAddBankAccount}
+                  className="inline-flex items-center gap-1 text-xs font-bold text-[#3b5b84] hover:underline"
+                >
+                  <Plus className="w-3.5 h-3.5" /> Tambah Rekening Bank
+                </button>
+              </div>
+
+              {bankAccounts.map((acc, idx) => (
+                <div
+                  key={idx}
+                  className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2 relative"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-slate-500 uppercase">
+                      Rekening Bank #{idx + 1}
+                    </span>
+                    {bankAccounts.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveBankAccount(idx)}
+                        className="text-slate-400 hover:text-rose-600 transition-colors"
+                        title="Hapus Rekening"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-700 mb-1">
+                        Nama Bank *
+                      </label>
+                      <input
+                        type="text"
+                        required={paymentMode === "manual_bank"}
+                        value={acc.bank_name}
+                        onChange={(e) =>
+                          handleUpdateBankAccount(
+                            idx,
+                            "bank_name",
+                            e.target.value,
+                          )
+                        }
+                        placeholder="Contoh: Bank BRI / BCA / BNI"
+                        className={inputClass}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-700 mb-1">
+                        Nomor Rekening *
+                      </label>
+                      <input
+                        type="text"
+                        required={paymentMode === "manual_bank"}
+                        value={acc.account_number}
+                        onChange={(e) =>
+                          handleUpdateBankAccount(
+                            idx,
+                            "account_number",
+                            e.target.value,
+                          )
+                        }
+                        placeholder="Contoh: 001234567890"
+                        className={inputClass}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-700 mb-1">
+                        Atas Nama Pemilik Rekening *
+                      </label>
+                      <input
+                        type="text"
+                        required={paymentMode === "manual_bank"}
+                        value={acc.account_holder}
+                        onChange={(e) =>
+                          handleUpdateBankAccount(
+                            idx,
+                            "account_holder",
+                            e.target.value,
+                          )
+                        }
+                        placeholder="Contoh: Panitia MRC PNP"
+                        className={inputClass}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* JADWAL & TIMELINE SECTION */}
+        <p className="flex items-start gap-2 text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-lg p-3">
+          <Info className="w-4 h-4 shrink-0 mt-0.5 text-[#3b5b84]" />
+          Aturan Bisnis Timeline: Sebelum tanggal Rilis Timeline reached,
+          halaman publik{" "}
+          <span className="font-mono font-semibold text-slate-700">
+            /mrc
+          </span>{" "}
+          menampilkan &quot;Coming Soon&quot;. Batch 2 disembunyikan sepenuhnya
+          sampai Batch 1 berakhir.
+        </p>
+
+        {/* Tanggal Rilis Timeline Single Field */}
+        <div className="bg-slate-50/80 border border-slate-200 border-l-4 border-l-blue-500 rounded-lg p-4 space-y-2">
+          <label className="block text-sm font-bold text-slate-800">
+            Tanggal Rilis Timeline ke Publik
+          </label>
+          <p className="text-[11px] text-slate-500">
+            Sebelum tanggal ini, timeline publik di halaman /mrc akan berstatus
+            &quot;Coming Soon&quot;.
+          </p>
+          <input
+            type="datetime-local"
+            value={timelineReleaseDate}
+            onChange={(e) => setTimelineReleaseDate(e.target.value)}
+            className={inputClass}
+          />
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {ranges.map((r) => (
             <fieldset

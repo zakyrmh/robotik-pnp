@@ -517,6 +517,7 @@ export type Database = {
           registration_fee_batch2: number | null;
           slug: string;
           updated_at: string;
+          whatsapp_group_url: string | null;
         };
         Insert: {
           created_at?: string;
@@ -531,6 +532,7 @@ export type Database = {
           registration_fee_batch2?: number | null;
           slug: string;
           updated_at?: string;
+          whatsapp_group_url?: string | null;
         };
         Update: {
           created_at?: string;
@@ -545,6 +547,7 @@ export type Database = {
           registration_fee_batch2?: number | null;
           slug?: string;
           updated_at?: string;
+          whatsapp_group_url?: string | null;
         };
         Relationships: [];
       };
@@ -616,6 +619,7 @@ export type Database = {
           payment_status: string;
           registration_batch: string | null;
           registration_code: string;
+          rejection_reason: string | null;
           rules_accepted_at: string | null;
           rules_version_id: string | null;
           team_email: string;
@@ -642,6 +646,7 @@ export type Database = {
           payment_status?: string;
           registration_batch?: string | null;
           registration_code: string;
+          rejection_reason?: string | null;
           rules_accepted_at?: string | null;
           rules_version_id?: string | null;
           team_email: string;
@@ -668,6 +673,7 @@ export type Database = {
           payment_status?: string;
           registration_batch?: string | null;
           registration_code?: string;
+          rejection_reason?: string | null;
           rules_accepted_at?: string | null;
           rules_version_id?: string | null;
           team_email?: string;
@@ -727,6 +733,9 @@ export type Database = {
       };
       event_settings: {
         Row: {
+          bank_account_holder: string | null;
+          bank_account_number: string | null;
+          bank_name: string | null;
           batch1_end: string | null;
           batch1_start: string | null;
           batch2_end: string | null;
@@ -735,12 +744,16 @@ export type Database = {
           event_end: string | null;
           event_start: string | null;
           id: number;
+          payment_mode: string;
           technical_meeting_end: string | null;
           technical_meeting_start: string | null;
           timeline_release_date: string | null;
           updated_at: string;
         };
         Insert: {
+          bank_account_holder?: string | null;
+          bank_account_number?: string | null;
+          bank_name?: string | null;
           batch1_end?: string | null;
           batch1_start?: string | null;
           batch2_end?: string | null;
@@ -749,12 +762,16 @@ export type Database = {
           event_end?: string | null;
           event_start?: string | null;
           id?: number;
+          payment_mode?: string;
           technical_meeting_end?: string | null;
           technical_meeting_start?: string | null;
           timeline_release_date?: string | null;
           updated_at?: string;
         };
         Update: {
+          bank_account_holder?: string | null;
+          bank_account_number?: string | null;
+          bank_name?: string | null;
           batch1_end?: string | null;
           batch1_start?: string | null;
           batch2_end?: string | null;
@@ -763,6 +780,7 @@ export type Database = {
           event_end?: string | null;
           event_start?: string | null;
           id?: number;
+          payment_mode?: string;
           technical_meeting_end?: string | null;
           technical_meeting_start?: string | null;
           timeline_release_date?: string | null;
@@ -772,7 +790,7 @@ export type Database = {
       };
       event_team_members: {
         Row: {
-          birth_date: string | null
+          birth_date: string | null;
           created_at: string;
           full_name: string;
           id: string;
@@ -784,7 +802,7 @@ export type Database = {
           verification_status: string;
         };
         Insert: {
-          birth_date?: string | null
+          birth_date?: string | null;
           created_at?: string;
           full_name: string;
           id?: string;
@@ -796,7 +814,7 @@ export type Database = {
           verification_status?: string;
         };
         Update: {
-          birth_date?: string | null
+          birth_date?: string | null;
           created_at?: string;
           full_name?: string;
           id?: string;

@@ -6,10 +6,7 @@ import {
 } from "@/lib/event-batch";
 import type { EventSettings } from "@/types/event-registration";
 
-import {
-  isTimelineReleased,
-  isBatch2Visible,
-} from "@/lib/event-batch";
+import { isTimelineReleased, isBatch2Visible } from "@/lib/event-batch";
 
 const SETTINGS: EventSettings = {
   id: 1,
@@ -22,6 +19,11 @@ const SETTINGS: EventSettings = {
   technical_meeting_end: "2026-10-14T17:00:00+07:00",
   event_start: "2026-10-15T09:00:00+07:00",
   event_end: "2026-10-17T17:00:00+07:00",
+  payment_mode: "midtrans",
+  bank_name: null,
+  bank_account_number: null,
+  bank_account_holder: null,
+  bank_accounts: null,
   created_at: "2026-09-01T00:00:00.000Z",
   updated_at: "2026-09-01T00:00:00.000Z",
 };
@@ -40,7 +42,9 @@ describe("event-batch phase & visibility detection", () => {
       new Date("2026-09-08T12:00:00+07:00"),
     );
     expect(phase.phase).toBe("coming-soon");
-    expect(isTimelineReleased(SETTINGS, new Date("2026-09-08T12:00:00+07:00"))).toBe(false);
+    expect(
+      isTimelineReleased(SETTINGS, new Date("2026-09-08T12:00:00+07:00")),
+    ).toBe(false);
   });
 
   it("detects before-batch1 and released timeline after timeline_release_date", () => {
@@ -49,8 +53,12 @@ describe("event-batch phase & visibility detection", () => {
       new Date("2026-09-12T12:00:00+07:00"),
     );
     expect(phase.phase).toBe("before-batch1");
-    expect(isTimelineReleased(SETTINGS, new Date("2026-09-12T12:00:00+07:00"))).toBe(true);
-    expect(isBatch2Visible(SETTINGS, new Date("2026-09-12T12:00:00+07:00"))).toBe(false);
+    expect(
+      isTimelineReleased(SETTINGS, new Date("2026-09-12T12:00:00+07:00")),
+    ).toBe(true);
+    expect(
+      isBatch2Visible(SETTINGS, new Date("2026-09-12T12:00:00+07:00")),
+    ).toBe(false);
   });
 
   it("hides Batch 2 during Batch 1 registration period", () => {

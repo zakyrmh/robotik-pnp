@@ -62,7 +62,7 @@ async function checkEventRole(allowedRoles: RoleEvent[]) {
 }
 
 // --------------------------------------------------------
-// Global Event Settings (rentang Batch 1 / Batch 2 / Acara)
+// Global Event Settings (rentang Batch 1 / Batch 2 / Acara / Mode Pembayaran)
 // --------------------------------------------------------
 
 const EVENT_SETTINGS_ID = 1;
@@ -106,7 +106,7 @@ export async function updateEventSettingsAction(
     const firstIssue = validated.error.issues[0];
     return {
       success: false,
-      error: firstIssue?.message || "Rentang tanggal tidak valid.",
+      error: firstIssue?.message || "Input pengaturan event tidak valid.",
     };
   }
 
@@ -123,6 +123,11 @@ export async function updateEventSettingsAction(
     technical_meeting_end: toNullableIso(validated.data.technical_meeting_end),
     event_start: toNullableIso(validated.data.event_start),
     event_end: toNullableIso(validated.data.event_end),
+    payment_mode: validated.data.payment_mode,
+    bank_name: validated.data.bank_name || null,
+    bank_account_number: validated.data.bank_account_number || null,
+    bank_account_holder: validated.data.bank_account_holder || null,
+    bank_accounts: validated.data.bank_accounts || null,
     updated_at: new Date().toISOString(),
   };
 
@@ -144,7 +149,7 @@ export async function updateEventSettingsAction(
   return {
     success: true,
     data,
-    message: "Pengaturan jadwal & batch berhasil disimpan.",
+    message: "Pengaturan jadwal, batch & metode pembayaran berhasil disimpan.",
   };
 }
 
@@ -343,14 +348,103 @@ export async function updatePaymentStatusAction(
       categoryName: updatedReg.category?.name || "Minangkabau Robot Contest",
       accessToken: updatedReg.access_token,
       appBaseUrl: appUrl,
+      paymentStatus: "paid",
+      whatsappGroupUrl: updatedReg.category?.whatsapp_group_url,
     });
   }
 
   revalidatePath("/manajemen-event");
+  revalidatePath("/manajemen-event/verifikasi-pembayaran");
   return {
     success: true,
     data: { success: true },
     message: `Status pembayaran berhasil diubah ke ${newStatus}.`,
+  };
+}
+
+/**
+ * Admin Verifikasi Pembayaran Manual (Approve / Reject)
+ */
+export async function verifyManualPaymentAction(
+  registrationId: string,
+  action: "approve" | "reject",
+  rejectionReason?: string,
+): Promise<ActionResult<{ success: boolean }>> {
+  const check = await checkEventRole(["panitia-pendaftaran"]);
+  if (!check.authorized) {
+    return { success: false, error: check.error || "Akses ditolak." };
+  }
+
+  if (
+    action === "reject" &&
+    (!rejectionReason || rejectionReason.trim().length === 0)
+  ) {
+    return { success: false, error: "Alasan penolakan wajib diisi." };
+  }
+
+  const adminSupabase = createAdminClient();
+
+  const newStatus: PaymentStatus = action === "approve" ? "paid" : "rejected";
+  const updatePayload: Record<string, unknown> = {
+    payment_status: newStatus,
+    rejection_reason: action === "reject" ? rejectionReason?.trim() : null,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (action === "approve") {
+    updatePayload.paid_at = new Date().toISOString();
+  }
+
+  const { data: updatedReg, error } = await (untypedFrom(
+    adminSupabase,
+    "event_registrations",
+  )
+    .update(updatePayload)
+    .eq("id", registrationId)
+    .select(
+      `
+      *,
+      category:event_categories(*)
+    `,
+    )
+    .single() as unknown as Promise<{
+    data: EventRegistration | null;
+    error: unknown;
+  }>);
+
+  if (error || !updatedReg) {
+    return { success: false, error: "Gagal memproses verifikasi pembayaran." };
+  }
+
+  const appUrl =
+    process.env.APP_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.SITE_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    "http://localhost:3000";
+
+  // Send email to team regarding payment approval or rejection
+  await sendETicketEmail({
+    toEmail: updatedReg.team_email,
+    teamName: updatedReg.team_name,
+    registrationCode: updatedReg.registration_code,
+    categoryName: updatedReg.category?.name || "Minangkabau Robot Contest",
+    accessToken: updatedReg.access_token,
+    appBaseUrl: appUrl,
+    paymentStatus: newStatus,
+    whatsappGroupUrl: updatedReg.category?.whatsapp_group_url,
+    rejectionReason: action === "reject" ? rejectionReason : undefined,
+  });
+
+  revalidatePath("/manajemen-event");
+  revalidatePath("/manajemen-event/verifikasi-pembayaran");
+  return {
+    success: true,
+    data: { success: true },
+    message:
+      action === "approve"
+        ? "Pembayaran berhasil diverifikasi (Disetujui)."
+        : "Bukti pembayaran ditolak.",
   };
 }
 

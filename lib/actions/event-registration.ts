@@ -8,7 +8,6 @@ import {
   type EventRegistrationInput,
 } from "@/lib/schemas/event-registration";
 import {
-  createMidtransQrisCharge,
   createMidtransSnapTransaction,
   checkMidtransTransactionStatus,
 } from "@/lib/services/midtrans";
@@ -30,6 +29,7 @@ import type {
   EventRegistration,
   EventCategory,
   EventSettings,
+  PaymentStatus,
 } from "@/types/event-registration";
 
 function generateRegistrationCode(): string {
@@ -62,7 +62,6 @@ export async function registerEventAction(
     const hasMemberError = Object.keys(fieldErrors).some((k) =>
       k.startsWith("members"),
     );
-    // Server mencatat detail agar kegagalan validasi bisa ditelusuri dari log.
     console.error(
       "registerEventAction validation failed:",
       JSON.stringify(fieldErrors),
@@ -101,30 +100,7 @@ export async function registerEventAction(
     };
   }
 
-  // Validasi khusus kategori Line Follower Junior & Senior (Wajib Foto Kartu Pelajar/KK dan Tanggal Lahir)
-  const isLineFollowerCategory =
-    categoryData.slug === "line-follower-senior" ||
-    categoryData.slug === "line-follower-junior";
-
-  if (isLineFollowerCategory) {
-    for (let i = 0; i < validated.data.members.length; i++) {
-      const member = validated.data.members[i];
-      if (!member.identity_card_url) {
-        return {
-          success: false,
-          error: `Foto Kartu Pelajar / KK untuk anggota #${i + 1} (${member.full_name}) wajib diunggah untuk kategori Line Follower.`,
-        };
-      }
-      if (!member.birth_date) {
-        return {
-          success: false,
-          error: `Tanggal lahir untuk anggota #${i + 1} (${member.full_name}) wajib diisi untuk kategori Line Follower.`,
-        };
-      }
-    }
-  }
-
-  // Tentukan batch aktif dari settings global → biaya batch 1 / batch 2
+  // Tentukan batch aktif dari settings global
   const { data: settings } = await (untypedFrom(adminSupabase, "event_settings")
     .select("*")
     .eq("id", 1)
@@ -181,75 +157,122 @@ export async function registerEventAction(
       };
     }
 
-    // Catat batch pendaftaran ( dipakai untuk audit & nominal Midtrans )
+    // Catat batch pendaftaran
     await untypedFrom(adminSupabase, "event_registrations")
       .update({ registration_batch: activeBatch })
       .eq("id", regId);
 
     const orderId = generateOrderId(regCode);
-
-    // Buat tagihan QRIS dinamis (satu-satunya metode pembayaran) bila ada biaya
     let currentRegRecord: EventRegistration | null = null;
-    const qrUrl: string | null = null;
 
-    let snapToken: string | null = null;
+    const isManualBank = settings?.payment_mode === "manual_bank";
 
     if (totalAmount > 0) {
-      const snapRes = await createMidtransSnapTransaction({
-        orderId,
-        grossAmount: totalAmount,
-        customerDetails: {
-          first_name: validated.data.team_name,
-          email: validated.data.team_email,
-          phone: validated.data.team_whatsapp,
-        },
-        itemDetails: [
-          {
-            id: categoryData.id,
-            price: totalAmount,
-            quantity: 1,
-            name: `Biaya Lomba ${categoryData.name} (${BATCH_LABELS[activeBatch]})`,
+      if (isManualBank) {
+        // Mode Transfer Manual Bank
+        const { data: updatedReg } = await (untypedFrom(
+          adminSupabase,
+          "event_registrations",
+        )
+          .update({
+            payment_status: "unpaid",
+          })
+          .eq("id", regId)
+          .select("*")
+          .single() as unknown as Promise<{ data: EventRegistration | null }>);
+
+        currentRegRecord = updatedReg;
+
+        if (currentRegRecord) {
+          const appUrl =
+            process.env.APP_URL ||
+            process.env.NEXT_PUBLIC_APP_URL ||
+            process.env.SITE_URL ||
+            process.env.NEXT_PUBLIC_SITE_URL ||
+            "http://localhost:3000";
+
+          const bankAccounts =
+            settings?.bank_accounts && settings.bank_accounts.length > 0
+              ? settings.bank_accounts
+              : settings?.bank_name
+                ? [
+                    {
+                      bank_name: settings.bank_name,
+                      account_number: settings.bank_account_number || "",
+                      account_holder: settings.bank_account_holder || "",
+                    },
+                  ]
+                : [];
+
+          await sendETicketEmail({
+            toEmail: currentRegRecord.team_email,
+            teamName: currentRegRecord.team_name,
+            registrationCode: currentRegRecord.registration_code,
+            categoryName: categoryData.name,
+            accessToken: currentRegRecord.access_token,
+            appBaseUrl: appUrl,
+            paymentStatus: "unpaid",
+            paymentMode: "manual_bank",
+            bankAccounts,
+          });
+        }
+      } else {
+        // Mode Payment Gateway (Midtrans)
+        const snapRes = await createMidtransSnapTransaction({
+          orderId,
+          grossAmount: totalAmount,
+          customerDetails: {
+            first_name: validated.data.team_name,
+            email: validated.data.team_email,
+            phone: validated.data.team_whatsapp,
           },
-        ],
-      });
-      snapToken = snapRes.token;
-
-      // Update registration record with order_id and Snap token
-      const { data: updatedReg } = await (untypedFrom(
-        adminSupabase,
-        "event_registrations",
-      )
-        .update({
-          midtrans_order_id: orderId,
-          midtrans_snap_token: snapRes.token,
-          midtrans_payment_type: "snap",
-        })
-        .eq("id", regId)
-        .select("*")
-        .single() as unknown as Promise<{ data: EventRegistration | null }>);
-
-      currentRegRecord = updatedReg;
-
-      // Send pending registration confirmation email with access link
-      if (currentRegRecord) {
-        const appUrl =
-          process.env.APP_URL ||
-          process.env.NEXT_PUBLIC_APP_URL ||
-          process.env.SITE_URL ||
-          process.env.NEXT_PUBLIC_SITE_URL ||
-          "http://localhost:3000";
-        await sendETicketEmail({
-          toEmail: currentRegRecord.team_email,
-          teamName: currentRegRecord.team_name,
-          registrationCode: currentRegRecord.registration_code,
-          categoryName: categoryData.name,
-          accessToken: currentRegRecord.access_token,
-          appBaseUrl: appUrl,
-          paymentStatus: "pending",
+          itemDetails: [
+            {
+              id: categoryData.id,
+              price: totalAmount,
+              quantity: 1,
+              name: `Biaya Lomba ${categoryData.name} (${BATCH_LABELS[activeBatch]})`,
+            },
+          ],
         });
+
+        const { data: updatedReg } = await (untypedFrom(
+          adminSupabase,
+          "event_registrations",
+        )
+          .update({
+            midtrans_order_id: orderId,
+            midtrans_snap_token: snapRes.token,
+            midtrans_payment_type: "snap",
+            payment_status: "pending",
+          })
+          .eq("id", regId)
+          .select("*")
+          .single() as unknown as Promise<{ data: EventRegistration | null }>);
+
+        currentRegRecord = updatedReg;
+
+        if (currentRegRecord) {
+          const appUrl =
+            process.env.APP_URL ||
+            process.env.NEXT_PUBLIC_APP_URL ||
+            process.env.SITE_URL ||
+            process.env.NEXT_PUBLIC_SITE_URL ||
+            "http://localhost:3000";
+          await sendETicketEmail({
+            toEmail: currentRegRecord.team_email,
+            teamName: currentRegRecord.team_name,
+            registrationCode: currentRegRecord.registration_code,
+            categoryName: categoryData.name,
+            accessToken: currentRegRecord.access_token,
+            appBaseUrl: appUrl,
+            paymentStatus: "pending",
+            paymentMode: "midtrans",
+          });
+        }
       }
     } else {
-      // Free registration -> set paid directly
+      // Pendaftaran Gratis -> langsung lunas
       const { data: regRecord } = await (untypedFrom(
         adminSupabase,
         "event_registrations",
@@ -279,11 +302,13 @@ export async function registerEventAction(
           accessToken: regRecord.access_token,
           appBaseUrl: appUrl,
           paymentStatus: "paid",
+          whatsappGroupUrl: categoryData.whatsapp_group_url,
         });
       }
     }
 
     revalidatePath("/manajemen-event");
+    revalidatePath("/manajemen-event/verifikasi-pembayaran");
 
     return {
       success: true,
@@ -291,7 +316,7 @@ export async function registerEventAction(
         registrationId: regId,
         registrationCode: regCode,
         accessToken: currentRegRecord?.access_token || "",
-        qrUrl,
+        qrUrl: null,
       },
       message: "Pendaftaran berhasil disimpan.",
     };
@@ -304,11 +329,6 @@ export async function registerEventAction(
   }
 }
 
-/**
- * Menerbitkan ulang QRIS dinamis untuk pendaftaran yang QR-nya kedaluwarsa
- * atau gagal. Membuat order_id baru (Midtrans tidak mengizinkan charge ulang
- * order_id yang sama untuk QR baru) dan mengembalikan status ke pending.
- */
 export async function refreshQrisChargeAction(
   accessToken: string,
 ): Promise<ActionResult<{ qrUrl: string | null }>> {
@@ -429,14 +449,14 @@ export async function getRegistrationByAccessTokenAction(
     };
   }
 
-  // Active Sync: If status is still pending, check Midtrans REST API status to auto-update
+  // Active Sync: If status is still pending and using Midtrans order, check status
   if (data.payment_status === "pending" && data.midtrans_order_id) {
     const midtransData = await checkMidtransTransactionStatus(
       data.midtrans_order_id,
     );
     if (midtransData) {
       const status = midtransData.transaction_status;
-      let newStatus: "pending" | "paid" | "expired" | "failed" = "pending";
+      let newStatus: PaymentStatus = "pending";
 
       if (
         status === "settlement" ||
@@ -485,6 +505,7 @@ export async function getRegistrationByAccessTokenAction(
             accessToken: data.access_token,
             appBaseUrl: appUrl,
             paymentStatus: "paid",
+            whatsappGroupUrl: data.category?.whatsapp_group_url,
           });
         }
       }
@@ -507,23 +528,59 @@ export async function submitManualPaymentProofAction(
 
   const adminSupabase = createAdminClient();
 
-  const { error } = await (untypedFrom(adminSupabase, "event_registrations")
+  const { data: updatedReg, error } = await (untypedFrom(
+    adminSupabase,
+    "event_registrations",
+  )
     .update({
       manual_payment_proof_url: proofUrl,
+      payment_status: "pending_verification",
+      rejection_reason: null,
+      updated_at: new Date().toISOString(),
     })
-    .eq("id", registrationId) as unknown as Promise<{ error: unknown }>);
+    .eq("id", registrationId)
+    .select(
+      `
+      *,
+      category:event_categories(*)
+    `,
+    )
+    .single() as unknown as Promise<{
+    data: EventRegistration | null;
+    error: unknown;
+  }>);
 
-  if (error) {
+  if (error || !updatedReg) {
     return {
       success: false,
       error: "Gagal menyimpan bukti pembayaran manual.",
     };
   }
 
+  const appUrl =
+    process.env.APP_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.SITE_URL ||
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    "http://localhost:3000";
+
+  await sendETicketEmail({
+    toEmail: updatedReg.team_email,
+    teamName: updatedReg.team_name,
+    registrationCode: updatedReg.registration_code,
+    categoryName: updatedReg.category?.name || "Minangkabau Robot Contest",
+    accessToken: updatedReg.access_token,
+    appBaseUrl: appUrl,
+    paymentStatus: "pending_verification",
+  });
+
+  revalidatePath("/manajemen-event");
+  revalidatePath("/manajemen-event/verifikasi-pembayaran");
+
   return {
     success: true,
     data: { success: true },
-    message: "Bukti pembayaran berhasil diunggah. Menunggu konfirmasi panitia.",
+    message: "Bukti pembayaran berhasil diunggah. Menunggu verifikasi admin.",
   };
 }
 
@@ -536,13 +593,6 @@ async function getUploadClientIp(): Promise<string> {
   );
 }
 
-/**
- * Jalur upload gambar MRC bersama: rate-limit → validasi magic bytes
- * (`file-type`) → normalisasi WebP via `sharp` → simpan ke Cloudflare R2.
- *
- * `File.type` dari browser TIDAK dipercaya — keputusan format memakai 100%
- * hasil inspeksi signature di `processAndUploadMrcImage`.
- */
 async function handleMrcImageUpload(
   formData: FormData,
   kind: MrcImageKind,
@@ -569,9 +619,6 @@ async function handleMrcImageUpload(
 
   try {
     const processed = await processAndUploadMrcImage(file, kind);
-    // Kontrak balik tetap URL tunggal (varian utama WebP) agar skema
-    // `photo_url` / `identity_card_url` tidak berubah; thumbnail ikut
-    // tersimpan di R2 sebagai `<id>-thumb.webp` untuk kebutuhan verifikasi.
     return { success: true, data: processed.url };
   } catch (err: unknown) {
     if (err instanceof MrcImageValidationError) {
@@ -592,6 +639,12 @@ export async function uploadMemberPhotoAction(
 }
 
 export async function uploadMemberIdentityCardAction(
+  formData: FormData,
+): Promise<ActionResult<string>> {
+  return handleMrcImageUpload(formData, "identityCard");
+}
+
+export async function uploadPaymentProofAction(
   formData: FormData,
 ): Promise<ActionResult<string>> {
   return handleMrcImageUpload(formData, "identityCard");

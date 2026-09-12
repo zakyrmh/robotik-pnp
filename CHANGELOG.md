@@ -9,36 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **Mode Pembayaran Manual Transfer Bank (`supabase/migrations/20260911000000_add_payment_mode_and_manual_bank.sql`)**: kolom `payment_mode` (`midtrans`/`manual_bank`) beserta detail rekening (`bank_name`, `bank_account_number`, `bank_account_holder`) pada `event_settings`, kolom `whatsapp_group_url` pada `event_categories`, serta kolom `rejection_reason` dan status pembayaran `pending_verification`/`rejected` pada `event_registrations`.
-- **Dukungan Multi-Rekening Bank (`supabase/migrations/20260912000000_add_multiple_bank_accounts.sql`)**: kolom `bank_accounts` JSONB pada `event_settings` untuk menampung beberapa rekening tujuan pembayaran manual.
-
-### Changed
-
-- **Dev Origin Ngrok (`next.config.ts`)**: menambahkan `allowedDevOrigins` (`*.ngrok-free.dev`, `*.ngrok-free.app`) agar preview tunnel Ngrok dapat memuat dev server Next.js.
+- **Opsi Pembayaran Manual Bank Transfer + Verifikasi Admin (`lib/actions/event-registration.ts`, `lib/actions/event-admin.ts`, `components/event/manual-payment-verification-list.tsx`)**: mode pembayaran global (`midtrans` vs `manual_bank`) pada `event_settings`, instruksi transfer + upload bukti pada `/mrc/bayar/[token]`, halaman verifikasi admin pada `/manajemen-event/verifikasi-pembayaran` (setujui/tolak + alasan penolakan), serta notifikasi email instruksi, persetujuan (dengan link grup WA kategori), dan penolakan.
+- **Dukungan Multi Rekening Bank (`components/event/event-settings-form.tsx`, `components/event/qris-payment-view.tsx`, `supabase/migrations/20260912000000_add_multiple_bank_accounts.sql`)**: admin dapat mengonfigurasi beberapa rekening (mis. BRI, BCA, BNI), peserta memilih rekening tujuan, dan email instruksi memuat seluruh daftar rekening.
 
 ### Fixed
 
-- **Resolusi Konflik Timestamp Migrasi Review Midtrans (`supabase/migrations/20260913000000_create_review_midtrans_tables.sql`)**: memindahkan tabel terisolasi `review_registrations` & `review_transactions` dari timestamp `20260911` ke `20260913` karena slot `20260911` dipakai migrasi mode pembayaran manual.
-
-## [0.8.4] - 2026-09-10
-
-### Added
-
-- **Halaman Review Midtrans Tersembunyi untuk Verifikasi Sandbox (`app/(marketing)/review-midtrans/page.tsx`)**: Halaman terisolasi `/review-midtrans` berisi 6 kategori lomba simulasi, form input peserta, dan integrasi skrip Midtrans Snap Sandbox dengan harga fixed Rp100.000 untuk keperluan Tim Verifikator/Business Reviewer Midtrans.
-- **Isolasi Data & API Review Midtrans**:
-  - **Migrasi database (`supabase/migrations/20260911000000_create_review_midtrans_tables.sql`)**: tabel terisolasi `review_registrations` & `review_transactions` agar data review tidak mencampuri data pendaftaran MRC produksi.
-  - **Helper Midtrans (`lib/midtrans.ts`)**: pembuatan transaksi Snap dan verifikasi signature SHA-512.
-  - **Checkout API (`app/api/review-midtrans/checkout/route.ts`)**: endpoint terisolasi pembuatan transaksi Snap review.
-  - **Webhook notifikasi (`app/api/review-midtrans/notification/route.ts`)**: endpoint notifikasi pembayaran review yang aman.
-  - **Panduan pengujian (`docs/midtrans-review-instructions.md`)**: dokumentasi setup environment dan alur testing Sandbox.
-- **Penyesuaian Offset Sticky Navbar Halaman Review Midtrans (`app/(marketing)/review-midtrans/page.tsx`)**: menambahkan top padding (`pt-16 sm:pt-20`) pada kontainer halaman serta penyesuaian offset sticky header/sidebar agar tidak tertutup `LandingNavbar` yang fixed.
-
-### Changed
-
-- **Pembaruan Desain UI/UX & Dark Mode Halaman Review Midtrans (`app/(marketing)/review-midtrans/page.tsx`)**:
-  - Mengubah seluruh warna hardcoded Tailwind (`bg-slate-50`, `bg-blue-900`, `text-slate-900`, `border-slate-200`) menjadi token semantik `DESIGN.md` (`bg-background`, `bg-card`, `bg-secondary`, `bg-primary`, `text-foreground`, `text-muted-foreground`, `border-border`).
-  - Menyelaraskan mode gelap (Dark Mode) menggunakan _Deep Navy Slate_ (`#0f1b2d`) dan aksen Oranye Soft (`#f0975a`).
-  - Mengoptimalkan responsivitas layout seluler hingga desktop, penyesuaian font tipografi (`font-display` & `font-mono`), serta memastikan target sentuh minimal 44px (`min-h-[44px]`).
+- **Tipe Status Webhook Midtrans (`app/api/webhooks/midtrans/route.ts`)**: `newStatus` diselaraskan ke tipe global `PaymentStatus` agar `pnpm build` lolos type-check untuk seluruh status (`unpaid`, `pending_verification`, `rejected`, dll.).
+- **Regenerasi Tipe Database (`types/database.types.ts`)**: sinkronisasi hasil `supabase gen types` — kolom `event_categories.whatsapp_group_url`, `event_registrations.rejection_reason`, serta `event_settings.payment_mode`, `bank_name`, `bank_account_number`, `bank_account_holder`.
+- **Fixture Uji `EventSettings` (`lib/event-batch.test.ts`)**: melengkapi field baru (`payment_mode`, `bank_*`, `bank_accounts`) agar `tsc --noEmit` dan pre-commit hook lolos.
 
 ## [0.8.3] - 2026-09-08
 
