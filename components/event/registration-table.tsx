@@ -368,6 +368,11 @@ export function RegistrationTable({
                       <p className="font-bold text-xs text-slate-900 mt-1 truncate">
                         {m.full_name}
                       </p>
+                      {m.birth_date && (
+                        <p className="text-[10px] text-slate-600 font-medium mt-0.5">
+                          Tgl Lahir: {m.birth_date}
+                        </p>
+                      )}
                       <p className="text-[10px] text-slate-500 font-mono">
                         Status: {m.verification_status}
                       </p>
@@ -376,7 +381,7 @@ export function RegistrationTable({
                           href={m.identity_card_url}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex items-center gap-1 text-[10px] text-blue-600 hover:underline mt-1 font-medium"
+                          className="inline-flex items-center gap-1 text-[10px] text-blue-600 hover:underline mt-1 font-medium block"
                         >
                           Lihat Kartu Pelajar / KK{" "}
                           <ExternalLink className="w-2.5 h-2.5" />

@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["*.ngrok-free.dev", "*.ngrok-free.app"],
   env: {
     NEXT_PUBLIC_SITE_URL:
       process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL,
