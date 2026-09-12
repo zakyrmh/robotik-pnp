@@ -7,16 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.5] - 2026-09-12
+
 ### Added
 
 - **Opsi Pembayaran Manual Bank Transfer + Verifikasi Admin (`lib/actions/event-registration.ts`, `lib/actions/event-admin.ts`, `components/event/manual-payment-verification-list.tsx`)**: mode pembayaran global (`midtrans` vs `manual_bank`) pada `event_settings`, instruksi transfer + upload bukti pada `/mrc/bayar/[token]`, halaman verifikasi admin pada `/manajemen-event/verifikasi-pembayaran` (setujui/tolak + alasan penolakan), serta notifikasi email instruksi, persetujuan (dengan link grup WA kategori), dan penolakan.
 - **Dukungan Multi Rekening Bank (`components/event/event-settings-form.tsx`, `components/event/qris-payment-view.tsx`, `supabase/migrations/20260912000000_add_multiple_bank_accounts.sql`)**: admin dapat mengonfigurasi beberapa rekening (mis. BRI, BCA, BNI), peserta memilih rekening tujuan, dan email instruksi memuat seluruh daftar rekening.
+- **Formulir Pendaftaran Berbasis Kategori + Tanggal Lahir (`components/event/registration-form.tsx`, `lib/schemas/event-registration.ts`, `supabase/migrations/20260914000000_add_birth_date_to_event_team_members.sql`)**: diferensiasi field formulir per kategori lomba, kolom `birth_date` pada `event_team_members`, dan penyesuaian tabel registrasi admin.
 
 ### Fixed
 
+- **Tabrakan Versi Migrasi `20260911000000` (Local vs Cloud)**:
+  - Versi `20260911000000` dipakai dua file berbeda: `add_payment_mode_and_manual_bank.sql` (sudah terlanjur di-push ke cloud dari feature branch) vs `create_review_midtrans_tables.sql` (di `main`), sehingga tabel `review_registrations`/`review_transactions` tidak pernah dibuat di cloud meski versi tercatat applied.
+  - Mengimpor `20260911000000_add_payment_mode_and_manual_bank.sql` dan `20260912000000_add_multiple_bank_accounts.sql` dari branch `feature/mrc-manual-bank-payment` agar riwayat lokal selaras dengan skema cloud (kolom `payment_mode`, `bank_*`, `bank_accounts`, `whatsapp_group_url`, `rejection_reason`).
+  - Me-rename migrasi review menjadi `20260913000000_create_review_midtrans_tables.sql` agar menjadi pending dan teraplikasi via `db push`.
+  - **Terverifikasi pasca-push**: `migration list` 32/32 sinkron (termasuk `20260912` & `20260913`); dump katalog remote memuat `review_registrations`/`review_transactions` beserta policy-nya dan kolom `payment_mode`, `bank_*`, `bank_accounts`, `whatsapp_group_url`, `rejection_reason`; sisa diff hanya noise representasi (badan fungsi identik semantik) sehingga tidak di-push.
 - **Tipe Status Webhook Midtrans (`app/api/webhooks/midtrans/route.ts`)**: `newStatus` diselaraskan ke tipe global `PaymentStatus` agar `pnpm build` lolos type-check untuk seluruh status (`unpaid`, `pending_verification`, `rejected`, dll.).
 - **Regenerasi Tipe Database (`types/database.types.ts`)**: sinkronisasi hasil `supabase gen types` — kolom `event_categories.whatsapp_group_url`, `event_registrations.rejection_reason`, serta `event_settings.payment_mode`, `bank_name`, `bank_account_number`, `bank_account_holder`.
 - **Fixture Uji `EventSettings` (`lib/event-batch.test.ts`)**: melengkapi field baru (`payment_mode`, `bank_*`, `bank_accounts`) agar `tsc --noEmit` dan pre-commit hook lolos.
+- **Resolusi Konflik Merge `develop` ke `main`**: mengembalikan seksi `0.8.4` (halaman review Midtrans) yang sempat hilang akibat resolusi konflik, sehingga riwayat rilis tetap utuh.
+
+## [0.8.4] - 2026-09-10
+
+### Added
+
+- **Halaman Review Midtrans Tersembunyi untuk Verifikasi Sandbox (`app/(marketing)/review-midtrans/page.tsx`)**: Halaman terisolasi `/review-midtrans` berisi 6 kategori lomba simulasi, form input peserta, dan integrasi skrip Midtrans Snap Sandbox dengan harga fixed Rp100.000 untuk keperluan Tim Verifikator/Business Reviewer Midtrans.
+- **Isolasi Data & API Review Midtrans**:
+  - **Migrasi database (`supabase/migrations/20260911000000_create_review_midtrans_tables.sql`)**: tabel terisolasi `review_registrations` & `review_transactions` agar data review tidak mencampuri data pendaftaran MRC produksi.
+  - **Helper Midtrans (`lib/midtrans.ts`)**: pembuatan transaksi Snap dan verifikasi signature SHA-512.
+  - **Checkout API (`app/api/review-midtrans/checkout/route.ts`)**: endpoint terisolasi pembuatan transaksi Snap review.
+  - **Webhook notifikasi (`app/api/review-midtrans/notification/route.ts`)**: endpoint notifikasi pembayaran review yang aman.
+  - **Panduan pengujian (`docs/midtrans-review-instructions.md`)**: dokumentasi setup environment dan alur testing Sandbox.
+- **Penyesuaian Offset Sticky Navbar Halaman Review Midtrans (`app/(marketing)/review-midtrans/page.tsx`)**: menambahkan top padding (`pt-16 sm:pt-20`) pada kontainer halaman serta penyesuaian offset sticky header/sidebar agar tidak tertutup `LandingNavbar` yang fixed.
+
+### Changed
+
+- **Pembaruan Desain UI/UX & Dark Mode Halaman Review Midtrans (`app/(marketing)/review-midtrans/page.tsx`)**:
+  - Mengubah seluruh warna hardcoded Tailwind (`bg-slate-50`, `bg-blue-900`, `text-slate-900`, `border-slate-200`) menjadi token semantik `DESIGN.md` (`bg-background`, `bg-card`, `bg-secondary`, `bg-primary`, `text-foreground`, `text-muted-foreground`, `border-border`).
+  - Menyelaraskan mode gelap (Dark Mode) menggunakan _Deep Navy Slate_ (`#0f1b2d`) dan aksen Oranye Soft (`#f0975a`).
+  - Mengoptimalkan responsivitas layout seluler hingga desktop, penyesuaian font tipografi (`font-display` & `font-mono`), serta memastikan target sentuh minimal 44px (`min-h-[44px]`).
 
 ## [0.8.3] - 2026-09-08
 
@@ -361,7 +390,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Setup Husky pre-commit hook dan Commitlint.
 - Setup Next.js dengan pnpm.
 
-[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.8.4...HEAD
+[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.8.5...HEAD
+[0.8.5]: https://github.com/zakyrmh/robotik-pnp/compare/v0.8.4...v0.8.5
 [0.8.4]: https://github.com/zakyrmh/robotik-pnp/compare/v0.8.3...v0.8.4
 [0.8.3]: https://github.com/zakyrmh/robotik-pnp/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/zakyrmh/robotik-pnp/compare/v0.8.0...v0.8.2
