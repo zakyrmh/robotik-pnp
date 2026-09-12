@@ -138,7 +138,7 @@ export function CaangLandingClient({ settings }: CaangLandingClientProps) {
   const faqs = [
     {
       question: "Siapa saja yang boleh mendaftar calon anggota UKM Robotik PNP?",
-      answer: "Seluruh mahasiswa aktif Politeknik Negeri Padang (PNP) tingkat 1 dan tingkat 2 dari seluruh jurusan (Teknik Elektro, Teknik Mesin, Teknologi Informasi, Sipil, Akuntansi, dll).",
+      answer: "Seluruh mahasiswa aktif Politeknik Negeri Padang (PNP) untuk tingkat D3 maksimal semester 1 dan untuk tingkat D4 maksimal semester 3 dari seluruh jurusan.",
     },
     {
       question: "Apakah harus sudah punya keahlian robotika/koding sebelumnya?",
@@ -146,11 +146,11 @@ export function CaangLandingClient({ settings }: CaangLandingClientProps) {
     },
     {
       question: "Apa saja divisi yang bisa saya pilih di UKM Robotik?",
-      answer: "Terdapat divisi Kontes Robot Indonesia (KRI) seperti KRAI (Robot Beroda), KRSBI-B (Robot Sepakbola Beroda), KRSTI (Robot Seni Tari), KRSRI (Robot SAR), serta divisi pendukung Kestari & Kominfo.",
+      answer: "Terdapat divisi Kontes Robot Indonesia (KRI) seperti KRAI (Robot Beroda), KRSBI-H (Robot Sepakbola Humanoid), KRSBI-B (Robot Sepakbola Beroda), KRSTI (Robot Seni Tari), KRSRI (Robot SAR).",
     },
     {
       question: "Bagaimana alur pendaftarannya?",
-      answer: "Buat akun pendaftaran di web ini, isi biodata diri & data akademik, pilih divisi yang diminati, serta unggah dokumen pendukung seperti KTP/KTM & pasfoto.",
+      answer: "Buat akun pendaftaran di web ini, isi biodata diri & data akademik, serta unggah dokumen pendukung seperti KTM & pasfoto.",
     },
     {
       question: "Apakah pendaftaran dipungut biaya?",
@@ -286,7 +286,7 @@ export function CaangLandingClient({ settings }: CaangLandingClientProps) {
               </div>
               <h3 className="text-lg font-semibold">Mahasiswa Aktif PNP</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Tercatat sebagai mahasiswa aktif Politeknik Negeri Padang (Tingkat 1 atau Tingkat 2 seluruh jurusan).
+                Tercatat sebagai mahasiswa aktif Politeknik Negeri Padang (Tingkat D3 maksimal semester 1 dan Tingkat D4 maksimal semester 3 seluruh jurusan).
               </p>
             </div>
 
@@ -306,7 +306,7 @@ export function CaangLandingClient({ settings }: CaangLandingClientProps) {
               </div>
               <h3 className="text-lg font-semibold">Komitmen & Kerjasama Tim</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                Siap mengikuti alur magang, pembekalan workshop, piket laboratorium, dan memiliki disiplin organisasi.
+                Siap mengikuti pelatihan, alur magang, pembekalan workshop, mini project, dan memiliki disiplin organisasi.
               </p>
             </div>
           </div>
@@ -330,7 +330,6 @@ export function CaangLandingClient({ settings }: CaangLandingClientProps) {
                 <div className="bg-card border border-border rounded-xl p-5 sm:p-6 space-y-2 shadow-xs hover:border-primary/50 transition-colors">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs text-muted-foreground">
                     <span className="font-semibold text-primary uppercase tracking-wider font-mono">Tahap {idx + 1}</span>
-                    <span>{item.start_date} s/d {item.end_date}</span>
                   </div>
                   <h3 className="text-lg font-semibold text-foreground">{item.title}</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">{item.description}</p>
@@ -341,7 +340,7 @@ export function CaangLandingClient({ settings }: CaangLandingClientProps) {
         </div>
 
         {/* FAQ Section */}
-        <div className="space-y-8">
+        <div id="faq" className="space-y-8 scroll-mt-24">
           <div className="text-center space-y-2">
             <h2 className="text-2xl sm:text-3xl font-bold font-display">Pertanyaan Sering Diajukan (FAQ)</h2>
             <p className="text-muted-foreground text-sm">Temukan jawaban atas pertanyaan seputar pendaftaran</p>

@@ -159,7 +159,7 @@ export function RecruitmentSection({
                   size="lg"
                   className="w-full sm:w-auto font-medium gap-2"
                 >
-                  <Link href="/pendaftaran-caang">
+                  <Link href="/pendaftaran-caang#faq">
                     <span>Panduan & FAQ</span>
                     <ArrowRight className="w-4 h-4" />
                   </Link>
