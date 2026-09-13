@@ -42,6 +42,31 @@ export async function register(prevState: RegisterState, formData: FormData) {
     };
   }
 
+  // Cek status pendaftaran dari or_settings
+  const supabaseAdmin = createAdminClient();
+  const { data: settings } = await supabaseAdmin
+    .from("or_settings")
+    .select("status_pendaftaran, tanggal_mulai, tanggal_selesai")
+    .limit(1)
+    .maybeSingle();
+
+  if (
+    !settings ||
+    !settings.status_pendaftaran ||
+    !settings.tanggal_mulai ||
+    !settings.tanggal_selesai
+  ) {
+    return { error: "Pendaftaran calon anggota saat ini sedang ditutup." };
+  }
+
+  const now = new Date();
+  const startDate = new Date(settings.tanggal_mulai);
+  const endDate = new Date(settings.tanggal_selesai);
+
+  if (now < startDate || now > endDate) {
+    return { error: "Pendaftaran calon anggota saat ini sedang ditutup." };
+  }
+
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
   const confirmPassword = formData.get("confirmPassword") as string;

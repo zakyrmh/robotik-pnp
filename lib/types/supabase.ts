@@ -344,34 +344,61 @@ export type Database = {
         Row: {
           created_at: string | null;
           duty_date: string;
+          finalized_at: string | null;
           id: string;
+          is_final: boolean;
           is_verified: boolean | null;
           notes: string;
+          photo_hash_after: string | null;
+          photo_hash_before: string | null;
+          photo_taken_at_after: string | null;
+          photo_taken_at_before: string | null;
+          proof_image_before_url: string | null;
           proof_image_url: string;
+          rejection_reason: string | null;
           reported_by: string | null;
           schedule_id: string | null;
+          verified_at: string | null;
           verified_by: string | null;
         };
         Insert: {
           created_at?: string | null;
           duty_date?: string;
+          finalized_at?: string | null;
           id?: string;
+          is_final?: boolean;
           is_verified?: boolean | null;
           notes: string;
+          photo_hash_after?: string | null;
+          photo_hash_before?: string | null;
+          photo_taken_at_after?: string | null;
+          photo_taken_at_before?: string | null;
+          proof_image_before_url?: string | null;
           proof_image_url: string;
+          rejection_reason?: string | null;
           reported_by?: string | null;
           schedule_id?: string | null;
+          verified_at?: string | null;
           verified_by?: string | null;
         };
         Update: {
           created_at?: string | null;
           duty_date?: string;
+          finalized_at?: string | null;
           id?: string;
+          is_final?: boolean;
           is_verified?: boolean | null;
           notes?: string;
+          photo_hash_after?: string | null;
+          photo_hash_before?: string | null;
+          photo_taken_at_after?: string | null;
+          photo_taken_at_before?: string | null;
+          proof_image_before_url?: string | null;
           proof_image_url?: string;
+          rejection_reason?: string | null;
           reported_by?: string | null;
           schedule_id?: string | null;
+          verified_at?: string | null;
           verified_by?: string | null;
         };
         Relationships: [
@@ -392,6 +419,64 @@ export type Database = {
           {
             foreignKeyName: "piket_logs_verified_by_fkey";
             columns: ["verified_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      piket_fines: {
+        Row: {
+          amount: number;
+          created_at: string;
+          id: string;
+          imposed_by: string | null;
+          notes: string | null;
+          paid_at: string | null;
+          profile_id: string;
+          schedule_id: string;
+          status: string;
+        };
+        Insert: {
+          amount?: number;
+          created_at?: string;
+          id?: string;
+          imposed_by?: string | null;
+          notes?: string | null;
+          paid_at?: string | null;
+          profile_id: string;
+          schedule_id: string;
+          status?: string;
+        };
+        Update: {
+          amount?: number;
+          created_at?: string;
+          id?: string;
+          imposed_by?: string | null;
+          notes?: string | null;
+          paid_at?: string | null;
+          profile_id?: string;
+          schedule_id?: string;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "piket_fines_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "piket_fines_schedule_id_fkey";
+            columns: ["schedule_id"];
+            isOneToOne: false;
+            referencedRelation: "piket_schedules";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "piket_fines_imposed_by_fkey";
+            columns: ["imposed_by"];
             isOneToOne: false;
             referencedRelation: "profiles";
             referencedColumns: ["id"];

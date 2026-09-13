@@ -95,6 +95,10 @@ let mockCheckLegacyResult: any = {
 let mockSavePersonalResult: any = { success: true };
 let mockSaveAcademicResult: any = { success: true };
 let mockSaveCommitmentResult: any = { success: true };
+let mockUploadCommitmentProofResult: any = {
+  success: true,
+  url: "/api/r2/registrations/2025/test/ig_robotik.webp",
+};
 let mockSaveFinalResult: any = { success: true };
 let mockGetMajorsResult: any = [{ id: "maj-1", name: "Teknik Informatika" }];
 let mockGetStudyProgramsResult: any = [
@@ -120,6 +124,7 @@ vi.mock("@/lib/actions/registration", () => ({
   savePersonalData: vi.fn(async () => mockSavePersonalResult),
   saveAcademicData: vi.fn(async () => mockSaveAcademicResult),
   saveCommitmentData: vi.fn(async () => mockSaveCommitmentResult),
+  uploadCommitmentProofToR2: vi.fn(async () => mockUploadCommitmentProofResult),
   saveFinalData: vi.fn(async () => mockSaveFinalResult),
 }));
 
@@ -129,7 +134,7 @@ vi.mock("@/lib/actions/academic", () => ({
 }));
 
 // -----------------------------------------------------------------------
-// Mock: @/lib/supabase/client (dipakai oleh StepCommitment & StepUpload)
+// Mock: @/lib/supabase/client (dipakai oleh StepUpload)
 // -----------------------------------------------------------------------
 vi.mock("@/lib/supabase/client", () => ({
   createClient: vi.fn(() => ({
@@ -166,6 +171,7 @@ vi.mock("@/components/onboarding/image-cropper-modal", () => ({
 
 vi.mock("@/lib/utils/upload", () => ({
   compressImage: vi.fn(async (file: File) => file),
+  compressImageToWebp: vi.fn(async (file: File) => file),
 }));
 
 // -----------------------------------------------------------------------

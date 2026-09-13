@@ -109,6 +109,20 @@ export interface DashboardData {
     pendingSubmissions: number;
     totalTasks: number;
   };
+  adminKestariStats?: {
+    totalPiketLogs: number;
+    unverifiedPiketLogs: number;
+    scheduledMembersCount: number;
+    piketDays: string[];
+    piketLogsCount: number;
+    isScheduledToday: boolean;
+    hadirCount: number;
+    telatCount: number;
+    izinCount: number;
+    alfaCount: number;
+    totalAttendances: number;
+    upcomingActivities: ActivitySummary[];
+  };
   adminKomdisStats?: {
     pendingLeaves: number;
     todayActivitiesCount: number;
@@ -134,6 +148,7 @@ export function DashboardClient({ data }: DashboardClientProps) {
     anggota: "Anggota Aktif",
     "admin-or": "Admin OR",
     "admin-komdis": "Admin Komdis",
+    "admin-kestari": "Admin Kestari",
     "super-admin": "Super Admin",
   };
 
@@ -731,6 +746,358 @@ export function DashboardClient({ data }: DashboardClientProps) {
             <div className="p-3 bg-accent-soft text-accent-deep rounded-xl">
               <HugeiconsIcon icon={Task01Icon} size={24} />
             </div>
+          </Card>
+        </div>
+      )}
+
+      {/* ==================================================== */}
+      {/* 3.5. ADMIN KESTARI DASHBOARD VIEW                    */}
+      {/* ==================================================== */}
+      {profile.role === "admin-kestari" && data.adminKestariStats && (
+        <div className="space-y-6">
+          {/* Quick Access Shortcuts Bar for Admin Kestari */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <Link href="/kegiatan" className="group">
+              <div className="border border-border bg-card p-4 rounded-xl shadow-xs hover:border-primary transition-all flex items-center justify-between min-h-[44px]">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-lg bg-primary-soft text-primary">
+                    <HugeiconsIcon icon={Calendar03Icon} size={20} />
+                  </div>
+                  <div>
+                    <span className="font-display font-medium text-sm text-foreground block group-hover:text-primary transition-colors">
+                      Agenda Kegiatan
+                    </span>
+                    <span className="text-[10px] font-mono text-muted-foreground uppercase">
+                      Jadwal Workshop &amp; Rapat
+                    </span>
+                  </div>
+                </div>
+                <HugeiconsIcon
+                  icon={ArrowRight01Icon}
+                  size={18}
+                  className="text-muted-foreground group-hover:translate-x-1 transition-transform"
+                />
+              </div>
+            </Link>
+
+            <Link href="/presensi" className="group">
+              <div className="border border-border bg-card p-4 rounded-xl shadow-xs hover:border-emerald-500 transition-all flex items-center justify-between min-h-[44px]">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                    <HugeiconsIcon icon={CheckmarkCircle01Icon} size={20} />
+                  </div>
+                  <div>
+                    <span className="font-display font-medium text-sm text-foreground block group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                      Histori Absensi
+                    </span>
+                    <span className="text-[10px] font-mono text-muted-foreground uppercase">
+                      Riwayat Presensi Anda
+                    </span>
+                  </div>
+                </div>
+                <HugeiconsIcon
+                  icon={ArrowRight01Icon}
+                  size={18}
+                  className="text-muted-foreground group-hover:translate-x-1 transition-transform"
+                />
+              </div>
+            </Link>
+
+            <Link href="/piket" className="group">
+              <div className="border border-border bg-card p-4 rounded-xl shadow-xs hover:border-accent transition-all flex items-center justify-between min-h-[44px]">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-lg bg-accent-soft text-accent-deep">
+                    <HugeiconsIcon icon={CleanIcon} size={20} />
+                  </div>
+                  <div>
+                    <span className="font-display font-medium text-sm text-foreground block group-hover:text-accent transition-colors">
+                      Piket Laboratorium
+                    </span>
+                    <span className="text-[10px] font-mono text-muted-foreground uppercase">
+                      Jadwal &amp; Form Laporan
+                    </span>
+                  </div>
+                </div>
+                <HugeiconsIcon
+                  icon={ArrowRight01Icon}
+                  size={18}
+                  className="text-muted-foreground group-hover:translate-x-1 transition-transform"
+                />
+              </div>
+            </Link>
+
+            <Link href="/piket/kelola" className="group">
+              <div className="border border-border bg-card p-4 rounded-xl shadow-xs hover:border-amber-500 transition-all flex items-center justify-between min-h-[44px]">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                    <HugeiconsIcon icon={Settings02Icon} size={20} />
+                  </div>
+                  <div>
+                    <span className="font-display font-medium text-sm text-foreground block group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                      Kelola Piket Kestari
+                    </span>
+                    <span className="text-[10px] font-mono text-muted-foreground uppercase">
+                      Penjadwalan &amp; Periode
+                    </span>
+                  </div>
+                </div>
+                <HugeiconsIcon
+                  icon={ArrowRight01Icon}
+                  size={18}
+                  className="text-muted-foreground group-hover:translate-x-1 transition-transform"
+                />
+              </div>
+            </Link>
+          </div>
+
+          {/* Telemetry Stat Cards Grid for Kestari */}
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
+            <Card className="bg-card border border-border rounded-2xl shadow-xs p-4 flex flex-row items-center justify-between border-l-4 border-l-accent min-h-[88px]">
+              <div className="flex flex-col justify-center min-w-0">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground block truncate">
+                  TOTAL LAPORAN PIKET
+                </span>
+                <span className="font-display text-3xl font-bold text-foreground mt-1 block leading-none">
+                  {data.adminKestariStats.totalPiketLogs}
+                </span>
+              </div>
+              <div className="p-3 bg-accent-soft text-accent-deep rounded-xl shrink-0 flex items-center justify-center">
+                <HugeiconsIcon icon={CleanIcon} size={22} />
+              </div>
+            </Card>
+
+            <Card className="bg-card border border-border rounded-2xl shadow-xs p-4 flex flex-row items-center justify-between border-l-4 border-l-amber-500 min-h-[88px]">
+              <div className="flex flex-col justify-center min-w-0">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground block truncate">
+                  LAPORAN BELUM VERIFIKASI
+                </span>
+                <span className="font-display text-3xl font-bold text-amber-600 dark:text-amber-400 mt-1 block leading-none">
+                  {data.adminKestariStats.unverifiedPiketLogs}
+                </span>
+              </div>
+              <div className="p-3 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-xl shrink-0 flex items-center justify-center">
+                <HugeiconsIcon icon={Settings02Icon} size={22} />
+              </div>
+            </Card>
+
+            <Card className="bg-card border border-border rounded-2xl shadow-xs p-4 flex flex-row items-center justify-between border-l-4 border-l-primary min-h-[88px]">
+              <div className="flex flex-col justify-center min-w-0">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground block truncate">
+                  PETUGAS PIKET MINGGU INI
+                </span>
+                <span className="font-display text-3xl font-bold text-primary mt-1 block leading-none">
+                  {data.adminKestariStats.scheduledMembersCount}
+                </span>
+              </div>
+              <div className="p-3 bg-primary-soft text-primary rounded-xl shrink-0 flex items-center justify-center">
+                <HugeiconsIcon icon={UserGroupIcon} size={22} />
+              </div>
+            </Card>
+          </div>
+
+          {/* Agenda Kegiatan Keanggotaan */}
+          <Card className="bg-card border border-border rounded-2xl shadow-xs">
+            <CardHeader className="border-b border-border pb-3 flex flex-row items-center justify-between">
+              <div>
+                <CardTitle className="text-base font-display font-semibold text-foreground flex items-center gap-2">
+                  <HugeiconsIcon
+                    icon={Calendar03Icon}
+                    size={18}
+                    className="text-primary"
+                  />
+                  <span>Agenda Kegiatan Keanggotaan</span>
+                </CardTitle>
+                <CardDescription className="text-xs font-mono text-muted-foreground">
+                  Daftar kegiatan UKM Robotik PNP yang perlu Anda ikuti.
+                </CardDescription>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                asChild
+                className="text-xs font-mono text-primary min-h-[44px]"
+              >
+                <Link href="/kegiatan">Semua &rarr;</Link>
+              </Button>
+            </CardHeader>
+            <CardContent className="p-4 space-y-3">
+              {data.adminKestariStats.upcomingActivities.length === 0 ? (
+                <div className="p-6 text-center text-muted-foreground font-mono text-xs">
+                  Belum ada agenda kegiatan mendatang.
+                </div>
+              ) : (
+                data.adminKestariStats.upcomingActivities.map((act) => (
+                  <div
+                    key={act.id}
+                    className="border border-border bg-surface/50 p-3.5 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3"
+                  >
+                    <div className="space-y-1">
+                      <span className="font-display font-medium text-sm text-foreground block">
+                        {act.title}
+                      </span>
+                      <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground font-mono">
+                        <span className="flex items-center gap-1">
+                          <HugeiconsIcon icon={Clock01Icon} size={13} />
+                          {new Date(act.start_date).toLocaleDateString(
+                            "id-ID",
+                            {
+                              weekday: "short",
+                              day: "numeric",
+                              month: "short",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            },
+                          )}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <HugeiconsIcon icon={Location01Icon} size={13} />
+                          {act.location || "Lab Robotik"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <Button
+                      size="sm"
+                      asChild
+                      className="bg-primary hover:bg-primary-hover text-primary-foreground font-mono text-xs min-h-[38px] px-3 rounded-lg shrink-0"
+                    >
+                      <Link href={`/presensi/${act.id}`}>Absen Sekarang</Link>
+                    </Button>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Statistik Kehadiran Anda */}
+          <Card className="bg-card border border-border rounded-2xl shadow-xs">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-display font-semibold text-foreground flex items-center gap-2">
+                <HugeiconsIcon
+                  icon={CheckmarkCircle01Icon}
+                  size={18}
+                  className="text-emerald-600 dark:text-emerald-400"
+                />
+                <span>Statistik Kehadiran Anda</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="border border-border bg-surface/60 p-3 rounded-xl text-center border-l-4 border-l-emerald-500">
+                  <span className="font-mono text-[10px] uppercase text-muted-foreground block">
+                    HADIR
+                  </span>
+                  <span className="font-display text-xl font-bold text-emerald-600 dark:text-emerald-400">
+                    {data.adminKestariStats.hadirCount}
+                  </span>
+                </div>
+
+                <div className="border border-border bg-surface/60 p-3 rounded-xl text-center border-l-4 border-l-amber-500">
+                  <span className="font-mono text-[10px] uppercase text-muted-foreground block">
+                    TELAT
+                  </span>
+                  <span className="font-display text-xl font-bold text-amber-600 dark:text-amber-400">
+                    {data.adminKestariStats.telatCount}
+                  </span>
+                </div>
+
+                <div className="border border-border bg-surface/60 p-3 rounded-xl text-center border-l-4 border-l-primary">
+                  <span className="font-mono text-[10px] uppercase text-muted-foreground block">
+                    IZIN / SAKIT
+                  </span>
+                  <span className="font-display text-xl font-bold text-primary">
+                    {data.adminKestariStats.izinCount}
+                  </span>
+                </div>
+
+                <div className="border border-border bg-surface/60 p-3 rounded-xl text-center border-l-4 border-l-destructive">
+                  <span className="font-mono text-[10px] uppercase text-muted-foreground block">
+                    ALFA
+                  </span>
+                  <span className="font-display text-xl font-bold text-destructive">
+                    {data.adminKestariStats.alfaCount}
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Widget Kedisiplinan Organisasi */}
+          {discipline && (
+            <DisciplineWidget
+              netPoints={discipline.netPoints}
+              activeSpLevel={discipline.activeSpLevel}
+            />
+          )}
+
+          {/* Status Penugasan Piket Kebersihan Anda */}
+          <Card className="bg-card border border-border rounded-2xl border-l-4 border-l-accent shadow-xs">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-display font-semibold text-foreground flex items-center gap-2">
+                <HugeiconsIcon
+                  icon={CleanIcon}
+                  size={18}
+                  className="text-accent"
+                />
+                <span>Status Penugasan Piket Kebersihan Anda</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="p-3 bg-surface/60 rounded-xl border border-border font-mono text-xs space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">JADWAL HARI:</span>
+                  {data.adminKestariStats.piketDays.length > 0 ? (
+                    <div className="flex gap-1 flex-wrap">
+                      {data.adminKestariStats.piketDays.map((day) => (
+                        <Badge
+                          key={day}
+                          className="bg-accent-soft text-accent-deep border border-accent/20 text-[10px] rounded-full px-2"
+                        >
+                          {day}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <Badge
+                      variant="outline"
+                      className="text-muted-foreground text-[10px]"
+                    >
+                      TIDAK ADA
+                    </Badge>
+                  )}
+                </div>
+
+                <div className="flex justify-between items-center pt-2 border-t border-border">
+                  <span className="text-muted-foreground">LAPORAN MASUK:</span>
+                  <span className="font-bold text-foreground text-sm">
+                    {data.adminKestariStats.piketLogsCount} Laporan
+                  </span>
+                </div>
+              </div>
+
+              {data.adminKestariStats.isScheduledToday ? (
+                <div className="space-y-2">
+                  <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-700 dark:text-amber-300 font-mono">
+                    ⚠️ <strong>PERHATIAN:</strong> Hari ini adalah jadwal piket
+                    Anda! Harap kirim laporan sebelum lab tutup.
+                  </div>
+                  <Button
+                    asChild
+                    className="w-full bg-accent hover:bg-accent-deep text-accent-foreground font-mono text-xs rounded-xl min-h-[44px] shadow-xs uppercase"
+                  >
+                    <Link href="/piket">Kirim Laporan Piket</Link>
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  asChild
+                  className="w-full border-border font-mono text-xs rounded-xl min-h-[44px]"
+                >
+                  <Link href="/piket">Lihat Modul Piket</Link>
+                </Button>
+              )}
+            </CardContent>
           </Card>
         </div>
       )}

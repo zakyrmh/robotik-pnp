@@ -13,6 +13,7 @@ import {
   Add01Icon,
   Settings02Icon,
   UserGroupIcon,
+  Search01Icon,
 } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,6 +32,19 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import {
   createPiketPeriod,
   assignPiketMember,
@@ -90,12 +104,17 @@ export function KelolaPiketClient({
   const [assignScheduleId, setAssignScheduleId] = useState<string>("");
   const [assignTargetWeek, setAssignTargetWeek] = useState<number>(1);
   const [selectedCandidateId, setSelectedCandidateId] = useState<string>("");
+  const [isCandidatePickerOpen, setIsCandidatePickerOpen] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
   const [isDeletingMember, setIsDeletingMember] = useState<string | null>(null);
 
   // Filter schedules for currently selected period
   const periodSchedules = allSchedules.filter(
     (s) => s.academic_period === selectedPeriod,
+  );
+
+  const selectedCandidate = activeCandidates.find(
+    (candidate) => candidate.id === selectedCandidateId,
   );
 
   // Handler: Create new period
@@ -135,6 +154,7 @@ export function KelolaPiketClient({
     setAssignScheduleId(schedId);
     setAssignTargetWeek(weekNum);
     setSelectedCandidateId("");
+    setIsCandidatePickerOpen(false);
     setIsAssignModalOpen(true);
   };
 
@@ -453,18 +473,59 @@ export function KelolaPiketClient({
               <Label className="text-xs font-semibold font-mono text-slate-700 dark:text-slate-300">
                 Pilih Nama Pengurus / Anggota
               </Label>
-              <select
-                value={selectedCandidateId}
-                onChange={(e) => setSelectedCandidateId(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-2.5 text-xs text-[#0a192f] dark:text-slate-100 font-body focus:ring-2 focus:ring-[#1e3a8a] outline-none cursor-pointer"
+              <Popover
+                open={isCandidatePickerOpen}
+                onOpenChange={setIsCandidatePickerOpen}
               >
-                <option value="">-- Pilih Nama Anggota --</option>
-                {activeCandidates.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} ({c.nim || c.role})
-                  </option>
-                ))}
-              </select>
+                <PopoverTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={isCandidatePickerOpen}
+                    className="w-full justify-between rounded-lg p-2.5 text-xs font-normal text-left"
+                  >
+                    <span className="truncate">
+                      {selectedCandidate
+                        ? `${selectedCandidate.name} (${selectedCandidate.nim || selectedCandidate.role})`
+                        : "-- Pilih Nama Anggota --"}
+                    </span>
+                    <HugeiconsIcon
+                      icon={Search01Icon}
+                      size={14}
+                      className="ml-2 shrink-0 opacity-50"
+                    />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent
+                  align="start"
+                  className="w-(--radix-popover-trigger-width) p-0 rounded-lg"
+                >
+                  <Command>
+                    <CommandInput placeholder="Cari nama, NIM, atau role..." />
+                    <CommandList>
+                      <CommandEmpty>Anggota tidak ditemukan.</CommandEmpty>
+                      <CommandGroup>
+                        {activeCandidates.map((candidate) => (
+                          <CommandItem
+                            key={candidate.id}
+                            value={`${candidate.name} ${candidate.nim} ${candidate.role}`}
+                            onSelect={() => {
+                              setSelectedCandidateId(candidate.id);
+                              setIsCandidatePickerOpen(false);
+                            }}
+                          >
+                            <span className="min-w-0 truncate">
+                              {candidate.name} (
+                              {candidate.nim || candidate.role})
+                            </span>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 

@@ -8,9 +8,11 @@ import {
 } from "@/lib/actions/divisions";
 import type { Division } from "@/lib/repositories/divisions";
 import { StatsSection } from "@/components/landing/stats-section";
+import { RecruitmentSection } from "@/components/landing/recruitment-section";
 import { DivisionsSection } from "@/components/landing/divisions-section";
 import { TimelineSection } from "@/components/landing/timeline-section";
 import { CtaSection } from "@/components/landing/cta-section";
+import { getPublicOrSettingsAction } from "@/lib/actions/or-settings";
 
 export const metadata: Metadata = {
   title: "UKM Robotik PNP — We Play with Technology",
@@ -57,6 +59,23 @@ export default async function HomePage() {
     console.error("Error loading divisions list:", error);
   }
 
+  let statusPendaftaran = false;
+  let tanggalMulai: string | null = null;
+  let tanggalSelesai: string | null = null;
+  let periodeRecruitment: string | undefined = undefined;
+
+  try {
+    const res = await getPublicOrSettingsAction();
+    if (res.success && res.data) {
+      statusPendaftaran = res.data.status_pendaftaran;
+      tanggalMulai = res.data.tanggal_mulai;
+      tanggalSelesai = res.data.tanggal_selesai;
+      periodeRecruitment = res.data.periode_recruitment;
+    }
+  } catch (error) {
+    console.error("Error loading public OR settings:", error);
+  }
+
   const currentYear = new Date().getFullYear();
   const yearFounded = parseInt(process.env.YEAR_FOUNDED || "2005", 10);
   const yearsStanding = currentYear - yearFounded;
@@ -92,6 +111,14 @@ export default async function HomePage() {
       <HeroSection
         activeMemberCount={memberCount}
         totalAchievements={achievementCount}
+      />
+
+      {/* 1.5 Section Pendaftaran Calon Anggota Baru */}
+      <RecruitmentSection
+        statusPendaftaran={statusPendaftaran}
+        tanggalMulai={tanggalMulai}
+        tanggalSelesai={tanggalSelesai}
+        periodeRecruitment={periodeRecruitment}
       />
 
       {/* 2. Statistika & Peta Kekuatan (Social Proof) */}

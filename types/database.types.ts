@@ -735,6 +735,7 @@ export type Database = {
         Row: {
           bank_account_holder: string | null;
           bank_account_number: string | null;
+          bank_accounts: Json | null;
           bank_name: string | null;
           batch1_end: string | null;
           batch1_start: string | null;
@@ -753,6 +754,7 @@ export type Database = {
         Insert: {
           bank_account_holder?: string | null;
           bank_account_number?: string | null;
+          bank_accounts?: Json | null;
           bank_name?: string | null;
           batch1_end?: string | null;
           batch1_start?: string | null;
@@ -771,6 +773,7 @@ export type Database = {
         Update: {
           bank_account_holder?: string | null;
           bank_account_number?: string | null;
+          bank_accounts?: Json | null;
           bank_name?: string | null;
           batch1_end?: string | null;
           batch1_start?: string | null;
@@ -1261,37 +1264,61 @@ export type Database = {
         Row: {
           created_at: string | null;
           duty_date: string;
+          finalized_at: string | null;
           id: string;
+          is_final: boolean;
           is_verified: boolean | null;
           notes: string;
+          photo_hash_after: string | null;
+          photo_hash_before: string | null;
+          photo_taken_at_after: string | null;
+          photo_taken_at_before: string | null;
           proof_image_before_url: string | null;
           proof_image_url: string;
+          rejection_reason: string | null;
           reported_by: string | null;
           schedule_id: string | null;
+          verified_at: string | null;
           verified_by: string | null;
         };
         Insert: {
           created_at?: string | null;
           duty_date?: string;
+          finalized_at?: string | null;
           id?: string;
+          is_final?: boolean;
           is_verified?: boolean | null;
           notes: string;
+          photo_hash_after?: string | null;
+          photo_hash_before?: string | null;
+          photo_taken_at_after?: string | null;
+          photo_taken_at_before?: string | null;
           proof_image_before_url?: string | null;
           proof_image_url: string;
+          rejection_reason?: string | null;
           reported_by?: string | null;
           schedule_id?: string | null;
+          verified_at?: string | null;
           verified_by?: string | null;
         };
         Update: {
           created_at?: string | null;
           duty_date?: string;
+          finalized_at?: string | null;
           id?: string;
+          is_final?: boolean;
           is_verified?: boolean | null;
           notes?: string;
+          photo_hash_after?: string | null;
+          photo_hash_before?: string | null;
+          photo_taken_at_after?: string | null;
+          photo_taken_at_before?: string | null;
           proof_image_before_url?: string | null;
           proof_image_url?: string;
+          rejection_reason?: string | null;
           reported_by?: string | null;
           schedule_id?: string | null;
+          verified_at?: string | null;
           verified_by?: string | null;
         };
         Relationships: [
@@ -1329,6 +1356,64 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "v_user_discipline_summary";
             referencedColumns: ["profile_id"];
+          },
+        ];
+      };
+      piket_fines: {
+        Row: {
+          amount: number;
+          created_at: string;
+          id: string;
+          imposed_by: string | null;
+          notes: string | null;
+          paid_at: string | null;
+          profile_id: string;
+          schedule_id: string;
+          status: string;
+        };
+        Insert: {
+          amount?: number;
+          created_at?: string;
+          id?: string;
+          imposed_by?: string | null;
+          notes?: string | null;
+          paid_at?: string | null;
+          profile_id: string;
+          schedule_id: string;
+          status?: string;
+        };
+        Update: {
+          amount?: number;
+          created_at?: string;
+          id?: string;
+          imposed_by?: string | null;
+          notes?: string | null;
+          paid_at?: string | null;
+          profile_id?: string;
+          schedule_id?: string;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "piket_fines_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "piket_fines_schedule_id_fkey";
+            columns: ["schedule_id"];
+            isOneToOne: false;
+            referencedRelation: "piket_schedules";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "piket_fines_imposed_by_fkey";
+            columns: ["imposed_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
           },
         ];
       };
@@ -1567,6 +1652,89 @@ export type Database = {
             columns: ["study_program_id"];
             isOneToOne: false;
             referencedRelation: "study_programs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      review_registrations: {
+        Row: {
+          amount: number;
+          category: string;
+          created_at: string | null;
+          email: string;
+          id: string;
+          leader_name: string;
+          status: string;
+          team_name: string;
+          whatsapp: string;
+        };
+        Insert: {
+          amount: number;
+          category: string;
+          created_at?: string | null;
+          email: string;
+          id?: string;
+          leader_name: string;
+          status?: string;
+          team_name: string;
+          whatsapp: string;
+        };
+        Update: {
+          amount?: number;
+          category?: string;
+          created_at?: string | null;
+          email?: string;
+          id?: string;
+          leader_name?: string;
+          status?: string;
+          team_name?: string;
+          whatsapp?: string;
+        };
+        Relationships: [];
+      };
+      review_transactions: {
+        Row: {
+          created_at: string | null;
+          gross_amount: number;
+          id: string;
+          order_id: string;
+          payment_type: string | null;
+          raw_response: Json | null;
+          registration_id: string | null;
+          snap_token: string | null;
+          transaction_status: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          created_at?: string | null;
+          gross_amount: number;
+          id?: string;
+          order_id: string;
+          payment_type?: string | null;
+          raw_response?: Json | null;
+          registration_id?: string | null;
+          snap_token?: string | null;
+          transaction_status?: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          created_at?: string | null;
+          gross_amount?: number;
+          id?: string;
+          order_id?: string;
+          payment_type?: string | null;
+          raw_response?: Json | null;
+          registration_id?: string | null;
+          snap_token?: string | null;
+          transaction_status?: string;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "review_transactions_registration_id_fkey";
+            columns: ["registration_id"];
+            isOneToOne: false;
+            referencedRelation: "review_registrations";
             referencedColumns: ["id"];
           },
         ];

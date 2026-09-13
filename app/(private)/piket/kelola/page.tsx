@@ -35,6 +35,7 @@ interface RawPiketSchedule {
 interface RawProfileCandidate {
   id: string;
   nim: string | null;
+  full_name: string | null;
   role: string;
   registrations: {
     full_name: string;
@@ -110,6 +111,7 @@ export default async function KelolaPiketPage() {
       `
       id,
       nim,
+      full_name,
       role,
       registrations (
         full_name
@@ -131,7 +133,7 @@ export default async function KelolaPiketPage() {
   ).map((c) => ({
     id: c.id,
     nim: c.nim || "",
-    name: c.registrations?.full_name || "Pengurus/Anggota",
+    name: c.full_name || c.registrations?.full_name || "Pengurus/Anggota",
     role: c.role,
   }));
 

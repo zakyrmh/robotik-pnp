@@ -3,35 +3,35 @@ import imageCompression from "browser-image-compression";
 interface ProcessImageResult {
   file: File;
   previewUrl: string;
+  /** True jika file asli berformat HEIC/HEIF dan dikonversi ke JPEG. */
+  wasHeic: boolean;
+  /** lastModified file asli (waktu ambil foto menurut perangkat), epoch ms. */
+  takenAtMs: number;
 }
 
+type Heic2AnyFn = (options: {
+  blob: Blob;
+  toType?: string;
+  quality?: number;
+}) => Promise<Blob | Blob[]>;
+
 /**
- * Dynamically loads heic2any for HEIC conversion on the client side without bundle overhead or npm lock dependencies.
+ * Loads heic2any from the locally bundled npm dependency (code-split via
+ * dynamic import) instead of a CDN, so conversion works offline and is not
+ * blocked by CSP / ad-blockers.
  */
-async function getHeic2AnyConverter() {
+async function getHeic2AnyConverter(): Promise<Heic2AnyFn | null> {
   if (typeof window === "undefined") return null;
 
-  const win = window as unknown as Record<string, unknown>;
-  if (win.heic2any) {
-    return win.heic2any as (options: {
-      blob: Blob;
-      toType?: string;
-      quality?: number;
-    }) => Promise<Blob | Blob[]>;
-  }
-
   try {
-    const cdnUrl = "https://cdn.jsdelivr.net/npm/heic2any@0.0.4/+esm";
-    const importedModule = (await new Function(
-      `return import("${cdnUrl}")`,
-    )()) as {
-      default?: (options: {
-        blob: Blob;
-        toType?: string;
-        quality?: number;
-      }) => Promise<Blob | Blob[]>;
-    };
-    return importedModule?.default || null;
+    const mod = (await import("heic2any")) as unknown as
+      | Heic2AnyFn
+      | { default: Heic2AnyFn };
+    if (typeof mod === "function") return mod;
+    if (mod && typeof (mod as { default: Heic2AnyFn }).default === "function") {
+      return (mod as { default: Heic2AnyFn }).default;
+    }
+    return null;
   } catch {
     return null;
   }
@@ -40,13 +40,17 @@ async function getHeic2AnyConverter() {
 /**
  * Utility to process user-uploaded image files:
  * 1. Automatically converts iPhone HEIC / HEIF files to JPEG format.
- * 2. Compresses image files to < 1MB while preserving EXIF metadata.
+ *    NOTE: konversi HEIC -> JPEG via heic2any TIDAK mempertahankan EXIF
+ *    DateTimeOriginal, sehingga caller wajib memakai flag `wasHeic` +
+ *    `takenAtMs` untuk jalur validasi fallback di server.
+ * 2. Compresses image files to < 1MB while preserving EXIF metadata (JPEG path).
  * 3. Generates a data URL preview for client-side display.
  */
 export async function processPiketImage(
   rawFile: File,
 ): Promise<ProcessImageResult> {
   let fileToProcess = rawFile;
+  const takenAtMs = rawFile?.lastModified || Date.now();
 
   const fileNameLower = (rawFile?.name || "photo.jpg").toLowerCase();
   const fileTypeLower = (rawFile?.type || "").toLowerCase();
@@ -58,6 +62,7 @@ export async function processPiketImage(
     fileTypeLower.includes("heif");
 
   // 1. Convert HEIC / HEIF to JPEG if needed
+  let convertedFromHeic = false;
   if (isHeic) {
     try {
       const heic2any = await getHeic2AnyConverter();
@@ -77,8 +82,9 @@ export async function processPiketImage(
         const newFileName = `${baseName}.jpg`;
         fileToProcess = new File([convertedBlob], newFileName, {
           type: "image/jpeg",
-          lastModified: rawFile.lastModified || Date.now(),
+          lastModified: takenAtMs,
         });
+        convertedFromHeic = true;
       }
     } catch (error) {
       console.warn(
@@ -123,7 +129,12 @@ export async function processPiketImage(
       reader.readAsDataURL(finalFile);
     });
 
-    return { file: finalFile, previewUrl };
+    return {
+      file: finalFile,
+      previewUrl,
+      wasHeic: convertedFromHeic,
+      takenAtMs,
+    };
   } catch (error) {
     console.error("Gagal mengompresi gambar:", error);
     const previewUrl = await new Promise<string>((resolve, reject) => {
@@ -132,6 +143,11 @@ export async function processPiketImage(
       reader.onerror = reject;
       reader.readAsDataURL(fileToProcess);
     });
-    return { file: fileToProcess, previewUrl };
+    return {
+      file: fileToProcess,
+      previewUrl,
+      wasHeic: convertedFromHeic,
+      takenAtMs,
+    };
   }
 }

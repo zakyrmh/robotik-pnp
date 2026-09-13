@@ -1,6 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import { uploadToR2 } from "@/lib/storage/r2";
 
 // ============================================================
 // Types
@@ -59,6 +60,71 @@ async function getAuthUser() {
     error,
   } = await supabase.auth.getUser();
   return { supabase, user, error };
+}
+
+// ============================================================
+// Upload Commitment Proof File to Cloudflare R2
+// ============================================================
+export async function uploadCommitmentProofToR2(formData: FormData) {
+  const { user, error: userError } = await getAuthUser();
+
+  if (userError || !user) {
+    return {
+      success: false,
+      error: "Sesi tidak ditemukan. Silakan login kembali.",
+    };
+  }
+
+  const file = formData.get("file") as File | null;
+  const proofType = formData.get("proofType") as string | null;
+
+  if (!file || !(file instanceof File) || file.size === 0) {
+    return {
+      success: false,
+      error: "File tidak ditemukan atau kosong.",
+    };
+  }
+
+  if (
+    !proofType ||
+    !["ig_robotik", "ig_mrc", "yt_robotik"].includes(proofType)
+  ) {
+    return {
+      success: false,
+      error: "Jenis bukti media sosial tidak valid.",
+    };
+  }
+
+  try {
+    const year = new Date().getFullYear().toString();
+    const userId = user.id;
+    const timestamp = Date.now();
+    const fileExt = file.name.endsWith(".webp")
+      ? "webp"
+      : file.name.split(".").pop() || "webp";
+    const key = `registrations/${year}/${userId}/${proofType}_${timestamp}.${fileExt}`;
+
+    const fileBuffer = Buffer.from(await file.arrayBuffer());
+
+    const publicUrl = await uploadToR2({
+      fileBuffer,
+      key,
+      contentType: file.type || "image/webp",
+    });
+
+    return {
+      success: true,
+      url: publicUrl,
+    };
+  } catch (err) {
+    console.error("Error uploading commitment proof to R2:", err);
+    const msg =
+      err instanceof Error ? err.message : "Gagal mengunggah file ke R2";
+    return {
+      success: false,
+      error: msg,
+    };
+  }
 }
 
 // ============================================================
@@ -202,7 +268,7 @@ export async function saveAcademicData(data: AcademicData) {
 // ============================================================
 // Step 4: Save Commitment Data
 // Simpan motivasi + URL bukti media sosial ke registrations.
-// URL sudah diupload ke storage dari client sebelum memanggil ini.
+// URL sudah diupload ke Cloudflare R2 sebelum memanggil ini.
 // ============================================================
 export async function saveCommitmentData(data: CommitmentData) {
   const { supabase, user, error: userError } = await getAuthUser();
@@ -270,9 +336,6 @@ export async function saveFinalData(data: FinalData) {
       console.error("Error updating final data:", updateError);
       return { success: false, error: "Gagal menyimpan data berkas." };
     }
-
-    // Update juga photo_url di profiles jika ada (opsional, jika profile punya kolom avatar)
-    // Saat ini profiles tidak punya kolom photo_url, jadi cukup di registrations.
 
     return { success: true, message: "Data berkas berhasil disimpan." };
   } catch (err) {

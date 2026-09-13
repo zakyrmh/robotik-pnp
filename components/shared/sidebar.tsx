@@ -116,6 +116,7 @@ const allMenuItems = {
 const roleMenuKeys: Record<string, (keyof typeof allMenuItems)[]> = {
   caang: ["dashboard", "kegiatan", "presensi", "tugas", "magang"],
   anggota: ["dashboard", "kegiatan", "presensi", "piket"],
+  "admin-kestari": ["dashboard", "kegiatan", "presensi", "piket"],
   "admin-komdis": [
     "dashboard",
     "kegiatan",

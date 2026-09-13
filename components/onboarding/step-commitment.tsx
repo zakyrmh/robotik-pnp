@@ -15,9 +15,11 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { UploadTile } from "./upload-tile";
-import { createClient } from "@/lib/supabase/client";
-import { compressImage } from "@/lib/utils/upload";
-import { saveCommitmentData } from "@/lib/actions/registration";
+import { compressImageToWebp } from "@/lib/utils/upload";
+import {
+  saveCommitmentData,
+  uploadCommitmentProofToR2,
+} from "@/lib/actions/registration";
 import type { OnboardingInitialCommitment } from "@/lib/actions/onboarding";
 import { toast } from "sonner";
 
@@ -51,54 +53,48 @@ export function StepCommitment({
 
     startTransition(async () => {
       try {
-        const supabase = createClient();
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        if (!user) {
-          toast.error("Sesi tidak ditemukan. Silakan login kembali.");
-          return;
-        }
-
-        const year = new Date().getFullYear().toString();
-        const userId = user.id;
-
-        // Helper upload file ke storage
-        const uploadFile = async (
+        // Helper upload file ke Cloudflare R2 setelah dikompresi ke WebP di client
+        const uploadFileToR2 = async (
           file: File | null,
-          path: string,
+          proofType: "ig_robotik" | "ig_mrc" | "yt_robotik",
           label: string,
+          existingUrl?: string | null,
         ): Promise<string | null> => {
-          if (!file) return null;
-          setUploadLabel(`Mengompresi ${label}...`);
-          const compressed = await compressImage(file);
-          setUploadLabel(`Mengunggah ${label}...`);
-          const { error } = await supabase.storage
-            .from("registrations")
-            .upload(path, compressed, { upsert: true });
-          if (error) throw new Error(`Gagal upload ${label}: ${error.message}`);
-          const {
-            data: { publicUrl },
-          } = supabase.storage.from("registrations").getPublicUrl(path);
-          return publicUrl;
+          if (!file) return existingUrl ?? null;
+
+          setUploadLabel(`Mengompresi ${label} ke WebP...`);
+          const compressedWebp = await compressImageToWebp(file, 1, 1920);
+
+          setUploadLabel(`Mengunggah ${label} ke R2...`);
+          const formData = new FormData();
+          formData.append("file", compressedWebp);
+          formData.append("proofType", proofType);
+
+          const res = await uploadCommitmentProofToR2(formData);
+          if (!res.success || !res.url) {
+            throw new Error(`Gagal upload ${label}: ${res.error}`);
+          }
+          return res.url;
         };
 
-        // Upload 3 bukti media sosial (opsional)
-        const igRobotikUrl = await uploadFile(
+        // Upload 3 bukti media sosial ke Cloudflare R2 (opsional)
+        const igRobotikUrl = await uploadFileToR2(
           igRobotikFile,
-          `${year}/${userId}/ig_robotik_${igRobotikFile?.name}`,
+          "ig_robotik",
           "Bukti Follow IG Robotik",
+          initialData?.igRobotikUrl,
         );
-        const igMrcUrl = await uploadFile(
+        const igMrcUrl = await uploadFileToR2(
           igMrcFile,
-          `${year}/${userId}/ig_mrc_${igMrcFile?.name}`,
+          "ig_mrc",
           "Bukti Follow IG MRC",
+          initialData?.igMrcUrl,
         );
-        const ytUrl = await uploadFile(
+        const ytUrl = await uploadFileToR2(
           ytFile,
-          `${year}/${userId}/yt_robotik_${ytFile?.name}`,
+          "yt_robotik",
           "Bukti Subscribe YT",
+          initialData?.ytUrl,
         );
 
         setUploadLabel("Menyimpan data...");

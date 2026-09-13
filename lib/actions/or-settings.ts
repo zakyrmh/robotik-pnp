@@ -41,6 +41,55 @@ export interface OrSettingsData {
 const SETTINGS_ID = "00000000-0000-0000-0000-000000000000";
 
 /**
+ * Fetch Public OR Settings.
+ * Accessible without authentication for landing page / public recruitment info.
+ */
+export async function getPublicOrSettingsAction(): Promise<
+  ServerActionResponse<OrSettingsData>
+> {
+  try {
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+      .from("or_settings")
+      .select("*")
+      .eq("id", SETTINGS_ID)
+      .single();
+
+    if (error) {
+      return {
+        success: false,
+        message: "Gagal mengambil pengaturan OR dari database.",
+        error: { code: "DATABASE_ERROR", details: error.message },
+      };
+    }
+
+    return {
+      success: true,
+      message: "Pengaturan OR berhasil diambil.",
+      data: {
+        periode_recruitment: data.periode_recruitment,
+        status_pendaftaran: data.status_pendaftaran,
+        tanggal_mulai: data.tanggal_mulai,
+        tanggal_selesai: data.tanggal_selesai,
+        biaya_pendaftaran: data.biaya_pendaftaran,
+        rekening_penerima: data.rekening_penerima as BankAccount[],
+        kontak_panitia: data.kontak_panitia as PanitiaContact[],
+        link_komunitas: data.link_komunitas as CommunityLinks,
+        timeline: data.timeline as TimelineEvent[],
+      },
+    };
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    return {
+      success: false,
+      message: "Terjadi kesalahan sistem saat mengambil pengaturan OR.",
+      error: { code: "SERVER_ERROR", details: errMsg },
+    };
+  }
+}
+
+/**
  * Fetch OR Settings.
  * Accessible by any authenticated user (e.g. Caang needs registration info).
  */

@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-09-13
+
+### Added
+
+- **Workflow Review Laporan Piket oleh Kestari (`lib/actions/piket.ts`, `components/features/piket/piket-client.tsx`)**: laporan bersifat auto-terverifikasi sistem namun dapat disetujui (final, terkunci) atau ditolak dengan alasan wajib oleh `admin-kestari`/`super-admin`; laporan ditolak dapat diunggah ulang sebagai log baru maks 2x per pekan; seluruh aksi review tercatat di audit log.
+- **Denda Administratif Piket (`supabase/migrations/20260916000000_piket_review_and_fines.sql`, `lib/actions/piket.ts`)**: tabel baru `piket_fines` (satu denda per anggota per jadwal pekan, nominal default Rp10.000, status Belum Lunas/Lunas) beserta aksi `imposePiketFine`, `markPiketFinePaid`, `voidPiketFine`; UI kelola denda + badge pengingat di halaman `/piket` (termasuk tombol Denda bagi petugas yang belum melapor).
+- **Penguatan Validasi Bukti Foto (`lib/actions/piket.ts`, `lib/utils/piket-date.ts`)**: helper `isDateInPiketWeek()` — foto boleh diambil di hari berbeda selama dalam pekan Senin–Minggu yang sama (foto pekan lain/masa depan tetap ditolak); tolak foto sebelum–sesudah identik (SHA-256), tolak hash yang pernah dipakai di laporan manapun, tolak urutan waktu terbalik; tanggal foto disimpan ke `photo_taken_at_*` dan hash ke `photo_hash_*`.
+- **Finalisasi Otomatis Akhir Pekan (`lib/actions/piket.ts`, `app/(private)/piket/page.tsx`)**: laporan auto yang pekannya sudah berakhir difinalisasi sistem secara lazy saat halaman dibuka Kestari (patuh RLS, + audit ringkasan).
+- **Dukungan HEIC/HEIF Lokal (`lib/utils/image-processing.ts`)**: konversi via dependency `heic2any` lokal (bukan CDN) + flag asal-HEIC dan tanggal file ke Server Action dengan jalur validasi fallback tanggal perangkat.
+- **Pencarian Anggota di Kelola Piket (`components/features/piket/kelola-piket-client.tsx`, `app/(private)/piket/kelola/page.tsx`)**: pemilih anggota berbasis pencarian (nama/NIM/role) serta pemakaian kolom `profiles.full_name` sebagai nama utama.
+
+### Fixed
+
+- **Sinkronisasi Pekan `/piket` vs `/piket/kelola` (`app/(private)/piket/page.tsx`)**: halaman anggota memakai kueri lama (`day`, `week_number` hardcoded 1) sehingga penugasan Pekan 3 tampil sebagai Pekan 1; kini memakai `academic_period`/`week_number`/`room_target` asli dari database dengan daftar periode dinamis.
+- **Ekspor Konstanta dari File `"use server"` (`lib/actions/piket.ts`)**: `MAX_PIKET_ATTEMPTS_PER_WEEK` dan `DEFAULT_PIKET_FINE_AMOUNT` dipindah ke `lib/utils/piket-date.ts` agar build lolos aturan Next.js (hanya fungsi async boleh diekspor).
+
 ## [0.8.5] - 2026-09-12
 
 ### Added
@@ -390,7 +406,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Setup Husky pre-commit hook dan Commitlint.
 - Setup Next.js dengan pnpm.
 
-[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.8.5...HEAD
+[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.8.5...v0.9.0
 [0.8.5]: https://github.com/zakyrmh/robotik-pnp/compare/v0.8.4...v0.8.5
 [0.8.4]: https://github.com/zakyrmh/robotik-pnp/compare/v0.8.3...v0.8.4
 [0.8.3]: https://github.com/zakyrmh/robotik-pnp/compare/v0.8.2...v0.8.3
