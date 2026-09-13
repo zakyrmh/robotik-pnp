@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-09-13
+
 ### Added
 
 - **Workflow Review Laporan Piket oleh Kestari (`lib/actions/piket.ts`, `components/features/piket/piket-client.tsx`)**: laporan bersifat auto-terverifikasi sistem namun dapat disetujui (final, terkunci) atau ditolak dengan alasan wajib oleh `admin-kestari`/`super-admin`; laporan ditolak dapat diunggah ulang sebagai log baru maks 2x per pekan; seluruh aksi review tercatat di audit log.
@@ -404,7 +406,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Setup Husky pre-commit hook dan Commitlint.
 - Setup Next.js dengan pnpm.
 
-[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.8.5...HEAD
+[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.8.5...v0.9.0
 [0.8.5]: https://github.com/zakyrmh/robotik-pnp/compare/v0.8.4...v0.8.5
 [0.8.4]: https://github.com/zakyrmh/robotik-pnp/compare/v0.8.3...v0.8.4
 [0.8.3]: https://github.com/zakyrmh/robotik-pnp/compare/v0.8.2...v0.8.3
