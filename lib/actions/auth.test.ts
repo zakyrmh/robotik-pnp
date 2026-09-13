@@ -36,6 +36,15 @@ let mockResetPasswordResult: { error: { message: string } | null } = {
 let mockUpdateUserResult: { error: { message: string } | null } = {
   error: null,
 };
+let mockOrSettingsResult: {
+  status_pendaftaran: boolean;
+  tanggal_mulai: string | null;
+  tanggal_selesai: string | null;
+} | null = {
+  status_pendaftaran: true,
+  tanggal_mulai: "2020-01-01",
+  tanggal_selesai: "2099-12-31",
+};
 
 // -----------------------------------------------------------------------
 // Mock: server-only
@@ -93,13 +102,24 @@ vi.mock("@/lib/supabase/server", () => ({
     auth: {
       resetPasswordForEmail: vi.fn(async () => mockResetPasswordResult),
     },
-    from: vi.fn(() => ({
-      select: vi.fn(() => ({
-        eq: vi.fn(() => ({
-          single: vi.fn(async () => mockProfileResult),
-          maybeSingle: vi.fn(async () => mockProfileResult),
-        })),
-      })),
+    from: vi.fn((table: string) => ({
+      select: vi.fn(() => {
+        const queryObj = {
+          limit: vi.fn(() => queryObj),
+          eq: vi.fn(() => queryObj),
+          single: vi.fn(async () =>
+            table === "or_settings"
+              ? { data: mockOrSettingsResult, error: null }
+              : mockProfileResult,
+          ),
+          maybeSingle: vi.fn(async () =>
+            table === "or_settings"
+              ? { data: mockOrSettingsResult, error: null }
+              : mockProfileResult,
+          ),
+        };
+        return queryObj;
+      }),
     })),
   })),
 }));
@@ -159,6 +179,11 @@ describe("A. Server Action: register()", () => {
     mockRedirectTarget = "";
     mockPwnedResult = { isPwned: false, occurrences: 0 };
     mockPwnedShouldThrow = false;
+    mockOrSettingsResult = {
+      status_pendaftaran: true,
+      tanggal_mulai: "2020-01-01",
+      tanggal_selesai: "2099-12-31",
+    };
   });
 
   // --- Test Case 1: Happy Path ---
@@ -335,6 +360,47 @@ describe("A. Server Action: register()", () => {
     const result = await register(null, fd);
 
     expect(result?.error).toContain("huruf besar");
+    expect(mockRedirectCalled).toBe(false);
+  });
+
+  // --- Test Case: Pendaftaran ditutup via or_settings ---
+  it("[TC-R12] Status pendaftaran false → register ditolak", async () => {
+    mockOrSettingsResult = {
+      status_pendaftaran: false,
+      tanggal_mulai: "2020-01-01",
+      tanggal_selesai: "2099-12-31",
+    };
+
+    const fd = createFormData({
+      email: "zaky@robotik.org",
+      password: VALID_PASSWORD,
+      confirmPassword: VALID_PASSWORD,
+      captchaToken: VALID_CAPTCHA_TOKEN,
+    });
+
+    const result = await register(null, fd);
+
+    expect(result?.error).toContain("sedang ditutup");
+    expect(mockRedirectCalled).toBe(false);
+  });
+
+  it("[TC-R13] Waktu pendaftaran di luar rentang tanggal → register ditolak", async () => {
+    mockOrSettingsResult = {
+      status_pendaftaran: true,
+      tanggal_mulai: "2020-01-01",
+      tanggal_selesai: "2020-12-31",
+    };
+
+    const fd = createFormData({
+      email: "zaky@robotik.org",
+      password: VALID_PASSWORD,
+      confirmPassword: VALID_PASSWORD,
+      captchaToken: VALID_CAPTCHA_TOKEN,
+    });
+
+    const result = await register(null, fd);
+
+    expect(result?.error).toContain("sedang ditutup");
     expect(mockRedirectCalled).toBe(false);
   });
 });
