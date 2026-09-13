@@ -3,6 +3,12 @@
  * Calculates ISO cross-month calendar week (Monday to Sunday) and cycle month.
  */
 
+/** Batas upload laporan per anggota per pekan (termasuk yang ditolak). */
+export const MAX_PIKET_ATTEMPTS_PER_WEEK = 2;
+
+/** Nominal default denda administratif piket (Rupiah). */
+export const DEFAULT_PIKET_FINE_AMOUNT = 10000;
+
 const MONTH_NAMES_ID = [
   "Januari",
   "Februari",
@@ -148,4 +154,39 @@ export function getPiketWeekInfo(targetDate: Date = new Date()): PiketWeekInfo {
     startIsoDate,
     endIsoDate,
   };
+}
+
+/** Toleransi jam untuk perbedaan clock client vs server (5 menit). */
+const FUTURE_SKEW_MS = 5 * 60 * 1000;
+
+/**
+ * Menentukan apakah sebuah tanggal/instan pengambilan foto berada dalam
+ * rentang pekan piket (Senin–Minggu, startIsoDate s.d. endIsoDate).
+ *
+ * Kebijakan: bukti foto boleh diambil di hari berbeda, selama masih dalam
+ * pekan yang sama dengan pekan upload (contoh: foto Senin, upload Rabu).
+ * Foto bertanggal masa depan (melebihi waktu upload + toleransi) ditolak.
+ *
+ * Perbandingan memakai kandidat tanggal UTC dan WIB untuk menoleransi
+ * selisih zona waktu client (WIB) vs server (UTC).
+ */
+export function isDateInPiketWeek(
+  target: Date,
+  week: Pick<PiketWeekInfo, "startIsoDate" | "endIsoDate">,
+  now: Date = new Date(),
+): boolean {
+  if (!(target instanceof Date) || Number.isNaN(target.getTime())) return false;
+
+  // Tolak tanggal masa depan (melebihi waktu saat ini + toleransi skew).
+  if (target.getTime() > now.getTime() + FUTURE_SKEW_MS) return false;
+
+  const utcDate = target.toISOString().split("T")[0];
+  const wibDate = new Date(target.getTime() + 7 * 3600 * 1000)
+    .toISOString()
+    .split("T")[0];
+
+  return (
+    (utcDate >= week.startIsoDate && utcDate <= week.endIsoDate) ||
+    (wibDate >= week.startIsoDate && wibDate <= week.endIsoDate)
+  );
 }

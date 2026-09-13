@@ -4,9 +4,13 @@ import {
   assignPiketMember,
   removePiketMember,
   createPiketPeriod,
+  reviewPiketLog,
+  imposePiketFine,
+  markPiketFinePaid,
+  voidPiketFine,
 } from "./piket";
 import { extractExifDateTime } from "@/lib/utils/exif";
-import { getPiketWeekInfo } from "@/lib/utils/piket-date";
+import { getPiketWeekInfo, isDateInPiketWeek } from "@/lib/utils/piket-date";
 
 // Mock next/cache
 vi.mock("next/cache", () => ({
@@ -23,11 +27,17 @@ const { mockSupabase } = vi.hoisted(() => {
       from: vi.fn().mockReturnThis(),
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
+      neq: vi.fn().mockReturnThis(),
+      or: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      is: vi.fn().mockReturnThis(),
+      lt: vi.fn().mockReturnThis(),
       single: vi.fn().mockReturnThis(),
       maybeSingle: vi.fn().mockReturnThis(),
       gte: vi.fn().mockReturnThis(),
       lte: vi.fn().mockReturnThis(),
       insert: vi.fn().mockReturnThis(),
+      update: vi.fn().mockReturnThis(),
       upsert: vi.fn().mockReturnThis(),
       delete: vi.fn().mockReturnThis(),
       storage: {
@@ -70,6 +80,61 @@ describe("Piket Date Utility - getPiketWeekInfo", () => {
     expect(info.cycleMonthName).toBe("September");
     expect(info.startIsoDate).toBe("2026-08-31");
     expect(info.endIsoDate).toBe("2026-09-06");
+  });
+});
+
+describe("Piket Date Utility - isDateInPiketWeek", () => {
+  // Pekan berjalan: Senin 31 Agu – Minggu 6 Sep 2026.
+  const week = getPiketWeekInfo(new Date(2026, 8, 2));
+  const wednesdayNoon = new Date("2026-09-02T10:00:00Z");
+
+  it("should accept a photo taken on a different day within the same week (Monday photo, Wednesday upload)", () => {
+    expect(
+      isDateInPiketWeek(new Date("2026-08-31T08:00:00Z"), week, wednesdayNoon),
+    ).toBe(true);
+  });
+
+  it("should accept a photo taken on the upload day", () => {
+    expect(isDateInPiketWeek(wednesdayNoon, week, wednesdayNoon)).toBe(true);
+  });
+
+  it("should accept a photo taken on Sunday of the same week", () => {
+    const sundayNight = new Date("2026-09-06T23:30:00Z");
+    expect(
+      isDateInPiketWeek(new Date("2026-09-06T23:00:00Z"), week, sundayNight),
+    ).toBe(true);
+  });
+
+  it("should accept a Monday 01:00 WIB photo via WIB tolerance (UTC date still Sunday)", () => {
+    // Senin 31 Agu 01:00 WIB = Minggu 30 Agu 18:00 UTC (di luar rentang UTC,
+    // masuk rentang via kandidat WIB).
+    expect(
+      isDateInPiketWeek(new Date("2026-08-30T18:00:00Z"), week, wednesdayNoon),
+    ).toBe(true);
+  });
+
+  it("should reject a photo from the previous week", () => {
+    expect(
+      isDateInPiketWeek(new Date("2026-08-30T12:00:00Z"), week, wednesdayNoon),
+    ).toBe(false);
+  });
+
+  it("should reject a photo from the next week", () => {
+    expect(
+      isDateInPiketWeek(new Date("2026-09-07T00:30:00Z"), week, wednesdayNoon),
+    ).toBe(false);
+  });
+
+  it("should reject an old photo from weeks ago", () => {
+    expect(
+      isDateInPiketWeek(new Date("2026-08-15T10:00:00Z"), week, wednesdayNoon),
+    ).toBe(false);
+  });
+
+  it("should reject a future-dated photo even within the same week", () => {
+    expect(
+      isDateInPiketWeek(new Date("2026-09-04T10:00:00Z"), week, wednesdayNoon),
+    ).toBe(false);
   });
 });
 
@@ -241,7 +306,7 @@ describe("Piket Server Action - submitPiketReport", () => {
     expect(res.message).toContain("sudah mengunggah laporan piket");
   });
 
-  it("should reject if EXIF date does not match today's date", async () => {
+  it("should reject if EXIF date is outside the current piket week", async () => {
     mockSupabase.auth.getUser.mockResolvedValueOnce({
       data: { user: { id: "user-id" } },
     });
@@ -289,6 +354,365 @@ describe("Piket Server Action - submitPiketReport", () => {
     );
   });
 
+  it("should accept an EXIF photo taken on a different day within the same week", async () => {
+    mockSupabase.auth.getUser.mockResolvedValueOnce({
+      data: { user: { id: "user-id" } },
+    });
+    mockSupabase.single.mockResolvedValueOnce({ data: { role: "anggota" } }); // profile
+
+    const weekInfo = getPiketWeekInfo(new Date());
+    mockSupabase.single.mockResolvedValueOnce({
+      data: {
+        id: "sched-id",
+        week_number: weekInfo.weekNumber,
+        room_target: "workshop_dan_sekretariat",
+      },
+    }); // schedule
+
+    // Mock membership exists
+    mockSupabase.maybeSingle.mockResolvedValueOnce({
+      data: { id: "membership-id" },
+      error: null,
+    });
+
+    // Mock no existing weekly log
+    mockSupabase.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
+
+    // Foto diambil awal pekan berjalan (Senin 00:01 waktu lokal — selalu
+    // di masa lalu dan dalam rentang pekan), upload di hari lain
+    // dalam pekan yang sama → tetap diterima.
+    const earlyInWeek = new Date(weekInfo.monday.getTime() + 60 * 1000);
+    vi.mocked(extractExifDateTime).mockReturnValue(earlyInWeek);
+
+    // Mock DB insertion
+    mockSupabase.insert.mockResolvedValueOnce({ error: null });
+
+    const formData = new FormData();
+    formData.append("schedule_id", "sched-id");
+    formData.append("notes", "cleaned the lab");
+    formData.append(
+      "photo_before",
+      new File([Buffer.from("before")], "before.jpg", { type: "image/jpeg" }),
+    );
+    formData.append(
+      "photo_after",
+      new File([Buffer.from("after")], "after.jpg", { type: "image/jpeg" }),
+    );
+
+    const res = await submitPiketReport(formData);
+    expect(res.success).toBe(true);
+    expect(res.message).toContain("Laporan piket kebersihan berhasil");
+  });
+
+  it("should accept HEIC-converted photos taken on a different day within the same week", async () => {
+    mockSupabase.auth.getUser.mockResolvedValueOnce({
+      data: { user: { id: "user-id" } },
+    });
+    mockSupabase.single.mockResolvedValueOnce({ data: { role: "anggota" } }); // profile
+
+    const weekInfo = getPiketWeekInfo(new Date());
+    mockSupabase.single.mockResolvedValueOnce({
+      data: {
+        id: "sched-id",
+        week_number: weekInfo.weekNumber,
+        room_target: "workshop_dan_sekretariat",
+      },
+    }); // schedule
+
+    // Mock membership exists
+    mockSupabase.maybeSingle.mockResolvedValueOnce({
+      data: { id: "membership-id" },
+      error: null,
+    });
+
+    // Mock no existing weekly log
+    mockSupabase.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
+
+    // Konversi HEIC menghilangkan EXIF → fallback tanggal file perangkat.
+    vi.mocked(extractExifDateTime).mockReturnValue(null);
+
+    // Mock DB insertion
+    mockSupabase.insert.mockResolvedValueOnce({ error: null });
+
+    const mondayMs = weekInfo.monday.getTime() + 60 * 1000;
+    const formData = new FormData();
+    formData.append("schedule_id", "sched-id");
+    formData.append("notes", "cleaned the lab");
+    formData.append(
+      "photo_before",
+      new File([Buffer.from("before")], "before.jpg", { type: "image/jpeg" }),
+    );
+    formData.append(
+      "photo_after",
+      new File([Buffer.from("after")], "after.jpg", { type: "image/jpeg" }),
+    );
+    formData.append("photo_before_was_heic", "1");
+    formData.append("photo_after_was_heic", "1");
+    formData.append("photo_before_taken_at", String(mondayMs));
+    formData.append("photo_after_taken_at", String(mondayMs));
+
+    const res = await submitPiketReport(formData);
+    expect(res.success).toBe(true);
+    expect(res.message).toContain("Laporan piket kebersihan berhasil");
+  });
+
+  it("should reject identical before and after photos", async () => {
+    mockSupabase.auth.getUser.mockResolvedValueOnce({
+      data: { user: { id: "user-id" } },
+    });
+    mockSupabase.single.mockResolvedValueOnce({ data: { role: "anggota" } }); // profile
+
+    const weekInfo = getPiketWeekInfo(new Date());
+    mockSupabase.single.mockResolvedValueOnce({
+      data: {
+        id: "sched-id",
+        week_number: weekInfo.weekNumber,
+        room_target: "workshop_dan_sekretariat",
+      },
+    }); // schedule
+
+    // Mock membership exists
+    mockSupabase.maybeSingle.mockResolvedValueOnce({
+      data: { id: "membership-id" },
+      error: null,
+    });
+
+    // Mock no existing weekly log
+    mockSupabase.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
+
+    // EXIF valid (today) agar sampai ke pengecekan hash
+    vi.mocked(extractExifDateTime).mockReturnValue(new Date());
+
+    const formData = new FormData();
+    formData.append("schedule_id", "sched-id");
+    formData.append("notes", "cleaned the lab");
+    formData.append(
+      "photo_before",
+      new File([Buffer.from("same-bytes")], "before.jpg", {
+        type: "image/jpeg",
+      }),
+    );
+    formData.append(
+      "photo_after",
+      new File([Buffer.from("same-bytes")], "after.jpg", {
+        type: "image/jpeg",
+      }),
+    );
+
+    const res = await submitPiketReport(formData);
+    expect(res.success).toBe(false);
+    expect(res.error?.code).toBe("BAD_REQUEST");
+    expect(res.message).toContain("identik");
+  });
+
+  it("should reject a photo hash already used in a previous report", async () => {
+    mockSupabase.auth.getUser.mockResolvedValueOnce({
+      data: { user: { id: "user-id" } },
+    });
+    mockSupabase.single.mockResolvedValueOnce({ data: { role: "anggota" } }); // profile
+
+    const weekInfo = getPiketWeekInfo(new Date());
+    mockSupabase.single.mockResolvedValueOnce({
+      data: {
+        id: "sched-id",
+        week_number: weekInfo.weekNumber,
+        room_target: "workshop_dan_sekretariat",
+      },
+    }); // schedule
+
+    // Mock membership exists
+    mockSupabase.maybeSingle.mockResolvedValueOnce({
+      data: { id: "membership-id" },
+      error: null,
+    });
+
+    // Mock no existing weekly log
+    mockSupabase.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
+
+    vi.mocked(extractExifDateTime).mockReturnValue(new Date());
+
+    // Mock hash reuse ditemukan
+    mockSupabase.limit.mockResolvedValueOnce({
+      data: [{ id: "old-log-id" }],
+      error: null,
+    });
+
+    const formData = new FormData();
+    formData.append("schedule_id", "sched-id");
+    formData.append("notes", "cleaned the lab");
+    formData.append(
+      "photo_before",
+      new File([Buffer.from("before-bytes")], "before.jpg", {
+        type: "image/jpeg",
+      }),
+    );
+    formData.append(
+      "photo_after",
+      new File([Buffer.from("after-bytes")], "after.jpg", {
+        type: "image/jpeg",
+      }),
+    );
+
+    const res = await submitPiketReport(formData);
+    expect(res.success).toBe(false);
+    expect(res.error?.code).toBe("BAD_REQUEST");
+    expect(res.message).toContain("sudah pernah digunakan");
+  });
+
+  it("should reject when the after photo predates the before photo", async () => {
+    mockSupabase.auth.getUser.mockResolvedValueOnce({
+      data: { user: { id: "user-id" } },
+    });
+    mockSupabase.single.mockResolvedValueOnce({ data: { role: "anggota" } }); // profile
+
+    const weekInfo = getPiketWeekInfo(new Date());
+    mockSupabase.single.mockResolvedValueOnce({
+      data: {
+        id: "sched-id",
+        week_number: weekInfo.weekNumber,
+        room_target: "workshop_dan_sekretariat",
+      },
+    }); // schedule
+
+    // Mock membership exists
+    mockSupabase.maybeSingle.mockResolvedValueOnce({
+      data: { id: "membership-id" },
+      error: null,
+    });
+
+    // Mock no existing weekly log
+    mockSupabase.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
+
+    // before = Senin +2 mnt, after = Senin +1 mnt (after lebih tua)
+    const mondayMs = weekInfo.monday.getTime();
+    vi.mocked(extractExifDateTime)
+      .mockImplementationOnce(() => new Date(mondayMs + 2 * 60 * 1000))
+      .mockImplementationOnce(() => new Date(mondayMs + 60 * 1000));
+
+    const formData = new FormData();
+    formData.append("schedule_id", "sched-id");
+    formData.append("notes", "cleaned the lab");
+    formData.append(
+      "photo_before",
+      new File([Buffer.from("before-bytes")], "before.jpg", {
+        type: "image/jpeg",
+      }),
+    );
+    formData.append(
+      "photo_after",
+      new File([Buffer.from("after-bytes")], "after.jpg", {
+        type: "image/jpeg",
+      }),
+    );
+
+    const res = await submitPiketReport(formData);
+    expect(res.success).toBe(false);
+    expect(res.error?.code).toBe("BAD_REQUEST");
+    expect(res.message).toContain("Urutan foto tidak valid");
+  });
+
+  it("should reject when weekly upload attempts are exhausted", async () => {
+    mockSupabase.auth.getUser.mockResolvedValueOnce({
+      data: { user: { id: "user-id" } },
+    });
+    mockSupabase.single.mockResolvedValueOnce({ data: { role: "anggota" } }); // profile
+
+    const weekInfo = getPiketWeekInfo(new Date());
+    mockSupabase.single.mockResolvedValueOnce({
+      data: {
+        id: "sched-id",
+        week_number: weekInfo.weekNumber,
+        room_target: "workshop_dan_sekretariat",
+      },
+    }); // schedule
+
+    // Mock membership exists
+    mockSupabase.maybeSingle.mockResolvedValueOnce({
+      data: { id: "membership-id" },
+      error: null,
+    });
+
+    // Mock no valid weekly log (yang ada hanya yang ditolak)
+    mockSupabase.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
+
+    // Panggilan lte pertama (cek duplikat) lanjut rantai, kedua (hitung
+    // percobaan) mengembalikan count 2 = kuota habis.
+    mockSupabase.lte
+      .mockReturnValueOnce(mockSupabase)
+      .mockResolvedValueOnce({ count: 2, error: null });
+
+    const formData = new FormData();
+    formData.append("schedule_id", "sched-id");
+    formData.append("notes", "cleaned the lab");
+    formData.append(
+      "photo_before",
+      new File([Buffer.from("before-bytes")], "before.jpg", {
+        type: "image/jpeg",
+      }),
+    );
+    formData.append(
+      "photo_after",
+      new File([Buffer.from("after-bytes")], "after.jpg", {
+        type: "image/jpeg",
+      }),
+    );
+
+    const res = await submitPiketReport(formData);
+    expect(res.success).toBe(false);
+    expect(res.error?.code).toBe("BAD_REQUEST");
+    expect(res.message).toContain("Kesempatan upload");
+  });
+
+  it("should allow re-upload after a rejection (rejected logs do not block)", async () => {
+    mockSupabase.auth.getUser.mockResolvedValueOnce({
+      data: { user: { id: "user-id" } },
+    });
+    mockSupabase.single.mockResolvedValueOnce({ data: { role: "anggota" } }); // profile
+
+    const weekInfo = getPiketWeekInfo(new Date());
+    mockSupabase.single.mockResolvedValueOnce({
+      data: {
+        id: "sched-id",
+        week_number: weekInfo.weekNumber,
+        room_target: "workshop_dan_sekretariat",
+      },
+    }); // schedule
+
+    // Mock membership exists
+    mockSupabase.maybeSingle.mockResolvedValueOnce({
+      data: { id: "membership-id" },
+      error: null,
+    });
+
+    // Mock no VALID weekly log (laporan ditolak dikecualikan query)
+    mockSupabase.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
+
+    vi.mocked(extractExifDateTime).mockReturnValue(new Date());
+
+    // Mock DB insertion
+    mockSupabase.insert.mockResolvedValueOnce({ error: null });
+
+    const formData = new FormData();
+    formData.append("schedule_id", "sched-id");
+    formData.append("notes", "cleaned the lab, second try");
+    formData.append(
+      "photo_before",
+      new File([Buffer.from("before-retry")], "before.jpg", {
+        type: "image/jpeg",
+      }),
+    );
+    formData.append(
+      "photo_after",
+      new File([Buffer.from("after-retry")], "after.jpg", {
+        type: "image/jpeg",
+      }),
+    );
+
+    const res = await submitPiketReport(formData);
+    expect(res.success).toBe(true);
+    expect(res.message).toContain("Laporan piket kebersihan berhasil");
+  });
+
   it("should successfully upload photos and save report when validations pass", async () => {
     mockSupabase.auth.getUser.mockResolvedValueOnce({
       data: { user: { id: "user-id" } },
@@ -334,6 +758,235 @@ describe("Piket Server Action - submitPiketReport", () => {
     const res = await submitPiketReport(formData);
     expect(res.success).toBe(true);
     expect(res.message).toContain("Laporan piket kebersihan berhasil");
+  });
+});
+
+describe("Piket Server Action - reviewPiketLog", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockSupabase.from.mockReturnThis();
+    mockSupabase.select.mockReturnThis();
+    mockSupabase.eq.mockReturnThis();
+  });
+
+  it("should reject non-kestari users from reviewing logs", async () => {
+    mockSupabase.auth.getUser.mockResolvedValueOnce({
+      data: { user: { id: "user-id" } },
+    });
+    mockSupabase.single.mockResolvedValueOnce({ data: { role: "anggota" } });
+
+    const res = await reviewPiketLog("log-id", "approve");
+    expect(res.success).toBe(false);
+    expect(res.error?.code).toBe("FORBIDDEN");
+  });
+
+  it("should require a reason when rejecting", async () => {
+    mockSupabase.auth.getUser.mockResolvedValueOnce({
+      data: { user: { id: "kestari-id" } },
+    });
+    mockSupabase.single.mockResolvedValueOnce({
+      data: { role: "admin-kestari" },
+    });
+
+    const res = await reviewPiketLog("log-id", "reject", "   ");
+    expect(res.success).toBe(false);
+    expect(res.error?.code).toBe("BAD_REQUEST");
+  });
+
+  it("should reject review of an already finalized log", async () => {
+    mockSupabase.auth.getUser.mockResolvedValueOnce({
+      data: { user: { id: "kestari-id" } },
+    });
+    mockSupabase.single.mockResolvedValueOnce({
+      data: { role: "admin-kestari" },
+    });
+    mockSupabase.single.mockResolvedValueOnce({
+      data: {
+        id: "log-id",
+        is_final: true,
+        is_verified: true,
+        reported_by: "user-id",
+        schedule_id: "sched-id",
+      },
+    });
+
+    const res = await reviewPiketLog("log-id", "approve");
+    expect(res.success).toBe(false);
+    expect(res.message).toContain("sudah final");
+  });
+
+  it("should allow kestari to approve a pending log", async () => {
+    mockSupabase.auth.getUser.mockResolvedValueOnce({
+      data: { user: { id: "kestari-id" } },
+    });
+    mockSupabase.single.mockResolvedValueOnce({
+      data: { role: "admin-kestari" },
+    });
+    mockSupabase.single.mockResolvedValueOnce({
+      data: {
+        id: "log-id",
+        is_final: false,
+        is_verified: true,
+        reported_by: "user-id",
+        schedule_id: "sched-id",
+      },
+    });
+
+    const res = await reviewPiketLog("log-id", "approve");
+    expect(res.success).toBe(true);
+    expect(res.message).toContain("disetujui");
+  });
+
+  it("should allow kestari to reject a pending log with a reason", async () => {
+    mockSupabase.auth.getUser.mockResolvedValueOnce({
+      data: { user: { id: "kestari-id" } },
+    });
+    mockSupabase.single.mockResolvedValueOnce({
+      data: { role: "admin-kestari" },
+    });
+    mockSupabase.single.mockResolvedValueOnce({
+      data: {
+        id: "log-id",
+        is_final: false,
+        is_verified: true,
+        reported_by: "user-id",
+        schedule_id: "sched-id",
+      },
+    });
+
+    const res = await reviewPiketLog("log-id", "reject", "Foto tidak valid");
+    expect(res.success).toBe(true);
+    expect(res.message).toContain("ditolak");
+  });
+});
+
+describe("Piket Server Action - piket fines", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockSupabase.from.mockReturnThis();
+    mockSupabase.select.mockReturnThis();
+    mockSupabase.eq.mockReturnThis();
+    mockSupabase.delete.mockReturnThis();
+  });
+
+  it("should reject non-kestari users from imposing fines", async () => {
+    mockSupabase.auth.getUser.mockResolvedValueOnce({
+      data: { user: { id: "user-id" } },
+    });
+    mockSupabase.single.mockResolvedValueOnce({ data: { role: "anggota" } });
+
+    const res = await imposePiketFine("target-id", "sched-id");
+    expect(res.success).toBe(false);
+    expect(res.error?.code).toBe("FORBIDDEN");
+  });
+
+  it("should block fines for members with a valid report", async () => {
+    mockSupabase.auth.getUser.mockResolvedValueOnce({
+      data: { user: { id: "kestari-id" } },
+    });
+    mockSupabase.single.mockResolvedValueOnce({
+      data: { role: "admin-kestari" },
+    });
+    // Target adalah anggota jadwal
+    mockSupabase.maybeSingle.mockResolvedValueOnce({
+      data: { id: "membership-id" },
+      error: null,
+    });
+    // Target sudah punya laporan valid
+    mockSupabase.maybeSingle.mockResolvedValueOnce({
+      data: { id: "valid-log-id" },
+      error: null,
+    });
+
+    const res = await imposePiketFine("target-id", "sched-id");
+    expect(res.success).toBe(false);
+    expect(res.message).toContain("laporan valid");
+  });
+
+  it("should allow kestari to impose a fine", async () => {
+    mockSupabase.auth.getUser.mockResolvedValueOnce({
+      data: { user: { id: "kestari-id" } },
+    });
+    mockSupabase.single.mockResolvedValueOnce({
+      data: { role: "admin-kestari" },
+    });
+    mockSupabase.maybeSingle.mockResolvedValueOnce({
+      data: { id: "membership-id" },
+      error: null,
+    });
+    mockSupabase.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
+    mockSupabase.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
+
+    const res = await imposePiketFine("target-id", "sched-id", 10000, "Alpha");
+    expect(res.success).toBe(true);
+    expect(res.message).toContain("Rp10.000");
+  });
+
+  it("should allow kestari to mark a fine as paid", async () => {
+    mockSupabase.auth.getUser.mockResolvedValueOnce({
+      data: { user: { id: "kestari-id" } },
+    });
+    mockSupabase.single.mockResolvedValueOnce({
+      data: { role: "admin-kestari" },
+    });
+    mockSupabase.single.mockResolvedValueOnce({
+      data: {
+        id: "fine-id",
+        status: "belum_lunas",
+        profile_id: "target-id",
+        schedule_id: "sched-id",
+        amount: 10000,
+      },
+    });
+
+    const res = await markPiketFinePaid("fine-id");
+    expect(res.success).toBe(true);
+    expect(res.message).toContain("lunas");
+  });
+
+  it("should reject marking an already paid fine", async () => {
+    mockSupabase.auth.getUser.mockResolvedValueOnce({
+      data: { user: { id: "kestari-id" } },
+    });
+    mockSupabase.single.mockResolvedValueOnce({
+      data: { role: "admin-kestari" },
+    });
+    mockSupabase.single.mockResolvedValueOnce({
+      data: {
+        id: "fine-id",
+        status: "lunas",
+        profile_id: "target-id",
+        schedule_id: "sched-id",
+        amount: 10000,
+      },
+    });
+
+    const res = await markPiketFinePaid("fine-id");
+    expect(res.success).toBe(false);
+    expect(res.error?.code).toBe("BAD_REQUEST");
+  });
+
+  it("should allow kestari to void a fine", async () => {
+    mockSupabase.auth.getUser.mockResolvedValueOnce({
+      data: { user: { id: "kestari-id" } },
+    });
+    mockSupabase.single.mockResolvedValueOnce({
+      data: { role: "admin-kestari" },
+    });
+    mockSupabase.maybeSingle.mockResolvedValueOnce({
+      data: {
+        id: "fine-id",
+        profile_id: "target-id",
+        schedule_id: "sched-id",
+        amount: 10000,
+        status: "belum_lunas",
+      },
+      error: null,
+    });
+
+    const res = await voidPiketFine("fine-id");
+    expect(res.success).toBe(true);
+    expect(res.message).toContain("dibatalkan");
   });
 });
 
