@@ -735,6 +735,7 @@ export type Database = {
         Row: {
           bank_account_holder: string | null;
           bank_account_number: string | null;
+          bank_accounts: Json | null;
           bank_name: string | null;
           batch1_end: string | null;
           batch1_start: string | null;
@@ -753,6 +754,7 @@ export type Database = {
         Insert: {
           bank_account_holder?: string | null;
           bank_account_number?: string | null;
+          bank_accounts?: Json | null;
           bank_name?: string | null;
           batch1_end?: string | null;
           batch1_start?: string | null;
@@ -771,6 +773,7 @@ export type Database = {
         Update: {
           bank_account_holder?: string | null;
           bank_account_number?: string | null;
+          bank_accounts?: Json | null;
           bank_name?: string | null;
           batch1_end?: string | null;
           batch1_start?: string | null;
@@ -1567,6 +1570,89 @@ export type Database = {
             columns: ["study_program_id"];
             isOneToOne: false;
             referencedRelation: "study_programs";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      review_registrations: {
+        Row: {
+          amount: number;
+          category: string;
+          created_at: string | null;
+          email: string;
+          id: string;
+          leader_name: string;
+          status: string;
+          team_name: string;
+          whatsapp: string;
+        };
+        Insert: {
+          amount: number;
+          category: string;
+          created_at?: string | null;
+          email: string;
+          id?: string;
+          leader_name: string;
+          status?: string;
+          team_name: string;
+          whatsapp: string;
+        };
+        Update: {
+          amount?: number;
+          category?: string;
+          created_at?: string | null;
+          email?: string;
+          id?: string;
+          leader_name?: string;
+          status?: string;
+          team_name?: string;
+          whatsapp?: string;
+        };
+        Relationships: [];
+      };
+      review_transactions: {
+        Row: {
+          created_at: string | null;
+          gross_amount: number;
+          id: string;
+          order_id: string;
+          payment_type: string | null;
+          raw_response: Json | null;
+          registration_id: string | null;
+          snap_token: string | null;
+          transaction_status: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          created_at?: string | null;
+          gross_amount: number;
+          id?: string;
+          order_id: string;
+          payment_type?: string | null;
+          raw_response?: Json | null;
+          registration_id?: string | null;
+          snap_token?: string | null;
+          transaction_status?: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          created_at?: string | null;
+          gross_amount?: number;
+          id?: string;
+          order_id?: string;
+          payment_type?: string | null;
+          raw_response?: Json | null;
+          registration_id?: string | null;
+          snap_token?: string | null;
+          transaction_status?: string;
+          updated_at?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "review_transactions_registration_id_fkey";
+            columns: ["registration_id"];
+            isOneToOne: false;
+            referencedRelation: "review_registrations";
             referencedColumns: ["id"];
           },
         ];
