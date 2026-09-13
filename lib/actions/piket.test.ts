@@ -10,7 +10,11 @@ import {
   voidPiketFine,
 } from "./piket";
 import { extractExifDateTime } from "@/lib/utils/exif";
-import { getPiketWeekInfo, isDateInPiketWeek } from "@/lib/utils/piket-date";
+import {
+  getPiketWeekInfo,
+  isDateInPiketWeek,
+  isMemberOnInternship,
+} from "@/lib/utils/piket-date";
 
 // Mock next/cache
 vi.mock("next/cache", () => ({
@@ -80,6 +84,29 @@ describe("Piket Date Utility - getPiketWeekInfo", () => {
     expect(info.cycleMonthName).toBe("September");
     expect(info.startIsoDate).toBe("2026-08-31");
     expect(info.endIsoDate).toBe("2026-09-06");
+  });
+});
+
+describe("Piket Date Utility - isMemberOnInternship", () => {
+  it("should return false for profile without internship flag", () => {
+    expect(isMemberOnInternship({ is_on_internship: false })).toBe(false);
+    expect(isMemberOnInternship(null)).toBe(false);
+  });
+
+  it("should return true for interning profile without date limits", () => {
+    expect(isMemberOnInternship({ is_on_internship: true })).toBe(true);
+  });
+
+  it("should validate reference date within internship window", () => {
+    const profile = {
+      is_on_internship: true,
+      internship_start_date: "2026-08-01",
+      internship_end_date: "2026-10-31",
+    };
+
+    expect(isMemberOnInternship(profile, "2026-09-01")).toBe(true);
+    expect(isMemberOnInternship(profile, "2026-07-31")).toBe(false);
+    expect(isMemberOnInternship(profile, "2026-11-01")).toBe(false);
   });
 });
 
@@ -330,8 +357,8 @@ describe("Piket Server Action - submitPiketReport", () => {
     // Mock no existing weekly log
     mockSupabase.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
 
-    // Mock EXIF date extractor to return a past date (1 week ago)
-    const pastDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    // Mock EXIF date extractor to return a past date (2 weeks ago)
+    const pastDate = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
     vi.mocked(extractExifDateTime).mockReturnValue(pastDate);
 
     const formData = new FormData();
@@ -880,6 +907,34 @@ describe("Piket Server Action - piket fines", () => {
     expect(res.error?.code).toBe("FORBIDDEN");
   });
 
+  it("should block fines for interning members", async () => {
+    mockSupabase.auth.getUser.mockResolvedValueOnce({
+      data: { user: { id: "kestari-id" } },
+    });
+    mockSupabase.single.mockResolvedValueOnce({
+      data: { role: "admin-kestari" },
+    });
+    // Target adalah anggota jadwal
+    mockSupabase.maybeSingle.mockResolvedValueOnce({
+      data: { id: "membership-id" },
+      error: null,
+    });
+    // Target profile berstatus magang
+    mockSupabase.maybeSingle.mockResolvedValueOnce({
+      data: {
+        id: "target-id",
+        is_on_internship: true,
+        internship_start_date: null,
+        internship_end_date: null,
+      },
+      error: null,
+    });
+
+    const res = await imposePiketFine("target-id", "sched-id");
+    expect(res.success).toBe(false);
+    expect(res.message).toContain("Magang Luar / PKL");
+  });
+
   it("should block fines for members with a valid report", async () => {
     mockSupabase.auth.getUser.mockResolvedValueOnce({
       data: { user: { id: "kestari-id" } },
@@ -890,6 +945,14 @@ describe("Piket Server Action - piket fines", () => {
     // Target adalah anggota jadwal
     mockSupabase.maybeSingle.mockResolvedValueOnce({
       data: { id: "membership-id" },
+      error: null,
+    });
+    // Target profile bukan magang
+    mockSupabase.maybeSingle.mockResolvedValueOnce({
+      data: {
+        id: "target-id",
+        is_on_internship: false,
+      },
       error: null,
     });
     // Target sudah punya laporan valid
@@ -912,6 +975,11 @@ describe("Piket Server Action - piket fines", () => {
     });
     mockSupabase.maybeSingle.mockResolvedValueOnce({
       data: { id: "membership-id" },
+      error: null,
+    });
+    // Profile bukan magang
+    mockSupabase.maybeSingle.mockResolvedValueOnce({
+      data: { id: "target-id", is_on_internship: false },
       error: null,
     });
     mockSupabase.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
