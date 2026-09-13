@@ -40,7 +40,7 @@ import {
   markPiketFinePaid,
   voidPiketFine,
 } from "@/lib/actions/piket";
-import { getPiketWeekInfo } from "@/lib/utils/piket-date";
+import { getPiketWeekInfo, isMemberOnInternship } from "@/lib/utils/piket-date";
 import { MAX_PIKET_ATTEMPTS_PER_WEEK as MAX_WEEKLY_ATTEMPTS } from "@/lib/utils/piket-date";
 import { getPublicR2Url } from "@/lib/storage/r2";
 import { processPiketImage } from "@/lib/utils/image-processing";
@@ -51,6 +51,9 @@ interface PiketClientProps {
     email: string;
     role: string;
     is_onboarded: boolean;
+    is_on_internship?: boolean;
+    internship_start_date?: string | null;
+    internship_end_date?: string | null;
   };
   availablePeriods?: string[];
   schedules: {
@@ -63,6 +66,9 @@ interface PiketClientProps {
       profile_id: string;
       nim: string;
       name: string;
+      is_on_internship?: boolean;
+      internship_start_date?: string | null;
+      internship_end_date?: string | null;
     }[];
   }[];
   myAssignments: {
@@ -212,6 +218,12 @@ export function PiketClient({
     (a) => a.week_number === weekInfo.weekNumber,
   );
   const isScheduledThisWeek = !!currentWeekAssignment;
+
+  // Check if current logged-in user is currently on internship
+  const currentUserIsOnInternship = isMemberOnInternship(
+    profile,
+    weekInfo.startIsoDate,
+  );
 
   console.log("user role", profile.role);
 
@@ -665,6 +677,23 @@ export function PiketClient({
                   </Badge>
                 )}
               </div>
+              {currentUserIsOnInternship && (
+                <div className="p-2.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-900/60 text-xs space-y-1">
+                  <div className="flex items-center gap-1.5 font-semibold text-indigo-700 dark:text-indigo-300 font-mono text-[11px] uppercase">
+                    <Badge className="bg-indigo-600 text-white text-[9px] px-1.5 py-0.5 rounded-sm">
+                      MAGANG / PKL
+                    </Badge>
+                    <span>Bebas Piket & Denda</span>
+                  </div>
+                  <p className="text-slate-600 dark:text-slate-300 font-body text-[11px] leading-relaxed">
+                    Anda sedang melaksanakan Magang Luar / PKL, sehingga secara
+                    otomatis tidak wajib melapor dan tidak mendapatkan denda.
+                    Namun, Anda tetap diperbolehkan mengirim laporan piket
+                    secara opsional.
+                  </p>
+                </div>
+              )}
+
               <div className="pt-1">
                 {isScheduledThisWeek ? (
                   <div className="flex items-start gap-1.5 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
@@ -676,6 +705,8 @@ export function PiketClient({
                     <span>
                       Anda bertugas piket di Pekan {weekInfo.weekNumber} ini!
                       (Bebas pilih hari Senin–Minggu).
+                      {currentUserIsOnInternship &&
+                        " (Opsional karena sedang Magang/PKL)"}
                     </span>
                   </div>
                 ) : (
@@ -804,6 +835,11 @@ export function PiketClient({
                           l.reporter_id === member.profile_id &&
                           getPiketLogStatus(l) !== "rejected",
                       );
+                      const memberIsInterning = isMemberOnInternship(
+                        member,
+                        weekInfo.startIsoDate,
+                      );
+
                       return (
                         <div
                           key={member.member_id}
@@ -813,13 +849,22 @@ export function PiketClient({
                               : "bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200"
                           }`}
                         >
-                          <div className="truncate max-w-[150px]">
-                            <span className="font-display font-medium block truncate">
-                              {member.name}
-                            </span>
-                            <span className="font-mono text-[10px] text-slate-500 dark:text-slate-400 block">
-                              {member.nim || "-"}
-                            </span>
+                          <div className="truncate max-w-[140px]">
+                            <div className="flex items-center gap-1">
+                              <span className="font-display font-medium truncate">
+                                {member.name}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-mono text-[10px] text-slate-500 dark:text-slate-400">
+                                {member.nim || "-"}
+                              </span>
+                              {memberIsInterning && (
+                                <Badge className="bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 text-[9px] px-1 py-0 rounded-xs">
+                                  MAGANG / PKL
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                           <div className="flex items-center gap-1.5 shrink-0">
                             {hasValidLog ? (
@@ -828,12 +873,16 @@ export function PiketClient({
                                 size={15}
                                 className="text-emerald-600 dark:text-emerald-400"
                               />
+                            ) : memberIsInterning ? (
+                              <Badge className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 text-[9px] rounded-full">
+                                BEBAS PIKET
+                              </Badge>
                             ) : (
                               <span className="font-mono text-[10px] text-slate-400 dark:text-slate-500">
                                 BELUM LAPOR
                               </span>
                             )}
-                            {isKestariAdmin && !hasValidLog && (
+                            {isKestariAdmin && !hasValidLog && !memberIsInterning && (
                               <button
                                 type="button"
                                 onClick={() =>

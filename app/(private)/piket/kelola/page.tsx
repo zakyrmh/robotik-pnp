@@ -84,6 +84,9 @@ export default async function KelolaPiketPage() {
           id,
           nim,
           role,
+          is_on_internship,
+          internship_start_date,
+          internship_end_date,
           registrations (
             full_name
           )
@@ -113,6 +116,9 @@ export default async function KelolaPiketPage() {
       nim,
       full_name,
       role,
+      is_on_internship,
+      internship_start_date,
+      internship_end_date,
       registrations (
         full_name
       )
@@ -128,13 +134,22 @@ export default async function KelolaPiketPage() {
     ])
     .eq("is_onboarded", true);
 
+  type ExtendedCandidate = RawProfileCandidate & {
+    is_on_internship?: boolean;
+    internship_start_date?: string | null;
+    internship_end_date?: string | null;
+  };
+
   const activeCandidates = (
-    (candidates as unknown as RawProfileCandidate[]) || []
+    (candidates as unknown as ExtendedCandidate[]) || []
   ).map((c) => ({
     id: c.id,
     nim: c.nim || "",
     name: c.full_name || c.registrations?.full_name || "Pengurus/Anggota",
     role: c.role,
+    is_on_internship: c.is_on_internship ?? false,
+    internship_start_date: c.internship_start_date || null,
+    internship_end_date: c.internship_end_date || null,
   }));
 
   // Format schedules data
@@ -145,13 +160,24 @@ export default async function KelolaPiketPage() {
     academic_period: sched.academic_period,
     week_number: sched.week_number,
     room_target: sched.room_target,
-    members: (sched.piket_members || []).map((m) => ({
-      member_id: m.id,
-      profile_id: m.profile_id,
-      nim: m.profiles?.nim || "",
-      name: m.profiles?.registrations?.full_name || "Anggota",
-      role: m.profiles?.role || "",
-    })),
+    members: (sched.piket_members || []).map((m) => {
+      type ExtendedProfile = typeof m.profiles & {
+        is_on_internship?: boolean;
+        internship_start_date?: string | null;
+        internship_end_date?: string | null;
+      };
+      const prof = m.profiles as ExtendedProfile | null;
+      return {
+        member_id: m.id,
+        profile_id: m.profile_id,
+        nim: prof?.nim || "",
+        name: prof?.registrations?.full_name || "Anggota",
+        role: prof?.role || "",
+        is_on_internship: prof?.is_on_internship ?? false,
+        internship_start_date: prof?.internship_start_date || null,
+        internship_end_date: prof?.internship_end_date || null,
+      };
+    }),
   }));
 
   return (
