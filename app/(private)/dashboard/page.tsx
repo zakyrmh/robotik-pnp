@@ -254,6 +254,89 @@ export default async function DashboardPage() {
       pendingSubmissions: pendingSubmissions || 0,
       totalTasks: totalTasks || 0,
     };
+  } else if (profile.role === "admin-kestari") {
+    // 1. Total piket reports submitted across organization
+    const { count: totalPiketLogs } = await supabase
+      .from("piket_logs")
+      .select("*", { count: "exact", head: true });
+
+    // 2. Unverified piket reports
+    const { count: unverifiedPiketLogs } = await supabase
+      .from("piket_logs")
+      .select("*", { count: "exact", head: true })
+      .eq("is_verified", false);
+
+    // 3. Current week number & members scheduled today
+    const currentWeekNumber = Math.ceil(new Date().getDate() / 7);
+    const { count: scheduledMembersCount } = await supabase
+      .from("piket_members")
+      .select("id, piket_schedules!inner(week_number)", { count: "exact", head: true })
+      .eq("piket_schedules.week_number", currentWeekNumber);
+
+    // 4. Personal piket assignment
+    const { data: piketMembers } = await supabase
+      .from("piket_members")
+      .select("piket_schedules(week_number)")
+      .eq("profile_id", user.id);
+    const piketDays = ((piketMembers as unknown as RawPiketMember[]) || [])
+      .map((pm) =>
+        pm.piket_schedules?.week_number
+          ? `Minggu ${pm.piket_schedules.week_number}`
+          : null,
+      )
+      .filter(Boolean) as string[];
+
+    const isScheduledToday = (
+      (piketMembers as unknown as RawPiketMember[]) || []
+    ).some((pm) => pm.piket_schedules?.week_number === currentWeekNumber);
+
+    // 5. Personal piket reports submitted
+    const { count: personalPiketLogsCount } = await supabase
+      .from("piket_logs")
+      .select("*", { count: "exact", head: true })
+      .eq("reported_by", user.id);
+
+    // 6. Personal attendance breakdown
+    const { data: attendances } = await supabase
+      .from("attendances")
+      .select("status")
+      .eq("profile_id", user.id);
+
+    let hadirCount = 0;
+    let telatCount = 0;
+    let izinCount = 0;
+    let alfaCount = 0;
+
+    attendances?.forEach((a) => {
+      if (a.status === "hadir") hadirCount++;
+      else if (a.status === "telat") telatCount++;
+      else if (a.status === "izin" || a.status === "sakit") izinCount++;
+      else if (a.status === "alfa") alfaCount++;
+    });
+
+    // 7. Upcoming Activities (limit 3)
+    const { data: upcomingActs } = await supabase
+      .from("activities")
+      .select("id, title, start_date, location")
+      .is("deleted_at", null)
+      .gte("end_date", nowIso)
+      .order("start_date", { ascending: true })
+      .limit(3);
+
+    dataPayload.adminKestariStats = {
+      totalPiketLogs: totalPiketLogs || 0,
+      unverifiedPiketLogs: unverifiedPiketLogs || 0,
+      scheduledMembersCount: scheduledMembersCount || 0,
+      piketDays,
+      piketLogsCount: personalPiketLogsCount || 0,
+      isScheduledToday,
+      hadirCount,
+      telatCount,
+      izinCount,
+      alfaCount,
+      totalAttendances: attendances?.length || 0,
+      upcomingActivities: upcomingActs || [],
+    };
   } else if (profile.role === "admin-komdis") {
     // 1. Pending leave requests (hanya anggota/pengurus aktif, exclude caang & alumni)
     const { count: pendingLeaves } = await supabase
