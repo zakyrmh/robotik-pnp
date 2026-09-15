@@ -79,9 +79,37 @@ export function OnboardingClient({ initialProgress }: OnboardingClientProps) {
     }
   };
 
+  const isRevision = initialProgress.status === "revision";
+
   return (
     <div className="relative z-10 w-full py-2 sm:py-4">
       <OnboardingHeader />
+
+      {/* Warning banner jika status pendaftaran adalah 'revision' */}
+      {isRevision && (
+        <div className="mb-4 rounded-xl border border-sky-200 bg-sky-50 p-4 text-xs sm:text-sm text-sky-800 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-300 shadow-xs">
+          <div className="flex items-start gap-3">
+            <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-sky-200 font-bold text-sky-800 dark:bg-sky-900 dark:text-sky-200">
+              !
+            </span>
+            <div className="space-y-1">
+              <h4 className="font-heading font-bold text-sky-900 dark:text-sky-200">
+                Pendaftaran Memerlukan Revisi / Perbaikan Berkas
+              </h4>
+              {initialProgress.revisionNotes ? (
+                <p className="whitespace-pre-wrap leading-relaxed">
+                  <strong>Catatan dari Admin:</strong> {initialProgress.revisionNotes}
+                </p>
+              ) : (
+                <p>
+                  Silakan periksa dan perbarui data atau berkas Anda sesuai petunjuk admin.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <OnboardingStepper currentStep={step} steps={STEPS} />
 
       <div className="relative overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-xs transition-colors duration-200 min-h-[460px]">
