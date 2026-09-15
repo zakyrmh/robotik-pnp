@@ -39,6 +39,8 @@ export interface OnboardingProgress {
   academic: OnboardingInitialAcademic | null;
   commitment: OnboardingInitialCommitment | null;
   paymentMethod: string | null;
+  status: string | null;
+  revisionNotes: string | null;
 }
 
 // ============================================================
@@ -200,6 +202,8 @@ export async function getOnboardingProgress(): Promise<OnboardingProgress> {
     academic: null,
     commitment: null,
     paymentMethod: null,
+    status: null,
+    revisionNotes: null,
   };
 
   const supabase = await createClient();
@@ -215,16 +219,18 @@ export async function getOnboardingProgress(): Promise<OnboardingProgress> {
     supabase
       .from("registrations")
       .select(
-        "full_name, nickname, gender, pob, dob, phone_number, origin_address, domicile_address, high_school, study_program_id, current_class, org_experience, achievements, motivation, proof_follow_robotik, proof_follow_mrc, proof_sub_yt, payment_method",
+        "full_name, nickname, gender, pob, dob, phone_number, origin_address, domicile_address, high_school, study_program_id, current_class, org_experience, achievements, motivation, proof_follow_robotik, proof_follow_mrc, proof_sub_yt, payment_method, status, revision_notes",
       )
       .eq("profile_id", user.id)
       .maybeSingle(),
   ]);
 
   const nim = profile?.nim ?? null;
+  const status = reg?.status ?? null;
+  const revisionNotes = reg?.revision_notes ?? null;
 
   // ── Step 1: NIM belum ada ──────────────────────────────────
-  if (!nim) return { ...empty, startStep: 1 };
+  if (!nim) return { ...empty, startStep: 1, status, revisionNotes };
 
   // ── Step 2: Cek kelengkapan data pribadi ──────────────────
   const p = reg;
@@ -259,6 +265,8 @@ export async function getOnboardingProgress(): Promise<OnboardingProgress> {
       academic: null,
       commitment: null,
       paymentMethod: p?.payment_method ?? null,
+      status,
+      revisionNotes,
     };
   }
 
@@ -293,6 +301,8 @@ export async function getOnboardingProgress(): Promise<OnboardingProgress> {
       academic,
       commitment: null,
       paymentMethod: p?.payment_method ?? null,
+      status,
+      revisionNotes,
     };
   }
 
@@ -316,6 +326,8 @@ export async function getOnboardingProgress(): Promise<OnboardingProgress> {
       academic,
       commitment,
       paymentMethod: p?.payment_method ?? null,
+      status,
+      revisionNotes,
     };
   }
 
@@ -327,5 +339,7 @@ export async function getOnboardingProgress(): Promise<OnboardingProgress> {
     academic,
     commitment,
     paymentMethod: p?.payment_method ?? null,
+    status,
+    revisionNotes,
   };
 }

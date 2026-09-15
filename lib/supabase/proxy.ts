@@ -187,8 +187,8 @@ export async function updateSession(request: NextRequest) {
         targetRoute = "/deleted";
       }
     } else if (profile.role === "caang" && !profile.is_onboarded) {
-      // 1. role === 'caang' AND is_onboarded === false AND registrations.status === 'process'
-      if (regStatus === "process" || !regStatus) {
+      // 1. role === 'caang' AND is_onboarded === false AND registrations.status === 'process' ATAU 'revision'
+      if (regStatus === "process" || regStatus === "revision" || !regStatus) {
         if (
           !matchRoute(pathname, "/onboarding") &&
           (isProtectedRoute || isAuthRoute)
@@ -233,6 +233,7 @@ export async function updateSession(request: NextRequest) {
         "/presensi",
         "/kegiatan",
         "/tugas",
+        "/magang",
         "/settings",
       ];
       const isAllowed = allowedCaangRoutes.some((r) => matchRoute(pathname, r));
