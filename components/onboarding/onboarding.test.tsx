@@ -95,7 +95,7 @@ let mockCheckLegacyResult: any = {
 let mockSavePersonalResult: any = { success: true };
 let mockSaveAcademicResult: any = { success: true };
 let mockSaveCommitmentResult: any = { success: true };
-let mockUploadCommitmentProofResult: any = {
+const mockUploadCommitmentProofResult: any = {
   success: true,
   url: "/api/r2/registrations/2025/test/ig_robotik.webp",
 };

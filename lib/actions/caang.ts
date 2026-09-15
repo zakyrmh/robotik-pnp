@@ -78,6 +78,7 @@ export async function getCaangList() {
         payment_proof_url,
         payment_method,
         status,
+        revision_notes,
         deleted_at,
         delete_reason,
         profiles!inner (
@@ -113,6 +114,62 @@ export async function getCaangList() {
     return { success: true, data };
   } catch (err) {
     console.error("Unexpected error fetching caang list:", err);
+    return { success: false, error: "Terjadi kesalahan tidak terduga." };
+  }
+}
+
+// Quick update caang registration status by Super Admin / Admin OR
+export async function updateCaangStatus(
+  profileId: string,
+  status: "process" | "pending" | "verified" | "rejected" | "revision",
+  revisionNotes?: string | null,
+) {
+  const authCheck = await verifyAdminAccess();
+  if (!authCheck.authorized) {
+    return { success: false, error: authCheck.error };
+  }
+
+  const supabaseAdmin = createSupabaseClient(
+    (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL)!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+
+  try {
+    const updatePayload: {
+      status: string;
+      revision_notes?: string | null;
+      updated_at: string;
+    } = {
+      status,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (status === "revision") {
+      updatePayload.revision_notes = revisionNotes || null;
+    } else if (revisionNotes !== undefined) {
+      updatePayload.revision_notes = revisionNotes;
+    }
+
+    const { error } = await supabaseAdmin
+      .from("registrations")
+      .update(updatePayload)
+      .eq("profile_id", profileId);
+
+    if (error) {
+      console.error("Error updating caang status:", error);
+      return {
+        success: false,
+        error: "Gagal memperbarui status registrasi: " + error.message,
+      };
+    }
+
+    revalidatePath("/manajemen-caang");
+    return {
+      success: true,
+      message: `Status calon anggota berhasil diubah menjadi ${status.toUpperCase()}.`,
+    };
+  } catch (err) {
+    console.error("Unexpected error updating caang status:", err);
     return { success: false, error: "Terjadi kesalahan tidak terduga." };
   }
 }
@@ -188,6 +245,7 @@ export async function updateCaang(
     currentClass: string;
     entryYear: number;
     status: string;
+    revisionNotes?: string | null;
   },
 ) {
   const authCheck = await verifyAdminAccess();
@@ -201,7 +259,7 @@ export async function updateCaang(
   );
 
   try {
-    // Update registrations table with all 12 registration fields
+    // Update registrations table with all registration fields
     const { error: regError } = await supabaseAdmin
       .from("registrations")
       .update({
@@ -217,6 +275,8 @@ export async function updateCaang(
         current_class: data.currentClass || null,
         entry_year: data.entryYear,
         status: data.status,
+        revision_notes:
+          data.revisionNotes !== undefined ? data.revisionNotes : null,
         updated_at: new Date().toISOString(),
       })
       .eq("profile_id", profileId);

@@ -16,62 +16,62 @@ export function DeletedCard({ formattedDate, deleteReason }: DeletedCardProps) {
   return (
     <div className="flex min-h-[60vh] items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-md space-y-6">
-        <Card className="border border-border dark:border-white/10 bg-card text-card-foreground text-center rounded-xl shadow-sm dark:shadow-none relative overflow-hidden transition-colors duration-200">
-          {/* PNP Accent Line at Top */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-dongker-surface via-pnp-orange to-destructive" />
+        <Card className="border border-border bg-card text-card-foreground text-center rounded-2xl shadow-xs relative overflow-hidden transition-colors duration-200">
+          {/* Top Decorative Stripe */}
+          <div className="absolute top-0 left-0 right-0 h-1 bg-destructive" />
 
-          <CardHeader className="pt-8 pb-4">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 text-destructive border border-destructive/30 shadow-sm">
-              <HugeiconsIcon icon={Delete01Icon} size={32} />
+          <CardHeader className="pt-8 pb-3">
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10 text-destructive border border-destructive/20 shadow-xs">
+              <HugeiconsIcon icon={Delete01Icon} size={28} />
             </div>
 
-            <span className="text-[10px] font-mono font-semibold uppercase tracking-widest text-destructive block mb-1">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-destructive block mb-1">
               STATUS: DEACTIVATED
             </span>
 
-            <CardTitle className="text-xl sm:text-2xl font-bold uppercase tracking-tight text-foreground font-display">
-              Pendaftaran Dihapus
+            <CardTitle className="text-xl sm:text-2xl font-bold uppercase tracking-tight text-foreground font-heading">
+              Pendaftaran Dinonaktifkan
             </CardTitle>
 
-            <span className="text-micro font-mono text-muted-foreground uppercase mt-1 tracking-wider block">
-              DIHAPUS PADA: {formattedDate} WIB
+            <span className="text-[11px] font-mono text-muted-foreground uppercase mt-1 tracking-wider block">
+              WAKTU: {formattedDate} WIB
             </span>
           </CardHeader>
 
-          <CardContent className="space-y-5 pb-8 px-5 sm:px-6">
-            <p className="text-xs sm:text-sm text-muted-foreground font-sans leading-relaxed">
-              Maaf, data pendaftaran Anda sebagai Calon Anggota UKM Robotik
-              Politeknik Negeri Padang telah dinonaktifkan dari sistem.
+          <CardContent className="space-y-4 pb-8 px-5 sm:px-6">
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              Data pendaftaran Anda sebagai Calon Anggota UKM Robotik Politeknik
+              Negeri Padang telah dinonaktifkan dari sistem.
             </p>
 
-            <div className="bg-muted/40 p-4 border border-border rounded-lg text-left space-y-2">
-              <span className="text-micro font-mono font-semibold uppercase tracking-widest text-muted-foreground block">
+            <div className="bg-secondary p-4 border border-border rounded-xl text-left space-y-2">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground block">
                 ALASAN PENONAKTIFAN:
               </span>
-              <div className="flex items-start gap-3 bg-destructive/10 p-3 border border-destructive/20 rounded-md">
+              <div className="flex items-start gap-2.5 bg-destructive/10 p-3 border border-destructive/20 rounded-lg">
                 <HugeiconsIcon
                   icon={InformationCircleIcon}
-                  size={18}
+                  size={16}
                   className="text-destructive shrink-0 mt-0.5"
                 />
-                <span className="text-xs font-mono text-foreground leading-relaxed uppercase break-all font-medium">
-                  {deleteReason || "TIDAK ADA ALASAN DIKIRIM OLEH PENGURUS"}
+                <span className="text-xs font-mono text-foreground leading-relaxed uppercase break-all font-semibold">
+                  {deleteReason || "TIDAK ADA ALASAN DILAMPIRKAN"}
                 </span>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <div className="text-center font-sans">
-          <p className="text-xs text-muted-foreground">
-            Ada pertanyaan atau ingin mengajukan banding?{" "}
+        <div className="text-center text-xs text-muted-foreground">
+          <p>
+            Ada pertanyaan atau ingin konfirmasi?{" "}
             <a
               href="https://instagram.com/ukmrobotikpnp"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-pnp-orange hover:underline font-mono text-micro font-semibold uppercase tracking-wider block sm:inline mt-1 sm:mt-0"
+              className="text-primary hover:underline font-medium inline-block"
             >
-              Hubungi Instagram Kami
+              Hubungi Instagram Kami ↗
             </a>
           </p>
         </div>

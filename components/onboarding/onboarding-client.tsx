@@ -16,10 +16,10 @@ import { toast } from "sonner";
 
 const STEPS = [
   { id: 1, label: "Validasi NIM" },
-  { id: 2, label: "Biodata & Kontak" },
-  { id: 3, label: "Akademik & Rekam Jejak" },
+  { id: 2, label: "Biodata" },
+  { id: 3, label: "Akademik" },
   { id: 4, label: "Visi & Komitmen" },
-  { id: 5, label: "Berkas & Pembayaran" },
+  { id: 5, label: "Berkas" },
 ];
 
 interface OnboardingClientProps {
@@ -40,9 +40,7 @@ export function OnboardingClient({ initialProgress }: OnboardingClientProps) {
   const nextStep = () => setStep((s) => Math.min(s + 1, 5));
   const prevStep = () => setStep((s) => Math.max(s - 1, 1));
 
-  // ──────────────────────────────────────────────
   // Step 1: Validasi NIM
-  // ──────────────────────────────────────────────
   const handleCheckNim = async () => {
     setIsCheckingNim(true);
     setClosedError(null);
@@ -86,7 +84,7 @@ export function OnboardingClient({ initialProgress }: OnboardingClientProps) {
       <OnboardingHeader />
       <OnboardingStepper currentStep={step} steps={STEPS} />
 
-      <div className="relative overflow-hidden rounded-xl border border-border dark:border-white/10 bg-card text-card-foreground shadow-sm dark:shadow-none transition-colors duration-200 min-h-125">
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-xs transition-colors duration-200 min-h-[460px]">
         <AnimatePresence mode="wait">
           {step === 1 && (
             <StepIdentity
@@ -123,9 +121,7 @@ export function OnboardingClient({ initialProgress }: OnboardingClientProps) {
           {step === 5 && (
             <StepUpload
               onPrev={prevStep}
-              onSuccess={() => {
-                window.location.href = "/waiting";
-              }}
+              onSuccess={() => router.push("/waiting")}
               initialPaymentMethod={initialProgress.paymentMethod}
             />
           )}

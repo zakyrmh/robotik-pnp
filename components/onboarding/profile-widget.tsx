@@ -33,35 +33,35 @@ export function ProfileWidget({ user }: ProfileWidgetProps) {
       {/* Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2.5 rounded-xl border border-border dark:border-white/10 bg-card p-1.5 pr-3.5 text-left shadow-xs transition-all hover:bg-muted/50 active:scale-98 cursor-pointer select-none"
+        className="flex items-center gap-2.5 rounded-full border border-border bg-card p-1 pr-3 text-left shadow-2xs transition-all hover:bg-muted/50 active:scale-98 cursor-pointer select-none"
       >
-        <div className="h-8 w-8 rounded-lg bg-dongker-surface p-[1px] overflow-hidden flex items-center justify-center">
-          <div className="flex h-full w-full items-center justify-center rounded-[7px] bg-card overflow-hidden text-xs font-bold text-foreground">
-            {user.photo_url ? (
-              <Image
-                src={user.photo_url}
-                alt={user.name}
-                width={32}
-                height={32}
-                className="h-full w-full object-cover"
-                unoptimized
-              />
-            ) : (
-              user.name.charAt(0).toUpperCase()
-            )}
-          </div>
+        <div className="h-8 w-8 rounded-full bg-secondary overflow-hidden flex items-center justify-center border border-border shrink-0">
+          {user.photo_url ? (
+            <Image
+              src={user.photo_url}
+              alt={user.name}
+              width={32}
+              height={32}
+              className="h-full w-full object-cover"
+              unoptimized
+            />
+          ) : (
+            <span className="text-xs font-bold text-foreground uppercase">
+              {user.name.charAt(0)}
+            </span>
+          )}
         </div>
         <div className="hidden flex-col md:flex">
           <span className="text-xs font-semibold leading-tight text-foreground line-clamp-1">
             {user.name}
           </span>
-          <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-pnp-orange">
+          <span className="text-[10px] font-mono font-semibold uppercase tracking-wider text-primary">
             {user.role}
           </span>
         </div>
         <HugeiconsIcon
           icon={ArrowRight02Icon}
-          size={14}
+          size={13}
           className={`text-muted-foreground transition-transform duration-200 hidden md:block ${
             isOpen ? "rotate-90" : ""
           }`}
@@ -80,39 +80,39 @@ export function ProfileWidget({ user }: ProfileWidgetProps) {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 8, scale: 0.95 }}
+            initial={{ opacity: 0, y: 6, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 8, scale: 0.95 }}
+            exit={{ opacity: 0, y: 6, scale: 0.96 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className="absolute right-0 mt-2 z-50 w-72 origin-top-right rounded-xl border border-border dark:border-white/10 bg-card p-4 shadow-xl backdrop-blur-md"
+            className="absolute right-0 mt-2 z-50 w-68 origin-top-right rounded-2xl border border-border bg-card p-4 shadow-xl backdrop-blur-md"
           >
             {/* User Info Card inside Dropdown */}
-            <div className="flex flex-col items-center border-b border-border pb-4 text-center">
-              <div className="relative mb-3 h-14 w-14 rounded-xl bg-dongker-surface p-[1px] overflow-hidden">
-                <div className="flex h-full w-full items-center justify-center rounded-[11px] bg-card overflow-hidden text-base font-bold text-foreground">
-                  {user.photo_url ? (
-                    <Image
-                      src={user.photo_url}
-                      alt={user.name}
-                      width={56}
-                      height={56}
-                      className="h-full w-full object-cover"
-                      unoptimized
-                    />
-                  ) : (
-                    user.name.charAt(0).toUpperCase()
-                  )}
-                </div>
+            <div className="flex flex-col items-center border-b border-border pb-3.5 text-center">
+              <div className="relative mb-2.5 h-13 w-13 rounded-full bg-secondary p-0.5 overflow-hidden border border-border">
+                {user.photo_url ? (
+                  <Image
+                    src={user.photo_url}
+                    alt={user.name}
+                    width={52}
+                    height={52}
+                    className="h-full w-full object-cover rounded-full"
+                    unoptimized
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center rounded-full bg-secondary text-sm font-bold text-foreground">
+                    {user.name.charAt(0).toUpperCase()}
+                  </div>
+                )}
               </div>
               <h3 className="font-bold text-sm text-foreground line-clamp-1">
                 {user.name}
               </h3>
-              <p className="text-xs text-muted-foreground line-clamp-1 mb-2 font-sans">
+              <p className="text-xs text-muted-foreground line-clamp-1 mb-2 font-mono">
                 {user.email || "-"}
               </p>
               <Badge
                 variant="outline"
-                className="gap-1 px-2.5 py-0.5 text-micro font-mono font-semibold uppercase bg-orange-wash dark:bg-pnp-orange/15 text-orange-deep dark:text-pnp-orange border-pnp-orange/30"
+                className="gap-1 px-2.5 py-0.5 text-[10px] font-mono font-semibold uppercase bg-primary-soft text-primary border-primary/20"
               >
                 <HugeiconsIcon icon={UserCheck01Icon} size={12} />
                 {user.role}
@@ -120,11 +120,11 @@ export function ProfileWidget({ user }: ProfileWidgetProps) {
             </div>
 
             {/* Logout Action */}
-            <div className="pt-3">
+            <div className="pt-2.5">
               <form action={signOut}>
                 <button
                   type="submit"
-                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-left text-xs font-semibold text-destructive transition-all hover:bg-destructive/10 active:scale-98 cursor-pointer"
+                  className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-semibold text-destructive transition-all hover:bg-destructive/10 active:scale-98 cursor-pointer"
                 >
                   <HugeiconsIcon
                     icon={Logout01Icon}

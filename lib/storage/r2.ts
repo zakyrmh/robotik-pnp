@@ -5,34 +5,73 @@ import {
   GetObjectCommand,
 } from "@aws-sdk/client-s3";
 
-/**
- * Membuat instance S3Client khusus Cloudflare R2
- */
+// ============================================================
+// S3 Client Factory — auto-switch MinIO (dev) ↔ Cloudflare R2 (prod)
+//
+// Logic prioritas endpoint:
+//   1. S3_DEV_ENDPOINT diset  → MinIO / S3-compatible emulator (development)
+//   2. CLOUDFLARE_ACCOUNT_ID diset → Cloudflare R2 production endpoint
+//   3. Keduanya kosong         → throw error dengan pesan informatif
+//
+// Credentials (CLOUDFLARE_R2_ACCESS_KEY_ID / SECRET_ACCESS_KEY) dipakai
+// untuk keduanya — di MinIO ini adalah MINIO_ROOT_USER / MINIO_ROOT_PASSWORD.
+// ============================================================
+
+type S3Mode = "minio" | "r2";
+
+function resolveS3Config(): { endpoint: string; mode: S3Mode } {
+  const devEndpoint = process.env.S3_DEV_ENDPOINT?.trim();
+  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID?.trim();
+
+  if (devEndpoint) {
+    // Mode MinIO / S3-compatible local emulator
+    return { endpoint: devEndpoint, mode: "minio" };
+  }
+
+  if (accountId) {
+    // Mode Cloudflare R2 production
+    return {
+      endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+      mode: "r2",
+    };
+  }
+
+  throw new Error(
+    [
+      "Konfigurasi storage belum lengkap. Pilih salah satu:",
+      "  · Development (MinIO): set S3_DEV_ENDPOINT=http://127.0.0.1:9000 di .env.local",
+      "  · Production (R2)    : set CLOUDFLARE_ACCOUNT_ID=<account-id> di .env",
+    ].join("\n"),
+  );
+}
+
 function getR2Client(): S3Client {
-  const accountId = process.env.CLOUDFLARE_ACCOUNT_ID;
   const accessKeyId = process.env.CLOUDFLARE_R2_ACCESS_KEY_ID;
   const secretAccessKey = process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY;
 
-  if (!accountId || !accessKeyId || !secretAccessKey) {
+  if (!accessKeyId || !secretAccessKey) {
     throw new Error(
-      "Kredensial Cloudflare R2 (CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_R2_ACCESS_KEY_ID, CLOUDFLARE_R2_SECRET_ACCESS_KEY) belum diset pada environment variables.",
+      "CLOUDFLARE_R2_ACCESS_KEY_ID dan CLOUDFLARE_R2_SECRET_ACCESS_KEY belum diset.\n" +
+        "Untuk MinIO: gunakan MINIO_ROOT_USER / MINIO_ROOT_PASSWORD sebagai nilainya.",
     );
   }
 
+  const { endpoint, mode } = resolveS3Config();
+
   return new S3Client({
-    region: "auto",
-    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
-    credentials: {
-      accessKeyId,
-      secretAccessKey,
-    },
+    region: mode === "minio" ? "us-east-1" : "auto", // MinIO membutuhkan region eksplisit
+    endpoint,
+    credentials: { accessKeyId, secretAccessKey },
+    // MinIO butuh forcePathStyle=true agar bucket name masuk ke path URL
+    // bukan subdomain (http://localhost:9000/bucket vs http://bucket.localhost:9000)
+    forcePathStyle: mode === "minio",
   });
 }
 
-/**
- * Mengunggah file Buffer ke Cloudflare R2 bucket
- * @returns Public URL dari file yang diunggah
- */
+// ============================================================
+// Upload file ke bucket (MinIO atau R2)
+// @returns Public URL dari file yang diunggah
+// ============================================================
 export async function uploadToR2(params: {
   fileBuffer: Buffer;
   key: string;
@@ -53,9 +92,9 @@ export async function uploadToR2(params: {
   return getPublicR2Url(params.key);
 }
 
-/**
- * Mengambil objek dari Cloudflare R2 bucket (Server-to-Server)
- */
+// ============================================================
+// Ambil objek dari bucket (Server-to-Server, untuk API proxy)
+// ============================================================
 export async function getObjectFromR2(key: string) {
   const bucketName = process.env.CLOUDFLARE_R2_BUCKET_NAME || "ukm-robotik-pnp";
   const r2Client = getR2Client();
@@ -74,9 +113,9 @@ export async function getObjectFromR2(key: string) {
   };
 }
 
-/**
- * Menghapus objek dari Cloudflare R2 bucket
- */
+// ============================================================
+// Hapus objek dari bucket
+// ============================================================
 export async function deleteFromR2(key: string): Promise<boolean> {
   try {
     const bucketName =
@@ -91,31 +130,35 @@ export async function deleteFromR2(key: string): Promise<boolean> {
     await r2Client.send(command);
     return true;
   } catch (err) {
-    console.error("Gagal menghapus objek dari Cloudflare R2:", err);
+    console.error("[R2] Gagal menghapus objek:", err);
     return false;
   }
 }
 
-/**
- * Mengonversi key objek R2 menjadi URL publik yang dapat diakses browser.
- * Secara otomatis menggunakan API Proxy internal (/api/r2/[key]) agar 100% bebas dari
- * pemblokiran ISP / Connection Time Out pada domain .r2.dev.
- */
+// ============================================================
+// Konversi R2/MinIO key → URL yang dapat diakses browser.
+//
+// Priority:
+//   1. CLOUDFLARE_R2_PUBLIC_URL diset dan bukan .r2.dev
+//      → pakai domain kustom (termasuk URL MinIO: http://localhost:9000/bucket)
+//   2. Fallback → Next.js internal API proxy  /api/r2/{key}
+//      (menghindari ISP throttle terhadap .r2.dev)
+// ============================================================
 export function getPublicR2Url(key: string | null | undefined): string {
   if (!key) return "";
 
   let cleanKey = key.trim();
 
-  // Strip duplicate /api/r2/ or api/r2/ prefix if key was already formatted
+  // Strip duplikat prefix /api/r2/ jika key sudah diformat sebelumnya
   while (cleanKey.startsWith("/api/r2/") || cleanKey.startsWith("api/r2/")) {
     if (cleanKey.startsWith("/api/r2/")) {
       cleanKey = cleanKey.substring(8);
-    } else if (cleanKey.startsWith("api/r2/")) {
+    } else {
       cleanKey = cleanKey.substring(7);
     }
   }
 
-  // Jika key dalam bentuk URL r2.dev eksternal, ekstrak path key-nya
+  // Jika key adalah URL r2.dev eksternal, ekstrak path-nya saja
   if (cleanKey.includes(".r2.dev/")) {
     const pathIndex = cleanKey.indexOf(".r2.dev/");
     cleanKey = cleanKey.substring(pathIndex + 8);
@@ -123,13 +166,13 @@ export function getPublicR2Url(key: string | null | undefined): string {
     cleanKey.startsWith("http://") ||
     cleanKey.startsWith("https://")
   ) {
-    // Jika sudah berupa URL eksternal selain r2.dev, gunakan apa adanya
+    // URL eksternal non-r2.dev (misal Supabase) → gunakan apa adanya
     return cleanKey;
   }
 
   cleanKey = cleanKey.startsWith("/") ? cleanKey.slice(1) : cleanKey;
 
-  // Jika CLOUDFLARE_R2_PUBLIC_URL diset dan BUKAN .r2.dev, gunakan domain kustom tersebut
+  // Pakai custom public URL jika diset dan bukan .r2.dev
   const customPublicUrl = process.env.CLOUDFLARE_R2_PUBLIC_URL;
   if (customPublicUrl && !customPublicUrl.includes(".r2.dev")) {
     const baseUrl = customPublicUrl.endsWith("/")
@@ -138,6 +181,6 @@ export function getPublicR2Url(key: string | null | undefined): string {
     return `${baseUrl}/${cleanKey}`;
   }
 
-  // Fallback utama: Gunakan Next.js internal API Proxy (/api/r2/[key])
+  // Fallback: Next.js API proxy (aman untuk produksi di belakang CDN)
   return `/api/r2/${cleanKey}`;
 }

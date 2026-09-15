@@ -1260,6 +1260,78 @@ export type Database = {
           },
         ];
       };
+      piket_fines: {
+        Row: {
+          amount: number;
+          created_at: string;
+          id: string;
+          imposed_by: string | null;
+          notes: string | null;
+          paid_at: string | null;
+          profile_id: string;
+          schedule_id: string;
+          status: string;
+        };
+        Insert: {
+          amount?: number;
+          created_at?: string;
+          id?: string;
+          imposed_by?: string | null;
+          notes?: string | null;
+          paid_at?: string | null;
+          profile_id: string;
+          schedule_id: string;
+          status?: string;
+        };
+        Update: {
+          amount?: number;
+          created_at?: string;
+          id?: string;
+          imposed_by?: string | null;
+          notes?: string | null;
+          paid_at?: string | null;
+          profile_id?: string;
+          schedule_id?: string;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "piket_fines_imposed_by_fkey";
+            columns: ["imposed_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "piket_fines_imposed_by_fkey";
+            columns: ["imposed_by"];
+            isOneToOne: false;
+            referencedRelation: "v_user_discipline_summary";
+            referencedColumns: ["profile_id"];
+          },
+          {
+            foreignKeyName: "piket_fines_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "piket_fines_profile_id_fkey";
+            columns: ["profile_id"];
+            isOneToOne: false;
+            referencedRelation: "v_user_discipline_summary";
+            referencedColumns: ["profile_id"];
+          },
+          {
+            foreignKeyName: "piket_fines_schedule_id_fkey";
+            columns: ["schedule_id"];
+            isOneToOne: false;
+            referencedRelation: "piket_schedules";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       piket_logs: {
         Row: {
           created_at: string | null;
@@ -1356,64 +1428,6 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "v_user_discipline_summary";
             referencedColumns: ["profile_id"];
-          },
-        ];
-      };
-      piket_fines: {
-        Row: {
-          amount: number;
-          created_at: string;
-          id: string;
-          imposed_by: string | null;
-          notes: string | null;
-          paid_at: string | null;
-          profile_id: string;
-          schedule_id: string;
-          status: string;
-        };
-        Insert: {
-          amount?: number;
-          created_at?: string;
-          id?: string;
-          imposed_by?: string | null;
-          notes?: string | null;
-          paid_at?: string | null;
-          profile_id: string;
-          schedule_id: string;
-          status?: string;
-        };
-        Update: {
-          amount?: number;
-          created_at?: string;
-          id?: string;
-          imposed_by?: string | null;
-          notes?: string | null;
-          paid_at?: string | null;
-          profile_id?: string;
-          schedule_id?: string;
-          status?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "piket_fines_profile_id_fkey";
-            columns: ["profile_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "piket_fines_schedule_id_fkey";
-            columns: ["schedule_id"];
-            isOneToOne: false;
-            referencedRelation: "piket_schedules";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "piket_fines_imposed_by_fkey";
-            columns: ["imposed_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
           },
         ];
       };

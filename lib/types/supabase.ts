@@ -599,6 +599,7 @@ export type Database = {
           proof_follow_mrc: string | null;
           proof_follow_robotik: string | null;
           proof_sub_yt: string | null;
+          revision_notes: string | null;
           status: Database["public"]["Enums"]["reg_status"] | null;
           study_program_id: string | null;
           updated_at: string | null;
@@ -628,6 +629,7 @@ export type Database = {
           proof_follow_mrc?: string | null;
           proof_follow_robotik?: string | null;
           proof_sub_yt?: string | null;
+          revision_notes?: string | null;
           status?: Database["public"]["Enums"]["reg_status"] | null;
           study_program_id?: string | null;
           updated_at?: string | null;
@@ -657,6 +659,7 @@ export type Database = {
           proof_follow_mrc?: string | null;
           proof_follow_robotik?: string | null;
           proof_sub_yt?: string | null;
+          revision_notes?: string | null;
           status?: Database["public"]["Enums"]["reg_status"] | null;
           study_program_id?: string | null;
           updated_at?: string | null;
@@ -842,7 +845,7 @@ export type Database = {
         | "Jumat"
         | "Sabtu"
         | "Minggu";
-      reg_status: "process" | "pending" | "verified" | "rejected";
+      reg_status: "process" | "pending" | "verified" | "rejected" | "revision";
       task_status: "belum_selesai" | "diperiksa" | "selesai" | "revisi";
       user_role:
         | "super-admin"
@@ -995,7 +998,7 @@ export const Constants = {
         "Sabtu",
         "Minggu",
       ],
-      reg_status: ["process", "pending", "verified", "rejected"],
+      reg_status: ["process", "pending", "verified", "rejected", "revision"],
       task_status: ["belum_selesai", "diperiksa", "selesai", "revisi"],
       user_role: [
         "super-admin",

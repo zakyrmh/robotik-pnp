@@ -128,6 +128,99 @@ export async function uploadCommitmentProofToR2(formData: FormData) {
 }
 
 // ============================================================
+// Upload Registration File (Step Berkas) to Cloudflare R2
+//
+// Menerima satu file per panggilan (pas_foto | ktm | payment_proof).
+// Kompresi WAJIB dilakukan di sisi client sebelum pemanggilan ini
+// agar payload tetap dalam batas aman Vercel Free Plan:
+//   · Vercel Serverless body cap  : 4.5 MB
+//   · Hard limit yang diberlakukan: 3.5 MB  (safety margin 1 MB)
+//   · Target kompresi client      : ≤ 1 MB untuk foto, ≤ 3.5 MB untuk PDF
+// ============================================================
+export async function uploadRegistrationFileToR2(formData: FormData) {
+  const { user, error: userError } = await getAuthUser();
+  if (userError || !user) {
+    return {
+      success: false,
+      error: "Sesi tidak ditemukan. Silakan login kembali.",
+    };
+  }
+
+  const file = formData.get("file") as File | null;
+  const fileType = formData.get("fileType") as string | null;
+
+  if (!file || !(file instanceof File) || file.size === 0) {
+    return { success: false, error: "File tidak ditemukan atau kosong." };
+  }
+
+  const ALLOWED_TYPES = ["pas_foto", "ktm", "payment_proof"] as const;
+  type RegistrationFileType = (typeof ALLOWED_TYPES)[number];
+
+  if (!fileType || !(ALLOWED_TYPES as readonly string[]).includes(fileType)) {
+    return {
+      success: false,
+      error:
+        "Jenis berkas tidak valid. Gunakan: pas_foto, ktm, atau payment_proof.",
+    };
+  }
+  const typedFileType = fileType as RegistrationFileType;
+
+  // Hard size limit — aman di bawah batas 4.5 MB Vercel Free Plan
+  const MAX_BYTES = 3.5 * 1024 * 1024;
+  if (file.size > MAX_BYTES) {
+    return {
+      success: false,
+      error: `File terlalu besar (${(file.size / 1024 / 1024).toFixed(1)} MB). Maksimum 3.5 MB. Kompresi terlebih dahulu di perangkat Anda.`,
+    };
+  }
+
+  // Validasi MIME type per kategori berkas
+  const ALLOWED_MIMES: Record<RegistrationFileType, string[]> = {
+    pas_foto: ["image/webp", "image/jpeg", "image/png"],
+    ktm: ["image/webp", "image/jpeg", "image/png"],
+    payment_proof: ["image/webp", "image/jpeg", "image/png", "application/pdf"],
+  };
+  if (!ALLOWED_MIMES[typedFileType].includes(file.type)) {
+    return {
+      success: false,
+      error: `Format file tidak diizinkan untuk ${typedFileType}. Gunakan: ${ALLOWED_MIMES[typedFileType].join(", ")}.`,
+    };
+  }
+
+  try {
+    const year = new Date().getFullYear().toString();
+    const userId = user.id;
+    const timestamp = Date.now();
+
+    const extMap: Record<string, string> = {
+      "image/webp": "webp",
+      "image/jpeg": "jpg",
+      "image/png": "png",
+      "application/pdf": "pdf",
+    };
+    const ext = extMap[file.type] ?? file.name.split(".").pop() ?? "bin";
+
+    // Struktur key: registrations/{year}/{userId}/{type}_{timestamp}.{ext}
+    const key = `registrations/${year}/${userId}/${typedFileType}_${timestamp}.${ext}`;
+
+    const fileBuffer = Buffer.from(await file.arrayBuffer());
+
+    const publicUrl = await uploadToR2({
+      fileBuffer,
+      key,
+      contentType: file.type,
+    });
+
+    return { success: true, url: publicUrl };
+  } catch (err) {
+    console.error(`[R2] Error uploading ${fileType}:`, err);
+    const msg =
+      err instanceof Error ? err.message : "Gagal mengunggah file ke R2.";
+    return { success: false, error: msg };
+  }
+}
+
+// ============================================================
 // Step 2: Save Personal Data
 // Upsert — INSERT jika belum ada record, UPDATE jika sudah ada.
 // study_program_id kini nullable, sehingga INSERT bisa dilakukan
