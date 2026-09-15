@@ -40,53 +40,36 @@ interface CategoryOption {
 
 const CATEGORIES: CategoryOption[] = [
   {
+    id: "sumobot",
+    name: "Sumobot",
+    description: "Pertarungan Sumo Robot Autonomous & Remote Control.",
+    price: 195000,
+    badge: "Umum",
+    icon: Cpu,
+  },
+  {
+    id: "robot-soccer",
+    name: "Robot Soccer",
+    description: "Kompetisi Robot Sepak Bola Beroda tingkat Pelajar/Mahasiswa.",
+    price: 195000,
+    badge: "Umum",
+    icon: Bot,
+  },
+  {
     id: "line-follower-senior",
-    name: "Line Follower Senior - Batch Review",
+    name: "Line Follower Senior",
     description: "Kategori Line Follower tingkat Mahasiswa / Umum.",
-    price: 100000,
+    price: 195000,
     badge: "Senior",
     icon: Zap,
   },
   {
     id: "line-follower-junior",
-    name: "Line Follower Junior - Batch Review",
+    name: "Line Follower Junior",
     description: "Kategori Line Follower tingkat Pelajar SMA/SMK Sederajat.",
-    price: 100000,
+    price: 170000,
     badge: "Junior",
     icon: Zap,
-  },
-  {
-    id: "sumo-bot-senior",
-    name: "Sumo Bot Senior - Batch Review",
-    description:
-      "Pertarungan Sumo Robot 3kg Autonomous tingkat Perguruan Tinggi.",
-    price: 100000,
-    badge: "Senior",
-    icon: Cpu,
-  },
-  {
-    id: "sumo-bot-junior",
-    name: "Sumo Bot Junior - Batch Review",
-    description: "Pertarungan Sumo Robot 1kg RC/Autonomous tingkat Sekolah.",
-    price: 100000,
-    badge: "Junior",
-    icon: Cpu,
-  },
-  {
-    id: "soccer-bot-senior",
-    name: "Soccer Bot Senior - Batch Review",
-    description: "Kompetisi Robot Sepak Bola Beroda tingkat Mahasiswa.",
-    price: 100000,
-    badge: "Senior",
-    icon: Bot,
-  },
-  {
-    id: "soccer-bot-junior",
-    name: "Soccer Bot Junior - Batch Review",
-    description: "Kompetisi Robot Sepak Bola Beroda tingkat Pelajar.",
-    price: 100000,
-    badge: "Junior",
-    icon: Bot,
   },
 ];
 
@@ -241,15 +224,15 @@ export default function MidtransReviewPage() {
             <p className="text-xs text-muted-foreground leading-relaxed max-w-3xl">
               Halaman ini disediakan khusus untuk Tim Verifikator / Business
               Reviewer Midtrans guna menguji alur registrasi dan integrasi Snap
-              Payment Gateway (Sandbox Mode) dengan harga fixed Rp100.000.
-              Halaman pendaftaran utama Minangkabau Robot Contest tetap ditutup
-              sesuai jadwal rilis resmi.
+              Payment Gateway (Sandbox Mode) sesuai nominal kategori
+              pendaftaran. Halaman pendaftaran utama Minangkabau Robot Contest
+              tetap ditutup sesuai jadwal rilis resmi.
             </p>
           </div>
           <div className="shrink-0">
             <span className="inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-card border border-warning/30 text-foreground shadow-2xs">
-              <CreditCard className="w-3.5 h-3.5 text-accent-strong" /> Fixed
-              Fee: Rp100.000
+              <CreditCard className="w-3.5 h-3.5 text-accent-strong" /> Biaya:
+              Rp170.000 - Rp195.000
             </span>
           </div>
         </div>
@@ -268,7 +251,7 @@ export default function MidtransReviewPage() {
                 </p>
               </div>
               <span className="text-[11px] font-medium text-muted-foreground bg-secondary px-2.5 py-1 rounded-full border border-border">
-                6 Kategori
+                4 Kategori
               </span>
             </div>
 
@@ -302,7 +285,9 @@ export default function MidtransReviewPage() {
                         className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${
                           cat.badge === "Senior"
                             ? "bg-primary/10 text-primary border border-primary/20"
-                            : "bg-warning-soft text-warning border border-warning/20"
+                            : cat.badge === "Junior"
+                              ? "bg-warning-soft text-warning border border-warning/20"
+                              : "bg-accent/10 text-accent-strong border border-accent/20"
                         }`}
                       >
                         {cat.badge}

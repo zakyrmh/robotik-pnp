@@ -17,6 +17,7 @@ MIDTRANS_IS_PRODUCTION="false"
 ```
 
 > **Catatan:**
+>
 > - Kunci dapat diperoleh dari Midtrans MAP Dashboard (Environment: **Sandbox** > **Settings** > **Access Keys**).
 > - Pastikan `MIDTRANS_IS_PRODUCTION` diatur ke `"false"` agar menggunakan gateway Sandbox.
 
@@ -29,9 +30,11 @@ Jalankan skrip migration SQL berikut pada Supabase SQL Editor atau CLI:
 ```bash
 npx supabase db push
 ```
+
 Atau eksekusi langsung isi file `supabase/migrations/20260911000000_create_review_midtrans_tables.sql` di SQL Editor Supabase Dashboard.
 
 Tabel yang akan dibuat secara terisolasi:
+
 1. `public.review_registrations`
 2. `public.review_transactions`
 
@@ -44,7 +47,7 @@ Tabel yang akan dibuat secara terisolasi:
    `http://localhost:3000/review-midtrans` (atau URL domain terpasang).
 
 2. **Pilih Kategori Simulasi:**
-   Pilih salah satu dari 6 kategori simulasi lomba (misal: *Line Follower Senior - Batch Review*, *Sumo Bot Senior - Batch Review*, dsb.) dengan harga tertera **Rp 100.000**.
+   Pilih salah satu dari 4 kategori simulasi lomba (_Sumobot_ Rp 195.000, _Robot Soccer_ Rp 195.000, _Line Follower Senior_ Rp 195.000, atau _Line Follower Junior_ Rp 170.000).
 
 3. **Lengkapi Form Pendaftaran:**
    Form sudah terisi nilai dummy default. Ubah jika diperlukan:
