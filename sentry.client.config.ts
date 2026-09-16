@@ -6,8 +6,8 @@ Sentry.init({
   // Integrasi Replay untuk merekam sesi ketika terjadi error pada client
   integrations: [Sentry.replayIntegration()],
 
-  // Tracing sample rate (1.0 = 100% sampel tercatat)
-  tracesSampleRate: 1.0,
+  // Tracing sample rate (0.1 = 10% sampel tercatat untuk Vercel Free Plan)
+  tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
 
   // Replay sample rates
   replaysSessionSampleRate: 0.1,
