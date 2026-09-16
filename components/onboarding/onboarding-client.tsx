@@ -12,6 +12,7 @@ import { StepCommitment } from "@/components/onboarding/step-commitment";
 import { StepUpload } from "@/components/onboarding/step-upload";
 import { checkLegacyMember } from "@/lib/actions/onboarding";
 import type { OnboardingProgress } from "@/lib/actions/onboarding";
+import type { BankAccount } from "@/lib/actions/or-settings";
 import { toast } from "sonner";
 
 const STEPS = [
@@ -24,9 +25,15 @@ const STEPS = [
 
 interface OnboardingClientProps {
   initialProgress: OnboardingProgress;
+  paymentAccounts?: BankAccount[];
+  registrationFee?: number;
 }
 
-export function OnboardingClient({ initialProgress }: OnboardingClientProps) {
+export function OnboardingClient({
+  initialProgress,
+  paymentAccounts = [],
+  registrationFee = 0,
+}: OnboardingClientProps) {
   const router = useRouter();
 
   // Mulai langsung dari step yang belum selesai
@@ -98,11 +105,13 @@ export function OnboardingClient({ initialProgress }: OnboardingClientProps) {
               </h4>
               {initialProgress.revisionNotes ? (
                 <p className="whitespace-pre-wrap leading-relaxed">
-                  <strong>Catatan dari Admin:</strong> {initialProgress.revisionNotes}
+                  <strong>Catatan dari Admin:</strong>{" "}
+                  {initialProgress.revisionNotes}
                 </p>
               ) : (
                 <p>
-                  Silakan periksa dan perbarui data atau berkas Anda sesuai petunjuk admin.
+                  Silakan periksa dan perbarui data atau berkas Anda sesuai
+                  petunjuk admin.
                 </p>
               )}
             </div>
@@ -151,6 +160,8 @@ export function OnboardingClient({ initialProgress }: OnboardingClientProps) {
               onPrev={prevStep}
               onSuccess={() => router.push("/waiting")}
               initialPaymentMethod={initialProgress.paymentMethod}
+              paymentAccounts={paymentAccounts}
+              registrationFee={registrationFee}
             />
           )}
         </AnimatePresence>

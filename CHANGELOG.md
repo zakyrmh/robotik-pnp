@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Informasi Rekening Pembayaran Pendaftaran (`app/(marketing)/pendaftaran-caang/CaangLandingClient.tsx`, `components/onboarding/step-upload.tsx`)**: Menampilkan biaya pendaftaran, nama bank, nomor rekening, dan nama pemilik rekening dari tabel `or_settings` pada halaman publik pendaftaran dan Step 5 onboarding.
+- **Tampilan Rekening Resmi di Step 5 (`components/onboarding/step-upload.tsx`)**: Menambahkan kartu rekening responsif dengan label rekening resmi, informasi biaya, dan styling yang mengikuti token desain `DESIGN.md` serta `app/globals.css`.
+
+### Changed
+
+- **Distribusi Pengaturan Pembayaran Onboarding (`app/(onboarding-flow)/onboarding/page.tsx`, `components/onboarding/onboarding-client.tsx`)**: Memuat pengaturan OR secara server-side bersama progres onboarding dan meneruskannya ke komponen Step 5 tanpa query database dari client component.
+- **UX Informasi Pembayaran Halaman Pendaftaran (`app/(marketing)/pendaftaran-caang/CaangLandingClient.tsx`)**: Menambahkan kartu rekening dengan dukungan salin nomor rekening, fallback saat rekening belum tersedia, dan informasi biaya pendaftaran.
+
 ## [0.9.1] - 2026-09-15
 
 ### Changed

@@ -5,8 +5,11 @@ import Link from "next/link";
 import {
   ArrowRight,
   Calendar,
+  Check,
   Clock,
+  Copy,
   HelpCircle,
+  Landmark,
   Sparkles,
   UserCheck,
   UserPlus,
@@ -28,6 +31,7 @@ interface TimeLeft {
 
 export function CaangLandingClient({ settings }: CaangLandingClientProps) {
   const [now, setNow] = useState<Date | null>(null);
+  const [copiedAccount, setCopiedAccount] = useState<string | null>(null);
 
   useEffect(() => {
     const timeout = setTimeout(() => setNow(new Date()), 0);
@@ -141,6 +145,18 @@ export function CaangLandingClient({ settings }: CaangLandingClientProps) {
     settings?.timeline && settings.timeline.length > 0
       ? settings.timeline
       : defaultTimeline;
+
+  const bankAccounts = settings?.rekening_penerima ?? [];
+
+  const handleCopyAccountNumber = async (accountNumber: string) => {
+    try {
+      await navigator.clipboard.writeText(accountNumber);
+      setCopiedAccount(accountNumber);
+      window.setTimeout(() => setCopiedAccount(null), 2000);
+    } catch {
+      // Clipboard permission may be unavailable in some browsers or contexts.
+    }
+  };
 
   const faqs = [
     {
@@ -358,6 +374,95 @@ export function CaangLandingClient({ settings }: CaangLandingClientProps) {
             </div>
           </div>
         </div>
+
+        {/* Payment Information */}
+        <section
+          className="space-y-8"
+          aria-labelledby="payment-information-title"
+        >
+          <div className="text-center space-y-2">
+            <h2
+              id="payment-information-title"
+              className="text-2xl sm:text-3xl font-bold font-display"
+            >
+              Informasi Pembayaran
+            </h2>
+            <p className="text-muted-foreground text-sm max-w-2xl mx-auto">
+              {settings?.biaya_pendaftaran && settings.biaya_pendaftaran > 0
+                ? `Biaya pendaftaran: Rp ${settings.biaya_pendaftaran.toLocaleString("id-ID")}. `
+                : "Pendaftaran tidak dipungut biaya. "}
+              Gunakan rekening resmi berikut jika diperlukan dan simpan bukti
+              pembayaran untuk diunggah saat proses registrasi.
+            </p>
+          </div>
+
+          {bankAccounts.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {bankAccounts.map((account, index) => (
+                <article
+                  key={`${account.bank_name}-${account.account_number}-${index}`}
+                  className="bg-card border border-border rounded-xl p-6 space-y-5 hover:border-primary/50 transition-colors"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                      <Landmark className="w-5 h-5" aria-hidden="true" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        Rekening {index + 1}
+                      </p>
+                      <h3 className="text-lg font-semibold text-foreground">
+                        {account.bank_name}
+                      </h3>
+                    </div>
+                  </div>
+
+                  <dl className="space-y-3 text-sm">
+                    <div className="flex flex-col gap-1">
+                      <dt className="text-muted-foreground">Nomor rekening</dt>
+                      <dd className="flex items-center justify-between gap-3">
+                        <span className="font-mono text-base font-semibold tracking-wide text-foreground break-all">
+                          {account.account_number}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleCopyAccountNumber(account.account_number)
+                          }
+                          className="inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center gap-2 rounded-md border border-border bg-background px-3 text-xs font-medium text-foreground transition-colors hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          aria-label={`Salin nomor rekening ${account.bank_name}`}
+                        >
+                          {copiedAccount === account.account_number ? (
+                            <>
+                              <Check className="w-4 h-4" aria-hidden="true" />
+                              <span className="sr-only">Tersalin</span>
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="w-4 h-4" aria-hidden="true" />
+                              <span className="sr-only">Salin</span>
+                            </>
+                          )}
+                        </button>
+                      </dd>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <dt className="text-muted-foreground">Atas nama</dt>
+                      <dd className="font-medium text-foreground">
+                        {account.account_holder}
+                      </dd>
+                    </div>
+                  </dl>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-border bg-surface p-6 text-center text-sm text-muted-foreground">
+              Informasi rekening pembayaran belum tersedia. Silakan hubungi
+              panitia untuk mendapatkan informasi lebih lanjut.
+            </div>
+          )}
+        </section>
 
         {/* Timeline Section */}
         <div className="space-y-8">

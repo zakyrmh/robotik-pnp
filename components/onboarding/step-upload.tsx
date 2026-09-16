@@ -29,17 +29,22 @@ import {
 } from "@/lib/actions/registration";
 import { toast } from "sonner";
 import { ImageCropperModal } from "./image-cropper-modal";
+import type { BankAccount } from "@/lib/actions/or-settings";
 
 interface StepUploadProps {
   onPrev: () => void;
   onSuccess: () => void;
   initialPaymentMethod?: string | null;
+  paymentAccounts?: BankAccount[];
+  registrationFee?: number;
 }
 
 export function StepUpload({
   onPrev,
   onSuccess,
   initialPaymentMethod,
+  paymentAccounts = [],
+  registrationFee = 0,
 }: StepUploadProps) {
   const [isPending, startTransition] = useTransition();
 
@@ -231,9 +236,51 @@ export function StepUpload({
 
         {/* Pembayaran */}
         <div className="space-y-4">
-          <span className="text-xs font-semibold uppercase tracking-wider text-primary font-mono block">
-            Informasi Pembayaran Pendaftaran
-          </span>
+          <div className="space-y-1">
+            <span className="text-xs font-semibold uppercase tracking-wider text-primary font-mono block">
+              Informasi Pembayaran Pendaftaran
+            </span>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              {registrationFee > 0
+                ? `Biaya pendaftaran: Rp ${registrationFee.toLocaleString("id-ID")}. `
+                : "Pendaftaran tidak dipungut biaya. "}
+              Pastikan bukti pembayaran sesuai dengan data berikut.
+            </p>
+          </div>
+
+          {paymentAccounts.length > 0 && (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {paymentAccounts.map((account, index) => (
+                <div
+                  key={`${account.bank_name}-${account.account_number}-${index}`}
+                  className="rounded-xl border border-border bg-secondary/60 p-4 space-y-3"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="font-semibold text-foreground">
+                      {account.bank_name}
+                    </span>
+                    <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-primary">
+                      Rekening resmi
+                    </span>
+                  </div>
+                  <dl className="space-y-2 text-xs">
+                    <div className="flex flex-col gap-0.5">
+                      <dt className="text-muted-foreground">Nomor rekening</dt>
+                      <dd className="font-mono font-semibold tracking-wide text-foreground break-all">
+                        {account.account_number}
+                      </dd>
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                      <dt className="text-muted-foreground">Atas nama</dt>
+                      <dd className="font-medium text-foreground">
+                        {account.account_holder}
+                      </dd>
+                    </div>
+                  </dl>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold text-foreground">
