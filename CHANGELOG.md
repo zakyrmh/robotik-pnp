@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.9.3](https://github.com/zakyrmh/robotik-pnp/compare/v0.9.2...v0.9.3) (2026-09-16)
+
+### ✨ Features
+
+- **onboarding:** display registration payment accounts ([4e6bb08](https://github.com/zakyrmh/robotik-pnp/commit/4e6bb08281c364286a2c6ef18337e8617399d637))
+
+### 🏠 Chores
+
+- **release:** merge develop into main for v0.9.3 ([58551e9](https://github.com/zakyrmh/robotik-pnp/commit/58551e9d0c048805d6444576ef845a159c33e250))
+
 ### [0.9.2](https://github.com/zakyrmh/robotik-pnp/compare/v0.9.1...v0.9.2) (2026-09-16)
 
 ### ✨ Features
