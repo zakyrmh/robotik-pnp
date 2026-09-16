@@ -27,9 +27,9 @@ export interface AcademicData {
 
 export interface CommitmentData {
   motivation: string;
-  igRobotikUrl?: string | null;
-  igMrcUrl?: string | null;
-  ytUrl?: string | null;
+  igRobotikUrl: string;
+  igMrcUrl: string;
+  ytUrl: string;
 }
 
 export interface FinalData {
@@ -48,6 +48,31 @@ function extractEntryYearFromNim(nim: string): number {
   }
   const year = parseInt(nim.substring(0, 2), 10);
   return 2000 + year;
+}
+
+function isOwnedCommitmentProofUrl(
+  value: string,
+  userId: string,
+  proofType: "ig_robotik" | "ig_mrc" | "yt_robotik",
+): boolean {
+  try {
+    const url = new URL(value, "http://localhost");
+    const segments = decodeURIComponent(url.pathname)
+      .split("/")
+      .filter(Boolean);
+    const registrationsIndex = segments.indexOf("registrations");
+    const year = segments[registrationsIndex + 1];
+    const ownerId = segments[registrationsIndex + 2];
+    const filename = segments[registrationsIndex + 3];
+    return (
+      registrationsIndex >= 0 &&
+      /^\d{4}$/.test(year ?? "") &&
+      ownerId === userId &&
+      filename?.startsWith(`${proofType}_`) === true
+    );
+  } catch {
+    return false;
+  }
 }
 
 // ============================================================
@@ -364,6 +389,10 @@ export async function saveAcademicData(data: AcademicData) {
 // URL sudah diupload ke Cloudflare R2 sebelum memanggil ini.
 // ============================================================
 export async function saveCommitmentData(data: CommitmentData) {
+  if (!data.motivation.trim()) {
+    return { success: false, error: "Motivasi wajib diisi." };
+  }
+
   const { supabase, user, error: userError } = await getAuthUser();
 
   if (userError || !user) {
@@ -373,14 +402,25 @@ export async function saveCommitmentData(data: CommitmentData) {
     };
   }
 
+  if (
+    !isOwnedCommitmentProofUrl(data.igRobotikUrl, user.id, "ig_robotik") ||
+    !isOwnedCommitmentProofUrl(data.igMrcUrl, user.id, "ig_mrc") ||
+    !isOwnedCommitmentProofUrl(data.ytUrl, user.id, "yt_robotik")
+  ) {
+    return {
+      success: false,
+      error: "Bukti dukungan media sosial wajib diunggah lengkap.",
+    };
+  }
+
   try {
     const { error: updateError } = await supabase
       .from("registrations")
       .update({
         motivation: data.motivation,
-        proof_follow_robotik: data.igRobotikUrl ?? null,
-        proof_follow_mrc: data.igMrcUrl ?? null,
-        proof_sub_yt: data.ytUrl ?? null,
+        proof_follow_robotik: data.igRobotikUrl,
+        proof_follow_mrc: data.igMrcUrl,
+        proof_sub_yt: data.ytUrl,
         updated_at: new Date().toISOString(),
       })
       .eq("profile_id", user.id);

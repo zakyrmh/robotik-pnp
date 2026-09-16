@@ -50,6 +50,17 @@ export function StepCommitment({
       return;
     }
 
+    const missingProofs = [
+      !igRobotikFile && !initialData?.igRobotikUrl && "Follow IG Robotik",
+      !igMrcFile && !initialData?.igMrcUrl && "Follow IG MRC",
+      !ytFile && !initialData?.ytUrl && "Subscribe YouTube",
+    ].filter((proof): proof is string => Boolean(proof));
+
+    if (missingProofs.length > 0) {
+      toast.error(`Bukti wajib diunggah: ${missingProofs.join(", ")}.`);
+      return;
+    }
+
     startTransition(async () => {
       try {
         const uploadFileToR2 = async (
@@ -93,6 +104,11 @@ export function StepCommitment({
           "Bukti Subscribe YouTube",
           initialData?.ytUrl,
         );
+
+        if (!igRobotikUrl || !igMrcUrl || !ytUrl) {
+          toast.error("Bukti dukungan media sosial wajib diunggah lengkap.");
+          return;
+        }
 
         setUploadLabel("Menyimpan data...");
 
@@ -166,11 +182,12 @@ export function StepCommitment({
         <div className="space-y-3">
           <div>
             <span className="text-xs font-semibold uppercase tracking-wider text-primary font-mono block">
-              Bukti Dukungan Media Sosial (Opsional)
+              Bukti Dukungan Media Sosial{" "}
+              <span className="text-destructive">*</span>
             </span>
             <p className="text-xs text-muted-foreground mt-0.5">
               Unggah tangkapan layar (screenshot) bukti follow Instagram &amp;
-              subscribe YouTube.
+              subscribe YouTube. Ketiga bukti wajib diisi.
             </p>
           </div>
 
