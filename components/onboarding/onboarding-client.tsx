@@ -16,10 +16,10 @@ import { toast } from "sonner";
 
 const STEPS = [
   { id: 1, label: "Validasi NIM" },
-  { id: 2, label: "Biodata & Kontak" },
-  { id: 3, label: "Akademik & Rekam Jejak" },
+  { id: 2, label: "Biodata" },
+  { id: 3, label: "Akademik" },
   { id: 4, label: "Visi & Komitmen" },
-  { id: 5, label: "Berkas & Pembayaran" },
+  { id: 5, label: "Berkas" },
 ];
 
 interface OnboardingClientProps {
@@ -40,9 +40,7 @@ export function OnboardingClient({ initialProgress }: OnboardingClientProps) {
   const nextStep = () => setStep((s) => Math.min(s + 1, 5));
   const prevStep = () => setStep((s) => Math.max(s - 1, 1));
 
-  // ──────────────────────────────────────────────
   // Step 1: Validasi NIM
-  // ──────────────────────────────────────────────
   const handleCheckNim = async () => {
     setIsCheckingNim(true);
     setClosedError(null);
@@ -81,12 +79,42 @@ export function OnboardingClient({ initialProgress }: OnboardingClientProps) {
     }
   };
 
+  const isRevision = initialProgress.status === "revision";
+
   return (
     <div className="relative z-10 w-full py-2 sm:py-4">
       <OnboardingHeader />
+
+      {/* Warning banner jika status pendaftaran adalah 'revision' */}
+      {isRevision && (
+        <div className="mb-4 rounded-xl border border-sky-200 bg-sky-50 p-4 text-xs sm:text-sm text-sky-800 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-300 shadow-xs">
+          <div className="flex items-start gap-3">
+            <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-sky-200 font-bold text-sky-800 dark:bg-sky-900 dark:text-sky-200">
+              !
+            </span>
+            <div className="space-y-1">
+              <h4 className="font-heading font-bold text-sky-900 dark:text-sky-200">
+                Pendaftaran Memerlukan Revisi / Perbaikan Berkas
+              </h4>
+              {initialProgress.revisionNotes ? (
+                <p className="whitespace-pre-wrap leading-relaxed">
+                  <strong>Catatan dari Admin:</strong>{" "}
+                  {initialProgress.revisionNotes}
+                </p>
+              ) : (
+                <p>
+                  Silakan periksa dan perbarui data atau berkas Anda sesuai
+                  petunjuk admin.
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <OnboardingStepper currentStep={step} steps={STEPS} />
 
-      <div className="relative overflow-hidden rounded-xl border border-border dark:border-white/10 bg-card text-card-foreground shadow-sm dark:shadow-none transition-colors duration-200 min-h-125">
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-xs transition-colors duration-200 min-h-[460px]">
         <AnimatePresence mode="wait">
           {step === 1 && (
             <StepIdentity
@@ -123,9 +151,7 @@ export function OnboardingClient({ initialProgress }: OnboardingClientProps) {
           {step === 5 && (
             <StepUpload
               onPrev={prevStep}
-              onSuccess={() => {
-                window.location.href = "/waiting";
-              }}
+              onSuccess={() => router.push("/waiting")}
               initialPaymentMethod={initialProgress.paymentMethod}
             />
           )}

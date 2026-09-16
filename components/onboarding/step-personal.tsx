@@ -12,12 +12,16 @@ import { PersonalData, savePersonalData } from "@/lib/actions/registration";
 import type { OnboardingInitialPersonal } from "@/lib/actions/onboarding";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { Label } from "../ui/label";
-import { Input } from "../ui/input";
-import { Textarea } from "../ui/textarea";
-import { Button } from "../ui/button";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowLeft02Icon, ArrowRight02Icon } from "@hugeicons/core-free-icons";
+import {
+  ArrowLeft02Icon,
+  ArrowRight02Icon,
+  Loading02Icon,
+} from "@hugeicons/core-free-icons";
 
 interface StepPersonalProps {
   onNext: () => void;
@@ -104,7 +108,7 @@ export function StepPersonal({
           return;
         }
 
-        toast.success("Data pribadi disimpan.");
+        toast.success("Data pribadi berhasil disimpan.");
         onNext();
       } catch (err) {
         console.error(err);
@@ -116,143 +120,180 @@ export function StepPersonal({
   return (
     <motion.div
       key="step2"
-      initial={{ opacity: 0, x: 24 }}
+      initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -24 }}
-      transition={{ duration: 0.25 }}
-      className="px-8 py-10 overflow-y-auto custom-scrollbar"
+      exit={{ opacity: 0, x: -20 }}
+      transition={{ duration: 0.25, ease: "easeInOut" }}
+      className="p-6 sm:p-8 md:p-10 overflow-y-auto"
     >
-      <div className="mb-6">
-        <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+      <div className="mb-6 space-y-1">
+        <h2 className="text-lg sm:text-xl font-heading font-bold text-foreground tracking-tight">
           Data Pribadi &amp; Kontak
         </h2>
-        <p className="mt-1 text-sm text-neutral-500">
-          Lengkapi biodata dasar Anda.
+        <p className="text-xs sm:text-sm text-muted-foreground">
+          Lengkapi identitas diri dan nomor kontak aktif untuk keperluan
+          verifikasi.
         </p>
       </div>
 
-      <div className="space-y-5">
+      <div className="space-y-4 sm:space-y-5 text-xs sm:text-sm">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label className="text-xs font-bold uppercase text-neutral-500">
-              Nama Lengkap <span className="text-red-500">*</span>
+            <Label className="text-xs font-semibold text-foreground">
+              Nama Lengkap <span className="text-destructive">*</span>
             </Label>
             <Input
-              placeholder="John Doe"
-              className="h-10 rounded-xl"
+              placeholder="Contoh: Muhammad Zaky"
+              className="h-11 rounded-xl bg-background border-border text-sm text-foreground focus-visible:ring-2 focus-visible:ring-primary/20"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
+              disabled={isPending}
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs font-bold uppercase text-neutral-500">
-              Nama Panggilan <span className="text-red-500">*</span>
+            <Label className="text-xs font-semibold text-foreground">
+              Nama Panggilan <span className="text-destructive">*</span>
             </Label>
             <Input
-              placeholder="Doe"
-              className="h-10 rounded-xl"
+              placeholder="Contoh: Zaky"
+              className="h-11 rounded-xl bg-background border-border text-sm text-foreground focus-visible:ring-2 focus-visible:ring-primary/20"
               value={nickname}
               onChange={(e) => setNickname(e.target.value)}
+              disabled={isPending}
             />
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label className="text-xs font-bold uppercase text-neutral-500">
-              Jenis Kelamin <span className="text-red-500">*</span>
+            <Label className="text-xs font-semibold text-foreground">
+              Jenis Kelamin <span className="text-destructive">*</span>
             </Label>
             <Select
               value={gender}
               onValueChange={(v) => setGender(v as "L" | "P")}
+              disabled={isPending}
             >
-              <SelectTrigger className="h-10 rounded-xl">
-                <SelectValue placeholder="Pilih" />
+              <SelectTrigger className="h-11 rounded-xl bg-background border-border text-sm text-foreground focus:ring-2 focus:ring-primary/20">
+                <SelectValue placeholder="Pilih Jenis Kelamin" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="L">Laki-laki</SelectItem>
-                <SelectItem value="P">Perempuan</SelectItem>
+              <SelectContent className="rounded-xl border border-border bg-popover shadow-lg">
+                <SelectItem
+                  value="L"
+                  className="text-xs sm:text-sm cursor-pointer"
+                >
+                  Laki-laki (L)
+                </SelectItem>
+                <SelectItem
+                  value="P"
+                  className="text-xs sm:text-sm cursor-pointer"
+                >
+                  Perempuan (P)
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs font-bold uppercase text-neutral-500">
-              No. WhatsApp <span className="text-red-500">*</span>
+            <Label className="text-xs font-semibold text-foreground">
+              No. WhatsApp Aktif <span className="text-destructive">*</span>
             </Label>
             <Input
-              placeholder="0812..."
-              className="h-10 rounded-xl"
+              placeholder="081234567890"
+              className="h-11 rounded-xl bg-background border-border text-sm font-mono text-foreground focus-visible:ring-2 focus-visible:ring-primary/20"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
+              disabled={isPending}
             />
           </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-1.5">
-            <Label className="text-xs font-bold uppercase text-neutral-500">
-              Tempat Lahir <span className="text-red-500">*</span>
+            <Label className="text-xs font-semibold text-foreground">
+              Tempat Lahir <span className="text-destructive">*</span>
             </Label>
             <Input
-              placeholder="Kota Padang"
-              className="h-10 rounded-xl"
+              placeholder="Contoh: Kota Padang"
+              className="h-11 rounded-xl bg-background border-border text-sm text-foreground focus-visible:ring-2 focus-visible:ring-primary/20"
               value={pob}
               onChange={(e) => setPob(e.target.value)}
+              disabled={isPending}
             />
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs font-bold uppercase text-neutral-500">
-              Tanggal Lahir <span className="text-red-500">*</span>
+            <Label className="text-xs font-semibold text-foreground">
+              Tanggal Lahir <span className="text-destructive">*</span>
             </Label>
             <Input
               type="date"
-              className="h-10 rounded-xl"
+              className="h-11 rounded-xl bg-background border-border text-sm font-mono text-foreground focus-visible:ring-2 focus-visible:ring-primary/20"
               value={dob}
               onChange={(e) => setDob(e.target.value)}
+              disabled={isPending}
             />
           </div>
         </div>
 
         <div className="space-y-1.5">
-          <Label className="text-xs font-bold uppercase text-neutral-500">
-            Alamat Asal (KTP) <span className="text-red-500">*</span>
+          <Label className="text-xs font-semibold text-foreground">
+            Alamat Asal (KTP) <span className="text-destructive">*</span>
           </Label>
           <Textarea
-            placeholder="Alamat lengkap sesuai KTP"
-            className="rounded-xl min-h-[70px]"
+            placeholder="Tuliskan alamat lengkap sesuai KTP..."
+            className="rounded-xl bg-background border-border min-h-[72px] text-sm text-foreground focus-visible:ring-2 focus-visible:ring-primary/20 leading-relaxed"
             value={originAddress}
             onChange={(e) => setOriginAddress(e.target.value)}
+            disabled={isPending}
           />
         </div>
+
         <div className="space-y-1.5">
-          <Label className="text-xs font-bold uppercase text-neutral-500">
-            Alamat Domisili <span className="text-red-500">*</span>
+          <Label className="text-xs font-semibold text-foreground">
+            Alamat Domisili (Saat Ini){" "}
+            <span className="text-destructive">*</span>
           </Label>
           <Textarea
-            placeholder="Alamat kos atau rumah saat ini"
-            className="rounded-xl min-h-[70px]"
+            placeholder="Tuliskan alamat tempat tinggal / kos saat ini di Padang..."
+            className="rounded-xl bg-background border-border min-h-[72px] text-sm text-foreground focus-visible:ring-2 focus-visible:ring-primary/20 leading-relaxed"
             value={domicileAddress}
             onChange={(e) => setDomicileAddress(e.target.value)}
+            disabled={isPending}
           />
         </div>
       </div>
 
-      <div className="mt-8 flex gap-3 sticky bottom-0 bg-white dark:bg-neutral-900 pt-4">
+      <div className="mt-8 flex items-center gap-3 pt-4 border-t border-border">
         <Button
+          type="button"
           variant="outline"
           onClick={onPrev}
           disabled={isPending}
-          className="flex-1 h-11 rounded-xl gap-2"
+          className="flex-1 h-11 min-h-[44px] rounded-xl border-border text-xs sm:text-sm font-medium gap-2 cursor-pointer"
         >
-          <HugeiconsIcon icon={ArrowLeft02Icon} size={16} /> Kembali
+          <HugeiconsIcon icon={ArrowLeft02Icon} size={16} />
+          Kembali
         </Button>
         <Button
+          type="button"
           onClick={handleNext}
           disabled={isPending}
-          className="flex-2 h-11 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold"
+          className="flex-2 h-11 min-h-[44px] rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs sm:text-sm font-semibold gap-2 shadow-xs cursor-pointer"
         >
-          {isPending ? "Menyimpan..." : "Lanjut"}
-          {!isPending && <HugeiconsIcon icon={ArrowRight02Icon} size={16} />}
+          {isPending ? (
+            <>
+              <HugeiconsIcon
+                icon={Loading02Icon}
+                size={16}
+                className="animate-spin"
+              />
+              Menyimpan...
+            </>
+          ) : (
+            <>
+              Lanjut ke Akademik
+              <HugeiconsIcon icon={ArrowRight02Icon} size={16} />
+            </>
+          )}
         </Button>
       </div>
     </motion.div>

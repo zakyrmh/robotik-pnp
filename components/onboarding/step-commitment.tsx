@@ -10,6 +10,7 @@ import {
   YoutubeIcon,
   Note01Icon,
   Loading02Icon,
+  CheckmarkCircle02Icon,
 } from "@hugeicons/core-free-icons";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -36,13 +37,11 @@ export function StepCommitment({
 }: StepCommitmentProps) {
   const [isPending, startTransition] = useTransition();
 
-  // State lokal — motivation pre-filled jika sudah ada di DB
   const [motivation, setMotivation] = useState(initialData?.motivation ?? "");
   const [igRobotikFile, setIgRobotikFile] = useState<File | null>(null);
   const [igMrcFile, setIgMrcFile] = useState<File | null>(null);
   const [ytFile, setYtFile] = useState<File | null>(null);
 
-  // Status upload granular untuk feedback ke user
   const [uploadLabel, setUploadLabel] = useState("");
 
   const handleNext = () => {
@@ -51,9 +50,19 @@ export function StepCommitment({
       return;
     }
 
+    const missingProofs = [
+      !igRobotikFile && !initialData?.igRobotikUrl && "Follow IG Robotik",
+      !igMrcFile && !initialData?.igMrcUrl && "Follow IG MRC",
+      !ytFile && !initialData?.ytUrl && "Subscribe YouTube",
+    ].filter((proof): proof is string => Boolean(proof));
+
+    if (missingProofs.length > 0) {
+      toast.error(`Bukti wajib diunggah: ${missingProofs.join(", ")}.`);
+      return;
+    }
+
     startTransition(async () => {
       try {
-        // Helper upload file ke Cloudflare R2 setelah dikompresi ke WebP di client
         const uploadFileToR2 = async (
           file: File | null,
           proofType: "ig_robotik" | "ig_mrc" | "yt_robotik",
@@ -65,7 +74,7 @@ export function StepCommitment({
           setUploadLabel(`Mengompresi ${label} ke WebP...`);
           const compressedWebp = await compressImageToWebp(file, 1, 1920);
 
-          setUploadLabel(`Mengunggah ${label} ke R2...`);
+          setUploadLabel(`Mengunggah ${label}...`);
           const formData = new FormData();
           formData.append("file", compressedWebp);
           formData.append("proofType", proofType);
@@ -77,7 +86,6 @@ export function StepCommitment({
           return res.url;
         };
 
-        // Upload 3 bukti media sosial ke Cloudflare R2 (opsional)
         const igRobotikUrl = await uploadFileToR2(
           igRobotikFile,
           "ig_robotik",
@@ -93,13 +101,17 @@ export function StepCommitment({
         const ytUrl = await uploadFileToR2(
           ytFile,
           "yt_robotik",
-          "Bukti Subscribe YT",
+          "Bukti Subscribe YouTube",
           initialData?.ytUrl,
         );
 
+        if (!igRobotikUrl || !igMrcUrl || !ytUrl) {
+          toast.error("Bukti dukungan media sosial wajib diunggah lengkap.");
+          return;
+        }
+
         setUploadLabel("Menyimpan data...");
 
-        // Simpan ke database via server action
         const result = await saveCommitmentData({
           motivation: motivation.trim(),
           igRobotikUrl,
@@ -112,7 +124,7 @@ export function StepCommitment({
           return;
         }
 
-        toast.success("Data visi & komitmen disimpan.");
+        toast.success("Visi & bukti komitmen sosial berhasil disimpan.");
         onNext();
       } catch (err) {
         console.error("Error saving commitment data:", err);
@@ -127,96 +139,125 @@ export function StepCommitment({
   return (
     <motion.div
       key="step4"
-      initial={{ opacity: 0, x: 24 }}
+      initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -24 }}
+      exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.25, ease: "easeInOut" }}
-      className="px-8 py-10 overflow-y-auto custom-scrollbar"
+      className="p-6 sm:p-8 md:p-10 overflow-y-auto"
     >
-      <div className="mb-6">
-        <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">
+      <div className="mb-6 space-y-1">
+        <h2 className="text-lg sm:text-xl font-heading font-bold text-foreground tracking-tight">
           Visi &amp; Komitmen Sosial
         </h2>
-        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-          Beritahu kami motivasi Anda dan lengkapi syarat media sosial.
+        <p className="text-xs sm:text-sm text-muted-foreground">
+          Sampaikan motivasi Anda bergabung dengan UKM Robotik dan sertakan
+          bukti dukungan media sosial.
         </p>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-6 text-xs sm:text-sm">
+        {/* Motivasi */}
         <div className="space-y-2">
-          <Label className="text-sm font-medium flex items-center gap-2">
+          <Label className="text-xs font-semibold text-foreground flex items-center gap-1.5">
             <HugeiconsIcon
               icon={Note01Icon}
-              size={16}
-              className="text-blue-500"
+              size={15}
+              className="text-primary"
             />
-            Motivasi Masuk UKM Robotik <span className="text-red-500">*</span>
+            Motivasi Bergabung UKM Robotik{" "}
+            <span className="text-destructive">*</span>
           </Label>
           <Textarea
-            placeholder="Apa alasan Anda ingin bergabung?"
-            className="min-h-[120px] rounded-xl bg-neutral-50 dark:bg-neutral-800 border-neutral-200"
+            placeholder="Ceritakan alasan, ketertarikan, atau target yang ingin Anda capai di bidang robotika..."
+            className="min-h-[110px] rounded-xl bg-background border-border text-sm text-foreground focus-visible:ring-2 focus-visible:ring-primary/20 leading-relaxed"
             value={motivation}
             onChange={(e) => setMotivation(e.target.value)}
             disabled={isPending}
           />
         </div>
 
-        <hr className="border-neutral-100 dark:border-neutral-800" />
+        <div className="h-px bg-border" />
 
-        <div className="space-y-4">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-400">
-            Bukti Media Sosial
-          </h3>
-          <div className="grid grid-cols-1 gap-4">
+        {/* Media Sosial */}
+        <div className="space-y-3">
+          <div>
+            <span className="text-xs font-semibold uppercase tracking-wider text-primary font-mono block">
+              Bukti Dukungan Media Sosial{" "}
+              <span className="text-destructive">*</span>
+            </span>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Unggah tangkapan layar (screenshot) bukti follow Instagram &amp;
+              subscribe YouTube. Ketiga bukti wajib diisi.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-1">
+            {/* IG Robotik */}
             <div className="space-y-1.5">
               <UploadTile
                 icon={InstagramIcon}
-                label="Follow Instagram Robotik"
-                hint="Screenshot profil @ukmrobotikpnp · Max 5MB"
+                label="Follow IG Robotik"
+                hint="Screenshot @ukmrobotikpnp"
                 accept="image/*"
                 file={igRobotikFile}
                 onChange={setIgRobotikFile}
                 disabled={isPending}
               />
               {!igRobotikFile && initialData?.igRobotikUrl && (
-                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1.5 pl-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
-                  Sudah diunggah sebelumnya. Upload baru untuk mengganti.
-                </p>
+                <div className="text-[11px] text-emerald-700 dark:text-emerald-300 font-medium flex items-center gap-1 px-1.5 py-1 rounded-md bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+                  <HugeiconsIcon
+                    icon={CheckmarkCircle02Icon}
+                    size={13}
+                    className="shrink-0"
+                  />
+                  Sudah terunggah sebelumnya
+                </div>
               )}
             </div>
+
+            {/* IG MRC */}
             <div className="space-y-1.5">
               <UploadTile
                 icon={InstagramIcon}
-                label="Follow Instagram MRC"
-                hint="Screenshot profil @mrc_pnp · Max 5MB"
+                label="Follow IG MRC"
+                hint="Screenshot @mrc_pnp"
                 accept="image/*"
                 file={igMrcFile}
                 onChange={setIgMrcFile}
                 disabled={isPending}
               />
               {!igMrcFile && initialData?.igMrcUrl && (
-                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1.5 pl-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
-                  Sudah diunggah sebelumnya. Upload baru untuk mengganti.
-                </p>
+                <div className="text-[11px] text-emerald-700 dark:text-emerald-300 font-medium flex items-center gap-1 px-1.5 py-1 rounded-md bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+                  <HugeiconsIcon
+                    icon={CheckmarkCircle02Icon}
+                    size={13}
+                    className="shrink-0"
+                  />
+                  Sudah terunggah sebelumnya
+                </div>
               )}
             </div>
+
+            {/* YouTube */}
             <div className="space-y-1.5">
               <UploadTile
                 icon={YoutubeIcon}
-                label="Subscribe YT Robotik"
-                hint="Screenshot bukti subscribe · Max 5MB"
+                label="Subscribe YouTube"
+                hint="Screenshot UKM Robotik PNP"
                 accept="image/*"
                 file={ytFile}
                 onChange={setYtFile}
                 disabled={isPending}
               />
               {!ytFile && initialData?.ytUrl && (
-                <p className="text-xs text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1.5 pl-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
-                  Sudah diunggah sebelumnya. Upload baru untuk mengganti.
-                </p>
+                <div className="text-[11px] text-emerald-700 dark:text-emerald-300 font-medium flex items-center gap-1 px-1.5 py-1 rounded-md bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800">
+                  <HugeiconsIcon
+                    icon={CheckmarkCircle02Icon}
+                    size={13}
+                    className="shrink-0"
+                  />
+                  Sudah terunggah sebelumnya
+                </div>
               )}
             </div>
           </div>
@@ -224,32 +265,48 @@ export function StepCommitment({
       </div>
 
       {isPending && uploadLabel && (
-        <p className="mt-4 text-sm text-center text-neutral-500 dark:text-neutral-400 animate-pulse">
+        <div className="mt-4 p-3 rounded-xl bg-primary-soft/50 border border-primary/20 flex items-center justify-center gap-2 text-xs font-medium text-primary animate-pulse">
           <HugeiconsIcon
             icon={Loading02Icon}
-            size={14}
-            className="inline mr-1.5 animate-spin"
+            size={16}
+            className="animate-spin"
           />
           {uploadLabel}
-        </p>
+        </div>
       )}
 
-      <div className="mt-8 flex gap-3 sticky bottom-0 bg-white dark:bg-neutral-900 pt-4 border-t border-neutral-100">
+      <div className="mt-8 flex items-center gap-3 pt-4 border-t border-border">
         <Button
+          type="button"
           variant="outline"
           onClick={onPrev}
           disabled={isPending}
-          className="flex-1 h-11 rounded-xl gap-2"
+          className="flex-1 h-11 min-h-[44px] rounded-xl border-border text-xs sm:text-sm font-medium gap-2 cursor-pointer"
         >
-          <HugeiconsIcon icon={ArrowLeft02Icon} size={16} /> Kembali
+          <HugeiconsIcon icon={ArrowLeft02Icon} size={16} />
+          Kembali
         </Button>
         <Button
+          type="button"
           onClick={handleNext}
           disabled={isPending}
-          className="flex-2 h-11 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold gap-2"
+          className="flex-2 h-11 min-h-[44px] rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs sm:text-sm font-semibold gap-2 shadow-xs cursor-pointer"
         >
-          {isPending ? "Menyimpan..." : "Lanjut ke Pembayaran"}
-          {!isPending && <HugeiconsIcon icon={ArrowRight02Icon} size={16} />}
+          {isPending ? (
+            <>
+              <HugeiconsIcon
+                icon={Loading02Icon}
+                size={16}
+                className="animate-spin"
+              />
+              Menyimpan...
+            </>
+          ) : (
+            <>
+              Lanjut ke Berkas &amp; Pembayaran
+              <HugeiconsIcon icon={ArrowRight02Icon} size={16} />
+            </>
+          )}
         </Button>
       </div>
     </motion.div>

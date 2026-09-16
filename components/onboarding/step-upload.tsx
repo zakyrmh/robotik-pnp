@@ -22,9 +22,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { UploadTile } from "./upload-tile";
-import { createClient } from "@/lib/supabase/client";
-import { compressImage } from "@/lib/utils/upload";
-import { saveFinalData } from "@/lib/actions/registration";
+import { compressImageToWebp } from "@/lib/utils/upload";
+import {
+  uploadRegistrationFileToR2,
+  saveFinalData,
+} from "@/lib/actions/registration";
 import { toast } from "sonner";
 import { ImageCropperModal } from "./image-cropper-modal";
 
@@ -41,7 +43,6 @@ export function StepUpload({
 }: StepUploadProps) {
   const [isPending, startTransition] = useTransition();
 
-  // State lokal — tidak perlu diangkat ke page.tsx
   const [pasFoto, setPasFoto] = useState<File | null>(null);
   const [ktmFoto, setKtmFoto] = useState<File | null>(null);
   const [paymentProof, setPaymentProof] = useState<File | null>(null);
@@ -49,11 +50,9 @@ export function StepUpload({
     initialPaymentMethod ?? "",
   );
 
-  // Status upload granular untuk feedback ke user
   const [uploadLabel, setUploadLabel] = useState("");
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  // State untuk modal crop
   const [cropperModalOpen, setCropperModalOpen] = useState(false);
   const [selectedImageForCrop, setSelectedImageForCrop] = useState<
     string | null
@@ -68,14 +67,49 @@ export function StepUpload({
     }
   };
 
+  // ----------------------------------------------------------------
+  // Helper: compress → send to Server Action → return R2 public URL
+  //
+  // Kompresi dilakukan client-side (WebP ≤ 1 MB untuk foto).
+  // PDF bukti bayar tidak dikompresi — dikirim as-is (max 3.5 MB).
+  // Setiap upload berjalan secara serial agar tidak spike memory
+  // sekaligus, yang penting untuk Vercel Serverless (1 GB RAM).
+  // ----------------------------------------------------------------
+  const uploadFileToR2 = async (
+    file: File | null,
+    fileType: "pas_foto" | "ktm" | "payment_proof",
+    label: string,
+  ): Promise<string | null> => {
+    if (!file) return null;
+
+    let fileToUpload: File = file;
+
+    if (file.type.startsWith("image/")) {
+      setUploadLabel(`Mengompresi ${label} ke WebP…`);
+      // Target ≤ 1 MB, max 1920px — jauh di bawah Vercel body cap 4.5 MB
+      fileToUpload = await compressImageToWebp(file, 1, 1920);
+    }
+    // PDF tidak dikompresi — server action akan tolak jika > 3.5 MB
+
+    setUploadLabel(`Mengunggah ${label} ke cloud…`);
+    const formData = new FormData();
+    formData.append("file", fileToUpload);
+    formData.append("fileType", fileType);
+
+    const res = await uploadRegistrationFileToR2(formData);
+    if (!res.success || !res.url) {
+      throw new Error(res.error ?? `Gagal mengunggah ${label}.`);
+    }
+    return res.url;
+  };
+
   const handleSubmit = () => {
-    // Validasi sebelum masuk transition
     if (!pasFoto) {
-      toast.error("Pas foto wajib diupload.");
+      toast.error("Pas foto formal wajib diunggah.");
       return;
     }
     if (!paymentProof) {
-      toast.error("Bukti pembayaran wajib diupload.");
+      toast.error("Bukti pembayaran pendaftaran wajib diunggah.");
       return;
     }
     if (!paymentMethod) {
@@ -85,69 +119,27 @@ export function StepUpload({
 
     startTransition(async () => {
       try {
-        const supabase = createClient();
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-
-        if (!user) {
-          toast.error("Sesi tidak ditemukan. Silakan login kembali.");
-          return;
-        }
-
-        const userId = user.id;
-        const year = new Date().getFullYear().toString();
-
-        const uploadFile = async (
-          file: File | null,
-          bucket: string,
-          path: string,
-          label: string,
-        ): Promise<string | null> => {
-          if (!file) return null;
-          setUploadLabel(`Mengompresi ${label}...`);
-          const compressed = await compressImage(file);
-          setUploadLabel(`Mengunggah ${label}...`);
-          const { error } = await supabase.storage
-            .from(bucket)
-            .upload(path, compressed, { upsert: true });
-          if (error) throw new Error(`Gagal upload ${label}: ${error.message}`);
-          const {
-            data: { publicUrl },
-          } = supabase.storage.from(bucket).getPublicUrl(path);
-          return publicUrl;
-        };
-
-        // Upload Pas Foto → bucket "profiles"
+        // ---- Upload serial: pas foto → KTM (opsional) → bukti bayar ----
         setUploadProgress(10);
-        const pasFotoUrl = await uploadFile(
+        const pasFotoUrl = await uploadFileToR2(
           pasFoto,
-          "profiles",
-          `${userId}/${pasFoto.name}`,
+          "pas_foto",
           "Pas Foto",
         );
 
-        // Upload KTM → bucket "registrations" (opsional)
         setUploadProgress(40);
-        const ktmUrl = await uploadFile(
-          ktmFoto,
-          "registrations",
-          `${year}/${userId}/ktm_${ktmFoto?.name}`,
-          "KTM",
-        );
+        const ktmUrl = await uploadFileToR2(ktmFoto, "ktm", "KTM");
 
-        // Upload Bukti Pembayaran → bucket "registrations"
-        setUploadProgress(65);
-        const paymentUrl = await uploadFile(
+        setUploadProgress(70);
+        const paymentUrl = await uploadFileToR2(
           paymentProof,
-          "registrations",
-          `${year}/${userId}/payment_${paymentProof.name}`,
+          "payment_proof",
           "Bukti Pembayaran",
         );
 
-        // Simpan URL ke database via server action
-        setUploadProgress(85);
-        setUploadLabel("Menyimpan data...");
+        // ---- Simpan URL ke database via Server Action ----
+        setUploadProgress(88);
+        setUploadLabel("Menyimpan seluruh data pendaftaran…");
 
         const result = await saveFinalData({
           pasFotoUrl: pasFotoUrl ?? "",
@@ -163,14 +155,15 @@ export function StepUpload({
 
         setUploadProgress(100);
         setUploadLabel("Selesai!");
-        toast.success("Pendaftaran berhasil dikirim!");
+        toast.success(
+          "Pendaftaran berhasil dikirim! Menuju halaman verifikasi…",
+        );
 
-        // Beri sedikit jeda agar progress bar terlihat 100% sebelum redirect
         await new Promise((r) => setTimeout(r, 800));
         onSuccess();
       } catch (err) {
-        console.error("Error submitting final data:", err);
-        const msg = err instanceof Error ? err.message : "Terjadi kesalahan";
+        console.error("[StepUpload] Error submitting final data:", err);
+        const msg = err instanceof Error ? err.message : "Terjadi kesalahan.";
         toast.error("Gagal mengirim pendaftaran: " + msg);
       } finally {
         if (uploadProgress < 100) {
@@ -184,146 +177,180 @@ export function StepUpload({
   return (
     <motion.div
       key="step5"
-      initial={{ opacity: 0, x: 24 }}
+      initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -24 }}
+      exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.25, ease: "easeInOut" }}
-      className="px-8 py-10 overflow-y-auto custom-scrollbar"
+      className="p-6 sm:p-8 md:p-10 overflow-y-auto"
     >
-      <div className="mb-6">
-        <h2 className="text-lg font-semibold text-neutral-900 dark:text-neutral-50">
-          Berkas &amp; Pembayaran
+      <div className="mb-6 space-y-1">
+        <h2 className="text-lg sm:text-xl font-heading font-bold text-foreground tracking-tight">
+          Berkas &amp; Pembayaran Registrasi
         </h2>
-        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-          Langkah terakhir untuk menyelesaikan pendaftaran Anda.
+        <p className="text-xs sm:text-sm text-muted-foreground">
+          Langkah terakhir untuk menyelesaikan pendaftaran anggota baru UKM
+          Robotik PNP.
         </p>
       </div>
 
-      <div className="space-y-6">
-        <div className="grid grid-cols-2 gap-4">
-          <UploadTile
-            icon={Camera01Icon}
-            label="Pas Foto"
-            hint="Formal · JPG/PNG · Max 5MB"
-            accept="image/jpeg,image/png"
-            file={pasFoto}
-            onChange={handlePasFotoChange}
-            disabled={isPending}
-          />
-          <UploadTile
-            icon={IdentityCardIcon}
-            label="Foto KTM"
-            hint="Opsional · JPG/PNG"
-            accept="image/jpeg,image/png"
-            file={ktmFoto}
-            onChange={setKtmFoto}
-            disabled={isPending}
-          />
+      <div className="space-y-6 text-xs sm:text-sm">
+        {/* Foto Profil & KTM */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-foreground">
+              Pas Foto Formal (1:1) <span className="text-destructive">*</span>
+            </Label>
+            <UploadTile
+              icon={Camera01Icon}
+              label="Pas Foto"
+              hint="Wajah jelas · JPG/PNG · Max 5 MB"
+              accept="image/jpeg,image/png"
+              file={pasFoto}
+              onChange={handlePasFotoChange}
+              disabled={isPending}
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-foreground">
+              Foto Kartu Tanda Mahasiswa (KTM)
+            </Label>
+            <UploadTile
+              icon={IdentityCardIcon}
+              label="Foto KTM"
+              hint="Opsional jika belum ada · Max 5 MB"
+              accept="image/jpeg,image/png"
+              file={ktmFoto}
+              onChange={setKtmFoto}
+              disabled={isPending}
+            />
+          </div>
         </div>
 
-        <hr className="border-neutral-100 dark:border-neutral-800" />
+        <div className="h-px bg-border" />
 
+        {/* Pembayaran */}
         <div className="space-y-4">
+          <span className="text-xs font-semibold uppercase tracking-wider text-primary font-mono block">
+            Informasi Pembayaran Pendaftaran
+          </span>
+
           <div className="space-y-1.5">
-            <Label className="text-sm font-medium">
-              Metode Pembayaran <span className="text-red-500">*</span>
+            <Label className="text-xs font-semibold text-foreground">
+              Metode Pembayaran <span className="text-destructive">*</span>
             </Label>
             <Select
               value={paymentMethod}
               onValueChange={setPaymentMethod}
               disabled={isPending}
             >
-              <SelectTrigger className="h-11 rounded-xl bg-neutral-50 dark:bg-neutral-800">
-                <SelectValue placeholder="Pilih Metode" />
+              <SelectTrigger className="h-11 rounded-xl bg-background border-border text-sm text-foreground focus:ring-2 focus:ring-primary/20">
+                <SelectValue placeholder="Pilih Metode Pembayaran" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="transfer">
-                  Transfer Bank / E-Wallet
+              <SelectContent className="rounded-xl border border-border bg-popover shadow-lg">
+                <SelectItem
+                  value="transfer"
+                  className="text-xs sm:text-sm cursor-pointer"
+                >
+                  Transfer Bank / QRIS / E-Wallet
                 </SelectItem>
-                <SelectItem value="cash">Tunai (Melalui Pengurus)</SelectItem>
+                <SelectItem
+                  value="cash"
+                  className="text-xs sm:text-sm cursor-pointer"
+                >
+                  Tunai (Melalui Pengurus UKM)
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
 
-          <UploadTile
-            icon={Wallet02Icon}
-            label="Bukti Pembayaran"
-            hint="PDF / JPG · Max 5MB"
-            accept="image/*,.pdf"
-            file={paymentProof}
-            onChange={setPaymentProof}
-            disabled={isPending}
-          />
+          <div className="space-y-1.5">
+            <Label className="text-xs font-semibold text-foreground">
+              Bukti Pembayaran Registrasi{" "}
+              <span className="text-destructive">*</span>
+            </Label>
+            <UploadTile
+              icon={Wallet02Icon}
+              label="Bukti Pembayaran"
+              hint="JPG / PNG / PDF · Max 3.5 MB"
+              accept="image/*,.pdf"
+              file={paymentProof}
+              onChange={setPaymentProof}
+              disabled={isPending}
+            />
+          </div>
         </div>
 
-        <div className="mt-5 flex gap-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-100 px-4 py-3 text-sm text-emerald-700">
+        {/* Info notice */}
+        <div className="flex items-center gap-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 p-3.5 text-xs sm:text-sm text-emerald-800 dark:text-emerald-300">
           <HugeiconsIcon
             icon={CheckmarkCircle02Icon}
             size={18}
-            className="mt-0.5 shrink-0"
+            className="shrink-0 text-emerald-600 dark:text-emerald-400"
           />
-          <p>
-            Seluruh data akan divalidasi manual. Mohon tunggu informasi
-            selanjutnya.
+          <p className="leading-relaxed">
+            Seluruh berkas tersimpan di cloud storage terenkripsi dan akan
+            diverifikasi oleh Panitia Open Recruitment UKM Robotik PNP.
           </p>
         </div>
       </div>
 
-      {/* Progress indicator selama upload */}
+      {/* Progress bar selama upload */}
       {isPending && (
-        <div className="mt-4 space-y-2">
+        <div className="mt-5 space-y-2 p-3.5 rounded-xl bg-secondary border border-border">
           {uploadLabel && (
-            <p className="text-sm text-center text-neutral-500 dark:text-neutral-400 animate-pulse">
+            <p className="text-xs text-center font-medium text-foreground flex items-center justify-center gap-1.5">
               <HugeiconsIcon
                 icon={Loading02Icon}
                 size={14}
-                className="inline mr-1.5 animate-spin"
+                className="animate-spin text-primary"
               />
               {uploadLabel}
             </p>
           )}
           {uploadProgress > 0 && (
-            <div className="h-1.5 w-full bg-neutral-100 dark:bg-neutral-800 rounded-full overflow-hidden">
+            <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
               <motion.div
                 initial={{ width: 0 }}
                 animate={{ width: `${uploadProgress}%` }}
                 transition={{ ease: "easeInOut", duration: 0.3 }}
-                className={`h-full ${
-                  uploadProgress === 100 ? "bg-emerald-500" : "bg-blue-500"
-                }`}
+                className="h-full bg-primary rounded-full"
               />
             </div>
           )}
         </div>
       )}
 
-      <div className="mt-8 flex gap-3 sticky bottom-0 bg-white dark:bg-neutral-900 pt-4 border-t border-neutral-100">
+      <div className="mt-8 flex items-center gap-3 pt-4 border-t border-border">
         <Button
+          type="button"
           variant="outline"
           onClick={onPrev}
-          className="flex-1 h-11 rounded-xl gap-2"
           disabled={isPending}
+          className="flex-1 h-11 min-h-[44px] rounded-xl border-border text-xs sm:text-sm font-medium gap-2 cursor-pointer"
         >
-          <HugeiconsIcon icon={ArrowLeft02Icon} size={16} /> Kembali
+          <HugeiconsIcon icon={ArrowLeft02Icon} size={16} />
+          Kembali
         </Button>
         <Button
+          type="button"
           onClick={handleSubmit}
           disabled={isPending}
-          className="flex-2 h-11 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold gap-2 shadow-lg shadow-emerald-500/25 disabled:opacity-70"
+          className="flex-2 h-11 min-h-[44px] rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold gap-2 shadow-xs cursor-pointer"
         >
           {isPending ? (
             <>
-              Mengirim...{" "}
+              Mengirim Pendaftaran…
               <HugeiconsIcon
                 icon={Loading02Icon}
-                size={18}
+                size={16}
                 className="animate-spin"
               />
             </>
           ) : (
             <>
-              Kirim Pendaftaran{" "}
-              <HugeiconsIcon icon={TickDouble02Icon} size={18} />
+              Kirim Pendaftaran
+              <HugeiconsIcon icon={TickDouble02Icon} size={16} />
             </>
           )}
         </Button>

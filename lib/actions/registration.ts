@@ -27,9 +27,9 @@ export interface AcademicData {
 
 export interface CommitmentData {
   motivation: string;
-  igRobotikUrl?: string | null;
-  igMrcUrl?: string | null;
-  ytUrl?: string | null;
+  igRobotikUrl: string;
+  igMrcUrl: string;
+  ytUrl: string;
 }
 
 export interface FinalData {
@@ -48,6 +48,31 @@ function extractEntryYearFromNim(nim: string): number {
   }
   const year = parseInt(nim.substring(0, 2), 10);
   return 2000 + year;
+}
+
+function isOwnedCommitmentProofUrl(
+  value: string,
+  userId: string,
+  proofType: "ig_robotik" | "ig_mrc" | "yt_robotik",
+): boolean {
+  try {
+    const url = new URL(value, "http://localhost");
+    const segments = decodeURIComponent(url.pathname)
+      .split("/")
+      .filter(Boolean);
+    const registrationsIndex = segments.indexOf("registrations");
+    const year = segments[registrationsIndex + 1];
+    const ownerId = segments[registrationsIndex + 2];
+    const filename = segments[registrationsIndex + 3];
+    return (
+      registrationsIndex >= 0 &&
+      /^\d{4}$/.test(year ?? "") &&
+      ownerId === userId &&
+      filename?.startsWith(`${proofType}_`) === true
+    );
+  } catch {
+    return false;
+  }
 }
 
 // ============================================================
@@ -124,6 +149,99 @@ export async function uploadCommitmentProofToR2(formData: FormData) {
       success: false,
       error: msg,
     };
+  }
+}
+
+// ============================================================
+// Upload Registration File (Step Berkas) to Cloudflare R2
+//
+// Menerima satu file per panggilan (pas_foto | ktm | payment_proof).
+// Kompresi WAJIB dilakukan di sisi client sebelum pemanggilan ini
+// agar payload tetap dalam batas aman Vercel Free Plan:
+//   · Vercel Serverless body cap  : 4.5 MB
+//   · Hard limit yang diberlakukan: 3.5 MB  (safety margin 1 MB)
+//   · Target kompresi client      : ≤ 1 MB untuk foto, ≤ 3.5 MB untuk PDF
+// ============================================================
+export async function uploadRegistrationFileToR2(formData: FormData) {
+  const { user, error: userError } = await getAuthUser();
+  if (userError || !user) {
+    return {
+      success: false,
+      error: "Sesi tidak ditemukan. Silakan login kembali.",
+    };
+  }
+
+  const file = formData.get("file") as File | null;
+  const fileType = formData.get("fileType") as string | null;
+
+  if (!file || !(file instanceof File) || file.size === 0) {
+    return { success: false, error: "File tidak ditemukan atau kosong." };
+  }
+
+  const ALLOWED_TYPES = ["pas_foto", "ktm", "payment_proof"] as const;
+  type RegistrationFileType = (typeof ALLOWED_TYPES)[number];
+
+  if (!fileType || !(ALLOWED_TYPES as readonly string[]).includes(fileType)) {
+    return {
+      success: false,
+      error:
+        "Jenis berkas tidak valid. Gunakan: pas_foto, ktm, atau payment_proof.",
+    };
+  }
+  const typedFileType = fileType as RegistrationFileType;
+
+  // Hard size limit — aman di bawah batas 4.5 MB Vercel Free Plan
+  const MAX_BYTES = 3.5 * 1024 * 1024;
+  if (file.size > MAX_BYTES) {
+    return {
+      success: false,
+      error: `File terlalu besar (${(file.size / 1024 / 1024).toFixed(1)} MB). Maksimum 3.5 MB. Kompresi terlebih dahulu di perangkat Anda.`,
+    };
+  }
+
+  // Validasi MIME type per kategori berkas
+  const ALLOWED_MIMES: Record<RegistrationFileType, string[]> = {
+    pas_foto: ["image/webp", "image/jpeg", "image/png"],
+    ktm: ["image/webp", "image/jpeg", "image/png"],
+    payment_proof: ["image/webp", "image/jpeg", "image/png", "application/pdf"],
+  };
+  if (!ALLOWED_MIMES[typedFileType].includes(file.type)) {
+    return {
+      success: false,
+      error: `Format file tidak diizinkan untuk ${typedFileType}. Gunakan: ${ALLOWED_MIMES[typedFileType].join(", ")}.`,
+    };
+  }
+
+  try {
+    const year = new Date().getFullYear().toString();
+    const userId = user.id;
+    const timestamp = Date.now();
+
+    const extMap: Record<string, string> = {
+      "image/webp": "webp",
+      "image/jpeg": "jpg",
+      "image/png": "png",
+      "application/pdf": "pdf",
+    };
+    const ext = extMap[file.type] ?? file.name.split(".").pop() ?? "bin";
+
+    // Struktur key: registrations/{year}/{userId}/{type}_{timestamp}.{ext}
+    const key = `registrations/${year}/${userId}/${typedFileType}_${timestamp}.${ext}`;
+
+    const fileBuffer = Buffer.from(await file.arrayBuffer());
+
+    const publicUrl = await uploadToR2({
+      fileBuffer,
+      key,
+      contentType: file.type,
+    });
+
+    return { success: true, url: publicUrl };
+  } catch (err) {
+    console.error(`[R2] Error uploading ${fileType}:`, err);
+    const msg =
+      err instanceof Error ? err.message : "Gagal mengunggah file ke R2.";
+    return { success: false, error: msg };
   }
 }
 
@@ -271,6 +389,10 @@ export async function saveAcademicData(data: AcademicData) {
 // URL sudah diupload ke Cloudflare R2 sebelum memanggil ini.
 // ============================================================
 export async function saveCommitmentData(data: CommitmentData) {
+  if (!data.motivation.trim()) {
+    return { success: false, error: "Motivasi wajib diisi." };
+  }
+
   const { supabase, user, error: userError } = await getAuthUser();
 
   if (userError || !user) {
@@ -280,14 +402,25 @@ export async function saveCommitmentData(data: CommitmentData) {
     };
   }
 
+  if (
+    !isOwnedCommitmentProofUrl(data.igRobotikUrl, user.id, "ig_robotik") ||
+    !isOwnedCommitmentProofUrl(data.igMrcUrl, user.id, "ig_mrc") ||
+    !isOwnedCommitmentProofUrl(data.ytUrl, user.id, "yt_robotik")
+  ) {
+    return {
+      success: false,
+      error: "Bukti dukungan media sosial wajib diunggah lengkap.",
+    };
+  }
+
   try {
     const { error: updateError } = await supabase
       .from("registrations")
       .update({
         motivation: data.motivation,
-        proof_follow_robotik: data.igRobotikUrl ?? null,
-        proof_follow_mrc: data.igMrcUrl ?? null,
-        proof_sub_yt: data.ytUrl ?? null,
+        proof_follow_robotik: data.igRobotikUrl,
+        proof_follow_mrc: data.igMrcUrl,
+        proof_sub_yt: data.ytUrl,
         updated_at: new Date().toISOString(),
       })
       .eq("profile_id", user.id);

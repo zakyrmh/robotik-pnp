@@ -66,27 +66,26 @@ export function ImageCropperModal({
       }}
     >
       <DialogContent
-        className="sm:max-w-lg rounded-none border border-zinc-200 dark:border-zinc-800 p-0 overflow-hidden bg-white dark:bg-zinc-950 shadow-2xl"
+        className="sm:max-w-lg rounded-2xl border border-border p-0 overflow-hidden bg-card shadow-2xl"
         onPointerDownOutside={(e) => e.preventDefault()}
         onInteractOutside={(e) => e.preventDefault()}
       >
-        {/* Header (Deep Navy style) */}
-        <div className="bg-canvas-dark p-4 border-b border-tech-navy">
-          <DialogTitle className="text-sm font-semibold text-white uppercase tracking-wider flex items-center gap-2 font-mono">
-            <HugeiconsIcon
-              icon={Image01Icon}
-              size={16}
-              className="text-cyber-blue"
-            />
-            [Sesuaikan Pas Foto]
+        {/* Header */}
+        <div className="p-5 border-b border-border bg-card">
+          <DialogTitle className="text-base font-bold font-heading text-foreground flex items-center gap-2">
+            <div className="p-1 rounded-md bg-primary-soft text-primary">
+              <HugeiconsIcon icon={Image01Icon} size={16} />
+            </div>
+            Sesuaikan Pas Foto (Crop 1:1)
           </DialogTitle>
-          <DialogDescription className="mt-1 text-[10px] text-zinc-400 font-mono uppercase">
-            Geser & perbesar gambar. Rasio dikunci di 1:1.
+          <DialogDescription className="mt-1 text-xs text-muted-foreground">
+            Geser posisi dan perbesar foto agar wajah terlihat simetris di
+            tengah.
           </DialogDescription>
         </div>
 
         {/* Cropper Area */}
-        <div className="relative w-full h-[50vh] min-h-[300px] max-h-[400px] bg-zinc-950">
+        <div className="relative w-full h-[50vh] min-h-[280px] max-h-[380px] bg-black/90">
           {imageSrc && (
             <Cropper
               image={imageSrc}
@@ -103,9 +102,9 @@ export function ImageCropperModal({
         </div>
 
         {/* Zoom Slider */}
-        <div className="px-6 py-4 flex items-center gap-4 bg-zinc-50 dark:bg-zinc-900/50 border-t border-zinc-100 dark:border-zinc-900">
-          <span className="text-xs font-mono text-zinc-500 font-bold">
-            [ZOOM -]
+        <div className="px-6 py-3.5 flex items-center gap-3 bg-secondary/60 border-t border-border">
+          <span className="text-xs font-mono text-muted-foreground font-semibold">
+            Zoom
           </span>
           <input
             type="range"
@@ -113,32 +112,34 @@ export function ImageCropperModal({
             min={1}
             max={3}
             step={0.1}
-            aria-label="Zoom"
+            aria-label="Zoom foto"
             onChange={(e) => setZoom(Number(e.target.value))}
-            className="w-full h-1 bg-zinc-200 dark:bg-zinc-800 appearance-none cursor-pointer accent-tech-navy rounded-none"
+            className="w-full h-1.5 bg-muted rounded-full appearance-none cursor-pointer accent-primary"
           />
-          <span className="text-xs font-mono text-zinc-500 font-bold">
-            [ZOOM +]
+          <span className="text-xs font-mono text-muted-foreground font-semibold min-w-8 text-right">
+            {zoom.toFixed(1)}x
           </span>
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 flex items-center justify-end gap-3 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900">
+        <div className="p-4 flex items-center justify-end gap-2.5 border-t border-border bg-card">
           <Button
+            type="button"
             variant="outline"
             onClick={onClose}
             disabled={isProcessing}
-            className="h-9 px-5 rounded-none font-mono text-xs uppercase tracking-wider"
+            className="h-10 px-4 rounded-xl text-xs font-medium border-border"
           >
             Batal
           </Button>
 
           <Button
+            type="button"
             onClick={handleSave}
             disabled={isProcessing}
-            className="h-9 px-6 rounded-none bg-tech-navy hover:bg-cyber-blue text-white font-mono text-xs uppercase tracking-wider shadow-none"
+            className="h-10 px-5 rounded-xl bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold shadow-xs"
           >
-            {isProcessing ? "Memproses..." : "Simpan Foto"}
+            {isProcessing ? "Memproses..." : "Simpan Pas Foto"}
           </Button>
         </div>
       </DialogContent>

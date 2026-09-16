@@ -11,53 +11,53 @@ export function RejectedCard() {
   return (
     <div className="flex min-h-[60vh] items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-md space-y-6">
-        <Card className="border border-border dark:border-white/10 bg-card text-card-foreground text-center rounded-xl shadow-sm dark:shadow-none relative overflow-hidden transition-colors duration-200">
-          {/* PNP Accent Line at Top */}
-          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-dongker-surface via-pnp-orange to-destructive" />
+        <Card className="border border-border bg-card text-card-foreground text-center rounded-2xl shadow-xs relative overflow-hidden transition-colors duration-200">
+          {/* Top Decorative Stripe */}
+          <div className="absolute top-0 left-0 right-0 h-1 bg-destructive" />
 
-          <CardHeader className="pt-8 pb-4">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10 text-destructive border border-destructive/30 shadow-sm">
-              <HugeiconsIcon icon={Cancel01Icon} size={32} />
+          <CardHeader className="pt-8 pb-3">
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10 text-destructive border border-destructive/20 shadow-xs">
+              <HugeiconsIcon icon={Cancel01Icon} size={28} />
             </div>
 
-            <span className="text-[10px] font-mono font-semibold uppercase tracking-widest text-destructive block mb-1">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-destructive block mb-1">
               STATUS: REJECTED
             </span>
 
-            <CardTitle className="text-xl sm:text-2xl font-bold uppercase tracking-tight text-foreground font-display">
+            <CardTitle className="text-xl sm:text-2xl font-bold uppercase tracking-tight text-foreground font-heading">
               Pendaftaran Ditolak
             </CardTitle>
           </CardHeader>
 
-          <CardContent className="space-y-5 pb-8 px-5 sm:px-6">
-            <p className="text-xs sm:text-sm text-muted-foreground font-sans leading-relaxed">
-              Maaf, pendaftaran kamu sebagai Calon Anggota UKM Robotik PNP tidak
-              dapat disetujui saat ini.
+          <CardContent className="space-y-4 pb-8 px-5 sm:px-6">
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              Mohon maaf, pendaftaran Anda sebagai Calon Anggota UKM Robotik PNP
+              belum dapat disetujui pada periode ini.
             </p>
 
-            <div className="flex items-center justify-center gap-3 font-medium text-destructive bg-destructive/10 p-3.5 rounded-lg border border-destructive/20 text-xs sm:text-sm">
+            <div className="flex items-center justify-center gap-3 font-medium text-destructive bg-destructive/10 p-3.5 rounded-xl border border-destructive/20 text-xs sm:text-sm">
               <HugeiconsIcon
                 icon={InformationCircleIcon}
                 size={18}
                 className="shrink-0 text-destructive"
               />
-              <span className="text-left font-sans">
-                Silakan hubungi pengurus untuk informasi lebih lanjut.
+              <span className="text-left">
+                Silakan hubungi pengurus divisi untuk informasi lebih lanjut.
               </span>
             </div>
           </CardContent>
         </Card>
 
-        <div className="text-center font-sans">
-          <p className="text-xs text-muted-foreground">
+        <div className="text-center text-xs text-muted-foreground">
+          <p>
             Ada pertanyaan?{" "}
             <a
               href="https://instagram.com/ukmrobotikpnp"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-pnp-orange hover:underline font-mono text-micro font-semibold uppercase tracking-wider block sm:inline mt-1 sm:mt-0"
+              className="text-primary hover:underline font-medium inline-block"
             >
-              Hubungi Instagram Kami
+              Hubungi Instagram Kami ↗
             </a>
           </p>
         </div>

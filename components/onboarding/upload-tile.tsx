@@ -3,7 +3,9 @@ import {
   GoogleDocIcon,
   Delete02Icon,
   Loading02Icon,
+  Upload02Icon,
 } from "@hugeicons/core-free-icons";
+import { cn } from "@/lib/utils";
 
 interface UploadTileProps {
   icon: IconSvgElement;
@@ -42,15 +44,15 @@ export function UploadTile({
   return (
     <div className="relative">
       <label
-        className={`group relative flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed px-6 py-10 transition-all duration-200 
-          ${
-            file
-              ? "border-emerald-500 bg-emerald-50/20 dark:bg-emerald-900/10"
-              : error
-                ? "border-red-500 bg-red-50/20 dark:bg-red-900/10"
-                : "border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900 cursor-pointer hover:border-blue-500 hover:bg-blue-50/40 dark:hover:bg-blue-950/30"
-          }
-        `}
+        className={cn(
+          "group relative flex flex-col items-center justify-center gap-2.5 rounded-2xl border-2 border-dashed px-4 py-8 sm:py-9 transition-all duration-200 select-none",
+          file
+            ? "border-emerald-500/80 bg-emerald-50/30 dark:bg-emerald-950/20"
+            : error
+              ? "border-destructive/80 bg-destructive/5"
+              : "border-border bg-secondary/40 hover:border-primary/60 hover:bg-primary-soft/30 dark:hover:bg-primary-soft/10 cursor-pointer",
+          disabled ? "opacity-60 pointer-events-none cursor-not-allowed" : "",
+        )}
       >
         {!file && (
           <input
@@ -63,24 +65,24 @@ export function UploadTile({
         )}
 
         {isCompressing ? (
-          <div className="flex flex-col items-center gap-3">
-            <span className="flex h-12 w-12 items-center justify-center rounded-full border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/50">
+          <div className="flex flex-col items-center gap-2.5">
+            <span className="flex h-11 w-11 items-center justify-center rounded-full border border-primary/20 bg-primary-soft text-primary">
               <HugeiconsIcon
                 icon={Loading02Icon}
-                size={22}
-                className="text-blue-500 animate-spin"
+                size={20}
+                className="animate-spin"
               />
             </span>
             <div className="text-center">
-              <p className="text-sm font-medium text-blue-700 dark:text-blue-400">
-                Kompresi...
+              <p className="text-xs font-semibold text-primary">
+                Mengompresi berkas...
               </p>
             </div>
           </div>
         ) : file ? (
-          <div className="flex flex-col items-center gap-3 w-full">
+          <div className="flex flex-col items-center gap-2.5 w-full">
             {file.type.startsWith("image/") ? (
-              <div className="relative w-16 h-16 rounded-xl overflow-hidden border border-neutral-200 dark:border-neutral-700 shadow-sm">
+              <div className="relative w-16 h-16 rounded-xl overflow-hidden border border-border shadow-xs bg-background">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={URL.createObjectURL(file)}
@@ -93,24 +95,26 @@ export function UploadTile({
                 <HugeiconsIcon
                   icon={GoogleDocIcon}
                   size={22}
-                  className="text-emerald-500"
+                  className="text-emerald-600 dark:text-emerald-400"
                 />
               </span>
             )}
 
-            <div className="text-center w-full px-2">
-              <p className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate w-full">
+            <div className="text-center w-full px-2 max-w-xs">
+              <p className="text-xs font-semibold text-foreground truncate w-full">
                 {file.name}
               </p>
-              <p className="mt-0.5 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+              <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono font-medium">
                 {(file.size / (1024 * 1024)).toFixed(2)} MB
               </p>
             </div>
 
             <button
+              type="button"
               onClick={handleRemove}
               disabled={disabled}
-              className="absolute top-3 right-3 p-1.5 rounded-full bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-neutral-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+              title="Hapus file"
+              className="absolute top-3 right-3 p-1.5 rounded-full bg-card border border-border text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
             >
               <HugeiconsIcon icon={Delete02Icon} size={14} />
             </button>
@@ -118,42 +122,38 @@ export function UploadTile({
         ) : (
           <>
             <span
-              className={`flex h-12 w-12 items-center justify-center rounded-full border bg-white dark:bg-neutral-800 transition-all
-              ${
+              className={cn(
+                "flex h-11 w-11 items-center justify-center rounded-full border transition-all",
                 error
-                  ? "border-red-200 group-hover:border-red-400 group-hover:bg-red-50 dark:group-hover:bg-red-900/50"
-                  : "border-neutral-200 dark:border-neutral-700 group-hover:border-blue-400 group-hover:bg-blue-50 dark:group-hover:bg-blue-900"
-              }
-            `}
+                  ? "border-destructive/30 bg-destructive/10 text-destructive"
+                  : "border-border bg-card group-hover:border-primary/40 group-hover:bg-primary-soft text-muted-foreground group-hover:text-primary",
+              )}
             >
-              <HugeiconsIcon
-                icon={icon}
-                size={22}
-                className={`${error ? "text-red-400 group-hover:text-red-500" : "text-neutral-400 group-hover:text-blue-500"} transition-colors`}
-              />
+              <HugeiconsIcon icon={icon} size={20} />
             </span>
 
-            <div className="text-center">
+            <div className="text-center px-2">
               <p
-                className={`text-sm font-medium ${error ? "text-red-600 dark:text-red-400" : "text-neutral-700 dark:text-neutral-300"}`}
+                className={cn(
+                  "text-xs sm:text-sm font-semibold",
+                  error ? "text-destructive" : "text-foreground",
+                )}
               >
                 {label}
               </p>
-              <p
-                className={`mt-0.5 text-xs ${error ? "text-red-500/70 dark:text-red-400/70" : "text-neutral-400 dark:text-neutral-500"}`}
-              >
-                {hint}
-              </p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">{hint}</p>
             </div>
 
-            <span className="absolute top-3 right-3 text-[10px] font-semibold uppercase tracking-wider text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity">
-              Pilih file
+            <span className="inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-primary opacity-0 group-hover:opacity-100 transition-opacity">
+              <HugeiconsIcon icon={Upload02Icon} size={12} />
+              Pilih Berkas
             </span>
           </>
         )}
       </label>
+
       {error && !file && (
-        <p className="mt-2 text-xs text-red-500 font-medium text-center">
+        <p className="mt-1.5 text-xs text-destructive font-medium text-center">
           {error}
         </p>
       )}

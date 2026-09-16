@@ -78,6 +78,7 @@ export async function getCaangList() {
         payment_proof_url,
         payment_method,
         status,
+        revision_notes,
         deleted_at,
         delete_reason,
         profiles!inner (
@@ -113,6 +114,91 @@ export async function getCaangList() {
     return { success: true, data };
   } catch (err) {
     console.error("Unexpected error fetching caang list:", err);
+    return { success: false, error: "Terjadi kesalahan tidak terduga." };
+  }
+}
+
+// Quick update caang registration status by Super Admin / Admin OR
+export async function updateCaangStatus(
+  profileId: string,
+  status: "process" | "pending" | "verified" | "rejected" | "revision",
+  revisionNotes?: string | null,
+) {
+  const authCheck = await verifyAdminAccess();
+  if (!authCheck.authorized) {
+    return { success: false, error: authCheck.error };
+  }
+
+  const supabaseAdmin = createSupabaseClient(
+    (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL)!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  );
+
+  try {
+    // Attempt atomic update via Database RPC function update_caang_registration_status
+    const { data: rpcData, error: rpcError } = await supabaseAdmin.rpc(
+      "update_caang_registration_status",
+      {
+        p_profile_id: profileId,
+        p_status: status,
+        p_revision_notes: status === "revision" ? revisionNotes || null : null,
+      },
+    );
+
+    if (rpcError) {
+      console.warn(
+        "RPC update_caang_registration_status fell back to direct update:",
+        rpcError.message,
+      );
+
+      // Fallback: direct update on registrations + profiles
+      const updatePayload: {
+        status: string;
+        revision_notes?: string | null;
+        updated_at: string;
+      } = {
+        status,
+        revision_notes: status === "revision" ? revisionNotes || null : null,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error: regError } = await supabaseAdmin
+        .from("registrations")
+        .update(updatePayload)
+        .eq("profile_id", profileId);
+
+      if (regError) {
+        console.error("Error updating caang status (fallback):", regError);
+        return {
+          success: false,
+          error: "Gagal memperbarui status registrasi: " + regError.message,
+        };
+      }
+
+      // Update profiles.is_onboarded atomically
+      const { error: profileError } = await supabaseAdmin
+        .from("profiles")
+        .update({
+          is_onboarded: status === "verified",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", profileId);
+
+      if (profileError) {
+        console.error(
+          "Error updating profile is_onboarded (fallback):",
+          profileError,
+        );
+      }
+    }
+
+    revalidatePath("/manajemen-caang");
+    return {
+      success: true,
+      message: `Status calon anggota berhasil diubah menjadi ${status.toUpperCase()}.`,
+    };
+  } catch (err) {
+    console.error("Unexpected error updating caang status:", err);
     return { success: false, error: "Terjadi kesalahan tidak terduga." };
   }
 }
@@ -188,6 +274,7 @@ export async function updateCaang(
     currentClass: string;
     entryYear: number;
     status: string;
+    revisionNotes?: string | null;
   },
 ) {
   const authCheck = await verifyAdminAccess();
@@ -201,7 +288,7 @@ export async function updateCaang(
   );
 
   try {
-    // Update registrations table with all 12 registration fields
+    // Update registrations table with all registration fields
     const { error: regError } = await supabaseAdmin
       .from("registrations")
       .update({
@@ -217,6 +304,8 @@ export async function updateCaang(
         current_class: data.currentClass || null,
         entry_year: data.entryYear,
         status: data.status,
+        revision_notes:
+          data.revisionNotes !== undefined ? data.revisionNotes : null,
         updated_at: new Date().toISOString(),
       })
       .eq("profile_id", profileId);
@@ -228,6 +317,15 @@ export async function updateCaang(
         error: "Gagal memperbarui data pendaftaran Caang.",
       };
     }
+
+    // Keep profiles.is_onboarded in sync with status
+    await supabaseAdmin
+      .from("profiles")
+      .update({
+        is_onboarded: data.status === "verified",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", profileId);
 
     revalidatePath("/manajemen-caang");
     return { success: true, message: "Data Caang berhasil diperbarui." };

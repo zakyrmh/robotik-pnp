@@ -10,6 +10,9 @@ import {
   Edit02Icon,
   Delete01Icon,
   UserGroupIcon,
+  CheckmarkCircle02Icon,
+  ArrowDown01Icon,
+  AlertCircleIcon,
 } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,11 +25,24 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Label } from "@/components/ui/label";
-import { deleteCaang, updateCaang } from "@/lib/actions/caang";
+import {
+  deleteCaang,
+  updateCaang,
+  updateCaangStatus,
+} from "@/lib/actions/caang";
+import { cn } from "@/lib/utils";
 import Image from "next/image";
 
-interface CaangItem {
+export interface CaangItem {
   profileId: string;
   email: string;
   nim: string;
@@ -53,6 +69,7 @@ interface CaangItem {
   paymentProofUrl: string;
   paymentMethod: string;
   status: string;
+  revisionNotes?: string | null;
   studyProgramId: string;
   studyProgramName: string;
   majorName: string;
@@ -63,6 +80,111 @@ interface CaangItem {
 interface CaangClientProps {
   initialCaang: CaangItem[];
 }
+
+type RegistrationStatusType =
+  | "process"
+  | "pending"
+  | "verified"
+  | "rejected"
+  | "revision";
+
+interface StatusConfig {
+  label: string;
+  short: string;
+  badgeClass: string;
+  dotClass: string;
+  bgSoft: string;
+  textColor: string;
+}
+
+const STATUS_CONFIG: Record<string, StatusConfig> = {
+  verified: {
+    label: "Terverifikasi / Diterima",
+    short: "Diterima",
+    badgeClass:
+      "bg-emerald-50 text-emerald-700 border-emerald-200/80 hover:bg-emerald-100/70 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/80 dark:hover:bg-emerald-900/50",
+    dotClass: "bg-emerald-500",
+    bgSoft: "bg-emerald-500",
+    textColor: "text-emerald-700 dark:text-emerald-300",
+  },
+  pending: {
+    label: "Menunggu Verifikasi",
+    short: "Pending",
+    badgeClass:
+      "bg-amber-50 text-amber-700 border-amber-200/80 hover:bg-amber-100/70 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/80 dark:hover:bg-amber-900/50",
+    dotClass: "bg-amber-500",
+    bgSoft: "bg-amber-500",
+    textColor: "text-amber-700 dark:text-amber-300",
+  },
+  revision: {
+    label: "Perlu Revisi Berkas",
+    short: "Revisi",
+    badgeClass:
+      "bg-sky-50 text-sky-700 border-sky-200/80 hover:bg-sky-100/70 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800/80 dark:hover:bg-sky-900/50",
+    dotClass: "bg-sky-500",
+    bgSoft: "bg-sky-500",
+    textColor: "text-sky-700 dark:text-sky-300",
+  },
+  process: {
+    label: "Sedang Diproses",
+    short: "Proses",
+    badgeClass:
+      "bg-slate-100 text-slate-700 border-slate-200/80 hover:bg-slate-200/70 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 dark:hover:bg-slate-750",
+    dotClass: "bg-slate-500",
+    bgSoft: "bg-slate-500",
+    textColor: "text-slate-700 dark:text-slate-300",
+  },
+  rejected: {
+    label: "Ditolak",
+    short: "Ditolak",
+    badgeClass:
+      "bg-rose-50 text-rose-700 border-rose-200/80 hover:bg-rose-100/70 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/80 dark:hover:bg-rose-900/50",
+    dotClass: "bg-rose-500",
+    bgSoft: "bg-rose-500",
+    textColor: "text-rose-700 dark:text-rose-300",
+  },
+};
+
+const STATUS_OPTIONS: {
+  key: RegistrationStatusType;
+  label: string;
+  desc: string;
+}[] = [
+  {
+    key: "verified",
+    label: "Terverifikasi (Diterima)",
+    desc: "Setujui pendaftaran dan aktifkan akses akun",
+  },
+  {
+    key: "revision",
+    label: "Revisi Data / Berkas",
+    desc: "Minta calon anggota memperbaiki berkas pendaftaran",
+  },
+  {
+    key: "pending",
+    label: "Pending / Menunggu",
+    desc: "Tandai pendaftaran dalam antrean pemeriksaan",
+  },
+  {
+    key: "process",
+    label: "Dalam Proses",
+    desc: "Status default pendaftaran baru",
+  },
+  {
+    key: "rejected",
+    label: "Tolak Pendaftaran",
+    desc: "Tolak calon anggota dari penerimaan",
+  },
+];
+
+const QUICK_REVISION_PRESETS = [
+  "Foto KTM tidak jelas atau buram. Mohon unggah scan/foto asli yang terbaca jelas.",
+  "Bukti pembayaran pendaftaran tidak valid atau nominal tidak sesuai.",
+  "Bukti follow Instagram UKM Robotik PNP & Minangkabau Robot Contest belum lengkap.",
+  "Bukti subscribe channel YouTube UKM Robotik PNP belum diunggah.",
+  "Data program studi atau kelas tidak sesuai dengan nomor induk mahasiswa (NIM).",
+  "Pasfoto formal belum memenuhi kriteria (wajah harus terlihat jelas menghadap depan).",
+];
 
 function isValidImageUrl(url: string | null | undefined): url is string {
   if (!url || typeof url !== "string") return false;
@@ -92,9 +214,10 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
     let female = 0;
     const majors: Record<string, number> = {};
     const statusCounts: Record<string, number> = {
+      verified: 0,
+      revision: 0,
       process: 0,
       pending: 0,
-      verified: 0,
       rejected: 0,
     };
 
@@ -142,6 +265,12 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
   const [deleteReasonText, setDeleteReasonText] = useState("");
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
+  // Status Change / Revision Modal state
+  const [revisionModalCaang, setRevisionModalCaang] =
+    useState<CaangItem | null>(null);
+  const [revisionNotesInput, setRevisionNotesInput] = useState("");
+  const [isSubmittingStatus, setIsSubmittingStatus] = useState(false);
+
   // Edit form state
   const [editForm, setEditForm] = useState({
     fullName: "",
@@ -155,7 +284,8 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
     highSchool: "",
     currentClass: "",
     entryYear: 0,
-    status: "",
+    status: "process",
+    revisionNotes: "",
   });
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
 
@@ -171,10 +301,13 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
   // Filtered Caang list
   const filteredCaang = useMemo(() => {
     return initialCaang.filter((item) => {
+      const q = search.toLowerCase();
       const matchSearch =
-        item.fullName.toLowerCase().includes(search.toLowerCase()) ||
-        item.nim.toLowerCase().includes(search.toLowerCase()) ||
-        item.email.toLowerCase().includes(search.toLowerCase());
+        !q ||
+        item.fullName.toLowerCase().includes(q) ||
+        item.nim.toLowerCase().includes(q) ||
+        item.email.toLowerCase().includes(q) ||
+        item.phoneNumber.toLowerCase().includes(q);
 
       const matchMajor =
         selectedMajor === "all" || item.majorName === selectedMajor;
@@ -205,6 +338,86 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
   const isAllSelected =
     filteredCaang.length > 0 && selectedIds.length === filteredCaang.length;
 
+  // Quick Status Change handler
+  const handleQuickStatusChange = async (
+    item: CaangItem,
+    newStatus: RegistrationStatusType,
+  ) => {
+    if (item.status === newStatus) return;
+
+    // If changing to 'revision', open modal for revision notes input
+    if (newStatus === "revision") {
+      setRevisionModalCaang(item);
+      setRevisionNotesInput(item.revisionNotes || "");
+      return;
+    }
+
+    setIsSubmittingStatus(true);
+    const toastId = toast.loading(
+      `Mengubah status menjadi ${newStatus.toUpperCase()}...`,
+    );
+
+    try {
+      const res = await updateCaangStatus(item.profileId, newStatus);
+      toast.dismiss(toastId);
+
+      if (res.success) {
+        toast.success(res.message);
+        router.refresh();
+      } else {
+        toast.error(res.error || "Gagal mengubah status.");
+      }
+    } catch (err: unknown) {
+      toast.dismiss(toastId);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      toast.error("Terjadi kesalahan: " + errMsg);
+    } finally {
+      setIsSubmittingStatus(false);
+    }
+  };
+
+  // Submit Revision status with notes
+  const handleRevisionSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!revisionModalCaang) return;
+
+    if (!revisionNotesInput.trim()) {
+      toast.error(
+        "Catatan revisi wajib diisi agar calon anggota mengetahui perbaikan yang diperlukan.",
+      );
+      return;
+    }
+
+    setIsSubmittingStatus(true);
+    const toastId = toast.loading("Menyimpan status revisi & catatan...");
+
+    try {
+      const res = await updateCaangStatus(
+        revisionModalCaang.profileId,
+        "revision",
+        revisionNotesInput.trim(),
+      );
+      toast.dismiss(toastId);
+
+      if (res.success) {
+        toast.success(
+          "Status berhasil diubah menjadi REVISI beserta catatan perbaikan.",
+        );
+        setRevisionModalCaang(null);
+        setRevisionNotesInput("");
+        router.refresh();
+      } else {
+        toast.error(res.error || "Gagal memperbarui status revisi.");
+      }
+    } catch (err: unknown) {
+      toast.dismiss(toastId);
+      const errMsg = err instanceof Error ? err.message : String(err);
+      toast.error("Terjadi kesalahan: " + errMsg);
+    } finally {
+      setIsSubmittingStatus(false);
+    }
+  };
+
   // Actions
   const openEditModal = (item: CaangItem) => {
     setEditingCaang(item);
@@ -221,6 +434,7 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
       currentClass: item.currentClass,
       entryYear: item.entryYear || 0,
       status: item.status,
+      revisionNotes: item.revisionNotes || "",
     });
   };
 
@@ -248,7 +462,11 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
     const toastId = toast.loading("Memperbarui data Caang...");
 
     try {
-      const res = await updateCaang(editingCaang.profileId, editForm);
+      const res = await updateCaang(editingCaang.profileId, {
+        ...editForm,
+        revisionNotes:
+          editForm.status === "revision" ? editForm.revisionNotes : null,
+      });
       toast.dismiss(toastId);
 
       if (res.success) {
@@ -339,132 +557,212 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
     router.refresh();
   };
 
-  // Helper status badge color
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "verified":
-        return (
-          <Badge className="bg-[#10b981]/15 text-[#10b981] border border-[#10b981]/30 font-mono text-[9px] rounded-none px-2 uppercase py-0.5">
-            VERIFIED
-          </Badge>
-        );
-      case "rejected":
-        return (
-          <Badge className="bg-[#e22718]/15 text-[#e22718] border border-[#e22718]/30 font-mono text-[9px] rounded-none px-2 uppercase py-0.5 shadow-[0_0_8px_rgba(226,39,24,0.1)]">
-            REJECTED
-          </Badge>
-        );
-      case "pending":
-        return (
-          <Badge className="bg-amber-500/15 text-amber-500 border border-amber-500/30 font-mono text-[9px] rounded-none px-2 uppercase py-0.5">
-            PENDING
-          </Badge>
-        );
-      default:
-        return (
-          <Badge className="bg-zinc-500/15 text-zinc-400 border border-zinc-500/30 font-mono text-[9px] rounded-none px-2 uppercase py-0.5">
-            PROCESS
-          </Badge>
-        );
-    }
+  // Status Selector Component for Table and Mobile Cards
+  const renderStatusDropdown = (item: CaangItem) => {
+    const statusCfg = STATUS_CONFIG[item.status] || STATUS_CONFIG.process;
+
+    return (
+      <div className="inline-flex items-center gap-1.5">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              disabled={isSubmittingStatus}
+              className={cn(
+                "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-150 cursor-pointer shadow-2xs hover:shadow-xs active:scale-[0.98] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-primary/40",
+                statusCfg.badgeClass,
+              )}
+              title="Klik untuk mengubah status registrasi calon anggota"
+            >
+              <span
+                className={cn(
+                  "w-2 h-2 rounded-full shrink-0",
+                  statusCfg.dotClass,
+                )}
+              />
+              <span className="font-semibold">{statusCfg.short}</span>
+              <HugeiconsIcon
+                icon={ArrowDown01Icon}
+                size={12}
+                className="opacity-70 ml-0.5 shrink-0"
+              />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="start"
+            sideOffset={6}
+            className="w-64 p-1.5 rounded-xl border border-border bg-popover shadow-lg"
+          >
+            <DropdownMenuLabel className="px-2.5 py-1 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+              Ubah Status Pendaftaran
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator className="my-1" />
+            {STATUS_OPTIONS.map((opt) => {
+              const cfg = STATUS_CONFIG[opt.key];
+              const isCurrent = item.status === opt.key;
+              return (
+                <DropdownMenuItem
+                  key={opt.key}
+                  onClick={() => handleQuickStatusChange(item, opt.key)}
+                  className={cn(
+                    "flex flex-col items-start px-2.5 py-2 rounded-lg cursor-pointer transition-colors text-left",
+                    isCurrent
+                      ? "bg-secondary text-foreground font-semibold"
+                      : "hover:bg-muted text-foreground",
+                  )}
+                >
+                  <div className="flex items-center justify-between w-full">
+                    <span className="flex items-center gap-2 text-xs font-medium">
+                      <span
+                        className={cn("w-2 h-2 rounded-full", cfg.dotClass)}
+                      />
+                      <span>{opt.label}</span>
+                    </span>
+                    {isCurrent && (
+                      <HugeiconsIcon
+                        icon={CheckmarkCircle02Icon}
+                        size={14}
+                        className="text-primary"
+                      />
+                    )}
+                  </div>
+                  <span className="text-[10px] text-muted-foreground mt-0.5 pl-4">
+                    {opt.desc}
+                  </span>
+                </DropdownMenuItem>
+              );
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* Small warning badge if candidate is in revision */}
+        {item.status === "revision" && item.revisionNotes && (
+          <button
+            type="button"
+            onClick={() => {
+              setRevisionModalCaang(item);
+              setRevisionNotesInput(item.revisionNotes || "");
+            }}
+            title={`Catatan revisi: ${item.revisionNotes}`}
+            className="p-1 rounded-full text-sky-600 hover:text-sky-800 hover:bg-sky-100 dark:text-sky-400 dark:hover:bg-sky-950/60 transition-colors cursor-pointer"
+          >
+            <HugeiconsIcon icon={AlertCircleIcon} size={15} />
+          </button>
+        )}
+      </div>
+    );
   };
 
   return (
-    <div className="space-y-6 w-full max-w-7xl mx-auto px-1 lg:px-4">
+    <div className="space-y-6 w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-4">
       {/* Header Banner */}
-      <div className="relative border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-6 rounded-none shadow-sm overflow-hidden">
-        {/* Tricolor Tech Stripe at Top */}
-        <div className="absolute top-0 left-0 right-0 h-[3px] bg-linear-to-r from-[#0066b1] via-[#1c69d4] to-[#e22718]" />
+      <div className="relative border border-border bg-card rounded-2xl p-6 sm:p-7 shadow-xs overflow-hidden">
+        {/* Subtle Decorative Gradient Header Stripe */}
+        <div className="absolute top-0 left-0 right-0 h-1 bg-linear-to-r from-primary via-primary-hover to-accent-strong" />
 
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h1 className="text-xl font-bold uppercase tracking-widest text-zinc-900 dark:text-zinc-50 font-sans flex items-center gap-2">
-              <HugeiconsIcon
-                icon={UserGroupIcon}
-                size={22}
-                className="text-[#1c69d4] dark:text-[#0066b1]"
-              />
-              Manajemen Calon Anggota (Caang)
-            </h1>
-            <p className="text-xs font-mono uppercase tracking-wider text-zinc-500 mt-1">
-              Data Penerimaan Anggota Baru UKM Robotik Politeknik Negeri Padang
-            </p>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-primary-soft text-primary border border-primary/10">
+                <HugeiconsIcon icon={UserGroupIcon} size={22} />
+              </div>
+              <div>
+                <h1 className="text-xl sm:text-2xl font-heading font-bold text-foreground tracking-tight">
+                  Manajemen Calon Anggota (Caang)
+                </h1>
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  Kelola verifikasi berkas, status penerimaan, dan data
+                  pendaftaran anggota baru UKM Robotik PNP.
+                </p>
+              </div>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-end">
             {selectedIds.length > 0 && (
               <Button
                 variant="destructive"
                 onClick={handleBulkDelete}
                 disabled={isBulkDeleting}
-                className="rounded-none border border-[#e22718] font-mono text-xs uppercase tracking-wider px-4 py-2 hover:bg-[#e22718]/10 transition-colors h-9"
+                className="rounded-lg text-xs font-medium px-4 h-10 shadow-xs"
               >
-                <HugeiconsIcon icon={Delete01Icon} size={16} className="mr-2" />
+                <HugeiconsIcon
+                  icon={Delete01Icon}
+                  size={16}
+                  className="mr-1.5"
+                />
                 Hapus Terpilih ({selectedIds.length})
               </Button>
             )}
 
-            <Badge className="bg-zinc-100 dark:bg-zinc-900 text-zinc-800 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-800 px-3 py-1.5 rounded-none font-mono text-[10px] uppercase tracking-wider">
-              TOTAL CAANG: {initialCaang.length}
+            <Badge
+              variant="outline"
+              className="bg-secondary text-foreground border-border px-3.5 py-1.5 rounded-full text-xs font-mono font-semibold"
+            >
+              Total Caang: {initialCaang.length}
             </Badge>
           </div>
         </div>
       </div>
 
       {/* Stats Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-5">
         {/* Card 1: Total pendaftar berdasarkan jenis kelamin */}
-        <div className="relative border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-5 rounded-none overflow-hidden flex flex-col justify-between min-h-[160px]">
-          {/* Subtle Accent Line */}
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-[#0066b1]" />
+        <div className="border border-border bg-card p-5 rounded-xl shadow-xs flex flex-col justify-between min-h-[170px]">
           <div>
-            <h3 className="font-mono text-[10px] font-medium uppercase tracking-widest text-zinc-500 flex items-center justify-between">
-              <span>GENDER TELEMETRY</span>
-              <span className="text-[9px] bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 px-1.5 py-0.5 rounded-none font-bold">
-                TOTAL: {stats.total}
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Distribusi Gender
               </span>
-            </h3>
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-secondary text-muted-foreground font-semibold">
+                Total: {stats.total}
+              </span>
+            </div>
 
             <div className="grid grid-cols-2 gap-4 mt-4">
               <div className="space-y-1">
-                <span className="font-mono text-[9px] uppercase tracking-wider text-zinc-400 block">
-                  LAKI-LAKI (L)
+                <span className="text-[11px] text-muted-foreground block font-medium">
+                  Laki-Laki (L)
                 </span>
-                <span className="font-sans text-2xl font-extrabold text-zinc-900 dark:text-zinc-100 tracking-tight flex items-baseline gap-1">
-                  {stats.male}
-                  <span className="font-mono text-[10px] text-zinc-500 font-medium">
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-2xl font-bold font-heading text-foreground">
+                    {stats.male}
+                  </span>
+                  <span className="text-xs font-mono text-muted-foreground">
                     (
                     {stats.total > 0
                       ? Math.round((stats.male / stats.total) * 100)
                       : 0}
                     %)
                   </span>
-                </span>
+                </div>
               </div>
 
               <div className="space-y-1">
-                <span className="font-mono text-[9px] uppercase tracking-wider text-zinc-400 block">
-                  PEREMPUAN (P)
+                <span className="text-[11px] text-muted-foreground block font-medium">
+                  Perempuan (P)
                 </span>
-                <span className="font-sans text-2xl font-extrabold text-zinc-900 dark:text-zinc-100 tracking-tight flex items-baseline gap-1">
-                  {stats.female}
-                  <span className="font-mono text-[10px] text-zinc-500 font-medium">
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-2xl font-bold font-heading text-foreground">
+                    {stats.female}
+                  </span>
+                  <span className="text-xs font-mono text-muted-foreground">
                     (
                     {stats.total > 0
                       ? Math.round((stats.female / stats.total) * 100)
                       : 0}
                     %)
                   </span>
-                </span>
+                </div>
               </div>
             </div>
           </div>
 
           <div className="space-y-2 mt-4">
-            <div className="h-2 w-full bg-zinc-100 dark:bg-zinc-900 rounded-none overflow-hidden flex">
+            <div className="h-2 w-full bg-secondary rounded-full overflow-hidden flex">
               {stats.male > 0 && (
                 <div
-                  className="h-full bg-[#0066b1]"
+                  className="h-full bg-primary"
                   style={{
                     width: `${stats.total > 0 ? (stats.male / stats.total) * 100 : 0}%`,
                   }}
@@ -472,40 +770,41 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
               )}
               {stats.female > 0 && (
                 <div
-                  className="h-full bg-[#1c69d4]"
+                  className="h-full bg-accent-strong"
                   style={{
                     width: `${stats.total > 0 ? (stats.female / stats.total) * 100 : 0}%`,
                   }}
                 />
               )}
             </div>
-            <div className="flex justify-between text-[9px] font-mono text-zinc-400">
-              <span className="flex items-center gap-1">
-                <span className="w-1.5 h-1.5 bg-[#0066b1]" /> MALE
+            <div className="flex justify-between text-[11px] font-mono text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-primary" /> Laki-laki
               </span>
-              <span className="flex items-center gap-1">
-                <span className="w-1.5 h-1.5 bg-[#1c69d4]" /> FEMALE
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-accent-strong" />{" "}
+                Perempuan
               </span>
             </div>
           </div>
         </div>
 
         {/* Card 2: Total pendaftar berdasarkan jurusan */}
-        <div className="relative border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-5 rounded-none overflow-hidden flex flex-col justify-between min-h-[160px]">
-          {/* Subtle Accent Line */}
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-[#1c69d4]" />
+        <div className="border border-border bg-card p-5 rounded-xl shadow-xs flex flex-col justify-between min-h-[170px]">
           <div>
-            <h3 className="font-mono text-[10px] font-medium uppercase tracking-widest text-zinc-500 flex items-center justify-between mb-3">
-              <span>DEPARTMENT DISTRIBUTION</span>
-              <span className="text-[9px] bg-zinc-100 dark:bg-zinc-900 text-zinc-600 dark:text-zinc-400 px-1.5 py-0.5 rounded-none font-bold">
-                MAJORS: {stats.majors.length}
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Distribusi Jurusan
               </span>
-            </h3>
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-secondary text-muted-foreground font-semibold">
+                {stats.majors.length} Jurusan
+              </span>
+            </div>
 
-            <div className="space-y-2.5 max-h-[110px] overflow-y-auto pr-1">
+            <div className="space-y-2.5 max-h-[120px] overflow-y-auto pr-1">
               {stats.majors.length === 0 ? (
-                <p className="text-[10px] font-mono text-zinc-400 uppercase py-2">
-                  Tidak ada data jurusan
+                <p className="text-xs text-muted-foreground py-2 italic">
+                  Belum ada data jurusan pendaftar
                 </p>
               ) : (
                 stats.majors.map(([major, count]) => {
@@ -513,17 +812,17 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                     stats.total > 0 ? (count / stats.total) * 100 : 0;
                   return (
                     <div key={major} className="space-y-1">
-                      <div className="flex justify-between text-[10px] font-mono">
-                        <span className="truncate max-w-[170px] uppercase text-zinc-600 dark:text-zinc-400 font-semibold">
+                      <div className="flex justify-between text-xs">
+                        <span className="truncate max-w-[180px] text-foreground font-medium">
                           {major}
                         </span>
-                        <span className="font-bold text-zinc-900 dark:text-zinc-100">
+                        <span className="font-mono text-muted-foreground font-semibold">
                           {count} ({Math.round(percentage)}%)
                         </span>
                       </div>
-                      <div className="h-1.5 w-full bg-zinc-100 dark:bg-zinc-900 rounded-none overflow-hidden">
+                      <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-zinc-400 dark:bg-zinc-600"
+                          className="h-full bg-primary/70 rounded-full"
                           style={{ width: `${percentage}%` }}
                         />
                       </div>
@@ -536,34 +835,37 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
         </div>
 
         {/* Card 3: Chart pendaftar berdasarkan status */}
-        <div className="relative border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-5 rounded-none overflow-hidden flex flex-col justify-between min-h-[160px]">
-          {/* Subtle Accent Line */}
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-[#e22718]" />
+        <div className="border border-border bg-card p-5 rounded-xl shadow-xs flex flex-col justify-between min-h-[170px]">
           <div>
-            <h3 className="font-mono text-[10px] font-medium uppercase tracking-widest text-zinc-500 mb-3">
-              REGISTRATION STATUS
-            </h3>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Status Verifikasi
+              </span>
+              <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-secondary text-muted-foreground font-semibold">
+                {stats.total} Berkas
+              </span>
+            </div>
 
             {/* Segmented Progress Bar */}
-            <div className="h-3 w-full bg-zinc-100 dark:bg-zinc-900 rounded-none overflow-hidden flex">
+            <div className="h-2.5 w-full bg-secondary rounded-full overflow-hidden flex gap-0.5">
               {stats.total > 0 ? (
                 <>
                   {stats.status.verified > 0 && (
                     <div
-                      className="h-full bg-[#10b981]"
+                      className="h-full bg-emerald-500"
                       style={{
                         width: `${(stats.status.verified / stats.total) * 100}%`,
                       }}
-                      title={`Verified: ${stats.status.verified}`}
+                      title={`Terverifikasi: ${stats.status.verified}`}
                     />
                   )}
-                  {stats.status.process > 0 && (
+                  {stats.status.revision > 0 && (
                     <div
-                      className="h-full bg-zinc-400 dark:bg-zinc-600"
+                      className="h-full bg-sky-500"
                       style={{
-                        width: `${(stats.status.process / stats.total) * 100}%`,
+                        width: `${(stats.status.revision / stats.total) * 100}%`,
                       }}
-                      title={`Process: ${stats.status.process}`}
+                      title={`Revisi: ${stats.status.revision}`}
                     />
                   )}
                   {stats.status.pending > 0 && (
@@ -575,67 +877,78 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                       title={`Pending: ${stats.status.pending}`}
                     />
                   )}
+                  {stats.status.process > 0 && (
+                    <div
+                      className="h-full bg-slate-400 dark:bg-slate-600"
+                      style={{
+                        width: `${(stats.status.process / stats.total) * 100}%`,
+                      }}
+                      title={`Proses: ${stats.status.process}`}
+                    />
+                  )}
                   {stats.status.rejected > 0 && (
                     <div
-                      className="h-full bg-[#e22718]"
+                      className="h-full bg-rose-500"
                       style={{
                         width: `${(stats.status.rejected / stats.total) * 100}%`,
                       }}
-                      title={`Rejected: ${stats.status.rejected}`}
+                      title={`Ditolak: ${stats.status.rejected}`}
                     />
                   )}
                 </>
               ) : (
-                <div className="h-full w-full bg-zinc-200 dark:bg-zinc-800" />
+                <div className="h-full w-full bg-muted" />
               )}
             </div>
 
             {/* Legend Grid */}
-            <div className="grid grid-cols-2 gap-x-3 gap-y-2 mt-4 text-[9px] font-mono">
-              <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-900 pb-1">
-                <div className="flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 bg-[#10b981] inline-block" />
-                  <span className="text-zinc-600 dark:text-zinc-400">
-                    VERIFIED
-                  </span>
-                </div>
-                <span className="font-bold text-zinc-900 dark:text-zinc-100">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-3 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5 text-muted-foreground text-[11px]">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                  Diterima
+                </span>
+                <span className="font-mono font-semibold text-foreground text-xs">
                   {stats.status.verified}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-900 pb-1">
-                <div className="flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 bg-zinc-400 dark:bg-zinc-600 inline-block" />
-                  <span className="text-zinc-600 dark:text-zinc-400">
-                    PROCESS
-                  </span>
-                </div>
-                <span className="font-bold text-zinc-900 dark:text-zinc-100">
-                  {stats.status.process}
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5 text-muted-foreground text-[11px]">
+                  <span className="w-2 h-2 rounded-full bg-sky-500 shrink-0" />
+                  Revisi
+                </span>
+                <span className="font-mono font-semibold text-foreground text-xs">
+                  {stats.status.revision || 0}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-900 pb-1">
-                <div className="flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 bg-amber-500 inline-block" />
-                  <span className="text-zinc-600 dark:text-zinc-400">
-                    PENDING
-                  </span>
-                </div>
-                <span className="font-bold text-zinc-900 dark:text-zinc-100">
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5 text-muted-foreground text-[11px]">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                  Pending
+                </span>
+                <span className="font-mono font-semibold text-foreground text-xs">
                   {stats.status.pending}
                 </span>
               </div>
 
-              <div className="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-900 pb-1">
-                <div className="flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 bg-[#e22718] inline-block" />
-                  <span className="text-zinc-600 dark:text-zinc-400">
-                    REJECTED
-                  </span>
-                </div>
-                <span className="font-bold text-zinc-900 dark:text-zinc-100">
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5 text-muted-foreground text-[11px]">
+                  <span className="w-2 h-2 rounded-full bg-slate-400 dark:bg-slate-600 shrink-0" />
+                  Proses
+                </span>
+                <span className="font-mono font-semibold text-foreground text-xs">
+                  {stats.status.process}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between col-span-2 pt-0.5 border-t border-border/60">
+                <span className="flex items-center gap-1.5 text-muted-foreground text-[11px]">
+                  <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
+                  Ditolak
+                </span>
+                <span className="font-mono font-semibold text-foreground text-xs">
                   {stats.status.rejected}
                 </span>
               </div>
@@ -645,27 +958,27 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
       </div>
 
       {/* Filter Controls Panel */}
-      <div className="flex flex-col sm:flex-row gap-3 border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-4 rounded-none">
+      <div className="flex flex-col sm:flex-row gap-3 border border-border bg-card p-4 rounded-xl shadow-xs">
         {/* Search */}
         <div className="relative flex-1">
           <HugeiconsIcon
             icon={Search01Icon}
-            className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500 dark:text-zinc-400"
+            className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
           />
           <Input
-            placeholder="Cari Nama / NIM..."
+            placeholder="Cari Nama, NIM, No. HP, atau Email..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-9 w-full bg-zinc-50/50 dark:bg-zinc-900/30 pl-10 rounded-none border border-zinc-200 dark:border-zinc-800 font-mono text-xs uppercase tracking-wider text-zinc-900 dark:text-zinc-50 focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600"
+            className="h-10 w-full bg-background pl-10 rounded-lg border-border text-sm text-foreground focus-visible:ring-2 focus-visible:ring-primary/20"
           />
         </div>
 
         {/* Filter Major */}
-        <div className="w-full sm:w-48">
+        <div className="w-full sm:w-56">
           <select
             value={selectedMajor}
             onChange={(e) => setSelectedMajor(e.target.value)}
-            className="h-9 w-full bg-zinc-50/50 dark:bg-zinc-900/30 px-3 rounded-none border border-zinc-200 dark:border-zinc-800 font-mono text-xs uppercase tracking-wider text-zinc-900 dark:text-zinc-50 focus:outline-hidden focus:border-zinc-400 dark:focus:border-zinc-600"
+            className="h-10 w-full bg-background px-3.5 rounded-lg border border-border text-xs sm:text-sm text-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/20 cursor-pointer"
           >
             <option value="all">Semua Jurusan</option>
             {uniqueMajors.map((major) => (
@@ -677,31 +990,39 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
         </div>
 
         {/* Filter Status */}
-        <div className="w-full sm:w-44">
+        <div className="w-full sm:w-48">
           <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
-            className="h-9 w-full bg-zinc-50/50 dark:bg-zinc-900/30 px-3 rounded-none border border-zinc-200 dark:border-zinc-800 font-mono text-xs uppercase tracking-wider text-zinc-900 dark:text-zinc-50 focus:outline-hidden focus:border-zinc-400 dark:focus:border-zinc-600"
+            className="h-10 w-full bg-background px-3.5 rounded-lg border border-border text-xs sm:text-sm text-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/20 cursor-pointer"
           >
             <option value="all">Semua Status</option>
-            <option value="process">Process</option>
+            <option value="verified">Diterima (Verified)</option>
+            <option value="revision">Perlu Revisi</option>
             <option value="pending">Pending</option>
-            <option value="verified">Verified</option>
-            <option value="rejected">Rejected</option>
+            <option value="process">Dalam Proses</option>
+            <option value="rejected">Ditolak</option>
           </select>
         </div>
       </div>
 
       {/* Main Content Area */}
       {filteredCaang.length === 0 ? (
-        <div className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-12 text-center rounded-none">
-          <HugeiconsIcon
-            icon={UserGroupIcon}
-            size={40}
-            className="mx-auto text-zinc-400 dark:text-zinc-600 mb-3"
-          />
-          <p className="font-mono text-xs uppercase tracking-widest text-zinc-600 dark:text-zinc-400">
-            Tidak ada data Calon Anggota ditemukan.
+        <div className="border border-border bg-card p-12 text-center rounded-xl shadow-xs">
+          <div className="mx-auto w-12 h-12 rounded-full bg-secondary flex items-center justify-center mb-3">
+            <HugeiconsIcon
+              icon={UserGroupIcon}
+              size={24}
+              className="text-muted-foreground"
+            />
+          </div>
+          <h3 className="font-heading font-semibold text-base text-foreground">
+            Tidak ada data Calon Anggota
+          </h3>
+          <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto">
+            {search || selectedMajor !== "all" || selectedStatus !== "all"
+              ? "Coba ubah kata kunci pencarian atau filter yang Anda pilih."
+              : "Belum ada calon anggota yang mendaftar pada gelombang ini."}
           </p>
         </div>
       ) : (
@@ -709,52 +1030,55 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
           {/* =======================================================
               DESKTOP VIEW: HTML table
               ======================================================= */}
-          <div className="hidden md:block overflow-x-auto border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 rounded-none">
-            <table className="w-full min-w-[900px] border-collapse text-left">
+          <div className="hidden md:block overflow-x-auto border border-border bg-card rounded-xl shadow-xs">
+            <table className="w-full min-w-[960px] border-collapse text-left text-sm">
               <thead>
-                <tr className="border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50/70 dark:bg-zinc-900/50">
-                  {/* Chekbox Header */}
-                  <th className="p-4 w-10 text-center">
+                <tr className="border-b border-border bg-muted/60 text-muted-foreground">
+                  {/* Checkbox Header */}
+                  <th className="p-4 w-12 text-center">
                     <input
                       type="checkbox"
                       checked={isAllSelected}
                       onChange={(e) => handleSelectAll(e.target.checked)}
-                      className="h-4 w-4 rounded-none accent-[#1c69d4] cursor-pointer"
+                      className="h-4 w-4 rounded-sm accent-primary cursor-pointer"
                     />
                   </th>
                   {/* Foto/Avatar Header */}
-                  <th className="p-4 w-16 text-center font-mono text-[10px] uppercase tracking-wider font-bold text-zinc-600 dark:text-zinc-400">
+                  <th className="p-4 w-16 text-center text-xs font-semibold uppercase tracking-wider">
                     Foto
                   </th>
                   {/* Nama & NIM Header */}
-                  <th className="p-4 font-mono text-[10px] uppercase tracking-wider font-bold text-zinc-600 dark:text-zinc-400">
+                  <th className="p-4 text-xs font-semibold uppercase tracking-wider">
                     Nama / NIM
                   </th>
                   {/* Kontak Header */}
-                  <th className="p-4 font-mono text-[10px] uppercase tracking-wider font-bold text-zinc-600 dark:text-zinc-400">
-                    Email / No. HP
+                  <th className="p-4 text-xs font-semibold uppercase tracking-wider">
+                    Kontak
                   </th>
                   {/* Prodi & Jurusan Header */}
-                  <th className="p-4 font-mono text-[10px] uppercase tracking-wider font-bold text-zinc-600 dark:text-zinc-400">
-                    Prodi / Jurusan
+                  <th className="p-4 text-xs font-semibold uppercase tracking-wider">
+                    Program Studi
                   </th>
                   {/* Status Header */}
-                  <th className="p-4 w-28 font-mono text-[10px] uppercase tracking-wider font-bold text-zinc-600 dark:text-zinc-400">
-                    Status
+                  <th className="p-4 w-44 text-xs font-semibold uppercase tracking-wider">
+                    Status Pendaftaran
                   </th>
                   {/* Aksi Header */}
-                  <th className="p-4 w-36 text-center font-mono text-[10px] uppercase tracking-wider font-bold text-zinc-600 dark:text-zinc-400">
+                  <th className="p-4 w-32 text-center text-xs font-semibold uppercase tracking-wider">
                     Aksi
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+              <tbody className="divide-y divide-border">
                 {filteredCaang.map((item) => {
                   const isChecked = selectedIds.includes(item.profileId);
                   return (
                     <tr
                       key={item.profileId}
-                      className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/20 transition-colors"
+                      className={cn(
+                        "hover:bg-muted/40 transition-colors",
+                        isChecked ? "bg-primary-soft/30" : "",
+                      )}
                     >
                       {/* Checkbox Cell */}
                       <td className="p-4 text-center align-middle">
@@ -764,13 +1088,13 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                           onChange={(e) =>
                             handleSelectRow(item.profileId, e.target.checked)
                           }
-                          className="h-4 w-4 rounded-none accent-[#1c69d4] cursor-pointer"
+                          className="h-4 w-4 rounded-sm accent-primary cursor-pointer"
                         />
                       </td>
 
                       {/* Avatar Cell */}
                       <td className="p-4 align-middle text-center">
-                        <div className="relative h-10 w-10 mx-auto rounded-none border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 overflow-hidden flex items-center justify-center">
+                        <div className="relative h-10 w-10 mx-auto rounded-full border border-border bg-secondary overflow-hidden flex items-center justify-center">
                           {isValidImageUrl(item.photoUrl) ? (
                             <Image
                               src={item.photoUrl}
@@ -781,7 +1105,7 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                               unoptimized
                             />
                           ) : (
-                            <span className="font-mono text-sm font-bold text-zinc-400 dark:text-zinc-500 uppercase">
+                            <span className="font-heading text-sm font-bold text-muted-foreground uppercase">
                               {item.fullName.charAt(0)}
                             </span>
                           )}
@@ -791,12 +1115,12 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                       {/* Name / NIM Cell */}
                       <td className="p-4 align-middle">
                         <div
-                          className="font-semibold text-zinc-900 dark:text-zinc-100 truncate max-w-[200px]"
+                          className="font-semibold text-foreground truncate max-w-[220px]"
                           title={item.fullName}
                         >
                           {item.fullName}
                         </div>
-                        <div className="font-mono text-[10px] text-zinc-500 mt-0.5 tracking-wider">
+                        <div className="font-mono text-xs text-muted-foreground mt-0.5">
                           {item.nim || "NIM TIDAK ADA"}
                         </div>
                       </td>
@@ -804,68 +1128,68 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                       {/* Email / No HP Cell */}
                       <td className="p-4 align-middle">
                         <div
-                          className="text-zinc-800 dark:text-zinc-300 text-xs truncate max-w-[200px]"
+                          className="text-text-secondary text-xs truncate max-w-[200px]"
                           title={item.email}
                         >
                           {item.email}
                         </div>
-                        <div className="font-mono text-[10px] text-zinc-500 mt-0.5">
-                          {item.phoneNumber || "NO HP TIDAK ADA"}
+                        <div className="font-mono text-xs text-muted-foreground mt-0.5">
+                          {item.phoneNumber || "-"}
                         </div>
                       </td>
 
                       {/* Prodi / Jurusan Cell */}
                       <td className="p-4 align-middle">
                         <div
-                          className="text-zinc-800 dark:text-zinc-300 text-xs truncate max-w-[200px]"
+                          className="text-foreground text-xs font-medium truncate max-w-[200px]"
                           title={item.studyProgramName}
                         >
-                          {item.studyProgramName || "BELUM MEMILIH"}
+                          {item.studyProgramName || "Belum Memilih"}
                         </div>
-                        <div className="font-mono text-[10px] text-zinc-500 mt-0.5 uppercase tracking-wider">
-                          {item.majorName || "BELUM MEMILIH"}
+                        <div className="text-[11px] text-muted-foreground mt-0.5 uppercase tracking-wide">
+                          {item.majorName || "Belum Memilih"}
                         </div>
                       </td>
 
-                      {/* Status Cell */}
+                      {/* Status Cell - Interactive Dropdown Switcher */}
                       <td className="p-4 align-middle">
-                        {getStatusBadge(item.status)}
+                        {renderStatusDropdown(item)}
                       </td>
 
                       {/* Actions Cell */}
                       <td className="p-4 align-middle text-center">
                         <div className="flex justify-center items-center gap-1.5">
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="icon"
-                            title="Lihat Detail"
+                            title="Lihat Detail Profil & Berkas"
                             onClick={() => setViewingCaang(item)}
-                            className="h-8 w-8 rounded-none border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 hover:dark:text-zinc-50 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                            className="h-8.5 w-8.5 rounded-lg border-border text-foreground hover:bg-secondary"
                           >
-                            <HugeiconsIcon icon={EyeIcon} size={16} />
+                            <HugeiconsIcon icon={EyeIcon} size={15} />
                           </Button>
 
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="icon"
-                            title="Edit Data"
+                            title="Edit Data Pendaftaran"
                             onClick={() => openEditModal(item)}
-                            className="h-8 w-8 rounded-none border border-zinc-200 dark:border-zinc-800 text-[#1c69d4] dark:text-[#0066b1] hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                            className="h-8.5 w-8.5 rounded-lg border-border text-primary hover:bg-primary-soft hover:text-primary"
                           >
-                            <HugeiconsIcon icon={Edit02Icon} size={16} />
+                            <HugeiconsIcon icon={Edit02Icon} size={15} />
                           </Button>
 
                           <Button
-                            variant="ghost"
+                            variant="outline"
                             size="icon"
-                            title="Hapus Akun"
+                            title="Hapus Data (Soft Delete)"
                             onClick={() => {
                               setDeletingCaangId(item.profileId);
                               setDeleteReasonText("");
                             }}
-                            className="h-8 w-8 rounded-none border border-zinc-200 dark:border-zinc-800 text-[#e22718] hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                            className="h-8.5 w-8.5 rounded-lg border-border text-destructive hover:bg-destructive/10 hover:text-destructive"
                           >
-                            <HugeiconsIcon icon={Delete01Icon} size={16} />
+                            <HugeiconsIcon icon={Delete01Icon} size={15} />
                           </Button>
                         </div>
                       </td>
@@ -879,26 +1203,31 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
           {/* =======================================================
               MOBILE VIEW: Card layout
               ======================================================= */}
-          <div className="block md:hidden space-y-4">
+          <div className="block md:hidden space-y-3.5">
             {filteredCaang.map((item) => {
               const isChecked = selectedIds.includes(item.profileId);
               return (
                 <div
                   key={item.profileId}
-                  className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-4 rounded-none space-y-3 relative shadow-xs"
+                  className={cn(
+                    "border border-border bg-card p-4 rounded-xl space-y-3 relative shadow-xs transition-colors",
+                    isChecked
+                      ? "ring-2 ring-primary/40 bg-primary-soft/20"
+                      : "",
+                  )}
                 >
-                  {/* Card Header: Checkbox, Avatar, Status */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                  {/* Card Header: Checkbox, Avatar, Status Dropdown */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-3 min-w-0">
                       <input
                         type="checkbox"
                         checked={isChecked}
                         onChange={(e) =>
                           handleSelectRow(item.profileId, e.target.checked)
                         }
-                        className="h-4 w-4 rounded-none accent-[#1c69d4] cursor-pointer"
+                        className="h-4 w-4 rounded-sm accent-primary cursor-pointer shrink-0"
                       />
-                      <div className="relative h-10 w-10 rounded-none border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 overflow-hidden flex items-center justify-center">
+                      <div className="relative h-10 w-10 rounded-full border border-border bg-secondary overflow-hidden flex items-center justify-center shrink-0">
                         {isValidImageUrl(item.photoUrl) ? (
                           <Image
                             src={item.photoUrl}
@@ -909,107 +1238,109 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                             unoptimized
                           />
                         ) : (
-                          <span className="font-mono text-sm font-bold text-zinc-400 dark:text-zinc-500 uppercase">
+                          <span className="font-heading text-sm font-bold text-muted-foreground uppercase">
                             {item.fullName.charAt(0)}
                           </span>
                         )}
                       </div>
+                      <div className="min-w-0">
+                        <span className="text-sm font-semibold text-foreground truncate block">
+                          {item.fullName}
+                        </span>
+                        <span className="font-mono text-xs text-muted-foreground">
+                          {item.nim || "NIM -"}
+                        </span>
+                      </div>
                     </div>
-                    {getStatusBadge(item.status)}
                   </div>
 
-                  {/* Card Content: Details resembling desktop columns */}
-                  <div className="space-y-2 pt-1 font-sans">
-                    {/* Nama & NIM */}
-                    <div>
-                      <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest block">
-                        Nama / NIM
-                      </span>
-                      <span className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-                        {item.fullName}
-                      </span>
-                      <span className="font-mono text-[10px] text-zinc-500 ml-2">
-                        ({item.nim || "NIM -"})
-                      </span>
-                    </div>
+                  {/* Status switcher on mobile */}
+                  <div className="flex items-center justify-between pt-1 border-t border-border/60">
+                    <span className="text-xs font-medium text-muted-foreground">
+                      Status:
+                    </span>
+                    {renderStatusDropdown(item)}
+                  </div>
 
+                  {/* Card Content: Details */}
+                  <div className="space-y-2 pt-1 text-xs border-t border-border/60">
                     {/* Email & No. HP */}
-                    <div className="grid grid-cols-2 gap-2 border-t border-zinc-100 dark:border-zinc-900 pt-2">
+                    <div className="grid grid-cols-2 gap-2">
                       <div>
-                        <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest block">
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider block">
                           Email
                         </span>
-                        <span className="text-xs text-zinc-700 dark:text-zinc-300 break-all">
+                        <span className="text-xs text-text-secondary truncate block">
                           {item.email}
                         </span>
                       </div>
                       <div>
-                        <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest block">
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider block">
                           No. HP
                         </span>
-                        <span className="text-xs text-zinc-700 dark:text-zinc-300 font-mono">
+                        <span className="text-xs text-text-secondary font-mono">
                           {item.phoneNumber || "-"}
                         </span>
                       </div>
                     </div>
 
                     {/* Prodi & Jurusan */}
-                    <div className="border-t border-zinc-100 dark:border-zinc-900 pt-2">
-                      <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest block">
+                    <div className="pt-1">
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider block">
                         Prodi / Jurusan
                       </span>
-                      <span className="text-xs text-zinc-700 dark:text-zinc-300">
+                      <span className="text-xs text-foreground font-medium block">
                         {item.studyProgramName || "Belum Memilih"}
                       </span>
-                      <span className="font-mono text-[10px] text-zinc-500 block uppercase mt-0.5">
+                      <span className="text-[11px] text-muted-foreground block uppercase">
                         {item.majorName || "Belum Memilih"}
                       </span>
                     </div>
                   </div>
 
                   {/* Card Actions */}
-                  <div className="flex items-center justify-end gap-2 border-t border-zinc-100 dark:border-zinc-900 pt-3">
+                  <div className="flex items-center justify-end gap-2 border-t border-border/60 pt-3">
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
                       onClick={() => setViewingCaang(item)}
-                      className="rounded-none border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-400 font-mono text-[10px] uppercase tracking-wider px-3 h-8 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                      className="rounded-lg border-border text-xs px-3 h-9"
                     >
                       <HugeiconsIcon
                         icon={EyeIcon}
                         size={14}
-                        className="mr-1.5"
+                        className="mr-1"
                       />
                       Detail
                     </Button>
 
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
                       onClick={() => openEditModal(item)}
-                      className="rounded-none border border-zinc-200 dark:border-zinc-800 text-[#1c69d4] dark:text-[#0066b1] font-mono text-[10px] uppercase tracking-wider px-3 h-8 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                      className="rounded-lg border-border text-primary text-xs px-3 h-9 hover:bg-primary-soft hover:text-primary"
                     >
                       <HugeiconsIcon
                         icon={Edit02Icon}
                         size={14}
-                        className="mr-1.5"
+                        className="mr-1"
                       />
                       Edit
                     </Button>
 
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
                       onClick={() => {
                         setDeletingCaangId(item.profileId);
                         setDeleteReasonText("");
                       }}
-                      className="rounded-none border border-zinc-200 dark:border-zinc-800 text-[#e22718] font-mono text-[10px] uppercase tracking-wider px-3 h-8 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                      className="rounded-lg border-border text-destructive text-xs px-3 h-9 hover:bg-destructive/10 hover:text-destructive"
                     >
                       <HugeiconsIcon
                         icon={Delete01Icon}
                         size={14}
-                        className="mr-1.5"
+                        className="mr-1"
                       />
                       Hapus
                     </Button>
@@ -1022,29 +1353,132 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
       )}
 
       {/* =======================================================
+          MODAL: REVISION NOTES DIALOG (KETIKA ADMIN MEMILIH REVISI)
+          ======================================================= */}
+      <Dialog
+        open={!!revisionModalCaang}
+        onOpenChange={(open) => !open && setRevisionModalCaang(null)}
+      >
+        <DialogContent className="rounded-2xl max-w-lg bg-card border border-border shadow-xl">
+          {revisionModalCaang && (
+            <form onSubmit={handleRevisionSubmit}>
+              <DialogHeader className="border-b border-border pb-3">
+                <DialogTitle className="font-heading text-lg font-bold text-foreground flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-sky-100 text-sky-700 dark:bg-sky-950/60 dark:text-sky-300">
+                    <HugeiconsIcon icon={AlertCircleIcon} size={18} />
+                  </div>
+                  Catatan Revisi Calon Anggota
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground mt-1">
+                  Kirim catatan kepada{" "}
+                  <strong className="text-foreground">
+                    {revisionModalCaang.fullName}
+                  </strong>{" "}
+                  ({revisionModalCaang.nim || "Caang"}) mengenai data atau
+                  berkas yang perlu diperbaiki.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="py-4 space-y-3.5">
+                {/* Quick Presets */}
+                <div>
+                  <span className="text-xs font-semibold text-foreground block mb-1.5">
+                    Pilihan Cepat Catatan Revisi:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {QUICK_REVISION_PRESETS.map((preset, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          if (revisionNotesInput) {
+                            setRevisionNotesInput(
+                              (prev) => `${prev}\n• ${preset}`,
+                            );
+                          } else {
+                            setRevisionNotesInput(preset);
+                          }
+                        }}
+                        className="text-[11px] text-left px-2.5 py-1 rounded-full bg-secondary hover:bg-primary-soft hover:text-primary text-text-secondary border border-border transition-colors cursor-pointer"
+                      >
+                        + {preset.slice(0, 38)}...
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Textarea */}
+                <div className="space-y-1.5">
+                  <Label
+                    htmlFor="revision-notes-text"
+                    className="text-xs font-medium text-foreground"
+                  >
+                    Instruksi / Catatan Revisi *
+                  </Label>
+                  <textarea
+                    id="revision-notes-text"
+                    rows={4}
+                    value={revisionNotesInput}
+                    onChange={(e) => setRevisionNotesInput(e.target.value)}
+                    placeholder="Tuliskan dengan spesifik apa yang harus diperbaiki calon anggota..."
+                    className="w-full bg-background p-3 rounded-xl border border-border text-sm text-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/20 placeholder:text-muted-foreground placeholder:text-xs leading-relaxed"
+                    required
+                  />
+                  <p className="text-[11px] text-muted-foreground">
+                    Catatan ini akan tampil langsung di halaman dashboard /
+                    status pendaftaran calon anggota.
+                  </p>
+                </div>
+              </div>
+
+              <DialogFooter className="border-t border-border pt-3 gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setRevisionModalCaang(null)}
+                  className="rounded-lg text-xs h-10 px-4"
+                >
+                  Batal
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmittingStatus || !revisionNotesInput.trim()}
+                  className="rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-xs h-10 px-4 font-semibold"
+                >
+                  {isSubmittingStatus
+                    ? "Menyimpan..."
+                    : "Kirim Revisi ke Calon Anggota"}
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* =======================================================
           MODAL: VIEW CAANG DETAIL
           ======================================================= */}
       <Dialog
         open={!!viewingCaang}
         onOpenChange={(open) => !open && setViewingCaang(null)}
       >
-        <DialogContent className="rounded-none max-w-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 overflow-y-auto max-h-[90vh]">
+        <DialogContent className="rounded-2xl max-w-2xl bg-card border border-border shadow-xl overflow-y-auto max-h-[90vh]">
           {viewingCaang && (
             <>
-              <DialogHeader className="border-b border-zinc-200 dark:border-zinc-800 pb-3 relative">
-                <DialogTitle className="font-sans text-base font-bold uppercase tracking-widest text-zinc-900 dark:text-zinc-50">
+              <DialogHeader className="border-b border-border pb-3">
+                <DialogTitle className="font-heading text-lg font-bold text-foreground">
                   Detail Calon Anggota
                 </DialogTitle>
-                <DialogDescription className="font-mono text-[10px] uppercase text-zinc-500 tracking-wider">
-                  Profil Lengkap & Dokumen Pendaftaran
+                <DialogDescription className="text-xs text-muted-foreground">
+                  Profil Lengkap, Riwayat Pendaftaran, dan Berkas Persyaratan
                 </DialogDescription>
               </DialogHeader>
 
               {/* Detail Content Grid */}
-              <div className="space-y-6 py-4">
+              <div className="space-y-5 py-4">
                 {/* Section 1: Utama & Foto */}
-                <div className="flex flex-col sm:flex-row gap-4 items-start pb-4 border-b border-zinc-100 dark:border-zinc-900">
-                  <div className="relative h-28 w-24 shrink-0 rounded-none border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 overflow-hidden flex items-center justify-center">
+                <div className="flex flex-col sm:flex-row gap-4 items-start pb-4 border-b border-border">
+                  <div className="relative h-28 w-24 shrink-0 rounded-xl border border-border bg-secondary overflow-hidden flex items-center justify-center">
                     {isValidImageUrl(viewingCaang.photoUrl) ? (
                       <Image
                         src={viewingCaang.photoUrl}
@@ -1055,74 +1489,85 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                         unoptimized
                       />
                     ) : (
-                      <span className="font-mono text-2xl font-bold text-zinc-400 dark:text-zinc-500 uppercase">
+                      <span className="font-heading text-2xl font-bold text-muted-foreground uppercase">
                         {viewingCaang.fullName.charAt(0)}
                       </span>
                     )}
                   </div>
 
                   <div className="space-y-1.5 flex-1 min-w-0">
-                    <h3 className="font-bold text-lg text-zinc-900 dark:text-zinc-50 tracking-tight leading-none uppercase">
-                      {viewingCaang.fullName}
-                    </h3>
-                    <p className="text-xs font-mono font-bold text-zinc-500">
-                      NIM:{" "}
-                      <span className="text-[#1c69d4] dark:text-[#0066b1]">
-                        {viewingCaang.nim || "NIM TIDAK ADA"}
-                      </span>
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <h3 className="font-heading font-bold text-lg text-foreground tracking-tight leading-tight">
+                        {viewingCaang.fullName}
+                      </h3>
+                      {renderStatusDropdown(viewingCaang)}
+                    </div>
+                    <p className="text-xs font-mono font-semibold text-primary">
+                      NIM: {viewingCaang.nim || "NIM TIDAK ADA"}
                     </p>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                      Panggilan: {viewingCaang.nickname || "-"} | Gender:{" "}
+                    <p className="text-xs text-text-secondary">
+                      Panggilan: {viewingCaang.nickname || "-"} • Gender:{" "}
                       {viewingCaang.gender === "L"
                         ? "Laki-laki"
                         : viewingCaang.gender === "P"
                           ? "Perempuan"
                           : "-"}
                     </p>
-                    <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                      TTL: {viewingCaang.pob || "-"}, {viewingCaang.dob || "-"}
+                    <p className="text-xs text-muted-foreground">
+                      Tempat, Tgl Lahir: {viewingCaang.pob || "-"},{" "}
+                      {viewingCaang.dob || "-"}
                     </p>
-                    <p className="pt-1.5">
-                      {getStatusBadge(viewingCaang.status)}
-                    </p>
+
+                    {/* Revision Note preview if any */}
+                    {viewingCaang.status === "revision" &&
+                      viewingCaang.revisionNotes && (
+                        <div className="mt-2 p-2.5 rounded-lg bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-800 text-xs text-sky-800 dark:text-sky-300">
+                          <span className="font-semibold block mb-0.5">
+                            Catatan Revisi:
+                          </span>
+                          <p className="whitespace-pre-wrap">
+                            {viewingCaang.revisionNotes}
+                          </p>
+                        </div>
+                      )}
                   </div>
                 </div>
 
                 {/* Section 2: Informasi Akademik */}
                 <div className="space-y-2">
-                  <h4 className="font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                     Informasi Akademik
                   </h4>
-                  <div className="grid grid-cols-2 gap-4 bg-zinc-50 dark:bg-zinc-900/30 p-3 border border-zinc-150 dark:border-zinc-900">
+                  <div className="grid grid-cols-2 gap-3 bg-secondary/60 p-3.5 rounded-xl border border-border/70 text-xs">
                     <div>
-                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider block font-semibold">
                         Program Studi
                       </span>
-                      <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+                      <span className="text-xs font-medium text-foreground">
                         {viewingCaang.studyProgramName || "Belum Memilih"}
                       </span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider block font-semibold">
                         Jurusan
                       </span>
-                      <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
+                      <span className="text-xs font-medium text-foreground">
                         {viewingCaang.majorName || "Belum Memilih"}
                       </span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider block font-semibold">
                         Sekolah Asal
                       </span>
-                      <span className="text-xs text-zinc-800 dark:text-zinc-200">
+                      <span className="text-xs text-foreground">
                         {viewingCaang.highSchool || "-"}
                       </span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
-                        Kelas Sekarang
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider block font-semibold">
+                        Kelas Saat Ini
                       </span>
-                      <span className="text-xs text-zinc-800 dark:text-zinc-200">
+                      <span className="text-xs text-foreground">
                         {viewingCaang.currentClass || "-"}
                       </span>
                     </div>
@@ -1131,39 +1576,39 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
 
                 {/* Section 3: Kontak & Alamat */}
                 <div className="space-y-2">
-                  <h4 className="font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                     Kontak & Alamat
                   </h4>
-                  <div className="grid grid-cols-2 gap-4 bg-zinc-50 dark:bg-zinc-900/30 p-3 border border-zinc-150 dark:border-zinc-900">
+                  <div className="grid grid-cols-2 gap-3 bg-secondary/60 p-3.5 rounded-xl border border-border/70 text-xs">
                     <div>
-                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider block font-semibold">
                         Email
                       </span>
-                      <span className="text-xs text-zinc-800 dark:text-zinc-200 break-all">
+                      <span className="text-xs text-foreground break-all font-mono">
                         {viewingCaang.email}
                       </span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
-                        No. Telepon / WA
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider block font-semibold">
+                        No. Telepon / WhatsApp
                       </span>
-                      <span className="text-xs text-zinc-800 dark:text-zinc-200 font-mono">
+                      <span className="text-xs text-foreground font-mono">
                         {viewingCaang.phoneNumber || "-"}
                       </span>
                     </div>
                     <div className="col-span-2">
-                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider block font-semibold">
                         Alamat Asal
                       </span>
-                      <span className="text-xs text-zinc-800 dark:text-zinc-200">
+                      <span className="text-xs text-foreground">
                         {viewingCaang.originAddress || "-"}
                       </span>
                     </div>
                     <div className="col-span-2">
-                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider block font-semibold">
                         Alamat Domisili
                       </span>
-                      <span className="text-xs text-zinc-800 dark:text-zinc-200">
+                      <span className="text-xs text-foreground">
                         {viewingCaang.domicileAddress || "-"}
                       </span>
                     </div>
@@ -1171,32 +1616,32 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                 </div>
 
                 {/* Section 4: Narasi Pendaftaran */}
-                <div className="space-y-3">
-                  <h4 className="font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
+                <div className="space-y-2">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                     Naratif & Pengalaman
                   </h4>
-                  <div className="space-y-3">
-                    <div className="bg-zinc-50 dark:bg-zinc-900/30 p-3 border border-zinc-150 dark:border-zinc-900">
-                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
-                        Motivasi
+                  <div className="space-y-2.5">
+                    <div className="bg-secondary/60 p-3.5 rounded-xl border border-border/70">
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider block font-semibold">
+                        Motivasi Bergabung
                       </span>
-                      <p className="text-xs text-zinc-700 dark:text-zinc-300 mt-1 whitespace-pre-wrap">
+                      <p className="text-xs text-text-secondary mt-1 whitespace-pre-wrap leading-relaxed">
                         {viewingCaang.motivation || "Tidak diisi"}
                       </p>
                     </div>
-                    <div className="bg-zinc-50 dark:bg-zinc-900/30 p-3 border border-zinc-150 dark:border-zinc-900">
-                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
+                    <div className="bg-secondary/60 p-3.5 rounded-xl border border-border/70">
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider block font-semibold">
                         Pengalaman Organisasi
                       </span>
-                      <p className="text-xs text-zinc-700 dark:text-zinc-300 mt-1 whitespace-pre-wrap">
+                      <p className="text-xs text-text-secondary mt-1 whitespace-pre-wrap leading-relaxed">
                         {viewingCaang.orgExperience || "Tidak ada"}
                       </p>
                     </div>
-                    <div className="bg-zinc-50 dark:bg-zinc-900/30 p-3 border border-zinc-150 dark:border-zinc-900">
-                      <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
+                    <div className="bg-secondary/60 p-3.5 rounded-xl border border-border/70">
+                      <span className="text-[10px] text-muted-foreground uppercase tracking-wider block font-semibold">
                         Prestasi / Penghargaan
                       </span>
-                      <p className="text-xs text-zinc-700 dark:text-zinc-300 mt-1 whitespace-pre-wrap">
+                      <p className="text-xs text-text-secondary mt-1 whitespace-pre-wrap leading-relaxed">
                         {viewingCaang.achievements || "Tidak ada"}
                       </p>
                     </div>
@@ -1204,19 +1649,19 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                 </div>
 
                 {/* Section 5: Bukti Administrasi & Pembayaran */}
-                <div className="space-y-3 border-t border-zinc-200 dark:border-zinc-800 pt-4">
-                  <h4 className="font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-                    Berkas Pendukung & Pembayaran
+                <div className="space-y-2.5 border-t border-border pt-4">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Berkas Persyaratan & Bukti Pembayaran
                   </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                     {/* KTM */}
-                    <div className="bg-zinc-50 dark:bg-zinc-900/30 p-3 border border-zinc-150 dark:border-zinc-900 flex flex-col justify-between">
+                    <div className="bg-secondary/60 p-3.5 rounded-xl border border-border/70 flex flex-col justify-between">
                       <div>
-                        <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
-                          Bukti KTM / Identitas
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider block font-semibold">
+                          Bukti KTM / Mahasiswa
                         </span>
                         {viewingCaang.ktmUrl ? (
-                          <div className="relative h-32 w-full mt-2 border border-zinc-200 dark:border-zinc-850 overflow-hidden bg-black/10">
+                          <div className="relative h-32 w-full mt-2 rounded-lg border border-border overflow-hidden bg-background">
                             <Image
                               src={viewingCaang.ktmUrl}
                               alt="KTM"
@@ -1226,7 +1671,7 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                             />
                           </div>
                         ) : (
-                          <p className="text-xs text-zinc-500 italic mt-2">
+                          <p className="text-xs text-muted-foreground italic mt-2">
                             Tidak diunggah
                           </p>
                         )}
@@ -1236,35 +1681,37 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                           href={viewingCaang.ktmUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="mt-3 block text-center font-mono text-[10px] font-bold uppercase text-[#1c69d4] hover:underline"
+                          className="mt-3 block text-center text-xs font-semibold text-primary hover:underline"
                         >
-                          Buka Gambar Penuh
+                          Buka Gambar Penuh ↗
                         </a>
                       )}
                     </div>
 
                     {/* Bukti Bayar */}
-                    <div className="bg-zinc-50 dark:bg-zinc-900/30 p-3 border border-zinc-150 dark:border-zinc-900 flex flex-col justify-between">
+                    <div className="bg-secondary/60 p-3.5 rounded-xl border border-border/70 flex flex-col justify-between">
                       <div>
-                        <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider block font-semibold">
                           Bukti Pembayaran
                         </span>
-                        <p className="text-[10px] text-zinc-500 mt-1 font-mono uppercase">
+                        <p className="text-[11px] text-muted-foreground mt-0.5">
                           Metode:{" "}
-                          {viewingCaang.paymentMethod || "Tidak diketahui"}
+                          <strong className="text-foreground">
+                            {viewingCaang.paymentMethod || "Manual"}
+                          </strong>
                         </p>
                         {viewingCaang.paymentProofUrl ? (
-                          <div className="relative h-32 w-full mt-2 border border-zinc-200 dark:border-zinc-850 overflow-hidden bg-black/10">
+                          <div className="relative h-32 w-full mt-2 rounded-lg border border-border overflow-hidden bg-background">
                             <Image
                               src={viewingCaang.paymentProofUrl}
-                              alt="Bukti Pembayaran"
+                              alt="Bukti Bayar"
                               fill
                               className="object-contain"
                               unoptimized
                             />
                           </div>
                         ) : (
-                          <p className="text-xs text-zinc-500 italic mt-2">
+                          <p className="text-xs text-muted-foreground italic mt-2">
                             Tidak diunggah
                           </p>
                         )}
@@ -1274,40 +1721,40 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                           href={viewingCaang.paymentProofUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="mt-3 block text-center font-mono text-[10px] font-bold uppercase text-[#1c69d4] hover:underline"
+                          className="mt-3 block text-center text-xs font-semibold text-primary hover:underline"
                         >
-                          Buka Gambar Penuh
+                          Buka Gambar Penuh ↗
                         </a>
                       )}
                     </div>
                   </div>
                 </div>
 
-                {/* Section 6: Bukti Follow & Subscribe Media Sosial */}
-                <div className="space-y-3 border-t border-zinc-200 dark:border-zinc-800 pt-4">
-                  <h4 className="font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-                    Bukti Media Sosial
+                {/* Section 6: Bukti Media Sosial */}
+                <div className="space-y-2.5 border-t border-border pt-4">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Bukti Follow & Subscribe Media Sosial
                   </h4>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {/* Follow Robotik PNP */}
-                    <div className="bg-zinc-50 dark:bg-zinc-900/30 p-3 border border-zinc-150 dark:border-zinc-900 flex flex-col justify-between">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {/* IG Robotik */}
+                    <div className="bg-secondary/60 p-3 rounded-xl border border-border/70 flex flex-col justify-between">
                       <div>
-                        <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
-                          Follow IG Robotik PNP
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider block font-semibold">
+                          IG Robotik PNP
                         </span>
                         {viewingCaang.proofFollowRobotik ? (
-                          <div className="relative h-32 w-full mt-2 border border-zinc-200 dark:border-zinc-850 overflow-hidden bg-black/10">
+                          <div className="relative h-28 w-full mt-2 rounded-lg border border-border overflow-hidden bg-background">
                             <Image
                               src={viewingCaang.proofFollowRobotik}
-                              alt="Bukti Follow Instagram Robotik"
+                              alt="IG Robotik"
                               fill
                               className="object-contain"
                               unoptimized
                             />
                           </div>
                         ) : (
-                          <p className="text-xs text-zinc-500 italic mt-2">
-                            Tidak diunggah
+                          <p className="text-xs text-muted-foreground italic mt-2">
+                            Tidak ada
                           </p>
                         )}
                       </div>
@@ -1316,32 +1763,32 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                           href={viewingCaang.proofFollowRobotik}
                           target="_blank"
                           rel="noreferrer"
-                          className="mt-3 block text-center font-mono text-[10px] font-bold uppercase text-[#1c69d4] hover:underline"
+                          className="mt-2 block text-center text-[11px] font-semibold text-primary hover:underline"
                         >
-                          Buka Gambar Penuh
+                          Buka Penuh ↗
                         </a>
                       )}
                     </div>
 
-                    {/* Follow MRC */}
-                    <div className="bg-zinc-50 dark:bg-zinc-900/30 p-3 border border-zinc-150 dark:border-zinc-900 flex flex-col justify-between">
+                    {/* IG MRC */}
+                    <div className="bg-secondary/60 p-3 rounded-xl border border-border/70 flex flex-col justify-between">
                       <div>
-                        <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
-                          Follow IG Minangkabau Robo
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider block font-semibold">
+                          IG Minangkabau RC
                         </span>
                         {viewingCaang.proofFollowMrc ? (
-                          <div className="relative h-32 w-full mt-2 border border-zinc-200 dark:border-zinc-850 overflow-hidden bg-black/10">
+                          <div className="relative h-28 w-full mt-2 rounded-lg border border-border overflow-hidden bg-background">
                             <Image
                               src={viewingCaang.proofFollowMrc}
-                              alt="Bukti Follow Instagram MRC"
+                              alt="IG MRC"
                               fill
                               className="object-contain"
                               unoptimized
                             />
                           </div>
                         ) : (
-                          <p className="text-xs text-zinc-500 italic mt-2">
-                            Tidak diunggah
+                          <p className="text-xs text-muted-foreground italic mt-2">
+                            Tidak ada
                           </p>
                         )}
                       </div>
@@ -1350,32 +1797,32 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                           href={viewingCaang.proofFollowMrc}
                           target="_blank"
                           rel="noreferrer"
-                          className="mt-3 block text-center font-mono text-[10px] font-bold uppercase text-[#1c69d4] hover:underline"
+                          className="mt-2 block text-center text-[11px] font-semibold text-primary hover:underline"
                         >
-                          Buka Gambar Penuh
+                          Buka Penuh ↗
                         </a>
                       )}
                     </div>
 
-                    {/* Subscribe YouTube */}
-                    <div className="bg-zinc-50 dark:bg-zinc-900/30 p-3 border border-zinc-150 dark:border-zinc-900 flex flex-col justify-between">
+                    {/* YouTube */}
+                    <div className="bg-secondary/60 p-3 rounded-xl border border-border/70 flex flex-col justify-between">
                       <div>
-                        <span className="text-[10px] text-zinc-400 uppercase tracking-widest block font-mono">
-                          Subscribe YouTube UKM
+                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider block font-semibold">
+                          YouTube UKM
                         </span>
                         {viewingCaang.proofSubYt ? (
-                          <div className="relative h-32 w-full mt-2 border border-zinc-200 dark:border-zinc-850 overflow-hidden bg-black/10">
+                          <div className="relative h-28 w-full mt-2 rounded-lg border border-border overflow-hidden bg-background">
                             <Image
                               src={viewingCaang.proofSubYt}
-                              alt="Bukti Subscribe YouTube"
+                              alt="YouTube"
                               fill
                               className="object-contain"
                               unoptimized
                             />
                           </div>
                         ) : (
-                          <p className="text-xs text-zinc-500 italic mt-2">
-                            Tidak diunggah
+                          <p className="text-xs text-muted-foreground italic mt-2">
+                            Tidak ada
                           </p>
                         )}
                       </div>
@@ -1384,9 +1831,9 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                           href={viewingCaang.proofSubYt}
                           target="_blank"
                           rel="noreferrer"
-                          className="mt-3 block text-center font-mono text-[10px] font-bold uppercase text-[#1c69d4] hover:underline"
+                          className="mt-2 block text-center text-[11px] font-semibold text-primary hover:underline"
                         >
-                          Buka Gambar Penuh
+                          Buka Penuh ↗
                         </a>
                       )}
                     </div>
@@ -1394,10 +1841,10 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                 </div>
               </div>
 
-              <DialogFooter className="border-t border-zinc-200 dark:border-zinc-800 pt-3">
+              <DialogFooter className="border-t border-border pt-3">
                 <Button
                   onClick={() => setViewingCaang(null)}
-                  className="rounded-none bg-zinc-900 hover:bg-zinc-800 text-white font-mono text-xs uppercase tracking-wider py-4"
+                  className="rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold px-5 h-10"
                 >
                   Tutup
                 </Button>
@@ -1414,24 +1861,25 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
         open={!!editingCaang}
         onOpenChange={(open) => !open && setEditingCaang(null)}
       >
-        <DialogContent className="rounded-none max-w-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 overflow-y-auto max-h-[90vh]">
+        <DialogContent className="rounded-2xl max-w-2xl bg-card border border-border shadow-xl overflow-y-auto max-h-[90vh]">
           {editingCaang && (
             <form onSubmit={handleEditSubmit}>
-              <DialogHeader className="border-b border-zinc-200 dark:border-zinc-800 pb-3">
-                <DialogTitle className="font-sans text-base font-bold uppercase tracking-widest text-zinc-900 dark:text-zinc-50">
-                  Edit Data Caang
+              <DialogHeader className="border-b border-border pb-3">
+                <DialogTitle className="font-heading text-lg font-bold text-foreground">
+                  Edit Data Calon Anggota
                 </DialogTitle>
-                <DialogDescription className="font-mono text-[10px] uppercase text-zinc-500 tracking-wider">
-                  Perbarui Informasi Profil Dasar Pendaftar
+                <DialogDescription className="text-xs text-muted-foreground">
+                  Perbarui informasi biodata dasar dan status pendaftaran calon
+                  anggota.
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4 font-sans">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4 text-xs">
                 {/* Full Name */}
                 <div className="space-y-1.5">
                   <Label
                     htmlFor="edit-name"
-                    className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500"
+                    className="text-xs font-semibold text-foreground"
                   >
                     Nama Lengkap *
                   </Label>
@@ -1444,7 +1892,7 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                         fullName: e.target.value,
                       }))
                     }
-                    className="rounded-none border border-zinc-200 dark:border-zinc-800 text-sm h-10 focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600"
+                    className="rounded-lg border-border text-sm h-10"
                   />
                 </div>
 
@@ -1452,7 +1900,7 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                 <div className="space-y-1.5">
                   <Label
                     htmlFor="edit-nickname"
-                    className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500"
+                    className="text-xs font-semibold text-foreground"
                   >
                     Nama Panggilan *
                   </Label>
@@ -1465,7 +1913,7 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                         nickname: e.target.value,
                       }))
                     }
-                    className="rounded-none border border-zinc-200 dark:border-zinc-800 text-sm h-10 focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600"
+                    className="rounded-lg border-border text-sm h-10"
                   />
                 </div>
 
@@ -1473,7 +1921,7 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                 <div className="space-y-1.5">
                   <Label
                     htmlFor="edit-gender"
-                    className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500"
+                    className="text-xs font-semibold text-foreground"
                   >
                     Jenis Kelamin *
                   </Label>
@@ -1486,17 +1934,13 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                         gender: e.target.value,
                       }))
                     }
-                    className="h-10 w-full bg-transparent px-3 rounded-none border border-zinc-200 dark:border-zinc-800 text-sm text-zinc-900 dark:text-zinc-50 focus:outline-hidden focus:border-zinc-400 dark:focus:border-zinc-600"
+                    className="h-10 w-full bg-background px-3.5 rounded-lg border border-border text-sm text-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/20 cursor-pointer"
                   >
-                    <option value="" disabled className="dark:bg-zinc-950">
+                    <option value="" disabled>
                       Pilih Jenis Kelamin
                     </option>
-                    <option value="L" className="dark:bg-zinc-950">
-                      Laki-laki (L)
-                    </option>
-                    <option value="P" className="dark:bg-zinc-950">
-                      Perempuan (P)
-                    </option>
+                    <option value="L">Laki-laki (L)</option>
+                    <option value="P">Perempuan (P)</option>
                   </select>
                 </div>
 
@@ -1504,9 +1948,9 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                 <div className="space-y-1.5">
                   <Label
                     htmlFor="edit-phone"
-                    className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500"
+                    className="text-xs font-semibold text-foreground"
                   >
-                    No. Telepon / WA *
+                    No. Telepon / WhatsApp *
                   </Label>
                   <Input
                     id="edit-phone"
@@ -1517,7 +1961,7 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                         phoneNumber: e.target.value,
                       }))
                     }
-                    className="rounded-none border border-zinc-200 dark:border-zinc-800 text-sm h-10 font-mono focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600"
+                    className="rounded-lg border-border text-sm h-10 font-mono"
                   />
                 </div>
 
@@ -1525,7 +1969,7 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                 <div className="space-y-1.5">
                   <Label
                     htmlFor="edit-pob"
-                    className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500"
+                    className="text-xs font-semibold text-foreground"
                   >
                     Tempat Lahir *
                   </Label>
@@ -1535,7 +1979,7 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                     onChange={(e) =>
                       setEditForm((prev) => ({ ...prev, pob: e.target.value }))
                     }
-                    className="rounded-none border border-zinc-200 dark:border-zinc-800 text-sm h-10 focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600"
+                    className="rounded-lg border-border text-sm h-10"
                   />
                 </div>
 
@@ -1543,7 +1987,7 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                 <div className="space-y-1.5">
                   <Label
                     htmlFor="edit-dob"
-                    className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500"
+                    className="text-xs font-semibold text-foreground"
                   >
                     Tanggal Lahir *
                   </Label>
@@ -1554,7 +1998,7 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                     onChange={(e) =>
                       setEditForm((prev) => ({ ...prev, dob: e.target.value }))
                     }
-                    className="rounded-none border border-zinc-200 dark:border-zinc-800 text-sm h-10 font-mono focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600"
+                    className="rounded-lg border-border text-sm h-10 font-mono"
                   />
                 </div>
 
@@ -1562,7 +2006,7 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                 <div className="space-y-1.5">
                   <Label
                     htmlFor="edit-highschool"
-                    className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500"
+                    className="text-xs font-semibold text-foreground"
                   >
                     Sekolah Asal
                   </Label>
@@ -1575,7 +2019,7 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                         highSchool: e.target.value,
                       }))
                     }
-                    className="rounded-none border border-zinc-200 dark:border-zinc-800 text-sm h-10 focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600"
+                    className="rounded-lg border-border text-sm h-10"
                   />
                 </div>
 
@@ -1583,7 +2027,7 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                 <div className="space-y-1.5">
                   <Label
                     htmlFor="edit-class"
-                    className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500"
+                    className="text-xs font-semibold text-foreground"
                   >
                     Kelas Sekarang
                   </Label>
@@ -1596,7 +2040,7 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                         currentClass: e.target.value,
                       }))
                     }
-                    className="rounded-none border border-zinc-200 dark:border-zinc-800 text-sm h-10 focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600"
+                    className="rounded-lg border-border text-sm h-10"
                   />
                 </div>
 
@@ -1604,9 +2048,9 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                 <div className="space-y-1.5">
                   <Label
                     htmlFor="edit-entryyear"
-                    className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500"
+                    className="text-xs font-semibold text-foreground"
                   >
-                    Tahun Masuk *
+                    Tahun Masuk (Angkatan) *
                   </Label>
                   <Input
                     id="edit-entryyear"
@@ -1620,7 +2064,7 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                           : 0,
                       }))
                     }
-                    className="rounded-none border border-zinc-200 dark:border-zinc-800 text-sm h-10 font-mono focus-visible:ring-1 focus-visible:ring-zinc-400 dark:focus-visible:ring-zinc-600"
+                    className="rounded-lg border-border text-sm h-10 font-mono"
                   />
                 </div>
 
@@ -1628,7 +2072,7 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                 <div className="space-y-1.5">
                   <Label
                     htmlFor="edit-status"
-                    className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500"
+                    className="text-xs font-semibold text-foreground"
                   >
                     Status Pendaftaran *
                   </Label>
@@ -1641,28 +2085,46 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                         status: e.target.value,
                       }))
                     }
-                    className="h-10 w-full bg-transparent px-3 rounded-none border border-zinc-200 dark:border-zinc-800 text-sm text-zinc-900 dark:text-zinc-50 focus:outline-hidden focus:border-zinc-400 dark:focus:border-zinc-600"
+                    className="h-10 w-full bg-background px-3.5 rounded-lg border border-border text-sm text-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/20 cursor-pointer"
                   >
-                    <option value="process" className="dark:bg-zinc-950">
-                      PROCESS
-                    </option>
-                    <option value="pending" className="dark:bg-zinc-950">
-                      PENDING
-                    </option>
-                    <option value="verified" className="dark:bg-zinc-950">
-                      VERIFIED
-                    </option>
-                    <option value="rejected" className="dark:bg-zinc-950">
-                      REJECTED
-                    </option>
+                    <option value="verified">VERIFIED (DITERIMA)</option>
+                    <option value="revision">REVISION (PERLU REVISI)</option>
+                    <option value="pending">PENDING</option>
+                    <option value="process">PROCESS</option>
+                    <option value="rejected">REJECTED (DITOLAK)</option>
                   </select>
                 </div>
+
+                {/* Revision notes if status is revision */}
+                {editForm.status === "revision" && (
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <Label
+                      htmlFor="edit-revision-notes"
+                      className="text-xs font-semibold text-sky-700 dark:text-sky-300"
+                    >
+                      Catatan Revisi *
+                    </Label>
+                    <textarea
+                      id="edit-revision-notes"
+                      value={editForm.revisionNotes}
+                      onChange={(e) =>
+                        setEditForm((prev) => ({
+                          ...prev,
+                          revisionNotes: e.target.value,
+                        }))
+                      }
+                      rows={3}
+                      placeholder="Tuliskan alasan atau bagian yang perlu direvisi..."
+                      className="w-full bg-background p-3 rounded-xl border border-sky-300 dark:border-sky-800 text-sm text-foreground focus:outline-hidden focus:ring-2 focus:ring-sky-400"
+                    />
+                  </div>
+                )}
 
                 {/* Alamat Asal */}
                 <div className="space-y-1.5 sm:col-span-2">
                   <Label
                     htmlFor="edit-origin"
-                    className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500"
+                    className="text-xs font-semibold text-foreground"
                   >
                     Alamat Asal *
                   </Label>
@@ -1676,7 +2138,7 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                       }))
                     }
                     rows={2}
-                    className="w-full bg-transparent p-2.5 rounded-none border border-zinc-200 dark:border-zinc-800 text-sm text-zinc-900 dark:text-zinc-50 focus:outline-hidden focus:border-zinc-400 dark:focus:border-zinc-600"
+                    className="w-full bg-background p-3 rounded-xl border border-border text-sm text-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
 
@@ -1684,7 +2146,7 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                 <div className="space-y-1.5 sm:col-span-2">
                   <Label
                     htmlFor="edit-domicile"
-                    className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500"
+                    className="text-xs font-semibold text-foreground"
                   >
                     Alamat Domisili *
                   </Label>
@@ -1698,24 +2160,24 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
                       }))
                     }
                     rows={2}
-                    className="w-full bg-transparent p-2.5 rounded-none border border-zinc-200 dark:border-zinc-800 text-sm text-zinc-900 dark:text-zinc-50 focus:outline-hidden focus:border-zinc-400 dark:focus:border-zinc-600"
+                    className="w-full bg-background p-3 rounded-xl border border-border text-sm text-foreground focus:outline-hidden focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
               </div>
 
-              <DialogFooter className="border-t border-zinc-200 dark:border-zinc-800 pt-3">
+              <DialogFooter className="border-t border-border pt-3 gap-2">
                 <Button
                   type="button"
-                  variant="ghost"
+                  variant="outline"
                   onClick={() => setEditingCaang(null)}
-                  className="rounded-none border border-zinc-200 dark:border-zinc-800 font-mono text-xs uppercase tracking-wider h-10 px-4"
+                  className="rounded-lg text-xs h-10 px-4"
                 >
                   Batal
                 </Button>
                 <Button
                   type="submit"
                   disabled={isSubmittingEdit}
-                  className="rounded-none bg-[#1c69d4] hover:bg-[#1059b0] text-white font-mono text-xs uppercase tracking-wider h-10 px-4"
+                  className="rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground text-xs font-semibold h-10 px-5"
                 >
                   {isSubmittingEdit ? "Menyimpan..." : "Simpan Perubahan"}
                 </Button>
@@ -1732,53 +2194,53 @@ export function CaangClient({ initialCaang }: CaangClientProps) {
         open={!!deletingCaangId}
         onOpenChange={(open) => !open && setDeletingCaangId(null)}
       >
-        <DialogContent className="rounded-none max-w-md bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800">
+        <DialogContent className="rounded-2xl max-w-md bg-card border border-border shadow-xl">
           <form onSubmit={handleDeleteConfirm}>
-            <DialogHeader className="border-b border-zinc-200 dark:border-zinc-800 pb-3">
-              <DialogTitle className="font-sans text-base font-bold uppercase tracking-widest text-[#e22718]">
+            <DialogHeader className="border-b border-border pb-3">
+              <DialogTitle className="font-heading text-lg font-bold text-destructive flex items-center gap-2">
+                <HugeiconsIcon icon={Delete01Icon} size={20} />
                 Hapus Data Caang (Soft Delete)
               </DialogTitle>
             </DialogHeader>
 
-            <div className="py-4 space-y-4 font-sans text-xs">
-              <p className="text-zinc-600 dark:text-zinc-400">
+            <div className="py-4 space-y-3.5 text-xs">
+              <p className="text-text-secondary leading-relaxed">
                 Apakah Anda yakin ingin menonaktifkan data calon anggota ini?
-                Tindakan ini akan menyembunyikan data dari daftar pendaftaran
-                aktif.
+                Tindakan ini akan menyembunyikan pendaftar dari daftar aktif.
               </p>
 
               <div className="space-y-1.5">
                 <Label
                   htmlFor="delete-reason"
-                  className="text-xs font-mono font-bold uppercase tracking-wider text-zinc-500"
+                  className="text-xs font-semibold text-foreground"
                 >
                   Alasan Penghapusan *
                 </Label>
                 <textarea
                   id="delete-reason"
-                  placeholder="Tulis alasan penonaktifan data di sini..."
+                  placeholder="Contoh: Mengundurkan diri, duplikasi berkas, dll..."
                   value={deleteReasonText}
                   onChange={(e) => setDeleteReasonText(e.target.value)}
                   rows={3}
-                  className="w-full bg-transparent p-2.5 rounded-none border border-zinc-200 dark:border-zinc-800 text-sm text-zinc-900 dark:text-zinc-50 focus:outline-hidden focus:border-zinc-400 dark:focus:border-zinc-600 placeholder:text-zinc-400 placeholder:text-xs"
+                  className="w-full bg-background p-3 rounded-xl border border-border text-sm text-foreground focus:outline-hidden focus:ring-2 focus:ring-destructive/20 placeholder:text-muted-foreground placeholder:text-xs"
                   required
                 />
               </div>
             </div>
 
-            <DialogFooter className="border-t border-zinc-200 dark:border-zinc-800 pt-3">
+            <DialogFooter className="border-t border-border pt-3 gap-2">
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 onClick={() => setDeletingCaangId(null)}
-                className="rounded-none border border-zinc-200 dark:border-zinc-800 font-mono text-xs uppercase tracking-wider h-10 px-4"
+                className="rounded-lg text-xs h-10 px-4"
               >
                 Batal
               </Button>
               <Button
                 type="submit"
                 disabled={!deleteReasonText.trim()}
-                className="rounded-none bg-[#e22718] hover:bg-[#c81e12] disabled:opacity-50 disabled:cursor-not-allowed text-white font-mono text-xs uppercase tracking-wider h-10 px-4 shadow-[0_0_8px_rgba(226,39,24,0.15)]"
+                className="rounded-lg bg-destructive hover:bg-destructive/90 text-white text-xs font-semibold h-10 px-5 shadow-xs"
               >
                 Konfirmasi Hapus
               </Button>
