@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Dukungan Revisi Pendaftaran Caang (`components/onboarding/`, `lib/actions/onboarding.ts`, `lib/actions/registration.ts`)**: Caang dapat melanjutkan proses onboarding setelah data ditolak atau dihapus, dengan pemuatan ulang data awal, status revisi, dan alur navigasi yang sesuai.
+- **Status Caang Atomik dan Migrasi Database (`lib/actions/caang.ts`, `supabase/migrations/20260917000000_add_revision_status_to_registrations.sql`, `supabase/migrations/20260918000000_update_caang_status_atomic.sql`)**: Menambahkan status revisi pendaftaran serta pembaruan status caang secara atomik untuk mencegah kondisi data yang tidak konsisten.
+- **Template Email Supabase Lokal (`supabase/templates/`)**: Menambahkan template email autentikasi untuk konfirmasi pendaftaran, undangan, magic link, pemulihan kata sandi, perubahan email, dan re-authentication.
+
+### Changed
+
+- **Penguatan Alur Onboarding Caang (`app/(onboarding-flow)/layout.tsx`, `components/onboarding/`)**: Menyempurnakan guard rute, stepper, kartu status, cropper gambar, widget profil, serta dukungan upload bukti komitmen melalui Cloudflare R2.
+- **Validasi Bukti Dukungan Media Sosial (`components/onboarding/step-commitment.tsx`, `lib/actions/registration.ts`)**: Bukti Follow IG Robotik, Follow IG MRC, dan Subscribe YouTube kini wajib diunggah; URL bukti divalidasi terhadap path R2 milik pengguna sebelum disimpan.
+- **Manajemen Caang (`app/(private)/manajemen-caang/CaangClient.tsx`)**: Menyesuaikan tampilan dan aksi pengelolaan caang untuk mendukung status revisi dan alur pendaftaran terbaru.
+
 ## [0.9.1] - 2026-09-15
 
 ### Changed
