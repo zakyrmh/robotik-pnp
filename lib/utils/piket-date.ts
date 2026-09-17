@@ -170,6 +170,41 @@ const FUTURE_SKEW_MS = 5 * 60 * 1000;
  * Perbandingan memakai kandidat tanggal UTC dan WIB untuk menoleransi
  * selisih zona waktu client (WIB) vs server (UTC).
  */
+export interface InternshipProfileInfo {
+  is_on_internship?: boolean | null;
+  internship_start_date?: string | null;
+  internship_end_date?: string | null;
+}
+
+/**
+ * Menentukan apakah seorang anggota berstatus magang/PKL pada tanggal referensi tertentu (YYYY-MM-DD).
+ * Jika is_on_internship = true:
+ * - Apabila tidak ada tanggal mulai/selesai, anggota dianggap magang.
+ * - Apabila ada tanggal referensi, dicek apakah tanggal tersebut berada dalam [start_date, end_date].
+ */
+export function isMemberOnInternship(
+  profile: InternshipProfileInfo | null | undefined,
+  referenceDateStr?: string | null,
+): boolean {
+  if (!profile || !profile.is_on_internship) return false;
+
+  if (!profile.internship_start_date && !profile.internship_end_date) {
+    return true;
+  }
+
+  if (referenceDateStr) {
+    const startOk =
+      !profile.internship_start_date ||
+      profile.internship_start_date <= referenceDateStr;
+    const endOk =
+      !profile.internship_end_date ||
+      profile.internship_end_date >= referenceDateStr;
+    return startOk && endOk;
+  }
+
+  return true;
+}
+
 export function isDateInPiketWeek(
   target: Date,
   week: Pick<PiketWeekInfo, "startIsoDate" | "endIsoDate">,

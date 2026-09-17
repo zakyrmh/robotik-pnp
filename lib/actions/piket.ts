@@ -3,8 +3,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { ServerActionResponse } from "@/lib/types/action";
 import { extractExifDateTime } from "@/lib/utils/exif";
-import { getPiketWeekInfo, isDateInPiketWeek } from "@/lib/utils/piket-date";
 import {
+  getPiketWeekInfo,
+  isDateInPiketWeek,
+  isMemberOnInternship,
   MAX_PIKET_ATTEMPTS_PER_WEEK,
   DEFAULT_PIKET_FINE_AMOUNT,
 } from "@/lib/utils/piket-date";
@@ -694,6 +696,26 @@ export async function imposePiketFine(
         error: {
           code: "BAD_REQUEST",
           details: "Target is not a schedule member",
+        },
+      };
+    }
+
+    // Blokir pengenaan denda bila anggota sedang melaksanakan Magang Luar / PKL
+    const todayStr = toIsoDate(new Date());
+    const { data: targetProfile } = await supabase
+      .from("profiles")
+      .select("id, is_on_internship, internship_start_date, internship_end_date")
+      .eq("id", profileId)
+      .maybeSingle();
+
+    if (isMemberOnInternship(targetProfile, todayStr)) {
+      return {
+        success: false,
+        message:
+          "Anggota sedang melaksanakan Magang Luar / PKL sehingga dibebaskan dari kewajiban dan denda piket.",
+        error: {
+          code: "BAD_REQUEST",
+          details: "Target member is on internship",
         },
       };
     }
