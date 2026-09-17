@@ -30,6 +30,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DisciplineWidget } from "@/components/features/komdis/discipline-widget";
+import { CaangWhatsappGroupCard } from "@/components/features/dashboard/caang-whatsapp-group-card";
 
 export interface ActivitySummary {
   id: string;
@@ -83,6 +84,7 @@ export interface DashboardData {
     activeSpLevel: number | null;
   };
   caangStats?: {
+    whatsappGroupUrl: string | null;
     groupName: string | null;
     divisionName: string | null;
     totalTasks: number;
@@ -519,6 +521,8 @@ export function DashboardClient({ data }: DashboardClientProps) {
       {profile.role === "caang" && data.caangStats && (
         <div className="space-y-6">
           <div className="grid gap-6 grid-cols-1 md:grid-cols-3">
+            <CaangWhatsappGroupCard url={data.caangStats.whatsappGroupUrl} />
+
             {/* Card: Group & Division info */}
             <Card className="bg-card border border-border rounded-2xl shadow-xs">
               <CardHeader className="pb-3">

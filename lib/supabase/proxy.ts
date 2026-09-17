@@ -78,12 +78,71 @@ export async function updateSession(request: NextRequest) {
     },
   );
 
-  // 1. Ambil data user dari Auth
+  // Definisi Rute
+  const authRoutes = [
+    "/register",
+    "/login",
+    "/verify-email",
+    "/forgot-password",
+  ];
+  const internalProtectedRoutes = [
+    "/dashboard",
+    "/kegiatan",
+    "/presensi",
+    "/tugas",
+    "/magang",
+    "/piket",
+    "/manajemen-kelompok",
+    "/manajemen-caang",
+    "/settings",
+  ];
+  const protectedRoutes = [
+    ...internalProtectedRoutes,
+    "/onboarding",
+    "/waiting",
+    "/rejected",
+    "/deleted",
+  ];
+  const isAuthCallback = pathname === "/callback";
+
+  if (isAuthCallback) return supabaseResponse;
+
+  const matchRoute = (path: string, route: string) => {
+    return path === route || path.startsWith(route + "/");
+  };
+
+  const isProtectedRoute = protectedRoutes.some((r) => matchRoute(pathname, r));
+  const isAuthRoute = authRoutes.some((r) => matchRoute(pathname, r));
+  const isUpdatePasswordRoute = matchRoute(pathname, "/update-password");
+
+  // Jika rute publik (bukan protected, auth, atau update-password), hindari kueri DB/auth berlebih
+  if (!isProtectedRoute && !isAuthRoute && !isUpdatePasswordRoute) {
+    return supabaseResponse;
+  }
+
+  // 1. Ambil data user dari Auth hanya untuk rute yang membutuhkan proteksi / pengalihan
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // 2. Ambil data profil (is_onboarded) dan registrasi jika user sudah login
+  // Penanganan khusus rute update-password (sesi recovery reset password)
+  if (isUpdatePasswordRoute) {
+    if (!user) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/forgot-password";
+      return NextResponse.redirect(url);
+    }
+    return supabaseResponse;
+  }
+
+  // Kasus: User Belum Login di Rute Terproteksi
+  if (!user && isProtectedRoute) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    return NextResponse.redirect(url);
+  }
+
+  // 2. Ambil data profil (is_onboarded) dan registrasi HANYA jika user sudah login
   let profile: { role: string; is_onboarded: boolean } | null = null;
   let regStatus: string | null = null;
   let deletedAt: string | null = null;
@@ -119,59 +178,6 @@ export async function updateSession(request: NextRequest) {
         }
       }
     }
-  }
-
-  // Definisi Rute
-  const authRoutes = [
-    "/register",
-    "/login",
-    "/verify-email",
-    "/forgot-password",
-  ];
-  const internalProtectedRoutes = [
-    "/dashboard",
-    "/kegiatan",
-    "/presensi",
-    "/tugas",
-    "/magang",
-    "/piket",
-    "/manajemen-kelompok",
-    "/manajemen-caang",
-    "/settings",
-  ];
-  const protectedRoutes = [
-    ...internalProtectedRoutes,
-    "/onboarding",
-    "/waiting",
-    "/rejected",
-    "/deleted",
-  ];
-  const isAuthCallback = pathname === "/callback";
-
-  if (isAuthCallback) return supabaseResponse;
-
-  const matchRoute = (path: string, route: string) => {
-    return path === route || path.startsWith(route + "/");
-  };
-
-  // Penanganan khusus rute update-password (sesi recovery reset password)
-  if (matchRoute(pathname, "/update-password")) {
-    if (!user) {
-      const url = request.nextUrl.clone();
-      url.pathname = "/forgot-password";
-      return NextResponse.redirect(url);
-    }
-    return supabaseResponse;
-  }
-
-  const isProtectedRoute = protectedRoutes.some((r) => matchRoute(pathname, r));
-  const isAuthRoute = authRoutes.some((r) => matchRoute(pathname, r));
-
-  // Kasus: User Belum Login
-  if (!user && isProtectedRoute) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    return NextResponse.redirect(url);
   }
 
   // Kasus: User Sudah Login

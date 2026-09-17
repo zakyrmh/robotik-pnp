@@ -89,6 +89,9 @@ interface RawPiketSchedule {
           id: string;
           nim: string | null;
           full_name?: string | null;
+          is_on_internship?: boolean;
+          internship_start_date?: string | null;
+          internship_end_date?: string | null;
           registrations: {
             full_name: string;
           } | null;
@@ -120,7 +123,9 @@ export default async function PiketPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("id, email, role, is_onboarded")
+    .select(
+      "id, email, role, is_onboarded, is_on_internship, internship_start_date, internship_end_date",
+    )
     .eq("id", user.id)
     .single();
 
@@ -150,6 +155,9 @@ export default async function PiketPage() {
           id,
           nim,
           full_name,
+          is_on_internship,
+          internship_start_date,
+          internship_end_date,
           registrations (
             full_name
           )
@@ -355,6 +363,9 @@ export default async function PiketPage() {
         m.profiles?.full_name ||
         m.profiles?.registrations?.full_name ||
         "Anggota",
+      is_on_internship: m.profiles?.is_on_internship ?? false,
+      internship_start_date: m.profiles?.internship_start_date || null,
+      internship_end_date: m.profiles?.internship_end_date || null,
     })),
   }));
 
@@ -377,6 +388,9 @@ export default async function PiketPage() {
           email: profile.email,
           role: profile.role,
           is_onboarded: profile.is_onboarded,
+          is_on_internship: profile.is_on_internship ?? false,
+          internship_start_date: profile.internship_start_date || null,
+          internship_end_date: profile.internship_end_date || null,
         }}
         availablePeriods={availablePeriods}
         schedules={formattedSchedules}

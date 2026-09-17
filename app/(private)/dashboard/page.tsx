@@ -33,6 +33,10 @@ interface RawPiketMember {
   } | null;
 }
 
+interface CommunityLinks {
+  whatsapp_url?: string;
+}
+
 export default async function DashboardPage() {
   const supabase = await createClient();
 
@@ -102,7 +106,16 @@ export default async function DashboardPage() {
   const nowIso = new Date().toISOString();
 
   if (profile.role === "caang") {
-    // 1. Group info
+    // 1. WhatsApp group link
+    const { data: orSettings } = await supabase
+      .from("or_settings")
+      .select("link_komunitas")
+      .maybeSingle();
+    const whatsappGroupUrl =
+      (orSettings?.link_komunitas as CommunityLinks | null)?.whatsapp_url ||
+      null;
+
+    // 2. Group info
     const { data: groupMember } = await supabase
       .from("group_members")
       .select("caang_groups(name)")
@@ -111,7 +124,7 @@ export default async function DashboardPage() {
     const groupName =
       (groupMember as unknown as RawGroupMember)?.caang_groups?.name || null;
 
-    // 2. Division info
+    // 3. Division info
     const { data: internship } = await supabase
       .from("internships")
       .select("divisions(name)")
@@ -120,7 +133,7 @@ export default async function DashboardPage() {
     const divisionName =
       (internship as unknown as RawInternship)?.divisions?.name || null;
 
-    // 3. Tasks stats
+    // 4. Tasks stats
     const { data: tasks } = await supabase.from("tasks").select("id");
     const totalTasks = tasks?.length || 0;
 
@@ -136,7 +149,7 @@ export default async function DashboardPage() {
           gradedTasks.length
         : 0;
 
-    // 4. Attendance stats
+    // 5. Attendance stats
     const { data: attendances } = await supabase
       .from("attendances")
       .select("status")
@@ -147,6 +160,7 @@ export default async function DashboardPage() {
         .length || 0;
 
     dataPayload.caangStats = {
+      whatsappGroupUrl,
       groupName,
       divisionName,
       totalTasks,
@@ -270,7 +284,10 @@ export default async function DashboardPage() {
     const currentWeekNumber = Math.ceil(new Date().getDate() / 7);
     const { count: scheduledMembersCount } = await supabase
       .from("piket_members")
-      .select("id, piket_schedules!inner(week_number)", { count: "exact", head: true })
+      .select("id, piket_schedules!inner(week_number)", {
+        count: "exact",
+        head: true,
+      })
       .eq("piket_schedules.week_number", currentWeekNumber);
 
     // 4. Personal piket assignment
