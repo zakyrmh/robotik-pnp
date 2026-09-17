@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.10.0](https://github.com/zakyrmh/robotik-pnp/compare/v0.9.4...v0.10.0) (2026-09-17)
+
+### ⚡ Performance Improvements
+
+- optimize server-side usage for Vercel Free Plan ([c389ad7](https://github.com/zakyrmh/robotik-pnp/commit/c389ad7cb7ef1611e1f3c695456ab20dfe7b1a4a))
+
+### ✨ Features
+
+- **dashboard:** add caang WhatsApp group link ([8aa178b](https://github.com/zakyrmh/robotik-pnp/commit/8aa178bae7ea9a84e51c619380f682e559e9a580))
+- **piket:** exempt members on internship/PKL from mandatory duties and fines ([c97687b](https://github.com/zakyrmh/robotik-pnp/commit/c97687b0779cc007b29b4deb966add80d59da611))
+
+### 🏠 Chores
+
+- **release:** merge develop into main for v0.10.0 ([c49b8fb](https://github.com/zakyrmh/robotik-pnp/commit/c49b8fb65e9bc3c8bba71d8be3fe433e84066ce6))
+
 ### [0.9.4](https://github.com/zakyrmh/robotik-pnp/compare/v0.9.3...v0.9.4) (2026-09-17)
 
 ### ✨ Features
