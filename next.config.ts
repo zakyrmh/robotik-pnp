@@ -43,6 +43,9 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
+    // Batasi format dan ukuran cache untuk efisiensi Vercel Free Plan (1.000 Image Optimizations/bulan)
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 86400, // Cache gambar di edge CDN selama minimal 24 jam (86400s)
     // Izinkan IP lokal hanya saat development (Next.js 16+ perlindungan SSRF)
     dangerouslyAllowLocalIP: process.env.NODE_ENV === "development",
     remotePatterns: [
