@@ -75,6 +75,11 @@ const allMenuItems = {
     href: "/piket",
     icon: CleanIcon,
   },
+  dashboardPendaftaranCaang: {
+    title: "Dashboard Pendaftaran",
+    href: "/dashboard-pendaftaran-caang",
+    icon: DashboardSquare01Icon,
+  },
   pengaturanOr: {
     title: "Pengaturan OR",
     href: "/pengaturan-or",
@@ -127,6 +132,7 @@ const roleMenuKeys: Record<string, (keyof typeof allMenuItems)[]> = {
   ],
   "admin-or": [
     "dashboard",
+    "dashboardPendaftaranCaang",
     "pengaturanOr",
     "manajemenCaang",
     "manajemenKelompokCaang",
@@ -137,6 +143,7 @@ const roleMenuKeys: Record<string, (keyof typeof allMenuItems)[]> = {
   ],
   "super-admin": [
     "dashboard",
+    "dashboardPendaftaranCaang",
     "pengaturanOr",
     "manajemenCaang",
     "manajemenKelompokCaang",
@@ -347,6 +354,7 @@ export function Sidebar() {
       title: "Open Recruitment",
       keys: (
         [
+          "dashboardPendaftaranCaang",
           "pengaturanOr",
           "manajemenCaang",
           "manajemenKelompokCaang",

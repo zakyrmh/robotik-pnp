@@ -87,6 +87,7 @@ export async function updateSession(request: NextRequest) {
   ];
   const internalProtectedRoutes = [
     "/dashboard",
+    "/dashboard-pendaftaran-caang",
     "/kegiatan",
     "/presensi",
     "/tugas",
