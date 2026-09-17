@@ -49,7 +49,7 @@ const TrashIcon = () => (
     viewBox="0 0 24 24"
     strokeWidth={1.5}
     stroke="currentColor"
-    className="w-4 h-4 text-rose-500"
+    className="w-4 h-4 text-destructive"
   >
     <path
       strokeLinecap="round"
@@ -229,49 +229,49 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
   };
 
   return (
-    <div className="space-y-6 w-full max-w-6xl mx-auto px-1 lg:px-4">
+    <div className="space-y-6 w-full max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Header Banner - Dual Canvas dark base with Tech stripe */}
-      <div className="relative border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-6 rounded-none shadow-sm overflow-hidden">
+      <div className="relative border border-border bg-card p-6 rounded-lg shadow-sm overflow-hidden">
         {/* Tricolor Tech Stripe at Top */}
-        <div className="absolute top-0 left-0 right-0 h-[3px] bg-linear-to-r from-[#0066b1] via-[#1c69d4] to-[#e22718]" />
+        <div className="absolute top-0 left-0 right-0 h-[3px] bg-linear-to-r from-primary via-accent-strong to-primary-hover" />
 
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-xl font-bold uppercase tracking-widest text-zinc-900 dark:text-zinc-50 font-sans flex items-center gap-2">
+            <h1 className="text-xl font-bold uppercase tracking-widest text-foreground font-sans flex items-center gap-2">
               <HugeiconsIcon
                 icon={Settings02Icon}
                 size={22}
-                className="text-[#1c69d4] dark:text-[#0066b1]"
+                className="text-primary"
               />
               Pengaturan Open Recruitment
             </h1>
-            <p className="text-xs font-mono uppercase tracking-wider text-zinc-500 mt-1">
+            <p className="text-xs font-mono uppercase tracking-wider text-muted-foreground mt-1">
               Konfigurasi Sistem Penerimaan Calon Anggota Baru UKM Robotik PNP
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
             {/* Status Indicator */}
-            <div className="flex items-center gap-2 border border-zinc-200 dark:border-zinc-800 px-3 py-1.5 bg-zinc-50/50 dark:bg-zinc-900/30">
-              <span className="font-mono text-[9px] uppercase tracking-wider text-zinc-500">
+            <div className="flex items-center gap-2 border border-border px-3 py-1.5 bg-secondary/50 dark:bg-secondary/50">
+              <span className="font-mono text-[9px] uppercase tracking-wider text-muted-foreground">
                 STATUS:
               </span>
               {statusPendaftaran ? (
                 <div className="flex items-center gap-1.5">
                   <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-success"></span>
                   </span>
-                  <Badge className="bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 font-mono text-[8px] rounded-none px-1 py-0 uppercase">
+                  <Badge className="bg-success/10 text-success border-success/20 font-mono text-[8px] rounded-lg px-1 py-0 uppercase">
                     DIBUKA
                   </Badge>
                 </div>
               ) : (
                 <div className="flex items-center gap-1.5">
                   <span className="relative flex h-2 w-2">
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-[#e22718]"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-destructive"></span>
                   </span>
-                  <Badge className="bg-[#e22718]/10 text-[#e22718] border border-[#e22718]/20 font-mono text-[8px] rounded-none px-1 py-0 uppercase">
+                  <Badge className="bg-destructive/10 text-destructive border border-destructive/20 font-mono text-[8px] rounded-lg px-1 py-0 uppercase">
                     DITUTUP
                   </Badge>
                 </div>
@@ -281,7 +281,7 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
             <Button
               onClick={handleSaveSettings}
               disabled={isSaving}
-              className="bg-zinc-900 dark:bg-zinc-50 text-white dark:text-zinc-900 border border-zinc-900 dark:border-zinc-50 hover:bg-transparent dark:hover:bg-transparent hover:text-zinc-900 dark:hover:text-zinc-50 transition-all font-mono text-xs uppercase tracking-widest px-6 py-4 rounded-none cursor-pointer"
+              className="bg-primary text-primary-foreground border border-primary hover:bg-primary-hover hover:text-primary-foreground transition-all font-mono text-xs uppercase tracking-widest px-6 py-4 rounded-lg cursor-pointer min-h-[44px]"
             >
               Simpan Semua
             </Button>
@@ -295,24 +295,24 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
         onValueChange={setActiveTab}
         className="space-y-6"
       >
-        <TabsList className="bg-zinc-50/80 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 p-1 rounded-none w-full grid grid-cols-3">
+        <TabsList className="bg-secondary/80 dark:bg-secondary/80 border border-border p-1 rounded-lg w-full grid grid-cols-1 sm:grid-cols-3">
           <TabsTrigger
             value="utama"
-            className="font-mono text-xs uppercase tracking-wider rounded-none data-[state=active]:bg-zinc-900 dark:data-[state=active]:bg-zinc-50 data-[state=active]:text-white dark:data-[state=active]:text-zinc-950"
+            className="font-mono text-xs uppercase tracking-wider rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
           >
             <HugeiconsIcon icon={Settings02Icon} className="mr-1.5 size-3.5" />
             Utama & Biaya
           </TabsTrigger>
           <TabsTrigger
             value="rekening"
-            className="font-mono text-xs uppercase tracking-wider rounded-none data-[state=active]:bg-zinc-900 dark:data-[state=active]:bg-zinc-50 data-[state=active]:text-white dark:data-[state=active]:text-zinc-950"
+            className="font-mono text-xs uppercase tracking-wider rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
           >
             <HugeiconsIcon icon={UserGroupIcon} className="mr-1.5 size-3.5" />
             Rekening & Panitia
           </TabsTrigger>
           <TabsTrigger
             value="timeline"
-            className="font-mono text-xs uppercase tracking-wider rounded-none data-[state=active]:bg-zinc-900 dark:data-[state=active]:bg-zinc-50 data-[state=active]:text-white dark:data-[state=active]:text-zinc-950"
+            className="font-mono text-xs uppercase tracking-wider rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
           >
             <HugeiconsIcon icon={Calendar03Icon} className="mr-1.5 size-3.5" />
             Timeline Seleksi
@@ -323,15 +323,15 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
         <TabsContent value="utama" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* General Configurations */}
-            <div className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-6 rounded-none space-y-4">
-              <h3 className="font-mono text-xs font-bold uppercase tracking-widest text-[#1c69d4] dark:text-[#0066b1] border-b border-zinc-100 dark:border-zinc-900 pb-2">
+            <div className="border border-border bg-card p-6 rounded-lg space-y-4">
+              <h3 className="font-mono text-xs font-bold uppercase tracking-widest text-primary border-b border-border pb-2">
                 KONFIGURASI UTAMA
               </h3>
 
               <div className="space-y-2">
                 <Label
                   htmlFor="periode"
-                  className="font-mono text-[10px] uppercase tracking-wider text-zinc-500"
+                  className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground"
                 >
                   PERIODE RECRUITMENT
                 </Label>
@@ -340,22 +340,22 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
                   value={periodeRecruitment}
                   onChange={(e) => setPeriodeRecruitment(e.target.value)}
                   placeholder="Contoh: OR-21"
-                  className="rounded-none border-zinc-200 dark:border-zinc-800 font-mono text-xs uppercase tracking-wider"
+                  className="rounded-lg border-border font-mono text-xs uppercase tracking-wider"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label className="font-mono text-[10px] uppercase tracking-wider text-zinc-500 block mb-1">
+                <Label className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground block mb-1">
                   STATUS PENDAFTARAN
                 </Label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => setStatusPendaftaran(true)}
-                    className={`py-2 text-center rounded-none font-mono text-xs uppercase tracking-wider border cursor-pointer transition-all ${
+                    className={`py-2 min-h-[44px] text-center rounded-lg font-mono text-xs uppercase tracking-wider border cursor-pointer transition-all ${
                       statusPendaftaran
-                        ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/50"
-                        : "bg-transparent text-zinc-500 border-zinc-200 dark:border-zinc-800"
+                        ? "bg-success/10 text-success border-success/50"
+                        : "bg-transparent text-muted-foreground border-border"
                     }`}
                   >
                     BUKA PENDAFTARAN
@@ -363,10 +363,10 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
                   <button
                     type="button"
                     onClick={() => setStatusPendaftaran(false)}
-                    className={`py-2 text-center rounded-none font-mono text-xs uppercase tracking-wider border cursor-pointer transition-all ${
+                    className={`py-2 min-h-[44px] text-center rounded-lg font-mono text-xs uppercase tracking-wider border cursor-pointer transition-all ${
                       !statusPendaftaran
-                        ? "bg-[#e22718]/10 text-[#e22718] border-[#e22718]/50 shadow-[0_0_8px_rgba(226,39,24,0.05)]"
-                        : "bg-transparent text-zinc-500 border-zinc-200 dark:border-zinc-800"
+                        ? "bg-destructive/10 text-destructive border-destructive/50 shadow-soft"
+                        : "bg-transparent text-muted-foreground border-border"
                     }`}
                   >
                     TUTUP PENDAFTARAN
@@ -378,7 +378,7 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
                 <div className="space-y-2">
                   <Label
                     htmlFor="start-date"
-                    className="font-mono text-[10px] uppercase tracking-wider text-zinc-500"
+                    className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground"
                   >
                     TANGGAL PEMBUKAAN
                   </Label>
@@ -387,13 +387,13 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
                     type="datetime-local"
                     value={tanggalMulai}
                     onChange={(e) => setTanggalMulai(e.target.value)}
-                    className="rounded-none border-zinc-200 dark:border-zinc-800 text-xs font-mono"
+                    className="rounded-lg border-border text-xs font-mono"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label
                     htmlFor="end-date"
-                    className="font-mono text-[10px] uppercase tracking-wider text-zinc-500"
+                    className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground"
                   >
                     TANGGAL PENUTUPAN
                   </Label>
@@ -402,27 +402,27 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
                     type="datetime-local"
                     value={tanggalSelesai}
                     onChange={(e) => setTanggalSelesai(e.target.value)}
-                    className="rounded-none border-zinc-200 dark:border-zinc-800 text-xs font-mono"
+                    className="rounded-lg border-border text-xs font-mono"
                   />
                 </div>
               </div>
             </div>
 
             {/* Registration Fee & Links */}
-            <div className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-6 rounded-none space-y-4">
-              <h3 className="font-mono text-xs font-bold uppercase tracking-widest text-[#1c69d4] dark:text-[#0066b1] border-b border-zinc-100 dark:border-zinc-900 pb-2">
+            <div className="border border-border bg-card p-6 rounded-lg space-y-4">
+              <h3 className="font-mono text-xs font-bold uppercase tracking-widest text-primary border-b border-border pb-2">
                 BIAYA & TAUTAN KOMUNITAS
               </h3>
 
               <div className="space-y-2">
                 <Label
                   htmlFor="biaya"
-                  className="font-mono text-[10px] uppercase tracking-wider text-zinc-500"
+                  className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground"
                 >
                   BIAYA PENDAFTARAN (RP)
                 </Label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono text-xs text-zinc-400">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 font-mono text-xs text-muted-foreground">
                     Rp
                   </span>
                   <Input
@@ -433,7 +433,7 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
                     onChange={(e) =>
                       setBiayaPendaftaran(parseInt(e.target.value) || 0)
                     }
-                    className="rounded-none border-zinc-200 dark:border-zinc-800 font-mono text-xs pl-8"
+                    className="rounded-lg border-border font-mono text-xs pl-8"
                   />
                 </div>
               </div>
@@ -441,7 +441,7 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
               <div className="space-y-2">
                 <Label
                   htmlFor="wa"
-                  className="font-mono text-[10px] uppercase tracking-wider text-zinc-500"
+                  className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground"
                 >
                   LINK GROUP WHATSAPP
                 </Label>
@@ -456,14 +456,14 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
                     })
                   }
                   placeholder="https://chat.whatsapp.com/..."
-                  className="rounded-none border-zinc-200 dark:border-zinc-800 text-xs font-mono"
+                  className="rounded-lg border-border text-xs font-mono"
                 />
               </div>
 
               <div className="space-y-2">
                 <Label
                   htmlFor="discord"
-                  className="font-mono text-[10px] uppercase tracking-wider text-zinc-500"
+                  className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground"
                 >
                   LINK SERVER DISCORD
                 </Label>
@@ -478,7 +478,7 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
                     })
                   }
                   placeholder="https://discord.gg/..."
-                  className="rounded-none border-zinc-200 dark:border-zinc-800 text-xs font-mono"
+                  className="rounded-lg border-border text-xs font-mono"
                 />
               </div>
             </div>
@@ -489,17 +489,17 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
         <TabsContent value="rekening" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Bank Accounts Section */}
-            <div className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-6 rounded-none space-y-4">
-              <h3 className="font-mono text-xs font-bold uppercase tracking-widest text-[#1c69d4] dark:text-[#0066b1] border-b border-zinc-100 dark:border-zinc-900 pb-2">
+            <div className="border border-border bg-card p-6 rounded-lg space-y-4">
+              <h3 className="font-mono text-xs font-bold uppercase tracking-widest text-primary border-b border-border pb-2">
                 REKENING PENERIMA BIAYA
               </h3>
 
               {/* Dynamic Add Bank Form */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 bg-zinc-50 dark:bg-zinc-900/30 p-3 border border-zinc-100 dark:border-zinc-900">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 bg-secondary p-3 border border-border">
                 <div className="space-y-1">
                   <Label
                     htmlFor="bankName"
-                    className="font-mono text-[8px] uppercase tracking-wider text-zinc-400"
+                    className="font-mono text-[8px] uppercase tracking-wider text-muted-foreground"
                   >
                     BANK / E-WALLET
                   </Label>
@@ -510,13 +510,13 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
                       setNewBank({ ...newBank, bank_name: e.target.value })
                     }
                     placeholder="E.g. Bank Mandiri"
-                    className="h-8 rounded-none border-zinc-200 dark:border-zinc-800 font-mono text-[10px] uppercase tracking-wider px-2"
+                    className="h-11 min-h-[44px] rounded-lg border-border font-mono text-[10px] uppercase tracking-wider px-2"
                   />
                 </div>
                 <div className="space-y-1">
                   <Label
                     htmlFor="accNum"
-                    className="font-mono text-[8px] uppercase tracking-wider text-zinc-400"
+                    className="font-mono text-[8px] uppercase tracking-wider text-muted-foreground"
                   >
                     NO. REKENING
                   </Label>
@@ -527,13 +527,13 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
                       setNewBank({ ...newBank, account_number: e.target.value })
                     }
                     placeholder="E.g. 111222333"
-                    className="h-8 rounded-none border-zinc-200 dark:border-zinc-800 font-mono text-[10px] px-2"
+                    className="h-11 min-h-[44px] rounded-lg border-border font-mono text-[10px] px-2"
                   />
                 </div>
                 <div className="space-y-1">
                   <Label
                     htmlFor="accHolder"
-                    className="font-mono text-[8px] uppercase tracking-wider text-zinc-400"
+                    className="font-mono text-[8px] uppercase tracking-wider text-muted-foreground"
                   >
                     NAMA PEMILIK
                   </Label>
@@ -548,12 +548,12 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
                         })
                       }
                       placeholder="E.g. Bendahara OR"
-                      className="h-8 rounded-none border-zinc-200 dark:border-zinc-800 font-mono text-[10px] uppercase tracking-wider px-2 flex-1"
+                      className="h-11 min-h-[44px] rounded-lg border-border font-mono text-[10px] uppercase tracking-wider px-2 flex-1"
                     />
                     <Button
                       onClick={handleAddBank}
                       type="button"
-                      className="h-8 w-8 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-none p-0 flex items-center justify-center cursor-pointer shrink-0"
+                      className="h-11 min-h-[44px] w-11 min-w-[44px] bg-primary text-primary-foreground rounded-lg p-0 flex items-center justify-center cursor-pointer shrink-0"
                     >
                       <PlusIcon />
                     </Button>
@@ -564,25 +564,25 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
               {/* List of Accounts */}
               <div className="space-y-2 mt-4 max-h-[220px] overflow-y-auto pr-1">
                 {rekeningPenerima.length === 0 ? (
-                  <p className="text-[10px] font-mono text-zinc-400 uppercase py-4 text-center border border-dashed border-zinc-200 dark:border-zinc-800">
+                  <p className="text-[10px] font-mono text-muted-foreground uppercase py-4 text-center border border-dashed border-border">
                     Tidak ada rekening terdaftar.
                   </p>
                 ) : (
                   rekeningPenerima.map((account, index) => (
                     <div
                       key={index}
-                      className="flex justify-between items-center border border-zinc-100 dark:border-zinc-900 p-3 hover:bg-zinc-50 dark:hover:bg-zinc-900/10 transition-colors"
+                      className="flex justify-between items-center border border-border p-3 hover:bg-secondary dark:hover:bg-secondary transition-colors"
                     >
                       <div>
                         <div className="flex items-center gap-1.5">
-                          <span className="font-mono text-[9px] uppercase tracking-widest bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 px-1 py-0.5 rounded-none font-bold">
+                          <span className="font-mono text-[9px] uppercase tracking-widest bg-secondary text-secondary-foreground px-1 py-0.5 rounded-lg font-bold">
                             {account.bank_name}
                           </span>
-                          <span className="font-mono text-xs text-zinc-900 dark:text-zinc-100 font-semibold">
+                          <span className="font-mono text-xs text-foreground font-semibold">
                             {account.account_number}
                           </span>
                         </div>
-                        <div className="font-mono text-[10px] text-zinc-400 mt-1 uppercase tracking-wider">
+                        <div className="font-mono text-[10px] text-muted-foreground mt-1 uppercase tracking-wider">
                           A.N. {account.account_holder}
                         </div>
                       </div>
@@ -590,7 +590,7 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
                         onClick={() => handleRemoveBank(index)}
                         variant="ghost"
                         size="icon-sm"
-                        className="text-[#e22718] hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-none cursor-pointer"
+                        className="text-destructive hover:bg-destructive/10 dark:hover:bg-destructive/15 rounded-lg cursor-pointer min-h-[44px] min-w-[44px]"
                       >
                         <TrashIcon />
                       </Button>
@@ -601,17 +601,17 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
             </div>
 
             {/* Committee Contacts Section */}
-            <div className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-6 rounded-none space-y-4">
-              <h3 className="font-mono text-xs font-bold uppercase tracking-widest text-[#1c69d4] dark:text-[#0066b1] border-b border-zinc-100 dark:border-zinc-900 pb-2">
+            <div className="border border-border bg-card p-6 rounded-lg space-y-4">
+              <h3 className="font-mono text-xs font-bold uppercase tracking-widest text-primary border-b border-border pb-2">
                 KONTAK PANITIA
               </h3>
 
               {/* Dynamic Add Contact Form */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-zinc-50 dark:bg-zinc-900/30 p-3 border border-zinc-100 dark:border-zinc-900">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-secondary p-3 border border-border">
                 <div className="space-y-1">
                   <Label
                     htmlFor="contactName"
-                    className="font-mono text-[8px] uppercase tracking-wider text-zinc-400"
+                    className="font-mono text-[8px] uppercase tracking-wider text-muted-foreground"
                   >
                     NAMA PANITIA
                   </Label>
@@ -622,13 +622,13 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
                       setNewContact({ ...newContact, name: e.target.value })
                     }
                     placeholder="E.g. Naufal Khalil"
-                    className="h-8 rounded-none border-zinc-200 dark:border-zinc-800 font-mono text-[10px] uppercase tracking-wider px-2"
+                    className="h-11 min-h-[44px] rounded-lg border-border font-mono text-[10px] uppercase tracking-wider px-2"
                   />
                 </div>
                 <div className="space-y-1">
                   <Label
                     htmlFor="contactPhone"
-                    className="font-mono text-[8px] uppercase tracking-wider text-zinc-400"
+                    className="font-mono text-[8px] uppercase tracking-wider text-muted-foreground"
                   >
                     NOMOR TELEPON
                   </Label>
@@ -643,12 +643,12 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
                         })
                       }
                       placeholder="E.g. 0812345678"
-                      className="h-8 rounded-none border-zinc-200 dark:border-zinc-800 font-mono text-[10px] px-2 flex-1"
+                      className="h-11 min-h-[44px] rounded-lg border-border font-mono text-[10px] px-2 flex-1"
                     />
                     <Button
                       onClick={handleAddContact}
                       type="button"
-                      className="h-8 w-8 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-none p-0 flex items-center justify-center cursor-pointer shrink-0"
+                      className="h-11 min-h-[44px] w-11 min-w-[44px] bg-primary text-primary-foreground rounded-lg p-0 flex items-center justify-center cursor-pointer shrink-0"
                     >
                       <PlusIcon />
                     </Button>
@@ -659,20 +659,20 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
               {/* List of Contacts */}
               <div className="space-y-2 mt-4 max-h-[220px] overflow-y-auto pr-1">
                 {kontakPanitia.length === 0 ? (
-                  <p className="text-[10px] font-mono text-zinc-400 uppercase py-4 text-center border border-dashed border-zinc-200 dark:border-zinc-800">
+                  <p className="text-[10px] font-mono text-muted-foreground uppercase py-4 text-center border border-dashed border-border">
                     Tidak ada kontak panitia terdaftar.
                   </p>
                 ) : (
                   kontakPanitia.map((contact, index) => (
                     <div
                       key={index}
-                      className="flex justify-between items-center border border-zinc-100 dark:border-zinc-900 p-3 hover:bg-zinc-50 dark:hover:bg-zinc-900/10 transition-colors"
+                      className="flex justify-between items-center border border-border p-3 hover:bg-secondary dark:hover:bg-secondary transition-colors"
                     >
                       <div>
-                        <div className="font-mono text-xs text-zinc-900 dark:text-zinc-100 font-semibold uppercase tracking-wider">
+                        <div className="font-mono text-xs text-foreground font-semibold uppercase tracking-wider">
                           {contact.name}
                         </div>
-                        <div className="font-mono text-[10px] text-zinc-400 mt-1">
+                        <div className="font-mono text-[10px] text-muted-foreground mt-1">
                           {contact.phone_number}
                         </div>
                       </div>
@@ -680,7 +680,7 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
                         onClick={() => handleRemoveContact(index)}
                         variant="ghost"
                         size="icon-sm"
-                        className="text-[#e22718] hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-none cursor-pointer"
+                        className="text-destructive hover:bg-destructive/10 dark:hover:bg-destructive/15 rounded-lg cursor-pointer min-h-[44px] min-w-[44px]"
                       >
                         <TrashIcon />
                       </Button>
@@ -694,14 +694,14 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
 
         {/* Tab 3: Timeline Seleksi */}
         <TabsContent value="timeline" className="space-y-6">
-          <div className="border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 p-6 rounded-none space-y-6">
-            <h3 className="font-mono text-xs font-bold uppercase tracking-widest text-[#1c69d4] dark:text-[#0066b1] border-b border-zinc-100 dark:border-zinc-900 pb-2">
+          <div className="border border-border bg-card p-6 rounded-lg space-y-6">
+            <h3 className="font-mono text-xs font-bold uppercase tracking-widest text-primary border-b border-border pb-2">
               TIMELINE KEGIATAN SELEKSI
             </h3>
 
             {/* Dynamic Add Event Form */}
-            <div className="bg-zinc-50 dark:bg-zinc-900/30 p-4 border border-zinc-100 dark:border-zinc-900 space-y-4">
-              <h4 className="font-mono text-[9px] font-bold uppercase tracking-widest text-zinc-500">
+            <div className="bg-secondary p-4 border border-border space-y-4">
+              <h4 className="font-mono text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
                 Tambah Kegiatan Baru
               </h4>
 
@@ -709,7 +709,7 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
                 <div className="space-y-1">
                   <Label
                     htmlFor="eventTitle"
-                    className="font-mono text-[8px] uppercase tracking-wider text-zinc-400"
+                    className="font-mono text-[8px] uppercase tracking-wider text-muted-foreground"
                   >
                     JUDUL KEGIATAN
                   </Label>
@@ -720,13 +720,13 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
                       setNewTimeline({ ...newTimeline, title: e.target.value })
                     }
                     placeholder="E.g. Tes Wawancara"
-                    className="h-8 rounded-none border-zinc-200 dark:border-zinc-800 font-mono text-[10px] uppercase tracking-wider px-2"
+                    className="h-11 min-h-[44px] rounded-lg border-border font-mono text-[10px] uppercase tracking-wider px-2"
                   />
                 </div>
                 <div className="space-y-1">
                   <Label
                     htmlFor="eventStart"
-                    className="font-mono text-[8px] uppercase tracking-wider text-zinc-400"
+                    className="font-mono text-[8px] uppercase tracking-wider text-muted-foreground"
                   >
                     TANGGAL MULAI
                   </Label>
@@ -740,13 +740,13 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
                         start_date: e.target.value,
                       })
                     }
-                    className="h-8 rounded-none border-zinc-200 dark:border-zinc-800 text-[10px] font-mono"
+                    className="h-11 min-h-[44px] rounded-lg border-border text-[10px] font-mono"
                   />
                 </div>
                 <div className="space-y-1">
                   <Label
                     htmlFor="eventEnd"
-                    className="font-mono text-[8px] uppercase tracking-wider text-zinc-400"
+                    className="font-mono text-[8px] uppercase tracking-wider text-muted-foreground"
                   >
                     TANGGAL SELESAI
                   </Label>
@@ -760,7 +760,7 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
                         end_date: e.target.value,
                       })
                     }
-                    className="h-8 rounded-none border-zinc-200 dark:border-zinc-800 text-[10px] font-mono"
+                    className="h-11 min-h-[44px] rounded-lg border-border text-[10px] font-mono"
                   />
                 </div>
               </div>
@@ -768,7 +768,7 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
               <div className="space-y-1">
                 <Label
                   htmlFor="eventDesc"
-                  className="font-mono text-[8px] uppercase tracking-wider text-zinc-400"
+                  className="font-mono text-[8px] uppercase tracking-wider text-muted-foreground"
                 >
                   DESKRIPSI KEGIATAN
                 </Label>
@@ -783,12 +783,12 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
                       })
                     }
                     placeholder="E.g. Seleksi lisan meliputi motivasi dan komitmen organisasi."
-                    className="h-14 rounded-none border-zinc-200 dark:border-zinc-800 text-xs placeholder-zinc-400 py-1 flex-1 min-h-[56px]"
+                    className="h-14 rounded-lg border-border text-xs placeholder-muted-foreground py-1 flex-1 min-h-[56px]"
                   />
                   <Button
                     onClick={handleAddTimeline}
                     type="button"
-                    className="h-10 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-none px-4 flex items-center justify-center gap-1.5 cursor-pointer font-mono text-[10px] uppercase tracking-widest shrink-0"
+                    className="h-11 min-h-[44px] bg-primary text-primary-foreground rounded-lg px-4 flex items-center justify-center gap-1.5 cursor-pointer font-mono text-[10px] uppercase tracking-widest shrink-0"
                   >
                     <PlusIcon />
                     TAMBAH
@@ -798,10 +798,10 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
             </div>
 
             {/* List of Timeline Events */}
-            <div className="space-y-4 relative pl-4 border-l border-zinc-200 dark:border-zinc-800 py-2">
+            <div className="space-y-4 relative pl-4 border-l border-border py-2">
               {timeline.length === 0 ? (
                 <div className="pl-2">
-                  <p className="text-[10px] font-mono text-zinc-400 uppercase py-4">
+                  <p className="text-[10px] font-mono text-muted-foreground uppercase py-4">
                     Belum ada kegiatan dalam timeline.
                   </p>
                 </div>
@@ -809,26 +809,26 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
                 timeline.map((event, index) => (
                   <div key={index} className="relative group">
                     {/* Timeline dot */}
-                    <div className="absolute -left-[20.5px] top-1.5 h-3 w-3 rounded-full bg-[#1c69d4] dark:bg-[#0066b1] border-2 border-white dark:border-zinc-950" />
+                    <div className="absolute -left-[20.5px] top-1.5 h-3 w-3 rounded-full bg-primary border-2 border-card" />
 
-                    <div className="border border-zinc-100 dark:border-zinc-900 bg-zinc-50/50 dark:bg-zinc-900/10 p-4 hover:bg-zinc-100/30 dark:hover:bg-zinc-900/30 transition-colors flex justify-between items-start gap-4">
+                    <div className="border border-border bg-secondary/50 p-4 hover:bg-secondary dark:hover:bg-secondary transition-colors flex justify-between items-start gap-4">
                       <div className="space-y-1">
-                        <div className="font-mono text-xs text-zinc-900 dark:text-zinc-100 font-bold uppercase tracking-wider">
+                        <div className="font-mono text-xs text-foreground font-bold uppercase tracking-wider">
                           {event.title}
                         </div>
-                        <div className="font-mono text-[9px] text-[#1c69d4] dark:text-[#0066b1] font-semibold">
+                        <div className="font-mono text-[9px] text-primary font-semibold">
                           {new Date(event.start_date).toLocaleString([], {
                             dateStyle: "medium",
                             timeStyle: "short",
                           })}
-                          <span className="text-zinc-400 mx-1">➜</span>
+                          <span className="text-muted-foreground mx-1">➜</span>
                           {new Date(event.end_date).toLocaleString([], {
                             dateStyle: "medium",
                             timeStyle: "short",
                           })}
                         </div>
                         {event.description && (
-                          <p className="text-xs text-zinc-500 leading-relaxed pt-1.5">
+                          <p className="text-xs text-muted-foreground leading-relaxed pt-1.5">
                             {event.description}
                           </p>
                         )}
@@ -837,7 +837,7 @@ export function SettingsClient({ initialSettings }: SettingsClientProps) {
                         onClick={() => handleRemoveTimeline(index)}
                         variant="ghost"
                         size="icon-sm"
-                        className="text-[#e22718] hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-none cursor-pointer shrink-0"
+                        className="text-destructive hover:bg-destructive/10 dark:hover:bg-destructive/15 rounded-lg cursor-pointer min-h-[44px] min-w-[44px] shrink-0"
                       >
                         <TrashIcon />
                       </Button>

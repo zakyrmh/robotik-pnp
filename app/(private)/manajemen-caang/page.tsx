@@ -30,22 +30,6 @@ interface RawRegistration {
   revision_notes: string | null;
   deleted_at: string | null;
   delete_reason: string | null;
-  profiles:
-    | {
-        id: string;
-        email: string;
-        nim: string | null;
-        role: string;
-        is_onboarded: boolean;
-      }
-    | {
-        id: string;
-        email: string;
-        nim: string | null;
-        role: string;
-        is_onboarded: boolean;
-      }[]
-    | null;
   study_programs: {
     id: string;
     name: string;
@@ -61,6 +45,17 @@ interface RawRegistration {
         }[]
       | null;
   } | null;
+}
+
+interface RawProfile {
+  id: string;
+  email: string;
+  nim: string | null;
+  role: string;
+  is_onboarded: boolean;
+  full_name: string | null;
+  avatar_url: string | null;
+  registrations: RawRegistration | RawRegistration[] | null;
 }
 
 export default async function ManajemenCaangPage() {
@@ -93,19 +88,40 @@ export default async function ManajemenCaangPage() {
   const caangRes = await getCaangList();
   const caangData = (caangRes.success && caangRes.data
     ? caangRes.data
-    : []) as unknown as RawRegistration[];
+    : []) as unknown as RawProfile[];
 
   // Format Caang data for the client component
-  const formattedCaang = caangData.map((reg) => {
-    const profile = Array.isArray(reg.profiles)
-      ? reg.profiles[0]
-      : reg.profiles || {
-          id: "",
-          email: "",
-          nim: "",
-          role: "caang",
-          is_onboarded: false,
-        };
+  const formattedCaang = caangData.map((profile) => {
+    const reg = (Array.isArray(profile.registrations)
+      ? profile.registrations[0]
+      : profile.registrations) || {
+      full_name: null,
+      nickname: null,
+      gender: null,
+      pob: null,
+      dob: null,
+      phone_number: null,
+      origin_address: null,
+      domicile_address: null,
+      high_school: null,
+      current_class: null,
+      entry_year: null,
+      motivation: null,
+      org_experience: null,
+      achievements: null,
+      photo_url: null,
+      ktm_url: null,
+      proof_follow_robotik: null,
+      proof_follow_mrc: null,
+      proof_sub_yt: null,
+      payment_proof_url: null,
+      payment_method: null,
+      status: null,
+      revision_notes: null,
+      deleted_at: null,
+      delete_reason: null,
+      study_programs: null,
+    };
     const sp = Array.isArray(reg.study_programs)
       ? reg.study_programs[0]
       : reg.study_programs || { id: "", name: "", degree: "", majors: null };
@@ -119,7 +135,7 @@ export default async function ManajemenCaangPage() {
       email: profile.email || "",
       nim: profile.nim || "",
       isOnboarded: profile.is_onboarded || false,
-      fullName: reg.full_name || "Calon Anggota",
+      fullName: reg?.full_name || profile.full_name || "Calon Anggota",
       nickname: reg.nickname || "",
       gender: reg.gender || "",
       pob: reg.pob || "",
@@ -133,7 +149,7 @@ export default async function ManajemenCaangPage() {
       motivation: reg.motivation || "",
       orgExperience: reg.org_experience || "",
       achievements: reg.achievements || "",
-      photoUrl: reg.photo_url || "",
+      photoUrl: reg.photo_url || profile.avatar_url || "",
       ktmUrl: reg.ktm_url || "",
       proofFollowRobotik: reg.proof_follow_robotik || "",
       proofFollowMrc: reg.proof_follow_mrc || "",

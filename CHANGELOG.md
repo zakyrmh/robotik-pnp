@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.9.4](https://github.com/zakyrmh/robotik-pnp/compare/v0.9.3...v0.9.4) (2026-09-17)
+
+### ✨ Features
+
+- **manajemen-caang:** mengambil data utama dari `profiles` dengan role `caang` dan menggabungkannya dengan data `registrations` pada tabel manajemen Caang.
+
+### 🐛 Bug Fixes
+
+- **manajemen-caang:** menambahkan fallback nama dan foto dari profil ketika data pendaftaran tidak lengkap.
+
 ### [0.9.3](https://github.com/zakyrmh/robotik-pnp/compare/v0.9.2...v0.9.3) (2026-09-16)
 
 ### ✨ Features
@@ -450,7 +460,8 @@ All notable changes to this project will be documented in this file. See [standa
 - Setup Husky pre-commit hook dan Commitlint.
 - Setup Next.js dengan pnpm.
 
-[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.9.1...HEAD
+[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.9.4...HEAD
+[0.9.4]: https://github.com/zakyrmh/robotik-pnp/compare/v0.9.3...v0.9.4
 [0.9.1]: https://github.com/zakyrmh/robotik-pnp/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.8.5...v0.9.0
 [0.8.5]: https://github.com/zakyrmh/robotik-pnp/compare/v0.8.4...v0.8.5
