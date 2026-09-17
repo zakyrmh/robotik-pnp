@@ -681,7 +681,9 @@ describe("Step 5 — StepUpload: Validasi File & Submisi Akhir", () => {
   it("[S5-TC1] Menampilkan toast.error jika Pas Foto belum diupload saat submit", () => {
     render(<StepUpload onPrev={vi.fn()} onSuccess={vi.fn()} />);
     fireEvent.click(screen.getByRole("button", { name: /Kirim Pendaftaran/i }));
-    expect(mockToastError).toHaveBeenCalledWith("Pas foto formal wajib diunggah.");
+    expect(mockToastError).toHaveBeenCalledWith(
+      "Pas foto formal wajib diunggah.",
+    );
   });
 
   it("[S5-TC2] Menampilkan toast.error jika Bukti Pembayaran belum diupload", async () => {
@@ -783,8 +785,8 @@ describe("Integrasi — OnboardingClient: Alur Stepper & Logika Legacy Member", 
     academic: null,
     commitment: null,
     paymentMethod: null,
-      status: null,
-      revisionNotes: null,
+    status: null,
+    revisionNotes: null,
   };
 
   it("[INT-TC1] Render dimulai dari Step 1 (Validasi NIM)", () => {

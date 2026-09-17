@@ -52,55 +52,57 @@ export async function getCaangList() {
 
   try {
     const { data, error } = await supabaseAdmin
-      .from("registrations")
+      .from("profiles")
       .select(
         `
         id,
+        email,
+        nim,
+        role,
+        is_onboarded,
         full_name,
-        nickname,
-        gender,
-        pob,
-        dob,
-        phone_number,
-        origin_address,
-        domicile_address,
-        high_school,
-        current_class,
-        entry_year,
-        motivation,
-        org_experience,
-        achievements,
-        photo_url,
-        ktm_url,
-        proof_follow_robotik,
-        proof_follow_mrc,
-        proof_sub_yt,
-        payment_proof_url,
-        payment_method,
-        status,
-        revision_notes,
-        deleted_at,
-        delete_reason,
-        profiles!inner (
+        avatar_url,
+        registrations (
           id,
-          email,
-          nim,
-          role,
-          is_onboarded
-        ),
-        study_programs (
-          id,
-          name,
-          degree,
-          majors (
+          full_name,
+          nickname,
+          gender,
+          pob,
+          dob,
+          phone_number,
+          origin_address,
+          domicile_address,
+          high_school,
+          current_class,
+          entry_year,
+          motivation,
+          org_experience,
+          achievements,
+          photo_url,
+          ktm_url,
+          proof_follow_robotik,
+          proof_follow_mrc,
+          proof_sub_yt,
+          payment_proof_url,
+          payment_method,
+          status,
+          revision_notes,
+          deleted_at,
+          delete_reason,
+          study_programs (
             id,
-            name
+            name,
+            degree,
+            majors (
+              id,
+              name
+            )
           )
         )
       `,
       )
-      .eq("profiles.role", "caang")
-      .is("deleted_at", null)
+      .eq("role", "caang")
+      .is("registrations.deleted_at", null)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -141,12 +143,15 @@ export async function updateCaangStatus(
       {
         p_profile_id: profileId,
         p_status: status,
-        p_revision_notes: status === "revision" ? (revisionNotes || null) : null,
+        p_revision_notes: status === "revision" ? revisionNotes || null : null,
       },
     );
 
     if (rpcError) {
-      console.warn("RPC update_caang_registration_status fell back to direct update:", rpcError.message);
+      console.warn(
+        "RPC update_caang_registration_status fell back to direct update:",
+        rpcError.message,
+      );
 
       // Fallback: direct update on registrations + profiles
       const updatePayload: {
@@ -155,7 +160,7 @@ export async function updateCaangStatus(
         updated_at: string;
       } = {
         status,
-        revision_notes: status === "revision" ? (revisionNotes || null) : null,
+        revision_notes: status === "revision" ? revisionNotes || null : null,
         updated_at: new Date().toISOString(),
       };
 
@@ -182,7 +187,10 @@ export async function updateCaangStatus(
         .eq("id", profileId);
 
       if (profileError) {
-        console.error("Error updating profile is_onboarded (fallback):", profileError);
+        console.error(
+          "Error updating profile is_onboarded (fallback):",
+          profileError,
+        );
       }
     }
 

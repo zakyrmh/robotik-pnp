@@ -1,11 +1,42 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+### [0.9.4](https://github.com/zakyrmh/robotik-pnp/compare/v0.9.3...v0.9.4) (2026-09-17)
 
-## [Unreleased]
+### ✨ Features
+
+- **manajemen-caang:** mengambil data utama dari `profiles` dengan role `caang` dan menggabungkannya dengan data `registrations` pada tabel manajemen Caang.
+
+### 🐛 Bug Fixes
+
+- **manajemen-caang:** menambahkan fallback nama dan foto dari profil ketika data pendaftaran tidak lengkap.
+
+### [0.9.3](https://github.com/zakyrmh/robotik-pnp/compare/v0.9.2...v0.9.3) (2026-09-16)
+
+### ✨ Features
+
+- **onboarding:** display registration payment accounts ([4e6bb08](https://github.com/zakyrmh/robotik-pnp/commit/4e6bb08281c364286a2c6ef18337e8617399d637))
+
+### 🏠 Chores
+
+- **release:** merge develop into main for v0.9.3 ([58551e9](https://github.com/zakyrmh/robotik-pnp/commit/58551e9d0c048805d6444576ef845a159c33e250))
+
+### [0.9.2](https://github.com/zakyrmh/robotik-pnp/compare/v0.9.1...v0.9.2) (2026-09-16)
+
+### ✨ Features
+
+- implement atomic caang status update, revision onboarding flow, and route guards ([448d3b5](https://github.com/zakyrmh/robotik-pnp/commit/448d3b54ca47d9fdc9f5f3a43d0f1546b3446a77))
+- **onboarding:** require social media proof uploads ([ad1d90b](https://github.com/zakyrmh/robotik-pnp/commit/ad1d90b54017d4bb501703ad0570b764353186dc))
+- **onboarding:** support candidate registration revisions ([002f6dd](https://github.com/zakyrmh/robotik-pnp/commit/002f6ddb14ab33565a5f41867af9f971c86ea00d))
+
+### 🏠 Chores
+
+- merge develop into main ([5461eea](https://github.com/zakyrmh/robotik-pnp/commit/5461eeae4313b600d3625ce03e0baa97df801326))
+
+### 📝 Documentation
+
+- update changelog for caang onboarding changes ([5931c3e](https://github.com/zakyrmh/robotik-pnp/commit/5931c3e35c332ed1354328e617651da3d0934000))
 
 ### Added
 
@@ -429,7 +460,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Setup Husky pre-commit hook dan Commitlint.
 - Setup Next.js dengan pnpm.
 
-[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.9.1...HEAD
+[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.9.4...HEAD
+[0.9.4]: https://github.com/zakyrmh/robotik-pnp/compare/v0.9.3...v0.9.4
 [0.9.1]: https://github.com/zakyrmh/robotik-pnp/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.8.5...v0.9.0
 [0.8.5]: https://github.com/zakyrmh/robotik-pnp/compare/v0.8.4...v0.8.5
