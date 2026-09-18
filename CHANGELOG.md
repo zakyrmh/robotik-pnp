@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.11.0](https://github.com/zakyrmh/robotik-pnp/compare/v0.10.0...v0.11.0) (2026-09-18)
+
+### ✨ Features
+
+- implement Caang Registration Dashboard and statistics ([accccde](https://github.com/zakyrmh/robotik-pnp/commit/accccde766aca8797e71574d934882e882e51f88))
+
 ## [0.10.0](https://github.com/zakyrmh/robotik-pnp/compare/v0.9.4...v0.10.0) (2026-09-17)
 
 ### ⚡ Performance Improvements
@@ -475,7 +481,9 @@ All notable changes to this project will be documented in this file. See [standa
 - Setup Husky pre-commit hook dan Commitlint.
 - Setup Next.js dengan pnpm.
 
-[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.9.4...HEAD
+[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.10.0...v0.11.0
+[0.10.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.9.4...v0.10.0
 [0.9.4]: https://github.com/zakyrmh/robotik-pnp/compare/v0.9.3...v0.9.4
 [0.9.1]: https://github.com/zakyrmh/robotik-pnp/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.8.5...v0.9.0
