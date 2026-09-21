@@ -22,6 +22,7 @@ import {
   processAndUploadMrcImage,
   MrcImageValidationError,
 } from "@/lib/server/mrc-image-pipeline";
+import { validateJuniorBirthDate } from "@/lib/mrc-rules";
 import type { MrcImageKind } from "@/lib/mrc-image-config";
 import { untypedFrom, untypedRpc } from "@/lib/supabase/untyped";
 import type {
@@ -98,6 +99,41 @@ export async function registerEventAction(
       success: false,
       error: "Pendaftaran untuk kategori lomba ini sudah ditutup.",
     };
+  }
+
+  // Kartu identitas dan tanggal lahir wajib & divalidasi untuk Line Follower Junior.
+  if (categoryData.slug === "line-follower-junior") {
+    const fieldErrors: Record<string, string[]> = {};
+
+    validated.data.members.forEach((member, index) => {
+      if (!member.identity_card_url) {
+        fieldErrors[`members.${index}.identity_card_url`] = [
+          "Foto Kartu Pelajar / Kartu Keluarga wajib diunggah untuk Line Follower Junior.",
+        ];
+      }
+      if (!member.birth_date) {
+        fieldErrors[`members.${index}.birth_date`] = [
+          "Tanggal lahir wajib diisi untuk Line Follower Junior.",
+        ];
+      } else {
+        const birthValidation = validateJuniorBirthDate(member.birth_date);
+        if (!birthValidation.valid) {
+          fieldErrors[`members.${index}.birth_date`] = [
+            birthValidation.error ||
+              "Tanggal lahir peserta tidak memenuhi syarat.",
+          ];
+        }
+      }
+    });
+
+    if (Object.keys(fieldErrors).length > 0) {
+      return {
+        success: false,
+        error:
+          "Data kartu identitas atau tanggal lahir anggota tidak memenuhi syarat (maksimal 19 tahun per 31 Oktober 2026).",
+        fieldErrors,
+      };
+    }
   }
 
   // Tentukan batch aktif dari settings global

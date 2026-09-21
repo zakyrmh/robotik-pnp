@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { verifyManualPaymentAction } from "@/lib/actions/event-admin";
 import type { EventRegistration } from "@/types/event-registration";
+import { Badge } from "@/components/ui/badge";
 import {
   CheckCircle2,
   XCircle,
@@ -15,6 +16,7 @@ import {
   FileText,
   AlertCircle,
   Eye,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -30,7 +32,6 @@ export function ManualPaymentVerificationList({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProofUrl, setSelectedProofUrl] = useState<string | null>(null);
 
-  // Modal Reject State
   const [rejectModalReg, setRejectModalReg] =
     useState<EventRegistration | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
@@ -126,97 +127,106 @@ export function ManualPaymentVerificationList({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header Stat & Search */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+    <div className="space-y-4">
+      {/* Header statistik + pencarian */}
+      <div className="flex flex-col gap-4 rounded-lg border border-border bg-card p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-3 bg-amber-50 text-amber-700 rounded-xl border border-amber-200">
-            <Clock className="w-6 h-6" />
+          <div className="rounded-lg border border-warning/30 bg-warning-soft p-3 text-warning">
+            <Clock className="size-6" aria-hidden="true" />
           </div>
           <div>
-            <h2 className="text-base font-bold text-slate-900">
+            <h3 className="flex flex-wrap items-center gap-2 font-display text-md font-semibold text-foreground">
               Menunggu Verifikasi Manual
-            </h2>
-            <p className="text-xs text-slate-500">
-              Terdapat{" "}
-              <strong className="text-amber-700 font-bold">
-                {pendingCount}
-              </strong>{" "}
-              bukti pembayaran yang perlu diverifikasi admin.
+              <Badge
+                variant="secondary"
+                className="border-warning/20 bg-warning-soft font-mono text-warning tabular-nums"
+              >
+                {pendingCount} Pending
+              </Badge>
+            </h3>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              Bukti pembayaran yang perlu diverifikasi admin.
             </p>
           </div>
         </div>
 
-        <div className="relative min-w-[260px]">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <div className="relative w-full sm:min-w-[260px]">
+          <Search
+            className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden="true"
+          />
           <input
-            type="text"
+            type="search"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cari tim, kode, email..."
-            className="w-full pl-9 pr-3 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#3b5b84]"
+            placeholder="Cari tim, kode, email…"
+            aria-label="Cari bukti pembayaran"
+            className="min-h-[44px] w-full rounded-md border border-border bg-background pr-3 pl-9 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:outline-none"
           />
         </div>
       </div>
 
-      {/* List Verifikasi */}
       {filteredRegistrations.length === 0 ? (
-        <div className="bg-white border border-slate-200 rounded-xl p-8 text-center space-y-2">
-          <FileText className="w-10 h-10 text-slate-300 mx-auto" />
-          <h3 className="text-sm font-bold text-slate-700">
+        <div className="rounded-lg border border-dashed border-border bg-card p-8 text-center">
+          <FileText
+            className="mx-auto size-10 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <h3 className="mt-2 font-display text-md font-semibold text-foreground">
             Tidak ada bukti pembayaran ditemukan
           </h3>
-          <p className="text-xs text-slate-500">
+          <p className="mx-auto mt-1 max-w-prose text-sm text-muted-foreground">
             {searchQuery
               ? "Tidak ada pendaftaran yang sesuai dengan kata kunci pencarian."
               : "Semua pendaftaran telah diverifikasi atau belum ada yang mengunggah bukti pembayaran."}
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {filteredRegistrations.map((reg) => {
             const isPending = reg.payment_status === "pending_verification";
             const isApproved = reg.payment_status === "paid";
             const isRejected = reg.payment_status === "rejected";
 
             return (
-              <div
+              <article
                 key={reg.id}
                 className={cn(
-                  "bg-white border rounded-xl shadow-sm p-5 space-y-4 relative flex flex-col justify-between transition-all",
-                  isPending && "border-amber-300 ring-2 ring-amber-500/10",
-                  isApproved && "border-emerald-200 bg-emerald-50/10",
-                  isRejected && "border-rose-200 bg-rose-50/10",
+                  "flex flex-col justify-between gap-4 rounded-lg border bg-card p-4 transition-colors duration-150 sm:p-5",
+                  isPending && "border-warning/50 ring-2 ring-warning/10",
+                  isApproved && "border-success/30",
+                  isRejected && "border-destructive/30",
+                  !isPending && !isApproved && !isRejected && "border-border",
                 )}
               >
                 <div className="space-y-3">
-                  <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-3">
-                    <div>
-                      <span className="text-[10px] font-bold text-slate-400 font-mono block">
+                  <div className="flex items-start justify-between gap-2 border-b border-border pb-3">
+                    <div className="min-w-0">
+                      <span className="block font-mono text-micro font-semibold text-muted-foreground">
                         {reg.registration_code}
                       </span>
-                      <h3 className="font-bold text-slate-900 text-base leading-snug">
+                      <h3 className="truncate font-display text-md font-semibold text-foreground">
                         {reg.team_name}
                       </h3>
-                      <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                        <Building2 className="w-3.5 h-3.5 shrink-0" />
+                      <p className="mt-0.5 flex items-center gap-1 truncate text-sm text-muted-foreground">
+                        <Building2
+                          className="size-3.5 shrink-0"
+                          aria-hidden="true"
+                        />
                         {reg.institution}
                       </p>
                     </div>
 
-                    <span
+                    <Badge
+                      variant="secondary"
                       className={cn(
-                        "inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold shrink-0 border uppercase tracking-wider",
+                        "shrink-0 uppercase",
                         isPending &&
-                          "bg-amber-50 text-amber-700 border-amber-200",
+                          "border-warning/30 bg-warning-soft text-warning",
                         isApproved &&
-                          "bg-emerald-50 text-emerald-700 border-emerald-200",
+                          "border-success/30 bg-success-soft text-success",
                         isRejected &&
-                          "bg-rose-50 text-rose-700 border-rose-200",
-                        !isPending &&
-                          !isApproved &&
-                          !isRejected &&
-                          "bg-slate-100 text-slate-600 border-slate-200",
+                          "border-destructive/30 bg-destructive/10 text-destructive",
                       )}
                     >
                       {isPending && "Menunggu Verifikasi"}
@@ -226,125 +236,133 @@ export function ManualPaymentVerificationList({
                         !isApproved &&
                         !isRejected &&
                         reg.payment_status}
-                    </span>
+                    </Badge>
                   </div>
 
-                  <div className="space-y-1.5 text-xs text-slate-600">
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Kategori:</span>
-                      <span className="font-semibold text-slate-800">
+                  <dl className="space-y-1.5 text-sm">
+                    <div className="flex justify-between gap-2">
+                      <dt className="text-muted-foreground">Kategori</dt>
+                      <dd className="truncate font-medium text-foreground">
                         {reg.category?.name || "Kategori Lomba"}
-                      </span>
+                      </dd>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Nominal:</span>
-                      <span className="font-mono font-bold text-[#3b5b84]">
+                    <div className="flex justify-between gap-2">
+                      <dt className="text-muted-foreground">Nominal</dt>
+                      <dd className="font-mono font-semibold text-primary">
                         Rp {Number(reg.total_amount).toLocaleString("id-ID")}
-                      </span>
+                      </dd>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">WhatsApp:</span>
-                      <a
-                        href={`https://wa.me/${reg.team_whatsapp.replace(/[^0-9]/g, "")}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="font-medium text-emerald-700 hover:underline flex items-center gap-1"
-                      >
-                        {reg.team_whatsapp} <ExternalLink className="w-3 h-3" />
-                      </a>
+                    <div className="flex justify-between gap-2">
+                      <dt className="text-muted-foreground">WhatsApp</dt>
+                      <dd>
+                        <a
+                          href={`https://wa.me/${reg.team_whatsapp.replace(/[^0-9]/g, "")}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-1 font-medium text-success hover:underline"
+                        >
+                          {reg.team_whatsapp}{" "}
+                          <ExternalLink className="size-3" aria-hidden="true" />
+                        </a>
+                      </dd>
                     </div>
-                  </div>
+                  </dl>
 
-                  {/* Preview Gambar Bukti Bayar */}
-                  <div className="pt-2">
-                    <span className="text-xs font-semibold text-slate-700 block mb-1.5">
+                  <div className="pt-1">
+                    <span className="mb-1.5 block text-sm font-medium text-foreground">
                       Bukti Transfer Bank:
                     </span>
                     {reg.manual_payment_proof_url ? (
-                      <div className="relative group border rounded-lg overflow-hidden bg-slate-100 aspect-video flex items-center justify-center">
+                      <div className="group relative flex aspect-video items-center justify-center overflow-hidden rounded-md border border-border bg-secondary">
                         <Image
                           src={reg.manual_payment_proof_url}
-                          alt="Bukti pembayaran"
+                          alt={`Bukti pembayaran ${reg.team_name}`}
                           fill
-                          className="object-cover group-hover:scale-105 transition-transform"
+                          sizes="(max-width: 768px) 100vw, 33vw"
+                          className="object-cover transition-transform duration-200 group-hover:scale-105"
                         />
                         <button
                           type="button"
                           onClick={() =>
                             setSelectedProofUrl(reg.manual_payment_proof_url)
                           }
-                          className="absolute inset-0 bg-slate-900/40 text-white opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-xs font-semibold"
+                          aria-label={`Lihat bukti pembayaran ${reg.team_name} fullscreen`}
+                          className="absolute inset-0 flex items-center justify-center gap-1.5 bg-black/40 text-sm font-medium text-white opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100"
                         >
-                          <Eye className="w-4 h-4" /> Lihat Fullscreen
+                          <Eye className="size-4" aria-hidden="true" /> Lihat
+                          Fullscreen
                         </button>
                       </div>
                     ) : (
-                      <p className="text-xs text-slate-400 italic bg-slate-50 p-3 rounded-lg border text-center">
+                      <p className="rounded-md border border-border bg-secondary p-3 text-center text-sm text-muted-foreground italic">
                         Belum ada gambar bukti transfer diunggah.
                       </p>
                     )}
                   </div>
 
                   {isRejected && reg.rejection_reason && (
-                    <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-xs text-rose-800 space-y-1">
-                      <span className="font-bold flex items-center gap-1">
-                        <AlertCircle className="w-3.5 h-3.5" /> Alasan
-                        Penolakan:
+                    <div className="space-y-1 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+                      <span className="flex items-center gap-1 font-semibold">
+                        <AlertCircle className="size-3.5" aria-hidden="true" />{" "}
+                        Alasan Penolakan:
                       </span>
-                      <p className="text-[11px] text-rose-700">
-                        {reg.rejection_reason}
-                      </p>
+                      <p className="text-xs">{reg.rejection_reason}</p>
                     </div>
                   )}
                 </div>
 
-                {/* Actions Button */}
-                <div className="pt-4 border-t flex items-center gap-2">
+                <div className="flex items-center gap-2 border-t border-border pt-4">
                   <button
                     type="button"
                     disabled={isSubmitting || !reg.manual_payment_proof_url}
                     onClick={() => handleApprove(reg)}
-                    className="flex-1 min-h-[38px] inline-flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold transition-colors disabled:opacity-50"
+                    className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-md bg-success px-3 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
                   >
-                    <CheckCircle2 className="w-4 h-4" /> Disetujui
+                    <CheckCircle2 className="size-4" aria-hidden="true" />{" "}
+                    Setujui
                   </button>
 
                   <button
                     type="button"
                     disabled={isSubmitting || !reg.manual_payment_proof_url}
                     onClick={() => handleOpenRejectModal(reg)}
-                    className="flex-1 min-h-[38px] inline-flex items-center justify-center gap-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold transition-colors disabled:opacity-50"
+                    className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-md bg-destructive px-3 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
                   >
-                    <XCircle className="w-4 h-4" /> Ditolak
+                    <XCircle className="size-4" aria-hidden="true" /> Tolak
                   </button>
                 </div>
-              </div>
+              </article>
             );
           })}
         </div>
       )}
 
-      {/* Fullscreen Proof Image Modal */}
+      {/* Fullscreen bukti */}
       {selectedProofUrl && (
         <div
-          className="fixed inset-0 bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4 z-50"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
           onClick={() => setSelectedProofUrl(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Pratinjau bukti pembayaran"
         >
           <div
-            className="relative max-w-4xl w-full max-h-[90vh] bg-black rounded-2xl overflow-hidden flex items-center justify-center p-2"
+            className="relative flex max-h-[90vh] w-full max-w-4xl items-center justify-center overflow-hidden rounded-lg bg-black p-2"
             onClick={(e) => e.stopPropagation()}
           >
             <button
               onClick={() => setSelectedProofUrl(null)}
-              className="absolute top-4 right-4 bg-slate-800/80 hover:bg-slate-800 text-white p-2 rounded-full z-10 transition-colors"
+              aria-label="Tutup pratinjau"
+              className="absolute top-4 right-4 z-10 inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-secondary p-2 text-foreground transition-colors hover:bg-secondary/70"
             >
-              ✕
+              <X className="size-4" aria-hidden="true" />
             </button>
-            <div className="relative w-full h-[80vh]">
+            <div className="relative h-[80vh] w-full">
               <Image
                 src={selectedProofUrl}
-                alt="Bukti Transfer Fullscreen"
+                alt="Bukti transfer fullscreen"
                 fill
+                sizes="100vw"
                 className="object-contain"
               />
             </div>
@@ -352,63 +370,80 @@ export function ManualPaymentVerificationList({
         </div>
       )}
 
-      {/* Modal Reject Reason */}
+      {/* Modal alasan tolak */}
       {rejectModalReg && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl border border-slate-200 max-w-md w-full p-6 space-y-4 shadow-xl">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Tolak bukti pembayaran"
+        >
+          <div className="w-full max-w-md space-y-4 rounded-lg border border-border bg-card p-5 shadow-[var(--shadow-soft)] sm:p-6">
             <div>
-              <h3 className="text-lg font-bold text-slate-900">
+              <h3 className="font-display text-md font-semibold text-foreground">
                 Tolak Bukti Pembayaran
               </h3>
-              <p className="text-xs text-slate-500 mt-1">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Tim: <strong>{rejectModalReg.team_name}</strong> (
-                {rejectModalReg.registration_code})
+                <span className="font-mono text-xs">
+                  {rejectModalReg.registration_code}
+                </span>
+                )
               </p>
             </div>
 
             {errorMsg && (
-              <p className="text-xs font-medium text-rose-600 bg-rose-50 border border-rose-200 rounded-lg p-3">
+              <p
+                role="alert"
+                className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-xs font-medium text-destructive"
+              >
                 {errorMsg}
               </p>
             )}
 
             <form onSubmit={handleConfirmReject} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label
+                  htmlFor="rejection-reason"
+                  className="mb-1 block text-sm font-medium text-foreground"
+                >
                   Alasan Penolakan *
                 </label>
                 <textarea
+                  id="rejection-reason"
                   required
                   rows={3}
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
-                  placeholder="Contoh: Nominal transfer tidak sesuai / Bukti pembayaran buram / Rekening tujuan salah."
-                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#3b5b84]"
+                  placeholder="Contoh: Nominal transfer tidak sesuai / Bukti buram / Rekening tujuan salah."
+                  className="min-h-[80px] w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:outline-none"
                 />
-                <p className="text-[10px] text-slate-400 mt-1">
-                  Alasan ini akan dikirimkan ke email peserta agar peserta dapat
-                  mengunggah ulang bukti transfer yang benar.
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Alasan ini dikirim ke email peserta agar dapat mengunggah
+                  ulang bukti yang benar.
                 </p>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t">
+              <div className="flex flex-col-reverse gap-2 border-t border-border pt-4 sm:flex-row sm:justify-end">
                 <button
                   type="button"
                   onClick={() => setRejectModalReg(null)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg min-h-[40px]"
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 min-h-[40px]"
+                  className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-md bg-destructive px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60"
                 >
                   {isSubmitting ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    "Kirim Penolakan"
-                  )}
+                    <Loader2
+                      className="size-4 animate-spin"
+                      aria-hidden="true"
+                    />
+                  ) : null}
+                  {isSubmitting ? "Mengirim…" : "Kirim Penolakan"}
                 </button>
               </div>
             </form>

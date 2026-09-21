@@ -9,6 +9,7 @@ import {
   AlertTriangle,
   XCircle,
   ArrowRight,
+  Loader2,
 } from "lucide-react";
 import type { PublicCategoryWithQuota } from "@/lib/actions/event-public";
 import {
@@ -42,6 +43,7 @@ export function MrcCategoryGrid({
   settings,
 }: MrcCategoryGridProps) {
   const [now] = useState(() => Date.now());
+  const [loadingSlug, setLoadingSlug] = useState<string | null>(null);
   const activeBatch: RegistrationBatch | null = useMemo(
     () => getActiveBatch(settings, new Date(now)),
     [settings, now],
@@ -94,6 +96,7 @@ export function MrcCategoryGrid({
           const activeFee = activeBatch
             ? getCategoryBatchFee(cat, activeBatch)
             : null;
+          const isLoading = loadingSlug === cat.slug;
 
           return (
             <div
@@ -221,10 +224,40 @@ export function MrcCategoryGrid({
                 {canRegister ? (
                   <Link
                     href={`/mrc/${cat.slug}/daftar`}
+                    aria-disabled={isLoading}
+                    onClick={(event) => {
+                      // Jangan menampilkan state loading untuk Ctrl/Cmd-click,
+                      // middle-click, atau pembukaan link di tab baru.
+                      if (
+                        event.metaKey ||
+                        event.ctrlKey ||
+                        event.shiftKey ||
+                        event.altKey ||
+                        event.button !== 0
+                      ) {
+                        return;
+                      }
+
+                      if (isLoading) {
+                        event.preventDefault();
+                        return;
+                      }
+
+                      setLoadingSlug(cat.slug);
+                    }}
                     className="w-full min-h-[44px] inline-flex items-center justify-center gap-2 font-body text-sm font-semibold px-4 py-2.5 rounded-md bg-primary hover:bg-primary-hover text-primary-foreground shadow-2xs transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
-                    <span>Daftar {cat.name}</span>
-                    <ArrowRight className="size-4" />
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="size-4 animate-spin" />
+                        <span>Memuat halaman daftar...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Daftar {cat.name}</span>
+                        <ArrowRight className="size-4" />
+                      </>
+                    )}
                   </Link>
                 ) : (
                   <button

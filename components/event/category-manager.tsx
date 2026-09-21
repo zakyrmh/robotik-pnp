@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { saveEventCategoryAction } from "@/lib/actions/event-admin";
 import type { EventCategory } from "@/types/event-registration";
+import { Badge } from "@/components/ui/badge";
 import {
   Plus,
   Edit2,
@@ -10,11 +11,18 @@ import {
   Trophy,
   Users,
   MessageSquare,
+  X,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface CategoryManagerProps {
   initialCategories: EventCategory[];
 }
+
+const inputClass =
+  "w-full min-h-[44px] px-3 py-2 border border-border rounded-md bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring transition-colors";
+
+const labelClass = "block text-sm font-medium text-foreground mb-1";
 
 export function CategoryManager({ initialCategories }: CategoryManagerProps) {
   const [categories, setCategories] =
@@ -102,110 +110,163 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
     }
   };
 
+  const formatFee = (v: number) =>
+    v > 0 ? `Rp ${Number(v).toLocaleString("id-ID")}` : "Gratis";
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-          <Trophy className="w-5 h-5 text-[#3b5b84]" /> Kategori Lomba
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <h2 className="flex items-center gap-2 font-display text-md font-semibold text-foreground">
+          <Trophy className="size-5 shrink-0 text-primary" aria-hidden="true" />
+          Kategori Lomba
+          <Badge variant="secondary" className="font-mono tabular-nums">
+            {categories.length}
+          </Badge>
         </h2>
         <button
           onClick={openCreateModal}
-          className="inline-flex items-center gap-1.5 px-3 py-2 bg-[#3b5b84] text-white rounded-lg text-xs font-semibold hover:bg-[#2f4a6d] transition-colors"
+          className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-md bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
         >
-          <Plus className="w-4 h-4" /> Tambah Kategori
+          <Plus className="size-4" aria-hidden="true" /> Tambah Kategori
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {categories.map((cat) => (
-          <div
-            key={cat.id}
-            className="p-4 bg-white border border-slate-200 rounded-xl shadow-sm space-y-3 relative"
-          >
-            <div className="flex items-start justify-between">
-              <div>
-                <span
-                  className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded-full uppercase ${cat.is_active ? "bg-emerald-100 text-emerald-700" : "bg-slate-100 text-slate-500"}`}
-                >
-                  {cat.is_active ? "Aktif" : "Non-Aktif"}
-                </span>
-                <h3 className="font-bold text-slate-900 mt-1">{cat.name}</h3>
-                <p className="text-xs text-slate-500 font-mono">{cat.slug}</p>
-              </div>
-              <button
-                onClick={() => openEditModal(cat)}
-                className="p-1.5 text-slate-400 hover:text-[#3b5b84] hover:bg-slate-50 rounded-md"
-              >
-                <Edit2 className="w-4 h-4" />
-              </button>
-            </div>
-
-            <p className="text-xs text-slate-600 line-clamp-2">
-              {cat.description || "Tidak ada deskripsi."}
-            </p>
-
-            <div className="pt-2 border-t space-y-1.5 text-xs text-slate-600">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500">Batch 1:</span>
-                <span className="font-semibold text-emerald-700">
-                  {(cat.registration_fee_batch1 ?? cat.registration_fee) > 0
-                    ? `Rp ${Number(cat.registration_fee_batch1 ?? cat.registration_fee).toLocaleString("id-ID")}`
-                    : "Gratis"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500">Batch 2:</span>
-                <span className="font-semibold text-amber-700">
-                  {(cat.registration_fee_batch2 ?? cat.registration_fee) > 0
-                    ? `Rp ${Number(cat.registration_fee_batch2 ?? cat.registration_fee).toLocaleString("id-ID")}`
-                    : "Gratis"}
-                </span>
-              </div>
-              {cat.whatsapp_group_url && (
-                <div className="flex items-center justify-between text-[11px] text-[#3b5b84] font-medium pt-1 border-t border-slate-100 truncate">
-                  <span className="flex items-center gap-1 shrink-0">
-                    <MessageSquare className="w-3.5 h-3.5 text-emerald-600" />{" "}
-                    Grup WA:
-                  </span>
-                  <a
-                    href={cat.whatsapp_group_url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="truncate hover:underline text-slate-600 max-w-[160px]"
+      {categories.length === 0 ? (
+        <div className="rounded-lg border border-dashed border-border bg-card p-8 text-center">
+          <Trophy
+            className="mx-auto size-10 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <h3 className="mt-2 font-display text-md font-semibold text-foreground">
+            Belum ada kategori lomba
+          </h3>
+          <p className="mx-auto mt-1 max-w-prose text-sm text-muted-foreground">
+            Tambahkan kategori pertama agar pendaftaran dapat dibuka.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {categories.map((cat) => (
+            <article
+              key={cat.id}
+              className="flex flex-col justify-between gap-3 rounded-lg border border-border bg-card p-4 transition-colors duration-150 hover:border-primary/50 hover:shadow-[var(--shadow-soft)] sm:p-5"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <Badge
+                    variant="secondary"
+                    className={cn(
+                      "uppercase",
+                      cat.is_active
+                        ? "border-success/30 bg-success-soft text-success"
+                        : "text-muted-foreground",
+                    )}
                   >
-                    {cat.whatsapp_group_url}
-                  </a>
+                    {cat.is_active ? "Aktif" : "Non-Aktif"}
+                  </Badge>
+                  <h3 className="mt-1.5 truncate font-display text-md font-semibold text-foreground">
+                    {cat.name}
+                  </h3>
+                  <p className="truncate font-mono text-xs text-muted-foreground">
+                    {cat.slug}
+                  </p>
                 </div>
-              )}
-              <div className="flex items-center justify-between pt-1 border-t border-dashed">
-                <span className="flex items-center gap-1">
-                  <Users className="w-3.5 h-3.5 text-slate-400" />
-                  Quota: {cat.quota} tim (Maks {cat.max_team_members} org/tim)
-                </span>
+                <button
+                  onClick={() => openEditModal(cat)}
+                  aria-label={`Edit kategori ${cat.name}`}
+                  className="inline-flex min-h-[44px] min-w-[44px] shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-primary"
+                >
+                  <Edit2 className="size-4" aria-hidden="true" />
+                </button>
               </div>
-            </div>
-          </div>
-        ))}
-      </div>
+
+              <p className="line-clamp-2 text-sm text-muted-foreground">
+                {cat.description || "Tidak ada deskripsi."}
+              </p>
+
+              <dl className="space-y-1.5 border-t border-border pt-3 text-sm">
+                <div className="flex items-center justify-between">
+                  <dt className="text-muted-foreground">Batch 1</dt>
+                  <dd className="font-mono font-semibold text-success">
+                    {formatFee(
+                      cat.registration_fee_batch1 ?? cat.registration_fee,
+                    )}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between">
+                  <dt className="text-muted-foreground">Batch 2</dt>
+                  <dd className="font-mono font-semibold text-warning">
+                    {formatFee(
+                      cat.registration_fee_batch2 ?? cat.registration_fee,
+                    )}
+                  </dd>
+                </div>
+                {cat.whatsapp_group_url && (
+                  <div className="flex items-center justify-between gap-2 border-t border-border pt-1.5 text-xs">
+                    <span className="flex shrink-0 items-center gap-1 font-medium text-success">
+                      <MessageSquare className="size-3.5" aria-hidden="true" />
+                      Grup WA
+                    </span>
+                    <a
+                      href={cat.whatsapp_group_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="max-w-[160px] truncate text-muted-foreground hover:text-primary hover:underline"
+                    >
+                      {cat.whatsapp_group_url}
+                    </a>
+                  </div>
+                )}
+                <div className="flex items-center justify-between border-t border-dashed border-border pt-1.5 text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <Users className="size-3.5" aria-hidden="true" />
+                    Kuota {cat.quota} tim · maks {cat.max_team_members} org/tim
+                  </span>
+                </div>
+              </dl>
+            </article>
+          ))}
+        </div>
+      )}
 
       {/* Modal CRUD */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl border max-w-lg w-full p-6 space-y-4 shadow-xl">
-            <h3 className="text-lg font-bold text-slate-900">
-              {editingId ? "Edit Kategori Lomba" : "Tambah Kategori Lomba Baru"}
-            </h3>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-label={editingId ? "Edit kategori" : "Tambah kategori"}
+        >
+          <div className="max-h-[90vh] w-full max-w-lg space-y-4 overflow-y-auto rounded-lg border border-border bg-card p-5 shadow-[var(--shadow-soft)] sm:p-6">
+            <div className="flex items-start justify-between gap-2">
+              <h3 className="font-display text-md font-semibold text-foreground">
+                {editingId
+                  ? "Edit Kategori Lomba"
+                  : "Tambah Kategori Lomba Baru"}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(false)}
+                aria-label="Tutup dialog"
+                className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
+              >
+                <X className="size-4" aria-hidden="true" />
+              </button>
+            </div>
 
             {errorMsg && (
-              <p className="text-xs text-rose-600 font-medium">{errorMsg}</p>
+              <p
+                role="alert"
+                className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-xs font-medium text-destructive"
+              >
+                {errorMsg}
+              </p>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4 text-sm">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
-                    Nama Kategori *
-                  </label>
+                  <label className={labelClass}>Nama Kategori *</label>
                   <input
                     type="text"
                     required
@@ -219,157 +280,145 @@ export function CategoryManager({ initialCategories }: CategoryManagerProps) {
                             .replace(/[^a-z0-9]+/g, "-"),
                         );
                     }}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className={inputClass}
                     placeholder="Robot Soccer"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
-                    Slug URL *
-                  </label>
+                  <label className={labelClass}>Slug URL *</label>
                   <input
                     type="text"
                     required
                     value={slug}
                     onChange={(e) => setSlug(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-lg font-mono text-xs"
+                    className={cn(inputClass, "font-mono text-xs")}
                     placeholder="robot-soccer"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Deskripsi Lomba
-                </label>
+                <label className={labelClass}>Deskripsi Lomba</label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg text-xs"
+                  className={cn(inputClass, "min-h-[80px]")}
                   rows={2}
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">
-                  Link Group WhatsApp Official Kategori
+                <label className={labelClass}>
+                  Link Grup WhatsApp Official Kategori
                 </label>
                 <input
                   type="url"
                   value={whatsappGroupUrl}
                   onChange={(e) => setWhatsappGroupUrl(e.target.value)}
                   placeholder="https://chat.whatsapp.com/..."
-                  className="w-full px-3 py-2 border rounded-lg text-xs"
+                  className={cn(inputClass, "text-xs")}
                 />
-                <p className="text-[10px] text-slate-400 mt-1">
-                  Link grup ini akan otomatis dikirim via email & ditampilkan
-                  saat pendaftaran lunas.
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Link ini dikirim via email & ditampilkan saat pendaftaran
+                  lunas.
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
-                    Biaya Batch 1 (Rp) *
-                  </label>
+                  <label className={labelClass}>Biaya Batch 1 (Rp) *</label>
                   <input
                     type="number"
                     required
                     min={0}
                     value={feeBatch1}
                     onChange={(e) => setFeeBatch1(Number(e.target.value))}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className={cn(inputClass, "font-mono")}
                     placeholder="150000"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
-                    Biaya Batch 2 (Rp) *
-                  </label>
+                  <label className={labelClass}>Biaya Batch 2 (Rp) *</label>
                   <input
                     type="number"
                     required
                     min={0}
                     value={feeBatch2}
                     onChange={(e) => setFeeBatch2(Number(e.target.value))}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className={cn(inputClass, "font-mono")}
                     placeholder="200000"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
-                    Biaya Default (Rp) *
-                  </label>
+                  <label className={labelClass}>Biaya Default (Rp) *</label>
                   <input
                     type="number"
                     required
                     value={fee}
                     onChange={(e) => setFee(Number(e.target.value))}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className={cn(inputClass, "font-mono")}
                   />
-                  <p className="text-[10px] text-slate-400 mt-1">
+                  <p className="mt-1 text-xs text-muted-foreground">
                     Fallback bila batch belum diatur.
                   </p>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
-                    Kuota Tim *
-                  </label>
+                  <label className={labelClass}>Kuota Tim *</label>
                   <input
                     type="number"
                     required
                     value={quota}
                     onChange={(e) => setQuota(Number(e.target.value))}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className={cn(inputClass, "font-mono")}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-700 mb-1">
-                    Maks Anggota *
-                  </label>
+                  <label className={labelClass}>Maks Anggota *</label>
                   <input
                     type="number"
                     required
                     value={maxMembers}
                     onChange={(e) => setMaxMembers(Number(e.target.value))}
-                    className="w-full px-3 py-2 border rounded-lg"
+                    className={cn(inputClass, "font-mono")}
                   />
                 </div>
               </div>
 
-              <label className="flex items-center gap-2">
+              <label className="flex min-h-[44px] cursor-pointer items-center gap-2">
                 <input
                   type="checkbox"
                   checked={isActive}
                   onChange={(e) => setIsActive(e.target.checked)}
-                  className="rounded text-[#3b5b84]"
+                  className="size-4 accent-primary"
                 />
-                <span className="text-xs text-slate-700 font-medium">
+                <span className="text-sm font-medium text-foreground">
                   Status Kategori Aktif
                 </span>
               </label>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t">
+              <div className="flex flex-col-reverse gap-2 border-t border-border pt-4 sm:flex-row sm:items-center sm:justify-end">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg"
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-md px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-4 py-2 bg-[#3b5b84] text-white text-xs font-semibold rounded-lg hover:bg-[#2f4a6d]"
+                  className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover disabled:opacity-60"
                 >
                   {isSubmitting ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    "Simpan"
-                  )}
+                    <Loader2
+                      className="size-4 animate-spin"
+                      aria-hidden="true"
+                    />
+                  ) : null}
+                  {isSubmitting ? "Menyimpan…" : "Simpan"}
                 </button>
               </div>
             </form>

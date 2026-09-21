@@ -5,6 +5,7 @@ interface ContactPerson {
   role: string;
   /** WhatsApp number in international format without +, e.g. "6281234567890" */
   whatsapp: string;
+  whatsappLabel: string;
 }
 
 /**
@@ -13,14 +14,16 @@ interface ContactPerson {
  */
 const contactPersons: ContactPerson[] = [
   {
-    name: "", // TODO: Isi nama CP 1
+    name: "Ilham Kurnia Ilahi",
     role: "Ketua Panitia",
-    whatsapp: "", // TODO: Isi nomor WA tanpa "+"
+    whatsapp: "6283180692738",
+    whatsappLabel: "+62 831 8069 2738",
   },
   {
-    name: "", // TODO: Isi nama CP 2
+    name: "Gadiza Fauzi",
     role: "Sekretariat",
-    whatsapp: "", // TODO: Isi nomor WA tanpa "+"
+    whatsapp: "6283182691238",
+    whatsappLabel: "+62 831 8269 1238",
   },
 ];
 
@@ -72,15 +75,20 @@ export function MrcContactSection() {
                     </div>
 
                     {cp.whatsapp && (
-                      <a
-                        href={`https://wa.me/${cp.whatsapp}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 min-h-[44px] font-body text-xs font-semibold px-3 py-1.5 rounded-md bg-success/15 text-success border border-success/30 hover:bg-success/25 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      >
-                        <MessageCircle className="size-3.5" />
-                        <span>Chat WhatsApp</span>
-                      </a>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-mono text-xs text-muted-foreground">
+                          {cp.whatsappLabel}
+                        </span>
+                        <a
+                          href={`https://wa.me/${cp.whatsapp}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 min-h-[44px] font-body text-xs font-semibold px-3 py-1.5 rounded-md bg-success/15 text-success border border-success/30 hover:bg-success/25 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                          <MessageCircle className="size-3.5" />
+                          <span>Chat WhatsApp</span>
+                        </a>
+                      </div>
                     )}
                   </div>
                 </div>

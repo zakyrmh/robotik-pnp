@@ -22,6 +22,12 @@ import type {
 } from "@/types/event-registration";
 import { BATCH_LABELS } from "@/lib/event-batch";
 import {
+  validateJuniorBirthDate,
+  MRC_EVENT_DATE,
+  MRC_EVENT_DATE_LABEL,
+  MRC_JUNIOR_MAX_AGE,
+} from "@/lib/mrc-rules";
+import {
   Loader2,
   Plus,
   Trash2,
@@ -170,9 +176,7 @@ export function RegistrationForm({
   const [teamWhatsapp, setTeamWhatsapp] = useState("");
   const [acceptRules, setAcceptRules] = useState(false);
 
-  const isLineFollower =
-    category.slug === "line-follower-senior" ||
-    category.slug === "line-follower-junior";
+  const isJuniorLineFollower = category.slug === "line-follower-junior";
 
   const [members, setMembers] = useState<MemberFormState[]>([
     {
@@ -297,7 +301,7 @@ export function RegistrationForm({
         );
         return;
       }
-      if (isLineFollower) {
+      if (isJuniorLineFollower) {
         if (!members[i].identity_card_url) {
           setErrorMessage(
             `Foto Kartu Pelajar / Kartu Keluarga untuk anggota #${i + 1} (${members[i].full_name || "Anggota"}) wajib diunggah.`,
@@ -306,7 +310,14 @@ export function RegistrationForm({
         }
         if (!members[i].birth_date) {
           setErrorMessage(
-            `Tanggal lahir untuk anggota #${i + 1} (${members[i].full_name || "Anggota"}) wajib diisi untuk verifikasi umur.`,
+            `Tanggal lahir untuk anggota #${i + 1} (${members[i].full_name || "Anggota"}) wajib diisi untuk verifikasi syarat umur.`,
+          );
+          return;
+        }
+        const birthValidation = validateJuniorBirthDate(members[i].birth_date);
+        if (!birthValidation.valid) {
+          setErrorMessage(
+            `Anggota #${i + 1} (${members[i].full_name || "Anggota"}): ${birthValidation.error}`,
           );
           return;
         }
@@ -329,8 +340,10 @@ export function RegistrationForm({
         members: members.map((m) => ({
           full_name: m.full_name,
           photo_url: m.photo_url,
-          identity_card_url: isLineFollower ? m.identity_card_url : undefined,
-          birth_date: isLineFollower ? m.birth_date : undefined,
+          identity_card_url: isJuniorLineFollower
+            ? m.identity_card_url
+            : undefined,
+          birth_date: isJuniorLineFollower ? m.birth_date : undefined,
           role_in_team: m.role_in_team,
         })),
       });
@@ -661,27 +674,77 @@ export function RegistrationForm({
                 </select>
               </div>
 
-              {isLineFollower && (
-                <div>
-                  <label className="block text-xs font-medium text-foreground mb-1">
-                    Tanggal Lahir *
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={member.birth_date}
-                    onChange={(e) =>
-                      updateMember(idx, "birth_date", e.target.value)
-                    }
-                    className="w-full min-h-[44px] px-3 py-2 bg-background border border-input rounded-md text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                  <p className="text-[10px] text-muted-foreground mt-1">
-                    {category.slug === "line-follower-junior"
-                      ? "Maksimal 19 tahun"
-                      : "Minimal 19 tahun"}
-                  </p>
-                </div>
-              )}
+              {isJuniorLineFollower &&
+                (() => {
+                  const birthValidation = member.birth_date
+                    ? validateJuniorBirthDate(member.birth_date)
+                    : null;
+                  const fieldError =
+                    fieldErrors[`members.${idx}.birth_date`]?.[0];
+
+                  return (
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-xs font-medium text-foreground">
+                          Tanggal Lahir *
+                        </label>
+                        <span className="text-[10px] text-muted-foreground">
+                          Maks {MRC_JUNIOR_MAX_AGE} thn per{" "}
+                          {MRC_EVENT_DATE_LABEL}
+                        </span>
+                      </div>
+                      <input
+                        type="date"
+                        required
+                        max={MRC_EVENT_DATE}
+                        value={member.birth_date}
+                        onChange={(e) =>
+                          updateMember(idx, "birth_date", e.target.value)
+                        }
+                        className={cn(
+                          "w-full min-h-[44px] px-3 py-2 bg-background border rounded-md text-sm text-foreground focus:outline-none focus:ring-2",
+                          birthValidation && !birthValidation.valid
+                            ? "border-destructive focus:ring-destructive"
+                            : birthValidation?.valid
+                              ? "border-success/60 focus:ring-success"
+                              : "border-input focus:ring-ring",
+                        )}
+                      />
+                      {birthValidation && (
+                        <p
+                          className={cn(
+                            "text-[11px] mt-1 font-medium flex items-center gap-1",
+                            birthValidation.valid
+                              ? "text-success"
+                              : "text-destructive",
+                          )}
+                        >
+                          {birthValidation.valid ? (
+                            <>
+                              <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+                              Usia: {birthValidation.age} tahun per{" "}
+                              {MRC_EVENT_DATE_LABEL} (Memenuhi syarat)
+                            </>
+                          ) : (
+                            <>
+                              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                              {birthValidation.error}
+                            </>
+                          )}
+                        </p>
+                      )}
+                      {fieldError &&
+                        (!birthValidation || birthValidation.valid) && (
+                          <p
+                            className="text-xs text-destructive mt-1"
+                            role="alert"
+                          >
+                            {fieldError}
+                          </p>
+                        )}
+                    </div>
+                  );
+                })()}
 
               <div>
                 <div className="flex items-center justify-between mb-1">
@@ -754,7 +817,7 @@ export function RegistrationForm({
                 )}
               </div>
 
-              {isLineFollower && (
+              {isJuniorLineFollower && (
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="block text-xs font-medium text-foreground">

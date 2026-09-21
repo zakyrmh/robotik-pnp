@@ -79,4 +79,26 @@ describe("eventRegistrationSchema with pipeline URLs", () => {
     });
     expect(res.success).toBe(true);
   });
+
+  it("passes junior payload with identity card and birth date", () => {
+    const res = eventRegistrationSchema.safeParse({
+      category_id: "cc205295-92eb-456f-9d00-d49a8ad4c470",
+      team_name: "Junior LF Team",
+      institution: "SMK 1 Padang",
+      origin_city: "Kota Padang",
+      team_email: "junior@example.com",
+      team_whatsapp: "08123456789",
+      accept_rules: true,
+      members: [
+        {
+          full_name: "Junior Member",
+          photo_url: "/api/r2/mrc/photos/photo-1.webp",
+          identity_card_url: "/api/r2/mrc/id-cards/card-1.webp",
+          birth_date: "2007-10-31",
+          role_in_team: "Ketua Tim",
+        },
+      ],
+    });
+    expect(res.success).toBe(true);
+  });
 });

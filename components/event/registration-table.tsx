@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import {
   updatePaymentStatusAction,
   purgeOldEventDataAction,
@@ -9,6 +10,7 @@ import type {
   EventRegistration,
   PaymentStatus,
 } from "@/types/event-registration";
+import { Badge } from "@/components/ui/badge";
 import {
   Search,
   Trash2,
@@ -17,12 +19,23 @@ import {
   Copy,
   Check,
   MessageSquare,
+  X,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface RegistrationTableProps {
   initialRegistrations: EventRegistration[];
   isSuperAdmin?: boolean;
 }
+
+const statusStyle: Record<string, string> = {
+  paid: "border-success/30 bg-success-soft text-success",
+  pending: "border-warning/30 bg-warning-soft text-warning",
+  pending_verification: "border-warning/30 bg-warning-soft text-warning",
+  expired: "border-destructive/30 bg-destructive/10 text-destructive",
+  failed: "border-destructive/30 bg-destructive/10 text-destructive",
+  rejected: "border-destructive/30 bg-destructive/10 text-destructive",
+};
 
 export function RegistrationTable({
   initialRegistrations,
@@ -117,100 +130,218 @@ export function RegistrationTable({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white p-4 border border-slate-200 rounded-xl shadow-sm">
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <div className="relative flex-1 md:w-72">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+      {/* Toolbar: search + filter + retensi */}
+      <div className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <div className="relative flex-1 sm:w-72">
+            <Search
+              className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden="true"
+            />
             <input
-              type="text"
-              placeholder="Cari tim, kode, instansi..."
+              type="search"
+              placeholder="Cari tim, kode, instansi…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-[#3b5b84]"
+              aria-label="Cari pendaftaran"
+              className="min-h-[44px] w-full rounded-md border border-border bg-background pr-3 pl-9 text-sm text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-ring focus:outline-none"
             />
           </div>
 
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs font-medium text-slate-700"
+            aria-label="Filter status pembayaran"
+            className="min-h-[44px] rounded-md border border-border bg-background px-3 py-2 text-sm font-medium text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
           >
             <option value="all">Semua Status Bayar</option>
             <option value="paid">Lunas (Paid)</option>
             <option value="pending">Menunggu (Pending)</option>
+            <option value="pending_verification">Menunggu Verifikasi</option>
             <option value="expired">Expired</option>
             <option value="failed">Failed</option>
           </select>
         </div>
 
-        {isSuperAdmin && (
-          <button
-            onClick={handlePurgeOldData}
-            disabled={isPurging}
-            className="inline-flex items-center gap-1.5 px-3 py-2 bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 rounded-lg text-xs font-semibold transition-colors"
-          >
-            {isPurging ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Trash2 className="w-4 h-4" />
-            )}{" "}
-            Retensi Data (&gt;3 Bulan)
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="font-mono tabular-nums">
+            {filtered.length} / {registrations.length} tim
+          </Badge>
+          {isSuperAdmin && (
+            <button
+              onClick={handlePurgeOldData}
+              disabled={isPurging}
+              className="inline-flex min-h-[44px] items-center gap-1.5 rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive transition-colors hover:bg-destructive/20 disabled:opacity-60"
+            >
+              {isPurging ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <Trash2 className="size-4" aria-hidden="true" />
+              )}
+              Retensi Data (&gt;3 Bulan)
+            </button>
+          )}
+        </div>
       </div>
 
       {purgeMessage && (
-        <p className="text-xs text-slate-600 font-medium">{purgeMessage}</p>
+        <p role="status" className="text-sm font-medium text-muted-foreground">
+          {purgeMessage}
+        </p>
       )}
 
-      <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+      {/* ── Mobile: kartu / Desktop: tabel ── */}
+      {/* Kartu mobile */}
+      <div className="grid grid-cols-1 gap-3 lg:hidden">
+        {filtered.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-border bg-card p-8 text-center">
+            <p className="text-sm font-semibold text-foreground">
+              Tidak ada pendaftaran ditemukan.
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Coba ubah kata kunci atau filter status.
+            </p>
+          </div>
+        ) : (
+          filtered.map((reg) => (
+            <article
+              key={reg.id}
+              className="space-y-3 rounded-lg border border-border bg-card p-4"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <span className="block font-mono text-xs font-semibold text-primary">
+                    {reg.registration_code}
+                  </span>
+                  <h3 className="truncate font-display text-md font-semibold text-foreground">
+                    {reg.team_name}
+                  </h3>
+                  <p className="truncate text-sm text-muted-foreground">
+                    {reg.category?.name || "-"} · {reg.institution}
+                  </p>
+                </div>
+                <Badge
+                  variant="secondary"
+                  className={cn(
+                    "shrink-0",
+                    statusStyle[reg.payment_status] ?? "",
+                  )}
+                >
+                  {reg.payment_status}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between border-t border-border pt-3 text-sm">
+                <span className="font-mono font-semibold text-foreground">
+                  {reg.total_amount > 0
+                    ? `Rp ${Number(reg.total_amount).toLocaleString("id-ID")}`
+                    : "Gratis"}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {reg.members?.length || 0} anggota
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <select
+                  value={reg.payment_status}
+                  onChange={(e) =>
+                    handleStatusChange(reg.id, e.target.value as PaymentStatus)
+                  }
+                  aria-label={`Ubah status ${reg.team_name}`}
+                  className={cn(
+                    "min-h-[44px] flex-1 rounded-md border bg-background px-2 py-2 text-xs font-semibold focus:ring-2 focus:ring-ring focus:outline-none",
+                    statusStyle[reg.payment_status] ?? "border-border",
+                  )}
+                >
+                  <option value="pending">pending</option>
+                  <option value="pending_verification">
+                    pending_verification
+                  </option>
+                  <option value="paid">paid</option>
+                  <option value="expired">expired</option>
+                  <option value="failed">failed</option>
+                </select>
+                <button
+                  onClick={() => setSelectedReg(reg)}
+                  className="inline-flex min-h-[44px] flex-1 items-center justify-center rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary-hover"
+                >
+                  Detail
+                </button>
+              </div>
+            </article>
+          ))
+        )}
+      </div>
+
+      {/* Tabel desktop */}
+      <div className="hidden overflow-hidden rounded-lg border border-border bg-card lg:block">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-700">
-            <thead className="bg-slate-50 border-b text-slate-900 font-semibold uppercase tracking-wider">
-              <tr>
-                <th className="p-3">Kode & Tim</th>
-                <th className="p-3">Kategori & Instansi</th>
-                <th className="p-3">Kontak Email / WA</th>
-                <th className="p-3">Total Biaya</th>
-                <th className="p-3">Status Pembayaran</th>
-                <th className="p-3 text-right">Aksi</th>
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-border bg-secondary text-xs font-semibold tracking-wider text-foreground uppercase">
+                <th scope="col" className="p-3">
+                  Kode & Tim
+                </th>
+                <th scope="col" className="p-3">
+                  Kategori & Instansi
+                </th>
+                <th scope="col" className="p-3">
+                  Kontak Email / WA
+                </th>
+                <th scope="col" className="p-3">
+                  Total Biaya
+                </th>
+                <th scope="col" className="p-3">
+                  Status Pembayaran
+                </th>
+                <th scope="col" className="p-3 text-right">
+                  Aksi
+                </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200">
+            <tbody className="divide-y divide-border">
               {filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="p-6 text-center text-slate-400">
+                  <td
+                    colSpan={6}
+                    className="p-6 text-center text-muted-foreground"
+                  >
                     Tidak ada pendaftaran ditemukan.
                   </td>
                 </tr>
               ) : (
-                filtered.map((reg) => (
-                  <tr key={reg.id} className="hover:bg-slate-50">
+                filtered.map((reg, i) => (
+                  <tr
+                    key={reg.id}
+                    className={cn(
+                      "transition-colors hover:bg-secondary/60",
+                      i % 2 === 1 && "bg-secondary/30",
+                    )}
+                  >
                     <td className="p-3">
-                      <span className="font-mono text-xs font-bold text-[#3b5b84] block">
+                      <span className="block font-mono text-xs font-semibold text-primary">
                         {reg.registration_code}
                       </span>
-                      <span className="font-semibold text-slate-900 text-sm">
+                      <span className="text-sm font-semibold text-foreground">
                         {reg.team_name}
                       </span>
                     </td>
                     <td className="p-3">
-                      <span className="font-medium text-slate-800 block">
+                      <span className="block text-sm font-medium text-foreground">
                         {reg.category?.name || "-"}
                       </span>
-                      <span className="text-slate-500 text-[11px]">
+                      <span className="text-xs text-muted-foreground">
                         {reg.institution} ({reg.origin_city || "-"})
                       </span>
                     </td>
                     <td className="p-3">
-                      <span className="block text-slate-800">
+                      <span className="block text-sm text-foreground">
                         {reg.team_email}
                       </span>
-                      <span className="text-slate-500 font-mono text-[11px]">
+                      <span className="font-mono text-xs text-muted-foreground">
                         {reg.team_whatsapp}
                       </span>
                     </td>
-                    <td className="p-3 font-semibold text-slate-900">
+                    <td className="p-3 font-mono text-sm font-semibold text-foreground">
                       {reg.total_amount > 0
                         ? `Rp ${Number(reg.total_amount).toLocaleString("id-ID")}`
                         : "Gratis"}
@@ -224,15 +355,16 @@ export function RegistrationTable({
                             e.target.value as PaymentStatus,
                           )
                         }
-                        className={`px-2 py-1 rounded text-xs font-bold border focus:outline-none ${
-                          reg.payment_status === "paid"
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-300"
-                            : reg.payment_status === "pending"
-                              ? "bg-amber-50 text-amber-700 border-amber-300"
-                              : "bg-rose-50 text-rose-700 border-rose-300"
-                        }`}
+                        aria-label={`Status pembayaran ${reg.team_name}`}
+                        className={cn(
+                          "min-h-[44px] rounded-md border bg-background px-2 py-1.5 text-xs font-semibold focus:ring-2 focus:ring-ring focus:outline-none",
+                          statusStyle[reg.payment_status] ?? "border-border",
+                        )}
                       >
                         <option value="pending">pending</option>
+                        <option value="pending_verification">
+                          pending_verification
+                        </option>
                         <option value="paid">paid</option>
                         <option value="expired">expired</option>
                         <option value="failed">failed</option>
@@ -242,42 +374,54 @@ export function RegistrationTable({
                           href={reg.manual_payment_proof_url}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex items-center gap-1 text-[10px] text-blue-600 hover:underline mt-1 block"
+                          className="mt-1 flex items-center gap-1 text-xs font-medium text-primary hover:underline"
                         >
-                          Bukti Manual <ExternalLink className="w-3 h-3" />
+                          Bukti Manual{" "}
+                          <ExternalLink className="size-3" aria-hidden="true" />
                         </a>
                       )}
                     </td>
-                    <td className="p-3 text-right space-x-1 space-y-1">
-                      <button
-                        onClick={() => copyAccessLink(reg.access_token, reg.id)}
-                        className="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-medium"
-                        title="Salin Link Akses Tiket / Pembayaran"
-                      >
-                        {copiedId === reg.id ? (
-                          <Check className="w-3 h-3 text-emerald-600" />
-                        ) : (
-                          <Copy className="w-3 h-3" />
-                        )}
-                        {copiedId === reg.id ? "Tersalin" : "Link"}
-                      </button>
+                    <td className="p-3">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() =>
+                            copyAccessLink(reg.access_token, reg.id)
+                          }
+                          title="Salin link akses tiket / pembayaran"
+                          className="inline-flex min-h-[44px] items-center gap-1 rounded-md bg-secondary px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-secondary/70"
+                        >
+                          {copiedId === reg.id ? (
+                            <Check
+                              className="size-3 text-success"
+                              aria-hidden="true"
+                            />
+                          ) : (
+                            <Copy className="size-3" aria-hidden="true" />
+                          )}
+                          {copiedId === reg.id ? "Tersalin" : "Link"}
+                        </button>
 
-                      <a
-                        href={getWaShareUrl(reg)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded text-[11px] font-medium"
-                        title="Kirim Link Akses ke WA Peserta"
-                      >
-                        <MessageSquare className="w-3 h-3" /> WA
-                      </a>
+                        <a
+                          href={getWaShareUrl(reg)}
+                          target="_blank"
+                          rel="noreferrer"
+                          title="Kirim link akses ke WA peserta"
+                          className="inline-flex min-h-[44px] items-center gap-1 rounded-md border border-success/30 bg-success-soft px-2.5 py-1.5 text-xs font-medium text-success hover:bg-success/20"
+                        >
+                          <MessageSquare
+                            className="size-3"
+                            aria-hidden="true"
+                          />{" "}
+                          WA
+                        </a>
 
-                      <button
-                        onClick={() => setSelectedReg(reg)}
-                        className="px-2.5 py-1 bg-[#3b5b84] hover:bg-[#2f4a6d] text-white rounded text-[11px] font-medium"
-                      >
-                        Detail ({reg.members?.length || 0})
-                      </button>
+                        <button
+                          onClick={() => setSelectedReg(reg)}
+                          className="inline-flex min-h-[44px] items-center rounded-md bg-primary px-2.5 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary-hover"
+                        >
+                          Detail ({reg.members?.length || 0})
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -289,34 +433,39 @@ export function RegistrationTable({
 
       {/* Modal Detail Tim */}
       {selectedReg && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl border max-w-2xl w-full p-6 space-y-4 shadow-xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b pb-3">
-              <div>
-                <span className="text-xs font-mono font-bold text-[#3b5b84]">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Detail tim ${selectedReg.team_name}`}
+        >
+          <div className="max-h-[90vh] w-full max-w-2xl space-y-4 overflow-y-auto rounded-lg border border-border bg-card p-5 shadow-[var(--shadow-soft)] sm:p-6">
+            <div className="flex items-start justify-between gap-2 border-b border-border pb-3">
+              <div className="min-w-0">
+                <span className="font-mono text-xs font-semibold text-primary">
                   {selectedReg.registration_code}
                 </span>
-                <h3 className="text-lg font-bold text-slate-900">
+                <h3 className="truncate font-display text-md font-semibold text-foreground">
                   {selectedReg.team_name}
                 </h3>
-                <p className="text-xs text-slate-500">
+                <p className="text-sm text-muted-foreground">
                   {selectedReg.institution} ({selectedReg.origin_city || "-"})
                 </p>
               </div>
               <button
                 onClick={() => setSelectedReg(null)}
-                className="text-slate-400 hover:text-slate-600 font-bold"
+                aria-label="Tutup detail"
+                className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-md text-muted-foreground hover:bg-secondary hover:text-foreground"
               >
-                ✕
+                <X className="size-4" aria-hidden="true" />
               </button>
             </div>
 
-            {/* Admin Sharing Actions in Modal */}
-            <div className="p-3 bg-slate-50 border rounded-lg flex flex-wrap items-center justify-between gap-2 text-xs">
-              <span className="font-semibold text-slate-700">
+            <div className="flex flex-col gap-2 rounded-lg border border-border bg-secondary p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
+              <span className="font-medium text-foreground">
                 Akses Portal Peserta:
               </span>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row">
                 <button
                   onClick={() =>
                     copyAccessLink(
@@ -324,12 +473,18 @@ export function RegistrationTable({
                       `modal-${selectedReg.id}`,
                     )
                   }
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 rounded font-medium"
+                  className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-md border border-border bg-background px-3 py-2 text-xs font-medium text-foreground hover:bg-secondary"
                 >
                   {copiedId === `modal-${selectedReg.id}` ? (
-                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                    <Check
+                      className="size-3.5 text-success"
+                      aria-hidden="true"
+                    />
                   ) : (
-                    <Copy className="w-3.5 h-3.5 text-slate-500" />
+                    <Copy
+                      className="size-3.5 text-muted-foreground"
+                      aria-hidden="true"
+                    />
                   )}
                   {copiedId === `modal-${selectedReg.id}`
                     ? "Link Akses Tersalin"
@@ -339,41 +494,44 @@ export function RegistrationTable({
                   href={getWaShareUrl(selectedReg)}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded font-medium"
+                  className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-md bg-success px-3 py-2 text-xs font-medium text-white hover:opacity-90"
                 >
-                  <MessageSquare className="w-3.5 h-3.5" /> Kirim Link via WA
+                  <MessageSquare className="size-3.5" aria-hidden="true" />{" "}
+                  Kirim Link via WA
                 </a>
               </div>
             </div>
 
-            <div className="space-y-4">
-              <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+            <div className="space-y-3">
+              <h4 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                 Anggota Tim
               </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {selectedReg.members?.map((m) => (
                   <div
                     key={m.id}
-                    className="p-3 border rounded-lg bg-slate-50 flex items-start gap-3"
+                    className="flex items-start gap-3 rounded-lg border border-border bg-secondary/60 p-3"
                   >
-                    <img
+                    <Image
                       src={m.photo_url}
-                      alt={m.full_name}
-                      className="w-12 h-12 object-cover rounded-md border flex-shrink-0"
+                      alt={`Foto ${m.full_name}`}
+                      width={48}
+                      height={48}
+                      className="size-12 shrink-0 rounded-md border border-border object-cover"
                     />
-                    <div className="flex-1 min-w-0">
-                      <span className="text-[10px] font-semibold px-2 py-0.5 bg-slate-200 text-slate-700 rounded-full">
+                    <div className="min-w-0 flex-1">
+                      <Badge variant="secondary" className="text-micro">
                         {m.role_in_team}
-                      </span>
-                      <p className="font-bold text-xs text-slate-900 mt-1 truncate">
+                      </Badge>
+                      <p className="mt-1 truncate text-sm font-semibold text-foreground">
                         {m.full_name}
                       </p>
                       {m.birth_date && (
-                        <p className="text-[10px] text-slate-600 font-medium mt-0.5">
+                        <p className="mt-0.5 text-xs font-medium text-muted-foreground">
                           Tgl Lahir: {m.birth_date}
                         </p>
                       )}
-                      <p className="text-[10px] text-slate-500 font-mono">
+                      <p className="font-mono text-xs text-muted-foreground">
                         Status: {m.verification_status}
                       </p>
                       {m.identity_card_url && (
@@ -381,10 +539,13 @@ export function RegistrationTable({
                           href={m.identity_card_url}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex items-center gap-1 text-[10px] text-blue-600 hover:underline mt-1 font-medium block"
+                          className="mt-1 flex items-center gap-1 text-xs font-medium text-primary hover:underline"
                         >
                           Lihat Kartu Pelajar / KK{" "}
-                          <ExternalLink className="w-2.5 h-2.5" />
+                          <ExternalLink
+                            className="size-2.5"
+                            aria-hidden="true"
+                          />
                         </a>
                       )}
                     </div>
