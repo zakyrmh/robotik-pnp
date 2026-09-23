@@ -95,6 +95,7 @@ export async function updateSession(request: NextRequest) {
     "/piket",
     "/manajemen-kelompok",
     "/manajemen-caang",
+    "/manajemen-event",
     "/settings",
   ];
   const protectedRoutes = [

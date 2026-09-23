@@ -354,7 +354,6 @@ export async function updatePaymentStatusAction(
   }
 
   revalidatePath("/manajemen-event");
-  revalidatePath("/manajemen-event/verifikasi-pembayaran");
   return {
     success: true,
     data: { success: true },
@@ -431,13 +430,12 @@ export async function verifyManualPaymentAction(
     categoryName: updatedReg.category?.name || "Minangkabau Robot Contest",
     accessToken: updatedReg.access_token,
     appBaseUrl: appUrl,
-    paymentStatus: newStatus,
+    paymentStatus: action === "approve" ? "paid" : "rejected",
     whatsappGroupUrl: updatedReg.category?.whatsapp_group_url,
     rejectionReason: action === "reject" ? rejectionReason : undefined,
   });
 
   revalidatePath("/manajemen-event");
-  revalidatePath("/manajemen-event/verifikasi-pembayaran");
   return {
     success: true,
     data: { success: true },

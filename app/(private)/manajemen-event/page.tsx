@@ -7,6 +7,7 @@ import {
 } from "@/lib/actions/event-admin";
 import { EventDashboardTabs } from "@/components/event/event-dashboard-tabs";
 import type { RoleEvent } from "@/types/event-registration";
+import { ShieldAlert } from "lucide-react";
 
 export default async function EventManagementPage() {
   const supabase = await createClient();
@@ -29,13 +30,24 @@ export default async function EventManagementPage() {
 
   if (!isSuperAdmin && !roleEvent) {
     return (
-      <div className="p-8 text-center max-w-md mx-auto space-y-3">
-        <h2 className="text-xl font-bold text-foreground">Akses Terbatas</h2>
-        <p className="text-sm text-muted-foreground">
-          Akun Anda tidak terdaftar dalam kepanitiaan Minangkabau Robot Contest
-          (`role_event`).
-        </p>
-      </div>
+      <main className="mx-auto max-w-md px-4 py-12 sm:px-6">
+        <div className="rounded-lg border border-border bg-card p-6 text-center shadow-xs">
+          <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+            <ShieldAlert className="size-6" aria-hidden="true" />
+          </div>
+          <h2 className="font-display text-lg font-semibold tracking-tight text-foreground">
+            Akses Terbatas
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Akun Anda tidak terdaftar dalam kepanitiaan Minangkabau Robot
+            Contest (
+            <code className="font-mono text-xs font-semibold text-foreground">
+              role_event
+            </code>
+            ).
+          </p>
+        </div>
+      </main>
     );
   }
 
@@ -46,7 +58,7 @@ export default async function EventManagementPage() {
   ]);
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
+    <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 space-y-6">
       <EventDashboardTabs
         settings={settingsRes.success ? settingsRes.data : null}
         categories={categoriesRes.success ? categoriesRes.data : []}
@@ -54,6 +66,6 @@ export default async function EventManagementPage() {
         isSuperAdmin={isSuperAdmin}
         roleEvent={roleEvent}
       />
-    </div>
+    </main>
   );
 }

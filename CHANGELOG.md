@@ -13,6 +13,16 @@ All notable changes to this project will be documented in this file. See [standa
 
 - **Struktur Section Halaman MRC (`app/(marketing)/mrc/page.tsx`)**: Menyisipkan `<MrcRulesSection />` sebagai section ke-5 (setelah Timeline, sebelum FAQ) dan menomori ulang komentar urutan section.
 - **Pembersihan Import FAQ MRC (`components/event/mrc-faq-accordion.tsx`)**: Menghapus import `Download` dan `FileText` yang tidak terpakai setelah seksi rulebook dipisahkan ke komponen tersendiri.
+- **Integrasi Verifikasi Pembayaran Manual ke Dashboard Manajemen Event (`components/event/event-dashboard-tabs.tsx`, `components/event/registration-table.tsx`, `app/(private)/manajemen-event/page.tsx`)**: Verifikasi pembayaran manual yang sebelumnya berupa halaman terpisah kini dilebur ke dalam tab "Pendaftaran & Transaksi" sebagai tabel master tunggal, dilengkapi filter, pencarian, badge status, dan ekspor CSV.
+- **Perombakan Navigasi Sidebar Berbasis `Collapsible` (`components/shared/sidebar.tsx`, `components/ui/collapsible.tsx`)**: Pengelompokan ulang menu menjadi grup _Governance_, _Minangkabau Robot Contest_, dan _Kebersihan_ dengan submenu yang dapat dilipat.
+- **Penyelarasan Token Desain Halaman Verifikasi Lapangan (`app/(private)/manajemen-event/verifikasi/page.tsx`)**: Mengganti warna hardcoded (`slate-*`, hex mentah `#f0975a`) dengan token semantik `DESIGN.md`, menambahkan tautan kembali ke dashboard, `aria-hidden` pada ikon dekoratif, dan target sentuh minimal 44px.
+- **Konsistensi Elemen Semantik Halaman Manajemen Event (`app/(private)/manajemen-event/page.tsx`)**: Mengganti wrapper `<div>` menjadi `<main>`, seragamkan kartu "Akses Terbatas" dengan token desain, dan tambahkan ikon `ShieldAlert`.
+- **Perbaikan Nilai Status Pembayaran pada Verifikasi Manual (`lib/actions/event-admin.ts`)**: `paymentStatus` kini ditetapkan eksplisit (`paid` saat disetujui, `rejected` saat ditolak) alih-alih meneruskan nilai mentah dari client.
+- **Proteksi Route Manajemen Event (`app/robots.ts`, `lib/supabase/proxy.ts`)**: Menambahkan `/manajemen-event` ke daftar `disallow` crawler dan daftar route terproteksi autentikasi.
+
+### Removed
+
+- **Halaman Verifikasi Pembayaran Manual Terpisah (`app/(private)/manajemen-event/verifikasi-pembayaran/page.tsx`, `components/event/manual-payment-verification-list.tsx`)**: Menghapus halaman dan komponen verifikasi pembayaran yang berdiri sendiri beserta seluruh pemanggilan `revalidatePath` terkait (`lib/actions/event-admin.ts`, `lib/actions/event-registration.ts`), karena fungsinya telah diintegrasikan ke dashboard manajemen event.
 
 ## [0.11.0](https://github.com/zakyrmh/robotik-pnp/compare/v0.10.0...v0.11.0) (2026-09-18)
 

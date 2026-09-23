@@ -344,7 +344,6 @@ export async function registerEventAction(
     }
 
     revalidatePath("/manajemen-event");
-    revalidatePath("/manajemen-event/verifikasi-pembayaran");
 
     return {
       success: true,
@@ -611,7 +610,6 @@ export async function submitManualPaymentProofAction(
   });
 
   revalidatePath("/manajemen-event");
-  revalidatePath("/manajemen-event/verifikasi-pembayaran");
 
   return {
     success: true,

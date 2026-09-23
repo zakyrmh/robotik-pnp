@@ -23,6 +23,7 @@ export default function robots(): MetadataRoute.Robots {
         "/manajemen-caang",
         "/manajemen-kelompok",
         "/manajemen-struktur",
+        "/manajemen-event",
         "/pengaturan-or",
         "/piket",
         "/tugas",

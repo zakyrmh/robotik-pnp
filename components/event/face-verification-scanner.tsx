@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import {
   getMemberByQrTokenAction,
   submitFaceVerificationAction,
@@ -12,13 +13,13 @@ import type {
 } from "@/types/event-registration";
 import {
   QrCode,
-  CheckCircle2,
   AlertTriangle,
   ShieldAlert,
   Loader2,
   UserCheck,
   UserX,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export function FaceVerificationScanner() {
   const [qrTokenInput, setQrTokenInput] = useState("");
@@ -104,12 +105,12 @@ export function FaceVerificationScanner() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       {/* Search/Scan QR Input */}
-      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
-        <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-          <QrCode className="w-5 h-5 text-[#3b5b84]" /> Scan / Input Token QR
-          Kokarde Anggota
+      <div className="bg-card p-5 sm:p-6 rounded-lg border border-border shadow-xs space-y-4">
+        <h2 className="font-display text-base font-semibold text-foreground flex items-center gap-2">
+          <QrCode className="size-5 text-primary" aria-hidden="true" /> Scan /
+          Input Token QR Kokarde Anggota
         </h2>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <input
             type="text"
             placeholder="Paste member_qr_token (UUID)..."
@@ -118,15 +119,15 @@ export function FaceVerificationScanner() {
             onKeyDown={(e) => {
               if (e.key === "Enter") handleScanLookup(qrTokenInput);
             }}
-            className="flex-1 min-h-[44px] px-3 py-2 border rounded-lg text-xs font-mono focus:outline-none focus:ring-2 focus:ring-[#3b5b84]"
+            className="flex-1 min-h-[44px] px-3 py-2 border border-input bg-background rounded-md text-xs font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
           />
           <button
             onClick={() => handleScanLookup(qrTokenInput)}
             disabled={isLoading}
-            className="px-4 py-2 bg-[#3b5b84] hover:bg-[#2f4a6d] text-white rounded-lg text-xs font-semibold"
+            className="inline-flex min-h-[44px] items-center justify-center px-4 py-2 bg-primary hover:bg-primary-hover text-primary-foreground rounded-md text-xs font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             {isLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
             ) : (
               "Cek QR"
             )}
@@ -134,38 +135,39 @@ export function FaceVerificationScanner() {
         </div>
 
         {errorMsg && (
-          <p className="text-xs text-rose-600 font-medium">{errorMsg}</p>
+          <p className="text-xs text-destructive font-medium">{errorMsg}</p>
         )}
         {successMsg && (
-          <p className="text-xs text-emerald-600 font-medium">{successMsg}</p>
+          <p className="text-xs text-success font-medium">{successMsg}</p>
         )}
       </div>
 
       {/* Member Display & Face Matching Card */}
       {memberData && (
-        <div className="bg-white rounded-xl border border-slate-200 shadow-md p-6 space-y-6">
-          <div className="flex items-center justify-between border-b pb-4">
+        <div className="bg-card rounded-lg border border-border shadow-xs p-5 sm:p-6 space-y-6">
+          <div className="flex items-center justify-between border-b border-border pb-4">
             <div>
-              <span className="text-xs text-slate-500 block">
+              <span className="text-xs text-muted-foreground block">
                 Kategori Lomba:
               </span>
-              <h3 className="font-bold text-slate-900 text-lg">
+              <h3 className="font-display font-semibold text-foreground text-lg">
                 {memberData.registration.category?.name ||
                   "Minangkabau Robot Contest"}
               </h3>
-              <p className="text-xs text-[#3b5b84] font-semibold">
+              <p className="text-xs text-primary font-semibold">
                 Tim: {memberData.registration.team_name} (
                 {memberData.registration.institution})
               </p>
             </div>
             <span
-              className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
+              className={cn(
+                "px-3 py-1 rounded-full text-micro font-bold uppercase tracking-wider border",
                 memberData.verification_status === "verified"
-                  ? "bg-emerald-100 text-emerald-800"
+                  ? "bg-success-soft text-success border-success/30"
                   : memberData.verification_status === "mismatch"
-                    ? "bg-rose-100 text-rose-800"
-                    : "bg-amber-100 text-amber-800"
-              }`}
+                    ? "bg-destructive/10 text-destructive border-destructive/30"
+                    : "bg-warning-soft text-warning border-warning/30",
+              )}
             >
               {memberData.verification_status}
             </span>
@@ -173,82 +175,86 @@ export function FaceVerificationScanner() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
             <div className="text-center space-y-2">
-              <span className="text-xs text-slate-500 font-semibold uppercase block">
+              <span className="text-xs text-muted-foreground font-semibold uppercase tracking-wider block">
                 Pas Foto Terdaftar
               </span>
-              <img
+              <Image
                 src={memberData.photo_url}
                 alt={memberData.full_name}
-                className="w-48 h-48 object-cover rounded-xl border-2 border-slate-300 mx-auto shadow-sm"
+                width={192}
+                height={192}
+                className="size-48 object-cover rounded-lg border border-border mx-auto shadow-xs bg-secondary"
               />
             </div>
 
             <div className="space-y-3">
               <div>
-                <span className="text-xs text-slate-500 block">
+                <span className="text-xs text-muted-foreground block">
                   Nama Anggota:
                 </span>
-                <p className="text-base font-bold text-slate-900">
+                <p className="text-base font-bold text-foreground">
                   {memberData.full_name}
                 </p>
               </div>
               <div>
-                <span className="text-xs text-slate-500 block">
+                <span className="text-xs text-muted-foreground block">
                   Peran dalam Tim:
                 </span>
-                <p className="text-sm font-semibold text-slate-700">
+                <p className="text-sm font-semibold text-foreground/90">
                   {memberData.role_in_team}
                 </p>
               </div>
               <div>
-                <span className="text-xs text-slate-500 block">
+                <span className="text-xs text-muted-foreground block">
                   Kode Pendaftaran Tim:
                 </span>
-                <p className="text-xs font-mono font-bold text-slate-800">
+                <p className="text-xs font-mono font-bold text-foreground">
                   {memberData.registration.registration_code}
                 </p>
               </div>
 
               <div className="pt-2">
-                <label className="block text-xs font-medium text-slate-700 mb-1">
+                <label className="block text-xs font-medium text-foreground mb-1">
                   Catatan Panitia (Opsional)
                 </label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Catatan hasil pencocokan fisik..."
-                  className="w-full px-3 py-1.5 border rounded-lg text-xs"
+                  className="w-full px-3 py-2 border border-input bg-background rounded-md text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   rows={2}
                 />
               </div>
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="border-t pt-4 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
+          {/* Action Buttons (Min 44px Touch Targets) */}
+          <div className="border-t border-border pt-4 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={() => handleVerifyResult("verified")}
                 disabled={isSubmitting}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold shadow-sm"
+                className="inline-flex min-h-[44px] items-center gap-1.5 px-4 py-2.5 bg-success hover:bg-success/90 text-white rounded-md text-xs font-semibold shadow-xs transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <UserCheck className="w-4 h-4" /> Wajah Cocok (Verified)
+                <UserCheck className="size-4" aria-hidden="true" /> Wajah Cocok
+                (Verified)
               </button>
               <button
                 onClick={() => handleVerifyResult("mismatch")}
                 disabled={isSubmitting}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold shadow-sm"
+                className="inline-flex min-h-[44px] items-center gap-1.5 px-4 py-2.5 bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-md text-xs font-semibold shadow-xs transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <UserX className="w-4 h-4" /> Wajah Beda (Mismatch)
+                <UserX className="size-4" aria-hidden="true" /> Wajah Beda
+                (Mismatch)
               </button>
             </div>
 
             <button
               onClick={() => setShowViolationModal(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-2 bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100 rounded-lg text-xs font-semibold"
+              className="inline-flex min-h-[44px] items-center gap-1.5 px-3 py-2 bg-warning-soft text-warning border border-warning/30 hover:bg-warning/20 rounded-md text-xs font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              <ShieldAlert className="w-4 h-4 text-amber-600" /> Catat
-              Pelanggaran Tim
+              <ShieldAlert className="size-4 text-warning" aria-hidden="true" />{" "}
+              Catat Pelanggaran Tim
             </button>
           </div>
         </div>
@@ -256,22 +262,25 @@ export function FaceVerificationScanner() {
 
       {/* Violation Modal */}
       {showViolationModal && memberData && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl border max-w-md w-full p-6 space-y-4 shadow-xl">
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-amber-600" /> Catat
-              Pelanggaran Tim ({memberData.registration.team_name})
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-xs flex items-center justify-center p-4 z-50">
+          <div className="bg-card rounded-lg border border-border max-w-md w-full p-6 space-y-4 shadow-lg">
+            <h3 className="text-base font-display font-bold text-foreground flex items-center gap-2">
+              <AlertTriangle
+                className="size-5 text-warning"
+                aria-hidden="true"
+              />{" "}
+              Catat Pelanggaran Tim ({memberData.registration.team_name})
             </h3>
 
             <form onSubmit={handleLogViolation} className="space-y-3 text-xs">
               <div>
-                <label className="block font-medium text-slate-700 mb-1">
+                <label className="block font-medium text-foreground mb-1">
                   Jenis Pelanggaran *
                 </label>
                 <select
                   value={violationType}
                   onChange={(e) => setViolationType(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full min-h-[44px] px-3 py-2 border border-input bg-background rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 >
                   <option value="joki">
                     Indikasi Joki / Wajah Tidak Cocok
@@ -287,7 +296,7 @@ export function FaceVerificationScanner() {
               </div>
 
               <div>
-                <label className="block font-medium text-slate-700 mb-1">
+                <label className="block font-medium text-foreground mb-1">
                   Tingkat Peringatan (SP) *
                 </label>
                 <input
@@ -296,35 +305,35 @@ export function FaceVerificationScanner() {
                   max={3}
                   value={warningNumber}
                   onChange={(e) => setWarningNumber(Number(e.target.value))}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full min-h-[44px] px-3 py-2 border border-input bg-background rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
 
               <div>
-                <label className="block font-medium text-slate-700 mb-1">
+                <label className="block font-medium text-foreground mb-1">
                   Keterangan / Deskripsi Kronologi
                 </label>
                 <textarea
                   value={violationDesc}
                   onChange={(e) => setViolationDesc(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg"
+                  className="w-full px-3 py-2 border border-input bg-background rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   rows={3}
                   placeholder="Tuliskan alasan / bukti singkat..."
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t">
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
                 <button
                   type="button"
                   onClick={() => setShowViolationModal(false)}
-                  className="px-3 py-2 font-semibold text-slate-600 hover:bg-slate-100 rounded-lg"
+                  className="inline-flex min-h-[44px] items-center px-4 py-2 font-semibold text-muted-foreground hover:bg-secondary rounded-md transition-colors"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-4 py-2 bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700"
+                  className="inline-flex min-h-[44px] items-center px-4 py-2 bg-warning text-warning-foreground font-semibold rounded-md hover:bg-warning/90 transition-colors"
                 >
                   {isSubmitting ? "Menyimpan..." : "Simpan Pelanggaran"}
                 </button>
