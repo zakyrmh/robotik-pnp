@@ -1,15 +1,53 @@
 import { z } from "zod";
 
 /**
- * URL gambar MRC: absolut `http(s)` ATAU relatif via proxy internal `/api/r2/...`.
+ * Host internal/metadata cloud yang TIDAK boleh dijadikan URL gambar.
+ *
+ * Tujuan: mencegah SSRF — penyerang menitipkan URL yang menunjuk ke
+ * layanan internal (metadata cloud, localhost, jaringan privat) agar
+ * dibaca server saat menampilkan foto.
  */
-function isMrcImageUrl(value: string): boolean {
+const BLOCKED_HOSTNAMES = new Set([
+  "localhost",
+  "metadata.google.internal",
+  "metadata.goog",
+]);
+
+function isBlockedHost(hostname: string): boolean {
+  const host = hostname.toLowerCase().replace(/^\[|\]$/g, "");
+  if (BLOCKED_HOSTNAMES.has(host)) return true;
+  // IPv4 privat / loopback / link-local (termasuk 169.254.169.254 metadata cloud)
+  if (/^127\./.test(host)) return true;
+  if (/^10\./.test(host)) return true;
+  if (/^192\.168\./.test(host)) return true;
+  if (/^169\.254\./.test(host)) return true;
+  if (/^172\.(1[6-9]|2\d|3[01])\./.test(host)) return true;
+  if (host === "::1" || host.startsWith("fc") || host.startsWith("fd")) {
+    return true;
+  }
+  // Host tanpa titik (mis. "intranet") tidak mungkin domain publik valid
+  if (!host.includes(".")) return true;
+  return false;
+}
+
+/**
+ * URL gambar MRC: relatif via proxy internal `/api/r2/...` ATAU absolut `http(s)`
+ * ke host publik yang tidak diblokir.
+ *
+ * Catatan: validasi ini bersifat *pertahanan berlapis*, bukan pengganti
+ * verifikasi bahwa berkas benar-benar ada di bucket R2 milik sendiri —
+ * hal itu tetap dipastikan oleh pipeline upload di server.
+ */
+export function isMrcImageUrl(value: string): boolean {
   if (value.startsWith("/api/r2/")) {
     return value.length > "/api/r2/".length;
   }
   try {
     const parsed = new URL(value);
-    return parsed.protocol === "http:" || parsed.protocol === "https:";
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+      return false;
+    }
+    return !isBlockedHost(parsed.hostname);
   } catch {
     return false;
   }
@@ -21,8 +59,21 @@ const mrcImageUrlSchema = (label: string) =>
     .min(1, `URL ${label} wajib diisi`)
     .refine(isMrcImageUrl, `URL ${label} harus valid`);
 
+/**
+ * Batas maksimal anggota per tim — pertahanan berlapis.
+ *
+ * Batas sesungguhnya berasal dari `category.max_team_members` dan diverifikasi
+ * ulang di `registerEventAction` (server action). Nilai di sini adalah plafon
+ * keras untuk mencegah payload raksasa (ratusan anggota) menghabiskan memori
+ * server sebelum kode sempat membandingkan dengan `max_team_members`.
+ */
+export const HARD_MAX_TEAM_MEMBERS = 20;
+
 export const eventMemberSchema = z.object({
-  full_name: z.string().min(2, "Nama anggota minimal 2 karakter"),
+  full_name: z
+    .string()
+    .min(2, "Nama anggota minimal 2 karakter")
+    .max(100, "Nama anggota maksimal 100 karakter"),
   photo_url: mrcImageUrlSchema("foto anggota"),
   identity_card_url: z
     .string()
@@ -38,22 +89,62 @@ export const eventMemberSchema = z.object({
       (val) => !val || !Number.isNaN(Date.parse(val)),
       "Format tanggal lahir tidak valid",
     ),
-  role_in_team: z.string().default("Anggota"),
+  role_in_team: z
+    .string()
+    .max(50, "Peran anggota maksimal 50 karakter")
+    .default("Anggota"),
 });
 
 export const eventRegistrationSchema = z.object({
   category_id: z.string().uuid("Kategori lomba tidak valid"),
-  team_name: z.string().min(2, "Nama tim minimal 2 karakter"),
-  institution: z.string().min(2, "Nama instansi minimal 2 karakter"),
-  origin_city: z.string().min(2, "Kota asal minimal 2 karakter"),
-  advisor_name: z.string().optional(),
-  team_email: z.string().email("Email tim tidak valid"),
-  team_whatsapp: z.string().min(9, "Nomor WhatsApp tidak valid"),
+  team_name: z
+    .string()
+    .min(2, "Nama tim minimal 2 karakter")
+    .max(100, "Nama tim maksimal 100 karakter"),
+  institution: z
+    .string()
+    .min(2, "Nama instansi minimal 2 karakter")
+    .max(150, "Nama instansi maksimal 150 karakter"),
+  origin_city: z
+    .string()
+    .min(2, "Kota asal minimal 2 karakter")
+    .max(100, "Kota asal maksimal 100 karakter"),
+  advisor_name: z
+    .string()
+    .max(100, "Nama pembimbing maksimal 100 karakter")
+    .optional(),
+  team_email: z
+    .string()
+    .email("Email tim tidak valid")
+    .max(254, "Email terlalu panjang"),
+  team_whatsapp: z
+    .string()
+    .trim()
+    .regex(
+      /^(\+62|62|0)8[1-9][0-9]{6,11}$/,
+      "Nomor WhatsApp tidak valid (contoh: 08123456789)",
+    ),
   rules_version_id: z.string().uuid("Versi aturan tidak valid").optional(),
   accept_rules: z.literal(true, {
     message: "Anda harus menyetujui aturan perlombaan",
   }),
-  members: z.array(eventMemberSchema).min(1, "Minimal harus ada 1 anggota tim"),
+  /** Token Cloudflare Turnstile dari widget di form. Diverifikasi di server. */
+  captcha_token: z.string().optional(),
+  /**
+   * Honeypot anti-bot. Field ini tersembunyi via CSS dan TIDAK boleh diisi
+   * manusia. Skema tetap mengizinkan string kosong (undefined); penolakan
+   * dilakukan di server action agar bot tidak tahu ia terdeteksi.
+   */
+  website: z.string().optional(),
+  /** Waktu form dirender (epoch ms) untuk deteksi submit terlalu cepat. */
+  form_rendered_at: z.coerce.number().optional(),
+  members: z
+    .array(eventMemberSchema)
+    .min(1, "Minimal harus ada 1 anggota tim")
+    .max(
+      HARD_MAX_TEAM_MEMBERS,
+      `Jumlah anggota tim tidak boleh melebihi ${HARD_MAX_TEAM_MEMBERS} orang`,
+    ),
 });
 
 export const eventCategorySchema = z.object({

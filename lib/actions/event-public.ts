@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/server";
 import { untypedFrom } from "@/lib/supabase/untyped";
+import { isRegistrationHoldingSlot } from "@/lib/event-quota";
 import type {
   ActionResult,
   EventCategory,
@@ -57,8 +58,10 @@ export async function getPublicEventOverviewAction(): Promise<
     }
 
     // 2. Fetch all valid registrations for stats & quota calculations
-    // Valid: paid OR (pending within last 2 hours)
-    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
+    //
+    // Kriteria penahanan slot dipusatkan di `lib/event-quota.ts` agar konsisten
+    // dengan fungsi `register_team` di database (lihat migrasi
+    // 20260923000000_fix_quota_manual_bank_and_extend_hold.sql).
 
     const { data: registrations, error: regError } = await (untypedFrom(
       adminSupabase,
@@ -84,12 +87,8 @@ export async function getPublicEventOverviewAction(): Promise<
     }
 
     // Filter valid registrations for quota & stats
-    const validRegs = registrations.filter((r) => {
-      if (r.payment_status === "paid") return true;
-      if (r.payment_status === "pending" && r.created_at >= twoHoursAgo)
-        return true;
-      return false;
-    });
+    // (kriteria dipusatkan di lib/event-quota.ts, harus sama dengan `register_team`)
+    const validRegs = registrations.filter((r) => isRegistrationHoldingSlot(r));
 
     // Compute taken & remaining quota per category
     const categoryQuotas = categories.map((cat) => {

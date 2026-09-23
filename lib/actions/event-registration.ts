@@ -1,10 +1,12 @@
 "use server";
 
+import { randomInt } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/server";
 import {
   eventRegistrationSchema,
+  isMrcImageUrl,
   type EventRegistrationInput,
 } from "@/lib/schemas/event-registration";
 import {
@@ -12,7 +14,11 @@ import {
   checkMidtransTransactionStatus,
 } from "@/lib/services/midtrans";
 import { sendETicketEmail } from "@/lib/services/resend";
-import { mrcUploadRateLimiter } from "@/lib/redis";
+import {
+  mrcUploadRateLimiter,
+  eventRegistrationRateLimiter,
+} from "@/lib/redis";
+import { verifyTurnstileToken } from "@/lib/turnstile";
 import {
   getActiveBatch,
   getCategoryBatchFee,
@@ -33,13 +39,25 @@ import type {
   PaymentStatus,
 } from "@/types/event-registration";
 
+/**
+ * Kode registrasi yang mudah dibaca manusia, contoh: `MRC-482913-7391`.
+ *
+ * Memakai `crypto.randomInt` (CSPRNG) alih-alih `Math.random()` agar tidak
+ * dapat diprediksi dari nilai sebelumnya. Sufiks waktu tetap dipertahankan
+ * untuk memudahkan panitia mengurutkan pendaftaran.
+ */
 function generateRegistrationCode(): string {
-  const randomSuffix = Math.floor(1000 + Math.random() * 9000).toString();
-  return `MRC-${Date.now().toString().slice(-6)}-${randomSuffix}`;
+  const timePart = Date.now().toString().slice(-6);
+  const randomPart = randomInt(1000, 10000).toString();
+  return `MRC-${timePart}-${randomPart}`;
 }
 
+/**
+ * Order ID untuk transaksi pembayaran. Bagian acak memakai CSPRNG, bukan
+ * `Math.random()`, agar tidak dapat ditebak dari order sebelumnya.
+ */
 function generateOrderId(registrationCode: string): string {
-  return `ORDER-${registrationCode}-${Math.floor(Math.random() * 1000)}`;
+  return `ORDER-${registrationCode}-${randomInt(0, 1000)}`;
 }
 
 export async function registerEventAction(
@@ -52,6 +70,101 @@ export async function registerEventAction(
     qrUrl: string | null;
   }>
 > {
+  // ---------------------------------------------------------------------------
+  // Lapis 1 — ANTI-BOT (S-2): honeypot + timing check.
+  //
+  // Diperiksa SEBELUM validasi Zod dan SEBELUM rate limit agar bot tidak
+  // menghabiskan kuota rate limit pengguna sah, dan agar tidak ada petunjuk
+  // mengenai field mana yang salah.
+  //
+  // Bila terdeteksi bot, kembalikan "sukses palsu" (panduan keamanan §9):
+  // bot tidak diberi tahu bahwa ia terdeteksi, sehingga tidak mencoba bypass.
+  // ---------------------------------------------------------------------------
+  const rawPayload = payload as unknown as Record<string, unknown>;
+
+  if (
+    typeof rawPayload.website === "string" &&
+    rawPayload.website.trim() !== ""
+  ) {
+    console.warn("[MRC_REGISTER] Honeypot terisi — permintaan diabaikan.");
+    return {
+      success: true,
+      data: {
+        registrationId: "",
+        registrationCode: "",
+        accessToken: "",
+        qrUrl: null,
+      },
+      message: "Pendaftaran berhasil disimpan.",
+    };
+  }
+
+  const renderedAt = Number(rawPayload.form_rendered_at);
+  if (Number.isFinite(renderedAt) && renderedAt > 0) {
+    const elapsedMs = Date.now() - renderedAt;
+    // Form yang dikirim < 3 detik hampir pasti bot; batas bawah 0 melindungi
+    // dari clock skew yang membuat elapsed negatif.
+    if (elapsedMs >= 0 && elapsedMs < 3000) {
+      console.warn("[MRC_REGISTER] Submit terlalu cepat — diabaikan.");
+      return {
+        success: true,
+        data: {
+          registrationId: "",
+          registrationCode: "",
+          accessToken: "",
+          qrUrl: null,
+        },
+        message: "Pendaftaran berhasil disimpan.",
+      };
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Lapis 2 — RATE LIMIT (S-3): batasi jumlah submit per IP.
+  // ---------------------------------------------------------------------------
+  const clientIp = await getUploadClientIp();
+  const { success: withinRateLimit } = await eventRegistrationRateLimiter.limit(
+    `register:${clientIp}`,
+  );
+  if (!withinRateLimit) {
+    return {
+      success: false,
+      error:
+        "Terlalu banyak percobaan pendaftaran dari jaringan Anda. Silakan coba lagi dalam beberapa menit.",
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Lapis 3 — CAPTCHA (S-1): verifikasi token Cloudflare Turnstile.
+  //
+  // Token Turnstile bersifat sekali pakai dan tidak boleh diverifikasi dua kali.
+  // Bila TURNSTILE_SECRET belum dikonfigurasi, verifikasi dilewati agar
+  // lingkungan pengembangan tetap dapat berjalan (fail-open terkendali, dicatat
+  // di log server).
+  // ---------------------------------------------------------------------------
+  const turnstileToken = rawPayload.captcha_token as string | undefined;
+  if (process.env.TURNSTILE_SECRET) {
+    if (!turnstileToken) {
+      return {
+        success: false,
+        error:
+          "Verifikasi keamanan belum selesai. Silakan selesaikan verifikasi lalu kirim ulang.",
+      };
+    }
+    const captchaOk = await verifyTurnstileToken(turnstileToken, clientIp);
+    if (!captchaOk) {
+      return {
+        success: false,
+        error:
+          "Verifikasi keamanan gagal atau kedaluwarsa. Silakan muat ulang halaman dan coba lagi.",
+      };
+    }
+  } else {
+    console.warn(
+      "[MRC_REGISTER] TURNSTILE_SECRET belum dikonfigurasi — verifikasi CAPTCHA dilewati.",
+    );
+  }
+
   const validated = eventRegistrationSchema.safeParse(payload);
   if (!validated.success) {
     const fieldErrors: Record<string, string[]> = {};
@@ -98,6 +211,15 @@ export async function registerEventAction(
     return {
       success: false,
       error: "Pendaftaran untuk kategori lomba ini sudah ditutup.",
+    };
+  }
+
+  // Batas jumlah anggota divalidasi terhadap data kategori di database,
+  // bukan hanya mengandalkan pembatasan tombol di UI (dapat dilewati).
+  if (validated.data.members.length > categoryData.max_team_members) {
+    return {
+      success: false,
+      error: `Jumlah anggota tim melebihi batas kategori ini (maksimal ${categoryData.max_team_members} orang).`,
     };
   }
 
@@ -180,9 +302,12 @@ export async function registerEventAction(
           error: "Maaf, kuota pendaftaran untuk kategori ini sudah penuh.",
         };
       }
+      // Jangan bocorkan pesan database mentah ke pengguna; catat di server.
+      console.error("register_team RPC error:", rpcError.message);
       return {
         success: false,
-        error: `Gagal mendaftarkan tim: ${rpcError.message}`,
+        error:
+          "Gagal mendaftarkan tim. Silakan coba lagi atau hubungi panitia bila masalah berlanjut.",
       };
     }
 
@@ -550,14 +675,30 @@ export async function getRegistrationByAccessTokenAction(
   return { success: true, data };
 }
 
+/**
+ * Menyimpan bukti pembayaran manual (transfer bank).
+ *
+ * Otorisasi memakai `accessToken` (token acak per pendaftaran yang hanya
+ * dikirim ke email tim), BUKAN `registrationId`. Ini mencegah IDOR: tanpa
+ * token yang benar, seseorang yang mengetahui/menebak ID pendaftaran tidak
+ * dapat menimpa bukti pembayaran tim lain.
+ */
 export async function submitManualPaymentProofAction(
-  registrationId: string,
+  accessToken: string,
   proofUrl: string,
 ): Promise<ActionResult<{ success: boolean }>> {
-  if (!registrationId || !proofUrl) {
+  if (!accessToken || !proofUrl) {
     return {
       success: false,
-      error: "ID Pendaftaran dan URL Bukti Bayar wajib diisi.",
+      error: "Token akses dan URL bukti bayar wajib diisi.",
+    };
+  }
+
+  // Validasi bentuk URL bukti bayar (relatif /api/r2 atau host publik).
+  if (!isMrcImageUrl(proofUrl)) {
+    return {
+      success: false,
+      error: "URL bukti pembayaran tidak valid.",
     };
   }
 
@@ -573,7 +714,8 @@ export async function submitManualPaymentProofAction(
       rejection_reason: null,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", registrationId)
+    // Kunci otorisasi: token akses, bukan ID yang mudah dikenali.
+    .eq("access_token", accessToken)
     .select(
       `
       *,
@@ -634,7 +776,9 @@ async function handleMrcImageUpload(
   const emptyMessage =
     kind === "photo"
       ? "File foto tidak boleh kosong."
-      : "File kartu identitas tidak boleh kosong.";
+      : kind === "paymentProof"
+        ? "File bukti pembayaran tidak boleh kosong."
+        : "File kartu identitas tidak boleh kosong.";
 
   const clientIp = await getUploadClientIp();
   const { success: withinLimit } = await mrcUploadRateLimiter.limit(clientIp);
@@ -681,5 +825,5 @@ export async function uploadMemberIdentityCardAction(
 export async function uploadPaymentProofAction(
   formData: FormData,
 ): Promise<ActionResult<string>> {
-  return handleMrcImageUpload(formData, "identityCard");
+  return handleMrcImageUpload(formData, "paymentProof");
 }

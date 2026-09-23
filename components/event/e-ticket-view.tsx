@@ -29,7 +29,10 @@ export function ETicketClientView({ registration }: ETicketClientViewProps) {
     if (!proofUrl) return;
 
     setIsSubmitting(true);
-    const res = await submitManualPaymentProofAction(registration.id, proofUrl);
+    const res = await submitManualPaymentProofAction(
+      registration.access_token,
+      proofUrl,
+    );
     setIsSubmitting(false);
 
     if (res.success) {

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
-import { createAdminClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { untypedFrom } from "@/lib/supabase/untyped";
+import { isRegistrationHoldingSlot } from "@/lib/event-quota";
 import { RegistrationForm } from "@/components/event/registration-form";
 import {
   getActiveBatch,
@@ -19,12 +20,13 @@ export default async function EventRegistrationPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const adminSupabase = createAdminClient();
 
-  const { data: category } = await (untypedFrom(
-    adminSupabase,
-    "event_categories",
-  )
+  // Halaman ini publik. Cukup memakai client anon — ketiga tabel di bawah
+  // sudah punya RLS policy "public read" untuk role anon, sehingga tidak perlu
+  // (dan tidak seharusnya) memakai service_role yang melewati RLS.
+  const supabase = await createClient();
+
+  const { data: category } = await (untypedFrom(supabase, "event_categories")
     .select("*")
     .eq("slug", slug)
     .single() as unknown as Promise<{ data: EventCategory | null }>);
@@ -34,7 +36,7 @@ export default async function EventRegistrationPage({
   }
 
   const { data: rulesVersion } = await (untypedFrom(
-    adminSupabase,
+    supabase,
     "event_rules_versions",
   )
     .select("*")
@@ -43,12 +45,38 @@ export default async function EventRegistrationPage({
     .limit(1)
     .maybeSingle() as unknown as Promise<{ data: EventRulesVersion | null }>);
 
-  const { data: settings } = await (untypedFrom(adminSupabase, "event_settings")
+  const { data: settings } = await (untypedFrom(supabase, "event_settings")
     .select("*")
     .eq("id", 1)
     .maybeSingle() as unknown as Promise<{ data: EventSettings | null }>);
 
   const activeBatch = getActiveBatch(settings);
+
+  // Hitung sisa kuota kategori ini agar pengunjung tidak mengisi formulir
+  // panjang hanya untuk ditolak di akhir. Kriteria penahanan slot dipakai
+  // bersama dengan `register_team` (lib/event-quota.ts).
+  const { data: holdingRegs } = await (untypedFrom(
+    supabase,
+    "event_registrations",
+  )
+    .select("payment_status, created_at")
+    .eq("category_id", category.id) as unknown as Promise<{
+    data: { payment_status: string; created_at: string }[] | null;
+  }>);
+
+  const takenQuota = (holdingRegs ?? []).filter((r) =>
+    isRegistrationHoldingSlot(r),
+  ).length;
+  const remainingQuota = Math.max(0, category.quota - takenQuota);
+
+  // Alasan formulir tidak dapat ditampilkan; null berarti boleh mendaftar.
+  const blockedReason: string | null = !category.is_active
+    ? "Pendaftaran untuk kategori lomba ini sedang ditutup oleh panitia."
+    : remainingQuota <= 0
+      ? "Kuota pendaftaran untuk kategori ini sudah penuh."
+      : !activeBatch
+        ? "Saat ini berada di luar periode Pendaftaran Batch 1 maupun Batch 2. Silakan kembali saat periode pendaftaran dibuka."
+        : null;
 
   return (
     <div className="min-h-screen bg-background pt-24 sm:pt-28 pb-16 px-4 sm:px-6 lg:px-8">
@@ -63,14 +91,22 @@ export default async function EventRegistrationPage({
             {category.description ||
               "Silakan lengkapi data tim dan pas foto anggota untuk verifikasi kokarde peserta."}
           </p>
+          {!blockedReason && (
+            <p className="font-mono text-xs text-muted-foreground">
+              Sisa kuota: {remainingQuota} dari {category.quota} slot
+            </p>
+          )}
         </div>
 
-        {!activeBatch ? (
+        {blockedReason ? (
           <div className="bg-card p-8 rounded-lg border border-border shadow-soft text-center space-y-3">
-            <h2 className="text-balance">Pendaftaran Sedang Ditutup</h2>
+            <h2 className="text-balance">
+              {!category.is_active || remainingQuota <= 0
+                ? "Pendaftaran Tidak Tersedia"
+                : "Pendaftaran Sedang Ditutup"}
+            </h2>
             <p className="text-sm text-muted-foreground max-w-md mx-auto">
-              Saat ini berada di luar periode Pendaftaran Batch 1 maupun Batch
-              2. Silakan kembali saat periode pendaftaran dibuka.
+              {blockedReason}
             </p>
             <a
               href="/mrc"

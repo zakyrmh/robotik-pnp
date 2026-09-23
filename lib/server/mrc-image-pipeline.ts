@@ -38,7 +38,14 @@ const ALLOWED_SET = new Set<string>(MRC_ALLOWED_MIMES);
 const HEIC_SET = new Set<string>(MRC_HEIC_MIMES);
 
 function kindLabel(kind: MrcImageKind): string {
-  return kind === "photo" ? "Pas foto" : "Foto kartu identitas";
+  switch (kind) {
+    case "photo":
+      return "Pas foto";
+    case "identityCard":
+      return "Foto kartu identitas";
+    case "paymentProof":
+      return "Bukti pembayaran";
+  }
 }
 
 /**
@@ -123,7 +130,14 @@ export async function processAndUploadMrcImage(
   const rawBuffer = Buffer.from(await file.arrayBuffer());
   await assertTrustedImageBuffer(rawBuffer, kind);
 
-  const folder = kind === "photo" ? "mrc/photos" : "mrc/id-cards";
+  // Setiap jenis berkas disimpan di folder terpisah agar mudah ditelusuri
+  // dan tidak tertukar saat ditampilkan di panel admin.
+  const folder =
+    kind === "photo"
+      ? "mrc/photos"
+      : kind === "paymentProof"
+        ? "mrc/payment-proofs"
+        : "mrc/id-cards";
   const cfg = MRC_VARIANT_CONFIG[kind];
 
   let metadata;

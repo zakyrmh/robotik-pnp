@@ -74,3 +74,18 @@ export const mrcUploadRateLimiter =
         prefix: "@upstash/ratelimit/mrc-upload",
       })
     : createDummyLimiter(30, 10 * 60 * 1000);
+
+// 5. Rate Limiter untuk Submit Pendaftaran Event MRC (endpoint publik tanpa auth)
+//
+// Batas sengaja longgar (10 per 15 menit per IP) karena satu tim sah bisa
+// mengirim beberapa kali bila ada kesalahan input, namun cukup ketat untuk
+// menahan skrip bot yang mencoba menghabiskan kuota kategori.
+export const eventRegistrationRateLimiter =
+  isConfigured && redis
+    ? new Ratelimit({
+        redis,
+        limiter: Ratelimit.slidingWindow(10, "15 m"),
+        analytics: true,
+        prefix: "@upstash/ratelimit/event-registration",
+      })
+    : createDummyLimiter(10, 15 * 60 * 1000);

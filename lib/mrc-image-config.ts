@@ -45,6 +45,7 @@ export const MRC_ACCEPT_ATTR = ".jpg,.jpeg,.png,.webp,.heic,.heif";
 export const MRC_MAX_RAW_BYTES = {
   photo: 6 * 1024 * 1024, // 6 MB — pas foto
   identityCard: 8 * 1024 * 1024, // 8 MB — kartu pelajar/KK butuh resolusi lebih tinggi
+  paymentProof: 6 * 1024 * 1024, // 6 MB — bukti transfer bank (umumnya tangkapan layar)
 } as const;
 
 export type MrcImageKind = keyof typeof MRC_MAX_RAW_BYTES;
@@ -57,6 +58,8 @@ export const MRC_MAX_IMAGE_PIXELS = 30_000_000; // ~30 MP
 export const MRC_VARIANT_CONFIG = {
   photo: { maxDim: 960, quality: 80, thumbDim: 256, thumbQuality: 70 },
   identityCard: { maxDim: 1600, quality: 82, thumbDim: 320, thumbQuality: 70 },
+  // Bukti transfer harus cukup tajam agar nominal & tanggal terbaca admin.
+  paymentProof: { maxDim: 1600, quality: 85, thumbDim: 320, thumbQuality: 70 },
 } as const satisfies Record<
   MrcImageKind,
   { maxDim: number; quality: number; thumbDim: number; thumbQuality: number }

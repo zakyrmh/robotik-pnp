@@ -232,7 +232,10 @@ export function QrisPaymentView({
     setIsSubmittingProof(true);
     setUploadProofError(null);
 
-    const res = await submitManualPaymentProofAction(reg.id, proofUrl);
+    const res = await submitManualPaymentProofAction(
+      reg.access_token,
+      proofUrl,
+    );
     setIsSubmittingProof(false);
 
     if (res.success) {

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import imageCompression from "browser-image-compression";
+import { Turnstile } from "@marsidev/react-turnstile";
 import {
   uploadMemberPhotoAction,
   uploadMemberIdentityCardAction,
@@ -176,6 +177,15 @@ export function RegistrationForm({
   const [teamWhatsapp, setTeamWhatsapp] = useState("");
   const [acceptRules, setAcceptRules] = useState(false);
 
+  // --- Anti-bot (S-1 & S-2) ---
+  // Token Cloudflare Turnstile dari widget; dikirim ke server untuk diverifikasi.
+  const [captchaToken, setCaptchaToken] = useState("");
+  // Honeypot: kolom tersembunyi yang hanya terisi bila bot mengisi otomatis.
+  const [honeypot, setHoneypot] = useState("");
+  // Waktu form dirender — dipakai server untuk menolak submit yang terlalu cepat.
+  // Lazy initializer agar nilainya stabil dan tidak berubah tiap render (React 19).
+  const [formRenderedAt] = useState(() => Date.now());
+
   const isJuniorLineFollower = category.slug === "line-follower-junior";
 
   const [members, setMembers] = useState<MemberFormState[]>([
@@ -337,6 +347,9 @@ export function RegistrationForm({
         team_whatsapp: teamWhatsapp,
         rules_version_id: rulesVersion?.id,
         accept_rules: acceptRules as true,
+        captcha_token: captchaToken,
+        website: honeypot,
+        form_rendered_at: formRenderedAt,
         members: members.map((m) => ({
           full_name: m.full_name,
           photo_url: m.photo_url,
@@ -922,10 +935,44 @@ export function RegistrationForm({
         </label>
       </div>
 
+      {/*
+        Honeypot anti-bot (S-2). Diposisikan di luar layar (bukan display:none)
+        karena bot canggih dapat mendeteksi elemen yang disembunyikan dengan
+        display/visibility. Manusia tidak akan pernah melihat atau mengisinya.
+      */}
+      <div
+        aria-hidden="true"
+        className="absolute left-[-9999px] top-auto h-px w-px overflow-hidden"
+      >
+        <label htmlFor="website">Website (jangan diisi)</label>
+        <input
+          id="website"
+          name="website"
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+          value={honeypot}
+          onChange={(e) => setHoneypot(e.target.value)}
+        />
+      </div>
+
+      {/* Cloudflare Turnstile — verifikasi keamanan sebelum submit (S-1) */}
+      <div className="flex justify-center py-1 overflow-x-auto">
+        <Turnstile
+          siteKey={
+            process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ||
+            "1x00000000000000000000AA"
+          }
+          onSuccess={(token: string) => setCaptchaToken(token)}
+          onExpire={() => setCaptchaToken("")}
+          onError={() => setCaptchaToken("")}
+        />
+      </div>
+
       {/* Submit Button */}
       <button
         type="submit"
-        disabled={isSubmitting}
+        disabled={isSubmitting || !captchaToken}
         className="w-full min-h-[48px] px-4 py-3 bg-primary hover:bg-primary-hover text-primary-foreground font-semibold rounded-md shadow-soft transition-colors flex items-center justify-center gap-2 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
       >
         {isSubmitting ? (
