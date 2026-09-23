@@ -67,3 +67,4 @@ sentry-wizard-installation-error-*.log
 
 # ===== Generic logs =====
 *.log
+/logs/
