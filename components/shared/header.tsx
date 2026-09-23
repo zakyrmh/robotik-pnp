@@ -4,16 +4,9 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
-import { HugeiconsIcon } from "@hugeicons/react";
-import {
-  Notification01Icon,
-  Search01Icon,
-  Menu01Icon,
-  Sun01Icon,
-  Moon01Icon,
-  Logout01Icon,
-} from "@hugeicons/core-free-icons";
+import { Bell, Search, Menu, Sun, Moon, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useSidebar } from "@/components/shared/sidebar-provider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -58,6 +51,7 @@ import {
 export function Header() {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { setMobileOpen } = useSidebar();
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [mounted, setMounted] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -171,21 +165,22 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-40 flex h-14 w-full items-center gap-2 border-b border-border bg-background/80 px-3 backdrop-blur-md sm:h-16 sm:px-4 lg:px-6">
-      {/* Mobile Menu Toggle */}
+      {/* Mobile Menu Toggle — sidebar tampil sebagai rail mulai breakpoint md,
+          jadi tombol ini hanya perlu tampil di bawah md (ponsel). */}
       <Button
         variant="ghost"
         size="icon-lg"
-        onClick={() => window.dispatchEvent(new CustomEvent("toggle-sidebar"))}
-        className="lg:hidden"
+        onClick={() => setMobileOpen(true)}
+        className="md:hidden"
         aria-label="Buka menu navigasi"
       >
-        <HugeiconsIcon icon={Menu01Icon} />
+        <Menu aria-hidden="true" />
       </Button>
 
       {/* Quick Search */}
       <InputGroup className="hidden h-9 w-full max-w-xs lg:flex xl:max-w-sm">
         <InputGroupAddon align="inline-start">
-          <HugeiconsIcon icon={Search01Icon} />
+          <Search aria-hidden="true" />
         </InputGroupAddon>
         <InputGroupInput placeholder="Cari sesuatu..." />
       </InputGroup>
@@ -208,9 +203,11 @@ export function Header() {
                 exit={{ rotate: 90, opacity: 0, scale: 0.8 }}
                 transition={{ duration: 0.15 }}
               >
-                <HugeiconsIcon
-                  icon={theme === "light" ? Moon01Icon : Sun01Icon}
-                />
+                {theme === "light" ? (
+                  <Moon aria-hidden="true" />
+                ) : (
+                  <Sun aria-hidden="true" />
+                )}
               </motion.div>
             </AnimatePresence>
           ) : (
@@ -227,7 +224,7 @@ export function Header() {
               aria-label="Notifikasi"
               className="relative"
             >
-              <HugeiconsIcon icon={Notification01Icon} />
+              <Bell aria-hidden="true" />
               {unreadCount > 0 && (
                 <Badge className="absolute -right-1 -top-1 h-4 min-w-4 items-center justify-center rounded-full px-1 font-mono text-[9px] font-bold">
                   {unreadCount > 9 ? "9+" : unreadCount}
@@ -271,7 +268,7 @@ export function Header() {
                 <Empty className="gap-2 border-0 py-6">
                   <EmptyHeader className="gap-1">
                     <EmptyMedia variant="icon">
-                      <HugeiconsIcon icon={Notification01Icon} />
+                      <Bell aria-hidden="true" />
                     </EmptyMedia>
                     <EmptyTitle className="text-xs font-medium text-foreground">
                       Tidak ada notifikasi
@@ -380,7 +377,7 @@ export function Header() {
                 onSelect={handleLogout}
                 className="cursor-pointer"
               >
-                <HugeiconsIcon icon={Logout01Icon} />
+                <LogOut aria-hidden="true" />
                 Logout
               </DropdownMenuItem>
             </DropdownMenuGroup>
