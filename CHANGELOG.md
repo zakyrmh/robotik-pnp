@@ -2,12 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
-## [Unreleased]
+## [0.12.0](https://github.com/zakyrmh/robotik-pnp/compare/v0.11.0...v0.12.0) (2026-09-23)
 
 ### Added
 
 - **Seksi Dokumen Peraturan MRC di Halaman `/mrc` (`components/event/mrc-rules-section.tsx`, `app/(marketing)/mrc/page.tsx`)**: Menambahkan section **"Dokumen Resmi — Peraturan & Berkas Perlombaan"** yang menyediakan 4 dokumen rulebook (Line Follower Junior, Line Follower Umum, Robot Soccer, Robot Sumo) dan 1 gambar denah lintasan (`track_lf.jpg`) untuk dapat **dilihat, diakses, dan diunduh tanpa login**. Setiap dokumen menyediakan aksi _Lihat Dokumen_ (`target="_blank"` ke viewer bawaan peramban) dan _Unduh_ (atribut `download` dengan nama berkas asli), sedangkan berkas disajikan sebagai aset statis dari `public/documents/mrc_x/rules/`.
 - **Berkas Regulasi Publik (`public/documents/mrc_x/rules/`)**: Menambahkan 4 PDF rulebook MRC X 2026 dan 1 gambar lintasan Line Follower sebagai sumber daya statis yang dapat diakses publik.
+- **Navigasi Tab Dashboard Manajemen Event (`components/event/event-dashboard-tabs.tsx`)**: Menambahkan navigasi tab dengan badge counter dan sticky save bar untuk mempermudah pengelolaan pengaturan, kategori, serta pendaftaran & transaksi kompetisi.
 
 ### Changed
 
@@ -29,6 +30,11 @@ All notable changes to this project will be documented in this file. See [standa
 - **Konsistensi Elemen Semantik Halaman Manajemen Event (`app/(private)/manajemen-event/page.tsx`)**: Mengganti wrapper `<div>` menjadi `<main>`, seragamkan kartu "Akses Terbatas" dengan token desain, dan tambahkan ikon `ShieldAlert`.
 - **Perbaikan Nilai Status Pembayaran pada Verifikasi Manual (`lib/actions/event-admin.ts`)**: `paymentStatus` kini ditetapkan eksplisit (`paid` saat disetujui, `rejected` saat ditolak) alih-alih meneruskan nilai mentah dari client.
 - **Proteksi Route Manajemen Event (`app/robots.ts`, `lib/supabase/proxy.ts`)**: Menambahkan `/manajemen-event` ke daftar `disallow` crawler dan daftar route terproteksi autentikasi.
+- **Pembangkitan Kode Registrasi & Order ID Memakai CSPRNG (`lib/actions/event-registration.ts`)**: `generateRegistrationCode()` dan `generateOrderId()` tidak lagi memakai `Math.random()` yang dapat diprediksi dari nilai sebelumnya, melainkan `randomInt` dari `node:crypto`.
+- **Jenis Berkas Khusus untuk Bukti Pembayaran (`lib/mrc-image-config.ts`, `lib/server/mrc-image-pipeline.ts`, `lib/actions/event-registration.ts`)**: Menambahkan kind `paymentProof` (batas 6 MB, kualitas WebP 85 agar nominal dan tanggal transfer terbaca) sehingga unggahan bukti transfer tidak lagi memakai konfigurasi kartu identitas dan tersimpan pada folder `mrc/payment-proofs` yang terpisah.
+- **Pengurangan Hak Akses Halaman Pendaftaran Publik (`app/(marketing)/mrc/[slug]/daftar/page.tsx`)**: Mengganti `createAdminClient()` (service_role, melewati RLS) dengan `createClient()` (anon) karena ketiga tabel yang dibaca sudah memiliki RLS policy `public read` untuk role anon — sejalan dengan prinsip least privilege.
+- **Refactor Sidebar & Header SIM (`components/shared/sidebar.tsx`, `components/shared/header.tsx`, `components/shared/sidebar-provider.tsx`, `components/ui/tooltip.tsx`, `app/(private)/layout.tsx`)**: Sidebar kini mendukung mode rail (hanya ikon) dengan status yang dibagi lewat `SidebarProvider`, sehingga sidebar, header, dan pembungkus konten (`SidebarInset`) tetap sinkron; preferensi minimize disimpan di `localStorage` dan dibaca lewat lazy initializer `useState` (menghindari setState di dalam `useEffect`). Ikon sidebar dimigrasikan dari Hugeicons ke `lucide-react` sesuai `DESIGN.md` §9.
+- **Perapatan & Penyejajaran Elemen Sidebar (`components/shared/sidebar.tsx`)**: Kolom pencarian menu kini sejajar satu baris dengan tombol ciutkan sidebar pada mode desktop (tombol dikirim sebagai slot `searchTrailing`); tinggi tiap item menu dirapatkan dari 44px menjadi 36px agar lebih efisien, dan kolom pencarian diberi jarak atas (`pt-3`).
 
 ### Fixed
 
@@ -43,17 +49,6 @@ All notable changes to this project will be documented in this file. See [standa
 - **Penguatan Skema Pendaftaran Event (`lib/schemas/event-registration.ts`)**: Menambahkan batas `.max()` pada seluruh field teks (nama tim, instansi, kota, pembimbing, nama anggota, email) untuk mencegah error `VARCHAR(n)`, serta mengganti validasi WhatsApp dari `.min(9)` menjadi regex nomor Indonesia `^(\+62|62|0)8[1-9][0-9]{6,11}$`.
 - **Penyembunyian Detail Error Database (`lib/actions/event-registration.ts`)**: Pesan kegagalan RPC `register_team` tidak lagi diteruskan mentah ke pengguna; detail lengkap hanya dicatat di log server.
 - **Test Regresi Keamanan (`lib/schemas/event-registration.security.test.ts`, `lib/event-quota.test.ts`)**: Menambahkan 23 test yang mengunci perilaku perbaikan di atas (validasi URL, batas anggota, panjang teks, format WhatsApp, field anti-bot, dan kriteria penahanan slot kuota) agar tidak kembali longgar.
-
-### Changed
-
-- **Pembangkitan Kode Registrasi & Order ID Memakai CSPRNG (`lib/actions/event-registration.ts`)**: `generateRegistrationCode()` dan `generateOrderId()` tidak lagi memakai `Math.random()` yang dapat diprediksi dari nilai sebelumnya, melainkan `randomInt` dari `node:crypto`.
-- **Jenis Berkas Khusus untuk Bukti Pembayaran (`lib/mrc-image-config.ts`, `lib/server/mrc-image-pipeline.ts`, `lib/actions/event-registration.ts`)**: Menambahkan kind `paymentProof` (batas 6 MB, kualitas WebP 85 agar nominal dan tanggal transfer terbaca) sehingga unggahan bukti transfer tidak lagi memakai konfigurasi kartu identitas dan tersimpan pada folder `mrc/payment-proofs` yang terpisah.
-- **Pengurangan Hak Akses Halaman Pendaftaran Publik (`app/(marketing)/mrc/[slug]/daftar/page.tsx`)**: Mengganti `createAdminClient()` (service_role, melewati RLS) dengan `createClient()` (anon) karena ketiga tabel yang dibaca sudah memiliki RLS policy `public read` untuk role anon — sejalan dengan prinsip least privilege.
-- **Refactor Sidebar & Header SIM (`components/shared/sidebar.tsx`, `components/shared/header.tsx`, `components/shared/sidebar-provider.tsx`, `components/ui/tooltip.tsx`, `app/(private)/layout.tsx`)**: Sidebar kini mendukung mode rail (hanya ikon) dengan status yang dibagi lewat `SidebarProvider`, sehingga sidebar, header, dan pembungkus konten (`SidebarInset`) tetap sinkron; preferensi minimize disimpan di `localStorage` dan dibaca lewat lazy initializer `useState` (menghindari setState di dalam `useEffect`). Ikon sidebar dimigrasikan dari Hugeicons ke `lucide-react` sesuai `DESIGN.md` §9.
-- **Perapatan & Penyejajaran Elemen Sidebar (`components/shared/sidebar.tsx`)**: Kolom pencarian menu kini sejajar satu baris dengan tombol ciutkan sidebar pada mode desktop (tombol dikirim sebagai slot `searchTrailing`); tinggi tiap item menu dirapatkan dari 44px menjadi 36px agar lebih efisien, dan kolom pencarian diberi jarak atas (`pt-3`).
-
-### Fixed
-
 - **Tombol Perluas Sidebar Tidak Muncul Setelah Minimize (`components/shared/sidebar.tsx`)**: Tombol minimize/expand sebelumnya memakai kombinasi kelas `hidden … md:inline-flex` pada `<Button>`, dan karena kelas dasar Button sudah memuat `inline-flex` — yang posisinya berada SETELAH `.hidden` di stylesheet Tailwind — maka `hidden` kalah dan tombol tidak pernah benar-benar tersembunyi/ditampilkan sesuai breakpoint. Visibilitas kini diatur lewat wrapper `hidden md:flex` sehingga tombol muncul konsisten di desktop dan tersembunyi di mobile.
 - **Tumpang Tindih Tombol Settings dan Tutup Drawer di Mobile (`components/shared/sidebar.tsx`)**: Pintasan gear ke `/settings` dipindah dari ujung kanan header drawer (yang bertabrakan dengan tombol tutup Sheet pada `absolute top-4 right-4`) ke baris kolom pencarian; pada desktop pintasan tetap berada di header brand.
 - **Konsistensi Helper `cn` (`components/ui/tooltip.tsx`, `package.json`)**: `tooltip.tsx` tadinya mengimpor `cn` dari paket NPM `cn` padahal 40 komponen lain memakai helper `cn` dari `@/lib/utils`; kini diseragamkan dan dependensi `cn` dihapus dari `package.json`.
@@ -541,7 +536,8 @@ All notable changes to this project will be documented in this file. See [standa
 - Setup Husky pre-commit hook dan Commitlint.
 - Setup Next.js dengan pnpm.
 
-[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.9.4...v0.10.0
 [0.9.4]: https://github.com/zakyrmh/robotik-pnp/compare/v0.9.3...v0.9.4
