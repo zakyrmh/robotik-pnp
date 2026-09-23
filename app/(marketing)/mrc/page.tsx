@@ -4,6 +4,7 @@ import { MrcHero } from "@/components/event/mrc-hero";
 import { MrcCategoryGrid } from "@/components/event/mrc-category-grid";
 import { MrcStatsSection } from "@/components/event/mrc-stats-section";
 import { MrcTimeline } from "@/components/event/mrc-timeline";
+import { MrcRulesSection } from "@/components/event/mrc-rules-section";
 import { MrcFaqAccordion } from "@/components/event/mrc-faq-accordion";
 import { MrcContactSection } from "@/components/event/mrc-contact-section";
 
@@ -49,10 +50,13 @@ export default async function MrcPortalPage() {
       {/* 4. Event Timeline & Milestones */}
       <MrcTimeline settings={settings} />
 
-      {/* 5. Rulebook Downloads & FAQ Accordion */}
+      {/* 5. Official Rulebook Downloads (view & download, no login required) */}
+      <MrcRulesSection />
+
+      {/* 6. FAQ Accordion */}
       <MrcFaqAccordion categories={categories} />
 
-      {/* 6. Contact Person / Narahubung */}
+      {/* 7. Contact Person / Narahubung */}
       <MrcContactSection />
     </div>
   );

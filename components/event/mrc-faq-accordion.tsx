@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronDown, HelpCircle, Download, FileText } from "lucide-react";
+import { ChevronDown, HelpCircle } from "lucide-react";
 import type { PublicCategoryWithQuota } from "@/lib/actions/event-public";
 import { cn } from "@/lib/utils";
 
@@ -17,7 +17,8 @@ const faqItems = [
       "Pembayaran dilakukan secara otomatis melalui Payment Gateway dengan menggunakan QRIS Dinamik saat mengisi form pendaftaran. Setelah pembayaran sukses, E-Tiket & Kode Pendaftaran akan dikirimkan secara otomatis ke email tim Anda.",
   },
   {
-    question: "Apakah peserta wajib mengunggah pas foto dan kartu identitas saat pendaftaran?",
+    question:
+      "Apakah peserta wajib mengunggah pas foto dan kartu identitas saat pendaftaran?",
     answer:
       "Setiap anggota tim wajib mengunggah pas foto formal untuk keperluan QR Kokarde Peserta. Khusus pendaftar kategori Line Follower Junior dan Line Follower Senior, peserta wajib mengunggah foto kartu identitas (Kartu Pelajar atau Kartu Keluarga). Untuk kategori Sumo Bot dan Soccer Bot, tidak diperlukan pengunggahan kartu identitas.",
   },

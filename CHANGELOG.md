@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [Unreleased]
+
+### Added
+
+- **Seksi Dokumen Peraturan MRC di Halaman `/mrc` (`components/event/mrc-rules-section.tsx`, `app/(marketing)/mrc/page.tsx`)**: Menambahkan section **"Dokumen Resmi — Peraturan & Berkas Perlombaan"** yang menyediakan 4 dokumen rulebook (Line Follower Junior, Line Follower Umum, Robot Soccer, Robot Sumo) dan 1 gambar denah lintasan (`track_lf.jpg`) untuk dapat **dilihat, diakses, dan diunduh tanpa login**. Setiap dokumen menyediakan aksi _Lihat Dokumen_ (`target="_blank"` ke viewer bawaan peramban) dan _Unduh_ (atribut `download` dengan nama berkas asli), sedangkan berkas disajikan sebagai aset statis dari `public/documents/mrc_x/rules/`.
+- **Berkas Regulasi Publik (`public/documents/mrc_x/rules/`)**: Menambahkan 4 PDF rulebook MRC X 2026 dan 1 gambar lintasan Line Follower sebagai sumber daya statis yang dapat diakses publik.
+
+### Changed
+
+- **Struktur Section Halaman MRC (`app/(marketing)/mrc/page.tsx`)**: Menyisipkan `<MrcRulesSection />` sebagai section ke-5 (setelah Timeline, sebelum FAQ) dan menomori ulang komentar urutan section.
+- **Pembersihan Import FAQ MRC (`components/event/mrc-faq-accordion.tsx`)**: Menghapus import `Download` dan `FileText` yang tidak terpakai setelah seksi rulebook dipisahkan ke komponen tersendiri.
+
 ## [0.11.0](https://github.com/zakyrmh/robotik-pnp/compare/v0.10.0...v0.11.0) (2026-09-18)
 
 ### ✨ Features
