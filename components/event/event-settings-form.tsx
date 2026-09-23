@@ -53,7 +53,7 @@ function initialBanks(s: EventSettings | null): BankAccount[] {
   }
   return [
     {
-      bank_name: "Bank Nagari / BNI",
+      bank_name: "Bank Nagari / BRI",
       account_number: "",
       account_holder: "UKM Robotik PNP",
     },

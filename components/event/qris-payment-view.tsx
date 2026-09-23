@@ -75,7 +75,7 @@ export function QrisPaymentView({
     ) {
       return [
         {
-          bank_name: eventSettings.bank_name || "Bank Nagari / BNI",
+          bank_name: eventSettings.bank_name || "Bank Nagari / BRI",
           account_number: eventSettings.bank_account_number || "",
           account_holder:
             eventSettings.bank_account_holder || "UKM Robotik PNP",
@@ -84,7 +84,7 @@ export function QrisPaymentView({
     }
     return [
       {
-        bank_name: "Bank Nagari / BNI",
+        bank_name: "Bank Nagari / BRI",
         account_number: "1234567890",
         account_holder: "UKM Robotik PNP",
       },

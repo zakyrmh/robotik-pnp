@@ -60,7 +60,7 @@ const faqItems = [
   {
     question: "Apakah ada batas usia untuk peserta?",
     answer:
-      "Batas usia hanya berlaku untuk kategori Line Follower Junior, yaitu peserta maksimal berusia 19 tahun pada saat lomba berlangsung (31 Oktober 2026). Untuk kategori lainnya, seperti Line Follower Senior, Sumo Bot, dan Soccer Bot, tidak ada batas usia, jadi siapa saja boleh ikut, baik pelajar maupun mahasiswa.",
+      "Batas usia hanya berlaku untuk kategori Line Follower Junior, yaitu peserta maksimal berusia 19 tahun pada saat lomba berlangsung (31 Oktober 2026). Untuk kategori lainnya, seperti Line Follower Umum, Sumo Bot, dan Soccer Bot, tidak ada batas usia, jadi siapa saja boleh ikut, baik pelajar maupun mahasiswa.",
   },
 ];
 

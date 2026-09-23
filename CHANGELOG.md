@@ -11,6 +11,8 @@ All notable changes to this project will be documented in this file. See [standa
 
 ### Changed
 
+- **Penyelarasan Nama Bank Rekening Panitia (`components/event/qris-payment-view.tsx`, `components/event/event-settings-form.tsx`)**: Mengubah nilai fallback nama bank dari `Bank Nagari / BNI` menjadi `Bank Nagari / BRI` pada halaman pembayaran peserta dan formulir pengaturan admin, agar sesuai dengan rekening yang diterima panitia dan konsisten dengan keterangan pada FAQ.
+- **Penyeragaman Istilah Kategori Line Follower (`components/event/mrc-faq-accordion.tsx`)**: Mengganti penyebutan `Line Follower Senior` menjadi `Line Follower Umum` pada FAQ batas usia, menyesuaikan kesepakatan panitia dan label yang telah dipakai pada seksi Dokumen Peraturan.
 - **Penyelarasan Isi FAQ Halaman MRC (`components/event/mrc-faq-accordion.tsx`)**: Menyesuaikan FAQ dengan alur pendaftaran terbaru dan menambah pertanyaan baru (dari 4 menjadi 10), meliputi:
   - Metode pembayaran berupa **transfer bank** ke rekening panitia (**Bank Nagari dan Bank BRI**) dengan pengiriman bukti pembayaran, menggantikan keterangan Payment Gateway/QRIS yang sudah tidak dipakai.
   - Kewajiban **pas foto untuk semua kategori**, sedangkan **kartu identitas hanya untuk kategori Line Follower Junior** sebagai dasar verifikasi usia.
