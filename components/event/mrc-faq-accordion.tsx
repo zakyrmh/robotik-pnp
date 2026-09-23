@@ -12,26 +12,55 @@ interface MrcFaqAccordionProps {
 
 const faqItems = [
   {
-    question: "Bagaimana cara melakukan pembayaran biaya pendaftaran?",
+    question: "Bagaimana cara membayar biaya pendaftaran?",
     answer:
-      "Pembayaran dilakukan secara otomatis melalui Payment Gateway dengan menggunakan QRIS Dinamik saat mengisi form pendaftaran. Setelah pembayaran sukses, E-Tiket & Kode Pendaftaran akan dikirimkan secara otomatis ke email tim Anda.",
+      "Pembayaran dilakukan dengan cara transfer ke rekening panitia. Nomor rekeningnya (Bank Nagari dan Bank BRI) akan muncul di halaman pembayaran tim Anda setelah formulir pendaftaran selesai dikirim. Setelah transfer, jangan lupa kirim foto bukti pembayaran di halaman tersebut, supaya pendaftaran tim Anda bisa diperiksa panitia.",
   },
   {
     question:
-      "Apakah peserta wajib mengunggah pas foto dan kartu identitas saat pendaftaran?",
+      "Apakah pas foto dan kartu identitas wajib dikirim saat mendaftar?",
     answer:
-      "Setiap anggota tim wajib mengunggah pas foto formal untuk keperluan QR Kokarde Peserta. Khusus pendaftar kategori Line Follower Junior dan Line Follower Senior, peserta wajib mengunggah foto kartu identitas (Kartu Pelajar atau Kartu Keluarga). Untuk kategori Sumo Bot dan Soccer Bot, tidak diperlukan pengunggahan kartu identitas.",
+      "Ya, pas foto wajib dikirim oleh semua peserta dari semua kategori lomba. Pas foto ini dipakai untuk membuat kartu peserta (QR Kokarde) yang dibawa saat lomba. Untuk foto kartu identitas (Kartu Pelajar atau Kartu Keluarga), hanya peserta kategori Line Follower Junior yang wajib mengirim, karena usianya perlu dipastikan sesuai ketentuan.",
   },
   {
-    question:
-      "Bagaimana jika modal pembayaran tertutup sebelum sempat membayar?",
+    question: "Bukti pembayaran sudah saya kirim, berapa lama diproses?",
     answer:
-      "Silakan cek email tim Anda (pastikan juga mengecek folder spam/junk). Link E-Tiket unik pembayaran telah dikirimkan ke email tersebut. Anda dapat membukanya kembali untuk melanjutkan pembayaran atau menghubungi Admin untuk bantuan.",
+      "Setelah bukti pembayaran Anda kirim, panitia akan memeriksa data dan memastikan dana transfer sudah masuk. Anda bisa memantau status pendaftaran di halaman pembayaran atau di E-Tiket tim. Jika dalam 1x24 jam kerja status belum berubah menjadi sah, silakan hubungi panitia melalui kontak yang tertera di halaman ini.",
   },
   {
-    question: "Apakah ada batasan usia untuk peserta perlombaan?",
+    question: "Bagaimana cara mendapatkan E-Tiket dan QR Kokarde?",
     answer:
-      "Batasan usia berlaku khusus untuk kategori Line Follower: Line Follower Junior ditujukan untuk peserta di bawah usia 19 tahun, sedangkan Line Follower Senior ditujukan untuk peserta di atas usia 19 tahun.",
+      "E-Tiket adalah bukti resmi pendaftaran tim Anda, dan QR Kokarde adalah kode/barcode untuk setiap anggota. Keduanya akan dikirim ke email tim yang Anda daftarkan setelah pembayaran dinyatakan sah. Simpan E-Tiket tersebut dengan baik, dan pastikan setiap anggota bisa menunjukkan QR Kokarde-nya saat pemeriksaan ulang di lokasi lomba.",
+  },
+  {
+    question: "Halaman pembayaran tim saya tidak bisa dibuka lagi, bagaimana?",
+    answer:
+      "Kalau halaman pembayaran tidak bisa dibuka lagi, coba cek email tim yang Anda daftarkan (termasuk folder spam atau junk), karena tautan E-Tiket dan halaman pembayaran dikirim ke email tersebut. Jika tetap tidak ditemukan, hubungi panitia melalui kontak di halaman ini supaya bisa dibantu diperiksa ulang.",
+  },
+  {
+    question: "Berapa jumlah maksimal anggota dalam satu tim?",
+    answer:
+      "Jumlah maksimal anggota berbeda-beda untuk setiap kategori lomba. Rinciannya bisa Anda lihat pada kartu kategori di bagian Cabang Perlombaan halaman ini, tepat di bawah keterangan biaya pendaftaran. Lengkapi data semua anggota tim Anda, supaya pendaftaran tidak tertunda saat diperiksa panitia.",
+  },
+  {
+    question: "Browser apa yang harus dipakai untuk mendaftar?",
+    answer:
+      "Gunakan browser biasa yang sudah terpasang di HP atau komputer Anda, seperti Google Chrome, Mozilla Firefox, Microsoft Edge, atau Opera. Sangat penting untuk tidak membuka halaman pendaftaran dan pembayaran langsung dari dalam aplikasi, misalnya saat Anda menekan tautan yang dibagikan lewat Instagram, WhatsApp, atau aplikasi lain. Bila dibuka dari dalam aplikasi, proses pengiriman foto dan pembayaran biasanya gagal sehingga pendaftaran tidak bisa diselesaikan. Jika saat ini Anda sedang membuka halaman ini dari dalam aplikasi, salin tautannya dahulu, lalu buka di browser biasa.",
+  },
+  {
+    question: "Format dan ukuran foto yang bisa dikirim apa saja?",
+    answer:
+      "Anda bisa mengirim foto dengan format JPG, PNG, atau WebP. Kalau Anda memakai iPhone, foto dengan format khusus iPhone (HEIC) juga bisa dikirim karena akan otomatis diubah oleh sistem. Pastikan foto yang Anda kirim jelas, tidak buram, dan tidak terpotong, karena foto yang tidak terbaca akan membuat pemeriksaan panitia terhambat.",
+  },
+  {
+    question: "Apakah data pendaftaran masih bisa diubah setelah dikirim?",
+    answer:
+      "Data pendaftaran yang sudah dikirim tidak bisa Anda ubah sendiri lewat halaman pendaftaran. Jika ada kesalahan, seperti salah menulis nama, data anggota, atau foto yang perlu diganti, silakan hubungi panitia melalui kontak di halaman ini. Panitia bisa membantu memperbaikinya selama masa pendaftaran masih dibuka.",
+  },
+  {
+    question: "Apakah ada batas usia untuk peserta?",
+    answer:
+      "Batas usia hanya berlaku untuk kategori Line Follower Junior, yaitu peserta maksimal berusia 19 tahun pada saat lomba berlangsung (31 Oktober 2026). Untuk kategori lainnya, seperti Line Follower Senior, Sumo Bot, dan Soccer Bot, tidak ada batas usia, jadi siapa saja boleh ikut, baik pelajar maupun mahasiswa.",
   },
 ];
 

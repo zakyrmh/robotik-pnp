@@ -11,6 +11,14 @@ All notable changes to this project will be documented in this file. See [standa
 
 ### Changed
 
+- **Penyelarasan Isi FAQ Halaman MRC (`components/event/mrc-faq-accordion.tsx`)**: Menyesuaikan FAQ dengan alur pendaftaran terbaru dan menambah pertanyaan baru (dari 4 menjadi 10), meliputi:
+  - Metode pembayaran berupa **transfer bank** ke rekening panitia (**Bank Nagari dan Bank BRI**) dengan pengiriman bukti pembayaran, menggantikan keterangan Payment Gateway/QRIS yang sudah tidak dipakai.
+  - Kewajiban **pas foto untuk semua kategori**, sedangkan **kartu identitas hanya untuk kategori Line Follower Junior** sebagai dasar verifikasi usia.
+  - Penjelasan durasi pemeriksaan bukti pembayaran (1x24 jam kerja), cara memperoleh E-Tiket & QR Kokarde, serta langkah yang ditempuh bila halaman pembayaran tidak dapat dibuka kembali.
+  - **Kewajiban memakai browser standar** (Chrome/Firefox/Edge/Opera) dan larangan mengakses pendaftaran/pembayaran dari browser dalam aplikasi (Instagram, WhatsApp) karena berisiko gagal saat pengiriman foto dan pembayaran.
+  - Informasi jumlah maksimal anggota tim, format foto yang diterima (JPG/PNG/WebP serta HEIC iPhone), dan prosedur perbaikan data pendaftaran.
+  - Penegasan batas usia hanya berlaku untuk Line Follower Junior (maksimal 19 tahun pada 31 Oktober 2026), sedangkan kategori lain bebas usia.
+- **Penyederhanaan Bahasa FAQ (`components/event/mrc-faq-accordion.tsx`)**: Mengganti istilah teknis dengan bahasa yang mudah dipahami peserta umum, seperti "mutasi transfer" menjadi "dana transfer sudah masuk", "tervalidasi" menjadi "sah", "in-app browser" menjadi "dibuka dari dalam aplikasi", dan "unggah berkas" menjadi "kirim foto". Istilah E-Tiket dan QR Kokarde kini disertai penjelasan singkat.
 - **Struktur Section Halaman MRC (`app/(marketing)/mrc/page.tsx`)**: Menyisipkan `<MrcRulesSection />` sebagai section ke-5 (setelah Timeline, sebelum FAQ) dan menomori ulang komentar urutan section.
 - **Pembersihan Import FAQ MRC (`components/event/mrc-faq-accordion.tsx`)**: Menghapus import `Download` dan `FileText` yang tidak terpakai setelah seksi rulebook dipisahkan ke komponen tersendiri.
 - **Integrasi Verifikasi Pembayaran Manual ke Dashboard Manajemen Event (`components/event/event-dashboard-tabs.tsx`, `components/event/registration-table.tsx`, `app/(private)/manajemen-event/page.tsx`)**: Verifikasi pembayaran manual yang sebelumnya berupa halaman terpisah kini dilebur ke dalam tab "Pendaftaran & Transaksi" sebagai tabel master tunggal, dilengkapi filter, pencarian, badge status, dan ekspor CSV.
