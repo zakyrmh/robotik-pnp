@@ -960,6 +960,11 @@ export function RegistrationForm({
       <div className="flex justify-center py-1 overflow-x-auto">
         <Turnstile
           siteKey={
+            // Sama seperti form autentikasi lainnya: TERIMA `TURNSTILE_SITE_KEY`
+            // tanpa prefix (yang diizinkan Vercel) — `next.config.ts` sudah
+            // memetakannya ke NEXT_PUBLIC_* saat build. Fallback terakhir
+            // adalah sitekey uji Cloudflare agar dev tetap berjalan.
+            process.env.TURNSTILE_SITE_KEY ||
             process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ||
             "1x00000000000000000000AA"
           }
