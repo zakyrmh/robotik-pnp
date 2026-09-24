@@ -1,10 +1,19 @@
 import {
+  Cloud,
   Download,
   ExternalLink,
   FileText,
+  FolderOpen,
   ImageIcon,
   Route,
 } from "lucide-react";
+
+/**
+ * Folder Google Drive publik berisi seluruh dokumen rule & dokumen lapangan.
+ * Diakses lewat tombol "Buka Google Drive" pada section ini.
+ */
+const GOOGLE_DRIVE_URL =
+  "https://drive.google.com/drive/folders/1WpRGBSbYoU8r0YMcaURwS1ryVn3FdGq9";
 
 interface RuleDocument {
   /** Judul dokumen yang ditampilkan ke pengunjung. */
@@ -15,6 +24,8 @@ interface RuleDocument {
   file: string;
   /** Deskripsi singkat cakupan isi dokumen. */
   description: string;
+  /** Label revisi/versi dokumen (mis. "v1.1"). Opsional. */
+  version?: string;
 }
 
 const BASE_PATH = "/documents/mrc_x/rules";
@@ -28,16 +39,18 @@ const ruleDocuments: RuleDocument[] = [
   {
     title: "Rule Line Follower Digital — Junior",
     label: "Line Follower Junior",
-    file: "Rule Line Follower Digital JUNIOR MRC X 2026.pdf",
+    file: "Rule Line Follower Digital JUNIOR MRC X 2026v1.1.pdf",
     description:
       "Spesifikasi robot, sensor, aturan lintasan, dan sistem penilaian kategori Junior.",
+    version: "v1.1",
   },
   {
     title: "Rule Line Follower Digital — Umum",
     label: "Line Follower Umum",
-    file: "Rule Line Follower Digital UMUM MRC X 2026.pdf",
+    file: "Rule Line Follower Digital UMUM MRC X 2026v1.1.pdf",
     description:
       "Spesifikasi robot, sensor, aturan lintasan, dan sistem penilaian kategori Umum.",
+    version: "v1.1",
   },
   {
     title: "Rule Robot Soccer",
@@ -97,12 +110,21 @@ export function MrcRulesSection() {
                     <Route className="size-5" />
                   </div>
 
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-muted text-muted-foreground border border-border">
-                    <FileText className="size-3.5" />
-                    <span className="font-mono uppercase tracking-wider">
-                      PDF
+                  <div className="flex items-center gap-1.5">
+                    {doc.version && (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-success/10 text-success border border-success/30">
+                        <span className="font-mono uppercase tracking-wider">
+                          {doc.version}
+                        </span>
+                      </span>
+                    )}
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-muted text-muted-foreground border border-border">
+                      <FileText className="size-3.5" />
+                      <span className="font-mono uppercase tracking-wider">
+                        PDF
+                      </span>
                     </span>
-                  </span>
+                  </div>
                 </div>
 
                 {/* Title & Description */}
@@ -143,6 +165,38 @@ export function MrcRulesSection() {
           );
         })}
       </div>
+
+      {/* Google Drive Repository — dokumen rule & lapangan lengkap */}
+      <article className="rounded-lg border border-primary/30 bg-primary-soft/30 dark:bg-primary-soft/10 p-5 sm:p-6 shadow-2xs">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="size-10 shrink-0 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-center text-primary">
+              <Cloud className="size-5" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="font-display font-semibold text-sm sm:text-base text-foreground">
+                Repositori Dokumen Lengkap (Google Drive)
+              </h3>
+              <p className="font-body text-xs text-muted-foreground leading-relaxed max-w-xl">
+                Seluruh dokumen peraturan dan dokumen lapangan terbaru tersedia
+                terpusat di Google Drive. Gunakan folder ini untuk mengakses
+                berkas tambahan, revisi, maupun lampiran teknis lainnya.
+              </p>
+            </div>
+          </div>
+
+          <a
+            href={GOOGLE_DRIVE_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 min-h-[44px] inline-flex items-center justify-center gap-2 font-body text-sm font-semibold px-5 py-2.5 rounded-md bg-primary hover:bg-primary-hover text-primary-foreground shadow-2xs transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <FolderOpen className="size-4" />
+            <span>Buka Google Drive</span>
+            <ExternalLink className="size-3.5" />
+          </a>
+        </div>
+      </article>
 
       {/* Track Reference Visual */}
       <article className="rounded-lg border border-border bg-card p-5 sm:p-6 shadow-2xs space-y-4">
