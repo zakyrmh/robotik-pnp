@@ -7,8 +7,8 @@ import { Turnstile } from "@marsidev/react-turnstile";
 import {
   uploadMemberPhotoAction,
   uploadMemberIdentityCardAction,
-  registerEventAction,
-} from "@/lib/actions/event-registration";
+} from "@/lib/actions/mrc-image-upload";
+import { registerEventAction } from "@/lib/actions/event-registration";
 import {
   MRC_ACCEPT_ATTR,
   MRC_ALLOWED_EXTENSIONS,
@@ -139,26 +139,28 @@ async function convertHeicToJpegIfNeeded(file: File): Promise<File> {
 }
 
 /**
- * Kompresi RINGAN client-side: resize kasar + turunkan ukuran agar upload
- * cepat dan hemat bandwidth. Kompresi final yang kanonis dilakukan server
- * via `sharp` (convert ke WebP + varian thumbnail).
+ * Kompresi + konversi ke WebP di client-side (mirip onboarding).
+ * Server hanya upload buffer ke R2 — TANPA sharp/file-type.
  */
-async function compressLightly(file: File, kind: MrcImageKind): Promise<File> {
+async function compressToWebp(file: File, kind: MrcImageKind): Promise<File> {
   const normalized = await convertHeicToJpegIfNeeded(file);
   try {
     const compressed = await imageCompression(normalized, {
       maxSizeMB: kind === "photo" ? 1 : 1.5,
       maxWidthOrHeight: kind === "photo" ? 1280 : 1920,
       useWebWorker: true,
+      fileType: "image/webp",
     });
-    const targetName =
-      (compressed as File)?.name || normalized.name || "photo.jpg";
-    return new File([compressed], targetName, {
-      type: compressed.type || normalized.type || "image/jpeg",
+    const baseName =
+      (compressed as File)?.name?.replace(/\.[^.]+$/, "") ||
+      normalized.name?.replace(/\.[^.]+$/, "") ||
+      "photo";
+    return new File([compressed], `${baseName}.webp`, {
+      type: "image/webp",
       lastModified: Date.now(),
     });
   } catch {
-    // Gagal kompres bukan fatal — kirim file ternormalisasi, server yang menangani.
+    // Fallback: return normalized file (server akan validasi MIME)
     return normalized;
   }
 }
@@ -267,7 +269,7 @@ export function RegistrationForm({
         return;
       }
 
-      const lightFile = await compressLightly(file, kind);
+      const lightFile = await compressToWebp(file, kind);
 
       const formData = new FormData();
       formData.append("file", lightFile);
