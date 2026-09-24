@@ -24,12 +24,7 @@ import {
   getCategoryBatchFee,
   BATCH_LABELS,
 } from "@/lib/event-batch";
-import {
-  processAndUploadMrcImage,
-  MrcImageValidationError,
-} from "@/lib/server/mrc-image-pipeline";
 import { validateJuniorBirthDate } from "@/lib/mrc-rules";
-import type { MrcImageKind } from "@/lib/mrc-image-config";
 import { untypedFrom, untypedRpc } from "@/lib/supabase/untyped";
 import type {
   ActionResult,
@@ -769,61 +764,13 @@ async function getUploadClientIp(): Promise<string> {
   );
 }
 
-async function handleMrcImageUpload(
-  formData: FormData,
-  kind: MrcImageKind,
-): Promise<ActionResult<string>> {
-  const emptyMessage =
-    kind === "photo"
-      ? "File foto tidak boleh kosong."
-      : kind === "paymentProof"
-        ? "File bukti pembayaran tidak boleh kosong."
-        : "File kartu identitas tidak boleh kosong.";
+// Re-export upload actions from the new module to maintain backward compatibility
+import {
+  uploadMemberPhotoAction as _uploadMemberPhotoAction,
+  uploadMemberIdentityCardAction as _uploadMemberIdentityCardAction,
+  uploadPaymentProofAction as _uploadPaymentProofAction,
+} from "@/lib/actions/mrc-image-upload";
 
-  const clientIp = await getUploadClientIp();
-  const { success: withinLimit } = await mrcUploadRateLimiter.limit(clientIp);
-  if (!withinLimit) {
-    return {
-      success: false,
-      error:
-        "Terlalu banyak upaya upload. Silakan coba lagi dalam beberapa menit.",
-    };
-  }
-
-  const file = formData.get("file");
-  if (!(file instanceof File) || file.size === 0) {
-    return { success: false, error: emptyMessage };
-  }
-
-  try {
-    const processed = await processAndUploadMrcImage(file, kind);
-    return { success: true, data: processed.url };
-  } catch (err: unknown) {
-    if (err instanceof MrcImageValidationError) {
-      return { success: false, error: err.message };
-    }
-    console.error("[MRC_UPLOAD_ERROR]", err);
-    return {
-      success: false,
-      error: "Gagal mengunggah file. Silakan coba lagi.",
-    };
-  }
-}
-
-export async function uploadMemberPhotoAction(
-  formData: FormData,
-): Promise<ActionResult<string>> {
-  return handleMrcImageUpload(formData, "photo");
-}
-
-export async function uploadMemberIdentityCardAction(
-  formData: FormData,
-): Promise<ActionResult<string>> {
-  return handleMrcImageUpload(formData, "identityCard");
-}
-
-export async function uploadPaymentProofAction(
-  formData: FormData,
-): Promise<ActionResult<string>> {
-  return handleMrcImageUpload(formData, "paymentProof");
-}
+export const uploadMemberPhotoAction = _uploadMemberPhotoAction;
+export const uploadMemberIdentityCardAction = _uploadMemberIdentityCardAction;
+export const uploadPaymentProofAction = _uploadPaymentProofAction;

@@ -2,13 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.12.2](https://github.com/zakyrmh/robotik-pnp/compare/v0.12.1...v0.12.2) (2026-09-24)
+
+### Fixed
+
+- **Error 500 Upload Foto MRC di Vercel — `sharp` Native Module Gagal Dimuat (`lib/actions/event-registration.ts`, `lib/actions/mrc-image-upload.ts` baru, `components/event/registration-form.tsx`, `next.config.ts`)**: Server Action upload foto di `/mrc/[slug]/daftar` mengembalikan HTTP 500 dengan pesan _Server Components render error_ di production Vercel. Akar masalah dari runtime log: `Failed to load external module sharp-71044da80993d1fb: Could not load the "sharp" module using the linux-x64 runtime — ERR_DLOPEN_FAILED: libvips-cpp.so.8.18.6: cannot open shared object file`. Perbaikan menyeluruh:
+  - **Arsitektur upload disederhanakan meniru onboarding**: Seluruh image processing (**konversi HEIC/HEIF Apple → JPEG → WebP, resize, kompresi**) dipindahkan ke **client-side** via `browser-image-compression` (`compressToWebp`). Server Action baru `lib/actions/mrc-image-upload.ts` hanya melakukan validasi ukuran/MIME dasar lalu upload buffer ke Cloudflare R2 — **`sharp` dan `file-type` dihapus sepenuhnya dari jalur upload server**. Akses libvips di serverless Vercel terbukti tidak andal, sedangkan pemrosesan di klien menghilangkan ketergantungan native sepenuhnya.
+  - **Pembersihan kode lama yang memaksa bundling `sharp`**: `lib/actions/event-registration.ts` sebelumnya masih meng-import `processAndUploadMrcImage` dari `lib/server/mrc-image-pipeline.ts` (yang memakai `sharp`), sehingga modul native tetap ikut ter-bundle ke serverless function meski form sudah memakai action baru. Import lama dan fungsi `handleMrcImageUpload` dihapus; tiga action (`uploadMemberPhotoAction`, `uploadMemberIdentityCardAction`, `uploadPaymentProofAction`) kini di-re-export dari modul baru agar `qris-payment-view.tsx` tetap kompatibel tanpa menarik `sharp`.
+  - **Batas body Server Action disesuaikan ke batas Vercel**: `experimental.serverActions.bodySizeLimit` diatur ke `"4mb"` — tetap di bawah batas ~4,5 MB request Vercel Function (Free/Hobby Plan). Karena klien sudah mengompres gambar ke ≤1,5 MB, nilai ini memberi margin aman dan mencegah request terpotong.
+  - **Fallback binary opsional**: `@img/sharp-linux-x64` dan `@img/sharp-libvips-linux-x64` tetap dicantumkan di `package.json` sebagai jaring pengaman bila `sharp` sewaktu-waktu dibutuhkan di runtime Linux.
+
 ## [0.12.1](https://github.com/zakyrmh/robotik-pnp/compare/v0.12.0...v0.12.1) (2026-09-24)
 
 ### Fixed
 
-- **Arsitektur Upload Gambar MRC Disederhanakan Meniru Onboarding (`lib/actions/mrc-image-upload.ts`, `components/event/registration-form.tsx`)**: Memindahkan **seluruh image processing (HEIC→JPEG→WebP, kompresi, resize)** ke client-side via `browser-image-compression`, server hanya melakukan validasi ukuran/MIME dasar dan upload buffer ke R2 — **menghapus dependency native `sharp` & `file-type` dari server MRC upload**. Sebelumnya pipeline server menggunakan `sharp` (magic bytes, resize, WebP conversion, thumbnail) yang memerlukan `libvips` native library yang tidak tersedia di Vercel production, menyebabkan `ERR_DLOPEN_FAILED`. Sekarang arsitektur identik dengan onboarding yang berhasil di production.
-- **Native Dependency `sharp` Tidak Tersedia di Vercel Linux Runtime (`package.json`)**: Menambahkan `@img/sharp-linux-x64` dan `@img/sharp-libvips-linux-x64` sebagai fallback dependencies untuk menyediakan binary pre-built Linux x64 (`libvips-cpp.so.8.18.6`).
 - **Batas Ukuran Body Server Action Terlalu Kecil untuk Upload Foto (`next.config.ts`)**: Menaikkan `bodySizeLimit` dari `"4mb"` menjadi `"10mb"` pada konfigurasi `experimental.serverActions`. Sebelumnya, batas 4 MB lebih kecil dari batas aplikasi yang diizinkan (pas foto 6 MB, kartu identitas 8 MB, bukti pembayaran 6 MB), sehingga request yang melebihi 4 MB dipotong oleh Next.js sebelum mencapai Server Action dan memicu _Server Components render error_ di production (Vercel). Di lingkungan development limit ini tidak diterapkan secara ketat, sehingga masalah hanya muncul di production.
+- **Native Dependency `sharp` Tidak Tersedia di Vercel Linux Runtime (`package.json`)**: Menambahkan `@img/sharp-linux-x64` dan `@img/sharp-libvips-linux-x64` sebagai fallback dependencies untuk menyediakan binary pre-built Linux x64 (`libvips-cpp.so.8.18.6`).
 
 ## [0.12.0](https://github.com/zakyrmh/robotik-pnp/compare/v0.11.0...v0.12.0) (2026-09-23)
 
