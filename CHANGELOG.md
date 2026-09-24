@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.12.1](https://github.com/zakyrmh/robotik-pnp/compare/v0.12.0...v0.12.1) (2026-02-20)
+
+### Fixed
+
+- **Batas Ukuran Body Server Action Terlalu Kecil untuk Upload Foto (`next.config.ts`)**: Menambahkan `bodySizeLimit` dari `"4mb"` menjadi `"10mb"` pada konfigurasi `experimental.serverActions`. Sebelumnya, batas 4 MB lebih kecil dari batas aplikasi yang diizinkan (pas foto 6 MB, kartu identitas 8 MB, bukti pembayaran 6 MB), sehingga request yang melebihi 4 MB dipotong oleh Next.js sebelum mencapai Server Action dan memicu _Server Components render error_ di production (Vercel). Di lingkungan development limit ini tidak diterapkan secara ketat, sehingga masalah hanya muncul di production.
+
 ## [0.12.0](https://github.com/zakyrmh/robotik-pnp/compare/v0.11.0...v0.12.0) (2026-09-23)
 
 ### Added
