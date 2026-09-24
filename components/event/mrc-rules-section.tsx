@@ -13,7 +13,7 @@ import {
  * Diakses lewat tombol "Buka Google Drive" pada section ini.
  */
 const GOOGLE_DRIVE_URL =
-  "https://drive.google.com/drive/folders/1WpRGBSbYoU8r0YMcaURwS1ryVn3FdGq9";
+  "https://drive.google.com/drive/folders/171jfnw-J5aiGvSFevZ8O1WhFfsoAL4M2?usp=sharing";
 
 interface RuleDocument {
   /** Judul dokumen yang ditampilkan ke pengunjung. */
