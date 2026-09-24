@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.12.3](https://github.com/zakyrmh/robotik-pnp/compare/v0.12.2...v0.12.3) (2026-09-24)
+
+### Added
+
+- **Repositori Dokumen Google Drive (`components/event/mrc-rules-section.tsx`)**: Menambahkan section **"Repositori Dokumen Lengkap (Google Drive)"** pada halaman `/mrc` yang menyediakan tombol **"Buka Google Drive"** menuju folder publik berisi seluruh dokumen peraturan dan dokumen lapangan. Folder ini menjadi pusat akses berkas tambahan, revisi, maupun lampiran teknis lainnya di luar rulebook statis.
+
+### Changed
+
+- **Pembaruan Rulebook Line Follower ke v1.1 (`public/documents/mrc_x/rules/`, `components/event/mrc-rules-section.tsx`)**: Mengganti dokumen **Rule Line Follower Digital Junior** dan **Rule Line Follower Digital Umum** dari revisi awal ke **v1.1** (`Rule Line Follower Digital JUNIOR MRC X 2026v1.1.pdf` dan `Rule Line Follower Digital UMUM MRC X 2026v1.1.pdf`). Berkas lama (v1.0) **dihapus** sehingga tidak lagi dapat diakses publik — hanya berkas terbaru yang tersedia. Kartu rulebook kini menampilkan **badge versi** (`v1.1`) di samping label format PDF agar peserta dapat memastikan dokumen yang dibaca adalah revisi terbaru.
+
 ## [0.12.2](https://github.com/zakyrmh/robotik-pnp/compare/v0.12.1...v0.12.2) (2026-09-24)
 
 ### Fixed
