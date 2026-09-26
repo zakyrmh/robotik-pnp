@@ -94,14 +94,78 @@ export async function getEventSettingsAction(): Promise<
 }
 
 export async function updateEventSettingsAction(
-  payload: EventSettingsInput,
+  payload: Partial<EventSettingsInput>,
 ): Promise<ActionResult<EventSettings>> {
   const check = await checkEventRole(["panitia-pendaftaran"]);
   if (!check.authorized) {
     return { success: false, error: check.error || "Akses ditolak." };
   }
 
-  const validated = eventSettingsSchema.safeParse(payload);
+  const currentSettingsRes = await getEventSettingsAction();
+  const currentSettings = currentSettingsRes.success
+    ? currentSettingsRes.data
+    : null;
+
+  const mergedPayload: EventSettingsInput = {
+    timeline_release_date:
+      payload.timeline_release_date !== undefined
+        ? payload.timeline_release_date
+        : (currentSettings?.timeline_release_date ?? null),
+    batch1_start:
+      payload.batch1_start !== undefined
+        ? payload.batch1_start
+        : (currentSettings?.batch1_start ?? null),
+    batch1_end:
+      payload.batch1_end !== undefined
+        ? payload.batch1_end
+        : (currentSettings?.batch1_end ?? null),
+    batch2_start:
+      payload.batch2_start !== undefined
+        ? payload.batch2_start
+        : (currentSettings?.batch2_start ?? null),
+    batch2_end:
+      payload.batch2_end !== undefined
+        ? payload.batch2_end
+        : (currentSettings?.batch2_end ?? null),
+    technical_meeting_start:
+      payload.technical_meeting_start !== undefined
+        ? payload.technical_meeting_start
+        : (currentSettings?.technical_meeting_start ?? null),
+    technical_meeting_end:
+      payload.technical_meeting_end !== undefined
+        ? payload.technical_meeting_end
+        : (currentSettings?.technical_meeting_end ?? null),
+    event_start:
+      payload.event_start !== undefined
+        ? payload.event_start
+        : (currentSettings?.event_start ?? null),
+    event_end:
+      payload.event_end !== undefined
+        ? payload.event_end
+        : (currentSettings?.event_end ?? null),
+    payment_mode:
+      payload.payment_mode !== undefined
+        ? payload.payment_mode
+        : (currentSettings?.payment_mode ?? "midtrans"),
+    bank_name:
+      payload.bank_name !== undefined
+        ? payload.bank_name
+        : (currentSettings?.bank_name ?? undefined),
+    bank_account_number:
+      payload.bank_account_number !== undefined
+        ? payload.bank_account_number
+        : (currentSettings?.bank_account_number ?? undefined),
+    bank_account_holder:
+      payload.bank_account_holder !== undefined
+        ? payload.bank_account_holder
+        : (currentSettings?.bank_account_holder ?? undefined),
+    bank_accounts:
+      payload.bank_accounts !== undefined
+        ? payload.bank_accounts
+        : (currentSettings?.bank_accounts ?? undefined),
+  };
+
+  const validated = eventSettingsSchema.safeParse(mergedPayload);
   if (!validated.success) {
     const firstIssue = validated.error.issues[0];
     return {
@@ -145,11 +209,14 @@ export async function updateEventSettingsAction(
   }
 
   revalidatePath("/manajemen-event");
+  revalidatePath("/manajemen-event/pendaftaran");
+  revalidatePath("/manajemen-event/timeline");
+  revalidatePath("/manajemen-event/pembayaran");
   revalidatePath("/mrc");
   return {
     success: true,
     data,
-    message: "Pengaturan jadwal, batch & metode pembayaran berhasil disimpan.",
+    message: "Pengaturan berhasil disimpan.",
   };
 }
 
@@ -212,6 +279,7 @@ export async function saveEventCategoryAction(
     }
 
     revalidatePath("/manajemen-event");
+    revalidatePath("/manajemen-event/kategori");
     return { success: true, data, message: "Kategori berhasil diperbarui." };
   } else {
     const { data, error } = await (untypedFrom(
@@ -233,6 +301,7 @@ export async function saveEventCategoryAction(
     }
 
     revalidatePath("/manajemen-event");
+    revalidatePath("/manajemen-event/kategori");
     return {
       success: true,
       data,
@@ -287,6 +356,46 @@ export async function getEventRegistrationsAction(
 
   if (error || !data) {
     return { success: false, error: "Gagal mengambil daftar pendaftaran." };
+  }
+
+  return { success: true, data };
+}
+
+export async function getEventRegistrationByIdAction(
+  registrationId: string,
+): Promise<ActionResult<EventRegistration>> {
+  const check = await checkEventRole([
+    "panitia-pendaftaran",
+    "panitia-verifikasi",
+    "panitia-pertandingan",
+  ]);
+  if (!check.authorized) {
+    return { success: false, error: check.error || "Akses ditolak." };
+  }
+
+  const adminSupabase = createAdminClient();
+  const { data, error } = await (untypedFrom(
+    adminSupabase,
+    "event_registrations",
+  )
+    .select(
+      `
+      *,
+      category:event_categories(*),
+      members:event_team_members(*)
+    `,
+    )
+    .eq("id", registrationId)
+    .single() as unknown as Promise<{
+    data: EventRegistration | null;
+    error: unknown;
+  }>);
+
+  if (error || !data) {
+    return {
+      success: false,
+      error: "Data pendaftaran tidak ditemukan.",
+    };
   }
 
   return { success: true, data };
@@ -354,6 +463,8 @@ export async function updatePaymentStatusAction(
   }
 
   revalidatePath("/manajemen-event");
+  revalidatePath("/manajemen-event/pendaftaran");
+  revalidatePath(`/manajemen-event/pendaftaran/${registrationId}`);
   return {
     success: true,
     data: { success: true },
@@ -436,6 +547,8 @@ export async function verifyManualPaymentAction(
   });
 
   revalidatePath("/manajemen-event");
+  revalidatePath("/manajemen-event/pendaftaran");
+  revalidatePath(`/manajemen-event/pendaftaran/${registrationId}`);
   return {
     success: true,
     data: { success: true },
@@ -536,6 +649,8 @@ export async function submitFaceVerificationAction(
   }
 
   revalidatePath("/manajemen-event");
+  revalidatePath("/manajemen-event/pendaftaran");
+  revalidatePath("/manajemen-event/verifikasi");
   return {
     success: true,
     data: { success: true },
@@ -581,6 +696,8 @@ export async function logEventViolationAction(
   }
 
   revalidatePath("/manajemen-event");
+  revalidatePath("/manajemen-event/pendaftaran");
+  revalidatePath(`/manajemen-event/pendaftaran/${registrationId}`);
   return {
     success: true,
     data: { success: true },
@@ -637,6 +754,7 @@ export async function purgeOldEventDataAction(): Promise<
   }
 
   revalidatePath("/manajemen-event");
+  revalidatePath("/manajemen-event/pendaftaran");
   return {
     success: true,
     data: { deletedCount: ids.length },

@@ -1,14 +1,20 @@
+import { notFound } from "next/navigation";
 import { ShieldAlert } from "lucide-react";
 import { requireEventAdminOrRedirect } from "@/lib/event-auth";
-import {
-  getEventCategoriesAction,
-  getEventRegistrationsAction,
-  getEventSettingsAction,
-} from "@/lib/actions/event-admin";
-import { MrcDashboardOverview } from "@/components/event/mrc-dashboard-overview";
+import { getEventRegistrationByIdAction } from "@/lib/actions/event-admin";
+import { RegistrationDetailView } from "@/components/event/registration-detail-view";
 
-export default async function EventManagementDashboardPage() {
-  const auth = await requireEventAdminOrRedirect();
+export default async function EventRegistrationDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const auth = await requireEventAdminOrRedirect([
+    "panitia-pendaftaran",
+    "panitia-verifikasi",
+    "panitia-pertandingan",
+  ]);
 
   if (!auth.isAuthorized) {
     return (
@@ -33,19 +39,17 @@ export default async function EventManagementDashboardPage() {
     );
   }
 
-  const [categoriesRes, registrationsRes, settingsRes] = await Promise.all([
-    getEventCategoriesAction(),
-    getEventRegistrationsAction(),
-    getEventSettingsAction(),
-  ]);
+  const res = await getEventRegistrationByIdAction(id);
+  if (!res.success || !res.data) {
+    notFound();
+  }
 
   return (
     <main className="mx-auto max-w-7xl space-y-6">
-      <MrcDashboardOverview
-        settings={settingsRes.success ? settingsRes.data : null}
-        categories={categoriesRes.success ? categoriesRes.data : []}
-        registrations={registrationsRes.success ? registrationsRes.data : []}
+      <RegistrationDetailView
+        registration={res.data}
         roleEvent={auth.roleEvent}
+        isSuperAdmin={auth.isSuperAdmin}
       />
     </main>
   );

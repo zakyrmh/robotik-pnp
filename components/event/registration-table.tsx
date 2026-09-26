@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import {
   updatePaymentStatusAction,
   verifyManualPaymentAction,
@@ -29,6 +30,7 @@ import {
   Eye,
   DollarSign,
   Users,
+  ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -611,11 +613,19 @@ export function RegistrationTable({
 
                   <button
                     onClick={() => setSelectedReg(reg)}
-                    className="inline-flex min-h-[44px] flex-1 sm:flex-initial items-center justify-center gap-1 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="inline-flex min-h-[44px] flex-1 sm:flex-initial items-center justify-center gap-1 rounded-md border border-border bg-secondary px-3 py-2 text-xs font-semibold text-foreground hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     <Eye className="size-3.5" aria-hidden="true" />
-                    <span>Detail</span>
+                    <span>Pratinjau</span>
                   </button>
+
+                  <Link
+                    href={`/manajemen-event/pendaftaran/${reg.id}`}
+                    className="inline-flex min-h-[44px] flex-1 sm:flex-initial items-center justify-center gap-1 rounded-md bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <ArrowRight className="size-3.5" aria-hidden="true" />
+                    <span>Detail</span>
+                  </Link>
                 </div>
               </div>
             </article>
@@ -802,11 +812,19 @@ export function RegistrationTable({
 
                         <button
                           onClick={() => setSelectedReg(reg)}
-                          className="inline-flex min-h-[44px] items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          className="inline-flex min-h-[44px] items-center gap-1 rounded-md border border-border bg-secondary px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                         >
                           <Eye className="size-3.5" aria-hidden="true" />
-                          <span>Detail ({reg.members?.length || 0})</span>
+                          <span>Pratinjau</span>
                         </button>
+
+                        <Link
+                          href={`/manajemen-event/pendaftaran/${reg.id}`}
+                          className="inline-flex min-h-[44px] items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                          <ArrowRight className="size-3.5" aria-hidden="true" />
+                          <span>Detail ({reg.members?.length || 0})</span>
+                        </Link>
                       </div>
                     </td>
                   </tr>

@@ -1,14 +1,10 @@
 import { ShieldAlert } from "lucide-react";
 import { requireEventAdminOrRedirect } from "@/lib/event-auth";
-import {
-  getEventCategoriesAction,
-  getEventRegistrationsAction,
-  getEventSettingsAction,
-} from "@/lib/actions/event-admin";
-import { MrcDashboardOverview } from "@/components/event/mrc-dashboard-overview";
+import { getEventSettingsAction } from "@/lib/actions/event-admin";
+import { EventPaymentForm } from "@/components/event/event-payment-form";
 
-export default async function EventManagementDashboardPage() {
-  const auth = await requireEventAdminOrRedirect();
+export default async function EventPaymentPage() {
+  const auth = await requireEventAdminOrRedirect(["panitia-pendaftaran"]);
 
   if (!auth.isAuthorized) {
     return (
@@ -21,31 +17,23 @@ export default async function EventManagementDashboardPage() {
             Akses Terbatas
           </h2>
           <p className="text-sm text-muted-foreground">
-            Akun Anda tidak terdaftar dalam kepanitiaan Minangkabau Robot
-            Contest (
+            Hanya Panitia Pendaftaran (
             <code className="font-mono text-xs font-semibold text-foreground">
-              role_event
+              panitia-pendaftaran
             </code>
-            ).
+            ) atau Super Admin yang dapat mengelola metode pembayaran event.
           </p>
         </div>
       </main>
     );
   }
 
-  const [categoriesRes, registrationsRes, settingsRes] = await Promise.all([
-    getEventCategoriesAction(),
-    getEventRegistrationsAction(),
-    getEventSettingsAction(),
-  ]);
+  const settingsRes = await getEventSettingsAction();
 
   return (
     <main className="mx-auto max-w-7xl space-y-6">
-      <MrcDashboardOverview
-        settings={settingsRes.success ? settingsRes.data : null}
-        categories={categoriesRes.success ? categoriesRes.data : []}
-        registrations={registrationsRes.success ? registrationsRes.data : []}
-        roleEvent={auth.roleEvent}
+      <EventPaymentForm
+        initialSettings={settingsRes.success ? settingsRes.data : null}
       />
     </main>
   );

@@ -275,6 +275,7 @@ export type EventRegistrationInput = z.infer<typeof eventRegistrationSchema>;
 export type EventMemberInput = z.infer<typeof eventMemberSchema>;
 export type EventCategoryInput = z.infer<typeof eventCategorySchema>;
 export type EventSettingsInput = z.infer<typeof eventSettingsSchema>;
+export type EventSettingsPartialInput = Partial<EventSettingsInput>;
 export type BankAccountInput = z.infer<typeof bankAccountSchema>;
 export type ManualPaymentVerificationInput = z.infer<
   typeof manualPaymentVerificationSchema

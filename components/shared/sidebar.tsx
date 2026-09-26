@@ -19,6 +19,8 @@ import {
   Briefcase,
   Settings,
   Trophy,
+  CalendarRange,
+  CreditCard,
   Search,
   ChevronDown,
   ChevronRight,
@@ -211,13 +213,47 @@ const allMenuItems = {
     searchTerms: "konfigurasi oprec gelombang window pendaftaran",
   },
 
-  manajemenEvent: {
-    title: "Manajemen Event",
+  mrcDashboard: {
+    title: "Dashboard MRC",
     href: "/manajemen-event",
+    icon: LayoutDashboard,
+    module: "mrc" as ModuleKey,
+    adminOnly: false,
+    searchTerms:
+      "mrc dashboard utama ringkasan statistik kuota pendaftaran tim",
+  },
+  mrcPendaftaran: {
+    title: "Data Pendaftar",
+    href: "/manajemen-event/pendaftaran",
+    icon: ClipboardList,
+    module: "mrc" as ModuleKey,
+    adminOnly: false,
+    searchTerms:
+      "mrc pendaftaran tim peserta verifikasi pembayaran bukti transfer pendaftar",
+  },
+  mrcKategori: {
+    title: "Kategori Lomba",
+    href: "/manajemen-event/kategori",
     icon: Trophy,
     module: "mrc" as ModuleKey,
     adminOnly: false,
-    searchTerms: "mrc lomba kompetisi pendaftaran verifikasi tiket",
+    searchTerms: "mrc kategori divisi lomba kuota biaya batch fee",
+  },
+  mrcTimeline: {
+    title: "Timeline Acara",
+    href: "/manajemen-event/timeline",
+    icon: CalendarRange,
+    module: "mrc" as ModuleKey,
+    adminOnly: false,
+    searchTerms: "mrc timeline jadwal batch technical meeting acara rilis",
+  },
+  mrcPembayaran: {
+    title: "Metode Pembayaran",
+    href: "/manajemen-event/pembayaran",
+    icon: CreditCard,
+    module: "mrc" as ModuleKey,
+    adminOnly: false,
+    searchTerms: "mrc pembayaran midtrans bank manual rekening qris gateway",
   },
 } as const;
 
@@ -248,9 +284,16 @@ const roleMenuKeys: Record<string, MenuKey[]> = {
     "manajemenKelompokCaang",
     "manajemenMagang",
   ],
-  "panitia-pendaftaran": ["dashboard", "manajemenEvent"],
-  "panitia-verifikasi": ["dashboard", "manajemenEvent"],
-  "panitia-pertandingan": ["dashboard", "manajemenEvent"],
+  "panitia-pendaftaran": [
+    "dashboard",
+    "mrcDashboard",
+    "mrcPendaftaran",
+    "mrcKategori",
+    "mrcTimeline",
+    "mrcPembayaran",
+  ],
+  "panitia-verifikasi": ["dashboard", "mrcDashboard", "mrcPendaftaran"],
+  "panitia-pertandingan": ["dashboard", "mrcDashboard", "mrcPendaftaran"],
   "super-admin": [
     "dashboard",
     "manajemenStruktur",
@@ -266,7 +309,11 @@ const roleMenuKeys: Record<string, MenuKey[]> = {
     "manajemenKelompokCaang",
     "manajemenMagang",
     "pengaturanOr",
-    "manajemenEvent",
+    "mrcDashboard",
+    "mrcPendaftaran",
+    "mrcKategori",
+    "mrcTimeline",
+    "mrcPembayaran",
   ],
 };
 
@@ -295,7 +342,13 @@ const menuOrderWithinModule: Record<ModuleKey, MenuKey[]> = {
     "manajemenMagang",
     "pengaturanOr",
   ],
-  mrc: ["manajemenEvent"],
+  mrc: [
+    "mrcDashboard",
+    "mrcPendaftaran",
+    "mrcKategori",
+    "mrcTimeline",
+    "mrcPembayaran",
+  ],
 };
 
 interface ModuleSection {
@@ -318,8 +371,12 @@ function resolveVisibleKeys(
   });
 }
 
+// Href yang harus dicocokkan persis: menjadi prefix bagi sub-route lain,
+// sehingga pencocokan `startsWith` akan salah menyalakan highlight.
+const EXACT_MATCH_HREFS = new Set<string>(["/dashboard", "/manajemen-event"]);
+
 function isActiveLink(pathname: string, href: string) {
-  if (href === "/dashboard") return pathname === "/dashboard";
+  if (EXACT_MATCH_HREFS.has(href)) return pathname === href;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -632,7 +689,7 @@ function ModuleSectionBlock({
               collapsed
               badgeCount={badgeCounts?.[key]}
               badgeTone={
-                key === "kedisiplinan" || key === "manajemenEvent"
+                key === "kedisiplinan" || key === "mrcPendaftaran"
                   ? "warning"
                   : "default"
               }
@@ -711,7 +768,7 @@ function ModuleSectionBlock({
                 collapsed={false}
                 badgeCount={badgeCounts?.[key]}
                 badgeTone={
-                  key === "kedisiplinan" || key === "manajemenEvent"
+                  key === "kedisiplinan" || key === "mrcPendaftaran"
                     ? "warning"
                     : "default"
                 }
