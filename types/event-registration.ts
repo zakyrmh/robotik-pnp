@@ -117,6 +117,63 @@ export interface EventTeamMember {
   created_at: string;
 }
 
+/**
+ * Proyeksi ringan `EventRegistration` untuk dashboard `/manajemen-event`.
+ *
+ * Hanya memuat kolom yang benar-benar dipakai ringkasan dashboard + grafik
+ * tren. Kolom berat (mis. `midtrans_snap_token`, `manual_payment_proof_url`,
+ * seluruh atribut anggota) sengaja tidak di-query agar hemat bandwidth dan
+ * cocok untuk Supabase Free Plan. Daftar lengkap tetap tersedia lewat
+ * `getEventRegistrationsAction` (halaman pendaftaran).
+ */
+export type EventRegistrationSummary = Pick<
+  EventRegistration,
+  | "id"
+  | "registration_code"
+  | "team_name"
+  | "institution"
+  | "origin_city"
+  | "payment_status"
+  | "total_amount"
+  | "created_at"
+  | "registration_batch"
+  | "category_id"
+  | "category"
+> & {
+  /** Hanya jumlah anggota yang dibutuhkan; cukup `id` untuk menghitung. */
+  members?: Pick<EventTeamMember, "id">[];
+};
+
+/**
+ * Hasil halaman (paginasi) `getEventRegistrationsAction`.
+ * `total` berasal dari `count: "exact"` PostgREST sehingga tetap akurat untuk
+ * indikator "menampilkan X dari Y tim" walau hanya sebagian baris yang dimuat.
+ */
+export interface EventRegistrationPage {
+  rows: EventRegistration[];
+  total: number;
+  hasMore: boolean;
+  page: number;
+  pageSize: number;
+}
+
+/** Ringkasan metrik daftar pendaftaran (dihitung di server, akurat lintas halaman). */
+export interface EventRegistrationMetrics {
+  total: number;
+  paidCount: number;
+  pendingVerificationCount: number;
+  pendingCount: number;
+  totalRevenue: number;
+}
+
+/**
+ * Ukuran halaman default untuk daftar pendaftaran admin.
+ *
+ * Ditempatkan di modul tipe (bukan `lib/actions/event-admin.ts` yang ber-`"use
+ * server"`) karena file server action hanya boleh mengekspor fungsi async.
+ */
+export const REGISTRATIONS_PAGE_SIZE = 50;
+
 export interface EventMemberVerification {
   id: string;
   member_id: string;

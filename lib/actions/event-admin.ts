@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag, unstable_cache } from "next/cache";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import {
@@ -14,11 +14,15 @@ import type {
   ActionResult,
   EventCategory,
   EventRegistration,
+  EventRegistrationMetrics,
+  EventRegistrationPage,
+  EventRegistrationSummary,
   EventSettings,
   EventTeamMember,
   PaymentStatus,
   RoleEvent,
 } from "@/types/event-registration";
+import { REGISTRATIONS_PAGE_SIZE } from "@/types/event-registration";
 
 async function checkEventRole(allowedRoles: RoleEvent[]) {
   const supabase = await createClient();
@@ -74,24 +78,34 @@ function toNullableIso(value: string | null | undefined): string | null {
   return new Date(t).toISOString();
 }
 
-export async function getEventSettingsAction(): Promise<
-  ActionResult<EventSettings>
-> {
-  const adminSupabase = createAdminClient();
-  const { data, error } = await (untypedFrom(adminSupabase, "event_settings")
-    .select("*")
-    .eq("id", EVENT_SETTINGS_ID)
-    .maybeSingle() as unknown as Promise<{
-    data: EventSettings | null;
-    error: unknown;
-  }>);
+/**
+ * Pengaturan event global (singleton) — jarang berubah.
+ *
+ * Di-cache lintas request dengan `unstable_cache` (memakai admin client tanpa
+ * cookie, jadi aman) untuk memangkas round-trip Supabase tiap kali dashboard
+ * dibuka. Cache di-invalidasi via tag `event-settings` pada setiap mutasi
+ * (`updateEventSettingsAction`).
+ */
+export const getEventSettingsAction = unstable_cache(
+  async (): Promise<ActionResult<EventSettings>> => {
+    const adminSupabase = createAdminClient();
+    const { data, error } = await (untypedFrom(adminSupabase, "event_settings")
+      .select("*")
+      .eq("id", EVENT_SETTINGS_ID)
+      .maybeSingle() as unknown as Promise<{
+      data: EventSettings | null;
+      error: unknown;
+    }>);
 
-  if (error || !data) {
-    return { success: false, error: "Gagal mengambil pengaturan event." };
-  }
+    if (error || !data) {
+      return { success: false, error: "Gagal mengambil pengaturan event." };
+    }
 
-  return { success: true, data };
-}
+    return { success: true, data };
+  },
+  ["event-settings"],
+  { tags: ["event-settings"], revalidate: 300 },
+);
 
 export async function updateEventSettingsAction(
   payload: Partial<EventSettingsInput>,
@@ -213,6 +227,9 @@ export async function updateEventSettingsAction(
   revalidatePath("/manajemen-event/timeline");
   revalidatePath("/manajemen-event/pembayaran");
   revalidatePath("/mrc");
+  // Invalidasi cache settings agar `getEventSettingsAction` tidak menyajikan
+  // data lama setelah pengaturan diubah.
+  updateTag("event-settings");
   return {
     success: true,
     data,
@@ -224,23 +241,38 @@ export async function updateEventSettingsAction(
 // Category Management
 // --------------------------------------------------------
 
-export async function getEventCategoriesAction(): Promise<
-  ActionResult<EventCategory[]>
-> {
-  const adminSupabase = createAdminClient();
-  const { data, error } = await (untypedFrom(adminSupabase, "event_categories")
-    .select("*")
-    .order("name", { ascending: true }) as unknown as Promise<{
-    data: EventCategory[] | null;
-    error: unknown;
-  }>);
+/**
+ * Daftar kategori lomba — jarang berubah.
+ *
+ * Di-cache lintas request dengan `unstable_cache` untuk memangkas round-trip
+ * Supabase. Cache di-invalidasi via tag `event-categories` pada setiap mutasi
+ * kategori (`saveEventCategoryAction`).
+ */
+export const getEventCategoriesAction = unstable_cache(
+  async (): Promise<ActionResult<EventCategory[]>> => {
+    const adminSupabase = createAdminClient();
+    const { data, error } = await (untypedFrom(
+      adminSupabase,
+      "event_categories",
+    )
+      .select("*")
+      .order("name", { ascending: true }) as unknown as Promise<{
+      data: EventCategory[] | null;
+      error: unknown;
+    }>);
 
-  if (error || !data) {
-    return { success: false, error: "Gagal mengambil daftar kategori lomba." };
-  }
+    if (error || !data) {
+      return {
+        success: false,
+        error: "Gagal mengambil daftar kategori lomba.",
+      };
+    }
 
-  return { success: true, data };
-}
+    return { success: true, data };
+  },
+  ["event-categories"],
+  { tags: ["event-categories"], revalidate: 300 },
+);
 
 export async function saveEventCategoryAction(
   categoryId: string | null,
@@ -280,6 +312,8 @@ export async function saveEventCategoryAction(
 
     revalidatePath("/manajemen-event");
     revalidatePath("/manajemen-event/kategori");
+    // Invalidasi cache kategori agar daftar tidak menyajikan data lama.
+    updateTag("event-categories");
     return { success: true, data, message: "Kategori berhasil diperbarui." };
   } else {
     const { data, error } = await (untypedFrom(
@@ -302,6 +336,8 @@ export async function saveEventCategoryAction(
 
     revalidatePath("/manajemen-event");
     revalidatePath("/manajemen-event/kategori");
+    // Invalidasi cache kategori agar daftar tidak menyajikan data lama.
+    updateTag("event-categories");
     return {
       success: true,
       data,
@@ -314,10 +350,110 @@ export async function saveEventCategoryAction(
 // Registration Management & Manual Payment Verification
 // --------------------------------------------------------
 
-export async function getEventRegistrationsAction(
-  categoryId?: string,
-  searchQuery?: string,
-): Promise<ActionResult<EventRegistration[]>> {
+/** Kolom eksplisit untuk daftar pendaftaran — menghindari `select *`.
+ *  Membuang kolom berat yang tak dipakai tabel (mis. `midtrans_snap_token`,
+ *  `midtrans_qr_url`, `rules_*`, `updated_at`) dan kolom anggota yang tak perlu
+ *  (`member_qr_token`) untuk menekan bandwidth (Supabase Free Plan). */
+const REGISTRATION_LIST_SELECT = `
+  id,
+  registration_code,
+  team_name,
+  institution,
+  origin_city,
+  team_email,
+  team_whatsapp,
+  payment_status,
+  total_amount,
+  manual_payment_proof_url,
+  access_token,
+  created_at,
+  category_id,
+  category:event_categories(id, name),
+  members:event_team_members(id, full_name, photo_url, identity_card_url, birth_date, role_in_team, verification_status)
+`;
+
+/**
+ * Daftar pendaftaran tim (terpaginasi).
+ *
+ * - `range(from, to)` + `count: "exact"` → satu request mengembalikan baris
+ *   halaman ini sekaligus total, sehingga payload per-load tetap kecil &
+ *   konstan (bukan tumbuh seiring data).
+ * - Kolom dibatasi lewat `REGISTRATION_LIST_SELECT`.
+ *
+ * Metrik ringkasan (total/lunas/pending) dihitung terpisah oleh
+ * `getEventRegistrationsMetricsAction` agar tetap akurat lintas halaman.
+ */
+export async function getEventRegistrationsAction(options?: {
+  categoryId?: string;
+  searchQuery?: string;
+  page?: number;
+  pageSize?: number;
+}): Promise<ActionResult<EventRegistrationPage>> {
+  const check = await checkEventRole([
+    "panitia-pendaftaran",
+    "panitia-verifikasi",
+    "panitia-pertandingan",
+  ]);
+  if (!check.authorized) {
+    return { success: false, error: check.error || "Akses ditolak." };
+  }
+
+  const pageSize = Math.max(1, options?.pageSize ?? REGISTRATIONS_PAGE_SIZE);
+  const page = Math.max(0, options?.page ?? 0);
+  const from = page * pageSize;
+  const to = from + pageSize - 1;
+
+  const adminSupabase = createAdminClient();
+  let query = untypedFrom(adminSupabase, "event_registrations")
+    .select(REGISTRATION_LIST_SELECT, { count: "exact" })
+    .order("created_at", { ascending: false })
+    .range(from, to);
+
+  if (options?.categoryId && options.categoryId !== "all") {
+    query = query.eq("category_id", options.categoryId);
+  }
+
+  if (options?.searchQuery && options.searchQuery.trim().length > 0) {
+    const q = options.searchQuery.trim();
+    query = query.or(
+      `team_name.ilike.%${q}%,registration_code.ilike.%${q}%,team_email.ilike.%${q}%,institution.ilike.%${q}%`,
+    );
+  }
+
+  const { data, error, count } = await (query as unknown as Promise<{
+    data: EventRegistration[] | null;
+    error: unknown;
+    count: number | null;
+  }>);
+
+  if (error || !data) {
+    return { success: false, error: "Gagal mengambil daftar pendaftaran." };
+  }
+
+  const total = count ?? data.length;
+  return {
+    success: true,
+    data: {
+      rows: data,
+      total,
+      hasMore: to + 1 < total,
+      page,
+      pageSize,
+    },
+  };
+}
+
+/**
+ * Metrik ringkasan pendaftaran (total, lunas, pending verifikasi, menunggu bayar,
+ * total pemasukan) — dihitung di server atas SELURUH baris.
+ *
+ * Hanya menarik 2 kolom (`payment_status`, `total_amount`) tanpa join, lalu
+ * diagregasi di server. Ini menjaga kartu metrik tetap akurat walau daftar
+ * utama terpaginasi, sekaligus hemat (1 request, tanpa data berat).
+ */
+export async function getEventRegistrationsMetricsAction(): Promise<
+  ActionResult<EventRegistrationMetrics>
+> {
   const check = await checkEventRole([
     "panitia-pendaftaran",
     "panitia-verifikasi",
@@ -328,34 +464,207 @@ export async function getEventRegistrationsAction(
   }
 
   const adminSupabase = createAdminClient();
-  let query = untypedFrom(adminSupabase, "event_registrations")
-    .select(
-      `
-      *,
-      category:event_categories(*),
-      members:event_team_members(*)
-    `,
-    )
-    .order("created_at", { ascending: false });
-
-  if (categoryId && categoryId !== "all") {
-    query = query.eq("category_id", categoryId);
-  }
-
-  if (searchQuery && searchQuery.trim().length > 0) {
-    const q = searchQuery.trim();
-    query = query.or(
-      `team_name.ilike.%${q}%,registration_code.ilike.%${q}%,team_email.ilike.%${q}%,institution.ilike.%${q}%`,
-    );
-  }
-
-  const { data, error } = await (query as unknown as Promise<{
-    data: EventRegistration[] | null;
+  const { data, error } = await (untypedFrom(
+    adminSupabase,
+    "event_registrations",
+  ).select("payment_status, total_amount") as unknown as Promise<{
+    data: Pick<EventRegistration, "payment_status" | "total_amount">[] | null;
     error: unknown;
   }>);
 
   if (error || !data) {
-    return { success: false, error: "Gagal mengambil daftar pendaftaran." };
+    return { success: false, error: "Gagal mengambil metrik pendaftaran." };
+  }
+
+  let paidCount = 0;
+  let pendingVerificationCount = 0;
+  let pendingCount = 0;
+  let totalRevenue = 0;
+
+  for (const row of data) {
+    if (row.payment_status === "paid") {
+      paidCount += 1;
+      totalRevenue += Number(row.total_amount) || 0;
+    } else if (row.payment_status === "pending_verification") {
+      pendingVerificationCount += 1;
+    } else if (row.payment_status === "pending") {
+      pendingCount += 1;
+    }
+  }
+
+  return {
+    success: true,
+    data: {
+      total: data.length,
+      paidCount,
+      pendingVerificationCount,
+      pendingCount,
+      totalRevenue,
+    },
+  };
+}
+
+/**
+ * Ekspor SELURUH data pendaftaran sebagai CSV (Q1: ekspor penuh).
+ *
+ * Hanya kolom yang dibutuhkan berkas CSV (tanpa anggota/foto/token) sehingga
+ * payload tetap kecil. CSV dibentuk di server; unduhan dilakukan di client
+ * lewat Blob, menghindari beban di sisi klien untuk dataset besar.
+ */
+export async function getEventRegistrationsExportAction(): Promise<
+  ActionResult<{ csv: string; filename: string; rowCount: number }>
+> {
+  const check = await checkEventRole([
+    "panitia-pendaftaran",
+    "panitia-verifikasi",
+    "panitia-pertandingan",
+  ]);
+  if (!check.authorized) {
+    return { success: false, error: check.error || "Akses ditolak." };
+  }
+
+  const adminSupabase = createAdminClient();
+  const { data, error } = await (untypedFrom(
+    adminSupabase,
+    "event_registrations",
+  )
+    .select(
+      `
+      registration_code,
+      team_name,
+      institution,
+      origin_city,
+      team_email,
+      team_whatsapp,
+      payment_status,
+      total_amount,
+      paid_at,
+      created_at,
+      category:event_categories(name)
+    `,
+    )
+    .order("created_at", { ascending: false }) as unknown as Promise<{
+    data:
+      | (Pick<
+          EventRegistration,
+          | "registration_code"
+          | "team_name"
+          | "institution"
+          | "origin_city"
+          | "team_email"
+          | "team_whatsapp"
+          | "payment_status"
+          | "total_amount"
+          | "paid_at"
+          | "created_at"
+        > & { category: { name: string } | null })[]
+      | null;
+    error: unknown;
+  }>);
+
+  if (error || !data) {
+    return { success: false, error: "Gagal mengekspor data pendaftaran." };
+  }
+
+  const headers = [
+    "Kode Registrasi",
+    "Nama Tim",
+    "Kategori",
+    "Instansi",
+    "Kota Asal",
+    "Email Tim",
+    "WhatsApp",
+    "Status Pembayaran",
+    "Total Biaya (Rp)",
+    "Tanggal Bayar",
+    "Tanggal Daftar",
+  ];
+
+  const escape = (value: string) => `"${value.replace(/"/g, '""')}"`;
+
+  const rows = data.map((r) =>
+    [
+      escape(r.registration_code),
+      escape(r.team_name),
+      escape(r.category?.name || ""),
+      escape(r.institution),
+      escape(r.origin_city || ""),
+      escape(r.team_email),
+      escape(r.team_whatsapp),
+      escape(r.payment_status),
+      escape(String(r.total_amount ?? "")),
+      escape(r.paid_at ? new Date(r.paid_at).toLocaleString("id-ID") : ""),
+      escape(
+        r.created_at ? new Date(r.created_at).toLocaleString("id-ID") : "",
+      ),
+    ].join(","),
+  );
+
+  // BOM agar Excel membaca UTF-8 dengan benar (tetap sesuai perilaku lama).
+  const csv = "\uFEFF" + [headers.join(","), ...rows].join("\n");
+
+  return {
+    success: true,
+    data: {
+      csv,
+      filename: `mrc-pendaftaran-${new Date().toISOString().slice(0, 10)}.csv`,
+      rowCount: data.length,
+    },
+  };
+}
+
+/**
+ * Proyeksi ringan pendaftaran untuk dashboard `/manajemen-event`.
+ *
+ * Memilih hanya kolom yang dipakai ringkasan dashboard & grafik tren, sehingga
+ * kolom berat (`midtrans_snap_token`, `manual_payment_proof_url`) dan seluruh
+ * atribut anggota (foto/identitas) tidak ikut dikirim. Ini menekan bandwidth
+ * request — penting untuk Supabase Free Plan. Data lengkap tetap diambil lewat
+ * `getEventRegistrationsAction` pada halaman pendaftaran.
+ *
+ * Sengaja TIDAK di-cache: data pendaftaran berubah cepat dan halaman ini
+ * memang untuk pemantauan real-time.
+ */
+export async function getEventRegistrationsSummaryAction(): Promise<
+  ActionResult<EventRegistrationSummary[]>
+> {
+  const check = await checkEventRole([
+    "panitia-pendaftaran",
+    "panitia-verifikasi",
+    "panitia-pertandingan",
+  ]);
+  if (!check.authorized) {
+    return { success: false, error: check.error || "Akses ditolak." };
+  }
+
+  const adminSupabase = createAdminClient();
+  const { data, error } = await (untypedFrom(
+    adminSupabase,
+    "event_registrations",
+  )
+    .select(
+      `
+      id,
+      registration_code,
+      team_name,
+      institution,
+      origin_city,
+      payment_status,
+      total_amount,
+      created_at,
+      registration_batch,
+      category_id,
+      category:event_categories(id, name),
+      members:event_team_members(id)
+    `,
+    )
+    .order("created_at", { ascending: false }) as unknown as Promise<{
+    data: EventRegistrationSummary[] | null;
+    error: unknown;
+  }>);
+
+  if (error || !data) {
+    return { success: false, error: "Gagal mengambil ringkasan pendaftaran." };
   }
 
   return { success: true, data };

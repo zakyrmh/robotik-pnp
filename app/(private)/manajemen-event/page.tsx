@@ -2,7 +2,7 @@ import { ShieldAlert } from "lucide-react";
 import { requireEventAdminOrRedirect } from "@/lib/event-auth";
 import {
   getEventCategoriesAction,
-  getEventRegistrationsAction,
+  getEventRegistrationsSummaryAction,
   getEventSettingsAction,
 } from "@/lib/actions/event-admin";
 import { MrcDashboardOverview } from "@/components/event/mrc-dashboard-overview";
@@ -35,7 +35,7 @@ export default async function EventManagementDashboardPage() {
 
   const [categoriesRes, registrationsRes, settingsRes] = await Promise.all([
     getEventCategoriesAction(),
-    getEventRegistrationsAction(),
+    getEventRegistrationsSummaryAction(),
     getEventSettingsAction(),
   ]);
 

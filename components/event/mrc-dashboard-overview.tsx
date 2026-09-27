@@ -6,7 +6,7 @@ import { getBatchPhase, PHASE_LABELS } from "@/lib/event-batch";
 import type {
   EventSettings,
   EventCategory,
-  EventRegistration,
+  EventRegistrationSummary,
   RoleEvent,
 } from "@/types/event-registration";
 import {
@@ -19,11 +19,12 @@ import {
   CreditCard,
   Building2,
 } from "lucide-react";
+import { MrcRegistrationTrendChart } from "@/components/event/mrc-registration-trend-chart";
 
 interface MrcDashboardOverviewProps {
   settings: EventSettings | null;
   categories: EventCategory[];
-  registrations: EventRegistration[];
+  registrations: EventRegistrationSummary[];
   roleEvent: RoleEvent | undefined;
 }
 
@@ -150,6 +151,9 @@ export function MrcDashboardOverview({
           </p>
         </div>
       </div>
+
+      {/* ── Grafik Tren Pendaftaran Harian (Chart.js) ── */}
+      <MrcRegistrationTrendChart registrations={registrations} />
 
       {/* ── Status Kuota Kategori & Pintasan Cepat ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
