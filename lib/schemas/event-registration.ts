@@ -69,6 +69,15 @@ const mrcImageUrlSchema = (label: string) =>
  */
 export const HARD_MAX_TEAM_MEMBERS = 20;
 
+/**
+ * Batas minimal anggota per tim — MRC mewajibkan Ketua Tim + 1 anggota.
+ *
+ * Ditegakkan berlapis: UI membuka form dengan 2 anggota, skema ini menolak
+ * payload <2, dan `registerEventAction` memverifikasi ulang terhadap data
+ * kategori. Aturan ini berlaku untuk semua kategori (wajib ≥2).
+ */
+export const MIN_TEAM_MEMBERS = 2;
+
 export const eventMemberSchema = z.object({
   full_name: z
     .string()
@@ -140,7 +149,10 @@ export const eventRegistrationSchema = z.object({
   form_rendered_at: z.coerce.number().optional(),
   members: z
     .array(eventMemberSchema)
-    .min(1, "Minimal harus ada 1 anggota tim")
+    .min(
+      MIN_TEAM_MEMBERS,
+      `Minimal ${MIN_TEAM_MEMBERS} anggota tim (Ketua Tim + 1 anggota)`,
+    )
     .max(
       HARD_MAX_TEAM_MEMBERS,
       `Jumlah anggota tim tidak boleh melebihi ${HARD_MAX_TEAM_MEMBERS} orang`,

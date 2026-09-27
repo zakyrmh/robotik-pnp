@@ -75,7 +75,14 @@ describe("eventRegistrationSchema with pipeline URLs", () => {
       team_email: "tim@example.com",
       team_whatsapp: "08123456789",
       accept_rules: true,
-      members: [VALID_MEMBER],
+      members: [
+        VALID_MEMBER,
+        {
+          ...VALID_MEMBER,
+          full_name: "Anggota Kedua",
+          role_in_team: "Programmer",
+        },
+      ],
     });
     expect(res.success).toBe(true);
   });
@@ -97,8 +104,29 @@ describe("eventRegistrationSchema with pipeline URLs", () => {
           birth_date: "2007-10-31",
           role_in_team: "Ketua Tim",
         },
+        {
+          full_name: "Junior Member Dua",
+          photo_url: "/api/r2/mrc/photos/photo-2.webp",
+          identity_card_url: "/api/r2/mrc/id-cards/card-2.webp",
+          birth_date: "2008-01-15",
+          role_in_team: "Anggota",
+        },
       ],
     });
     expect(res.success).toBe(true);
+  });
+
+  it("rejects payload with only one member (minimum is 2)", () => {
+    const res = eventRegistrationSchema.safeParse({
+      category_id: "cc205295-92eb-456f-9d00-d49a8ad4c470",
+      team_name: "Robosoccer PNP A",
+      institution: "Politeknik Negeri Padang",
+      origin_city: "Kota Padang",
+      team_email: "tim@example.com",
+      team_whatsapp: "08123456789",
+      accept_rules: true,
+      members: [VALID_MEMBER],
+    });
+    expect(res.success).toBe(false);
   });
 });

@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/server";
 import {
   eventRegistrationSchema,
   isMrcImageUrl,
+  MIN_TEAM_MEMBERS,
   type EventRegistrationInput,
 } from "@/lib/schemas/event-registration";
 import {
@@ -206,6 +207,17 @@ export async function registerEventAction(
     return {
       success: false,
       error: "Pendaftaran untuk kategori lomba ini sudah ditutup.",
+    };
+  }
+
+  // Setiap tim wajib mendaftarkan minimal 2 anggota (Ketua Tim + 1 anggota).
+  // Skema Zod sudah menolak <2, guard ini adalah pertahanan berlapis yang
+  // berlaku untuk semua kategori tanpa memandang `max_team_members`.
+  if (validated.data.members.length < MIN_TEAM_MEMBERS) {
+    return {
+      success: false,
+      error:
+        "Setiap tim wajib mendaftarkan minimal 2 anggota (Ketua Tim + 1 anggota).",
     };
   }
 

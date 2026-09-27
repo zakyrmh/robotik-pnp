@@ -4,6 +4,7 @@ import {
   eventMemberSchema,
   isMrcImageUrl,
   HARD_MAX_TEAM_MEMBERS,
+  MIN_TEAM_MEMBERS,
 } from "@/lib/schemas/event-registration";
 
 const member = (over: Partial<Record<string, unknown>> = {}) => ({
@@ -79,17 +80,20 @@ describe("K2 — Batas jumlah anggota ditegakkan di server", () => {
     ).toBe(false);
   });
 
-  it("tetap menerima jumlah wajar (1-2 anggota)", () => {
-    expect(
-      eventRegistrationSchema.safeParse({ ...base, members: [member()] })
-        .success,
-    ).toBe(true);
+  it("menerima jumlah minimum yang diwajibkan (2 anggota)", () => {
     expect(
       eventRegistrationSchema.safeParse({
         ...base,
         members: [member(), member({ full_name: "Anggota Dua" })],
       }).success,
     ).toBe(true);
+  });
+
+  it(`menolak kurang dari ${MIN_TEAM_MEMBERS} anggota (hanya 1)`, () => {
+    expect(
+      eventRegistrationSchema.safeParse({ ...base, members: [member()] })
+        .success,
+    ).toBe(false);
   });
 
   it("menolak array kosong", () => {
@@ -135,7 +139,7 @@ describe("S-4/S-5 — Batas panjang string & format WhatsApp", () => {
         eventRegistrationSchema.safeParse({
           ...base,
           team_whatsapp: good,
-          members: [member()],
+          members: [member(), member({ full_name: "Anggota Dua" })],
         }).success,
         `harusnya menerima: ${good}`,
       ).toBe(true);
@@ -149,6 +153,11 @@ describe("S-1/S-2 — Field anti-bot pada skema", () => {
     photo_url: "/api/r2/ukm-robotik-pnp/foto.webp",
     role_in_team: "Anggota",
   };
+  const memberDua = {
+    full_name: "Anggota Dua",
+    photo_url: "/api/r2/ukm-robotik-pnp/foto-2.webp",
+    role_in_team: "Programmer",
+  };
   const base = {
     category_id: "272a043a-ce3e-4dba-8418-222fe720a2dd",
     team_name: "Tim Robotik",
@@ -157,7 +166,7 @@ describe("S-1/S-2 — Field anti-bot pada skema", () => {
     team_email: "tim@example.com",
     team_whatsapp: "081234567890",
     accept_rules: true as const,
-    members: [member],
+    members: [member, memberDua],
   };
 
   it("menerima payload lengkap dengan field anti-bot", () => {

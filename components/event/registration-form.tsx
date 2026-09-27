@@ -9,6 +9,7 @@ import {
   uploadMemberIdentityCardAction,
 } from "@/lib/actions/mrc-image-upload";
 import { registerEventAction } from "@/lib/actions/event-registration";
+import { MIN_TEAM_MEMBERS } from "@/lib/schemas/event-registration";
 import {
   MRC_ACCEPT_ATTR,
   MRC_ALLOWED_EXTENSIONS,
@@ -200,6 +201,15 @@ export function RegistrationForm({
       isUploading: false,
       isUploadingIdCard: false,
     },
+    {
+      full_name: "",
+      photo_url: "",
+      identity_card_url: "",
+      birth_date: "",
+      role_in_team: "Anggota",
+      isUploading: false,
+      isUploadingIdCard: false,
+    },
   ]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -228,7 +238,7 @@ export function RegistrationForm({
   };
 
   const removeMember = (index: number) => {
-    if (members.length <= 1) return;
+    if (members.length <= MIN_TEAM_MEMBERS) return;
     setMembers(members.filter((_, i) => i !== index));
   };
 
@@ -304,6 +314,14 @@ export function RegistrationForm({
     e.preventDefault();
     setErrorMessage(null);
     setFieldErrors({});
+
+    // Setiap tim wajib mengisi minimal 2 anggota (Ketua Tim + 1 anggota).
+    if (members.length < MIN_TEAM_MEMBERS) {
+      setErrorMessage(
+        `Setiap tim wajib mendaftarkan minimal ${MIN_TEAM_MEMBERS} anggota (Ketua Tim + 1 anggota).`,
+      );
+      return;
+    }
 
     // Validate photos, identity cards, and birth date
     for (let i = 0; i < members.length; i++) {
@@ -619,9 +637,14 @@ export function RegistrationForm({
       {/* Anggota Tim & Upload Foto */}
       <div className="space-y-4">
         <div className="flex items-center justify-between border-b border-border pb-2">
-          <h3 className="text-lg font-semibold text-foreground">
-            Anggota Tim (Maks {category.max_team_members} Orang)
-          </h3>
+          <div className="space-y-0.5">
+            <h3 className="text-lg font-semibold text-foreground">
+              Anggota Tim ({MIN_TEAM_MEMBERS}–{category.max_team_members} Orang)
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              Minimal Ketua Tim + 1 anggota.
+            </p>
+          </div>
           {members.length < category.max_team_members && (
             <button
               type="button"
@@ -642,7 +665,7 @@ export function RegistrationForm({
               <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                 Anggota #{idx + 1}
               </span>
-              {members.length > 1 && (
+              {members.length > MIN_TEAM_MEMBERS && (
                 <button
                   type="button"
                   onClick={() => removeMember(idx)}
