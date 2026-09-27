@@ -3,7 +3,9 @@ import { requireEventAdminOrRedirect } from "@/lib/event-auth";
 import {
   getEventCategoriesAction,
   getEventRegistrationsAction,
+  getEventRegistrationsMetricsAction,
 } from "@/lib/actions/event-admin";
+import { REGISTRATIONS_PAGE_SIZE } from "@/types/event-registration";
 import { RegistrationTable } from "@/components/event/registration-table";
 
 export default async function EventRegistrationsPage() {
@@ -36,13 +38,24 @@ export default async function EventRegistrationsPage() {
     );
   }
 
-  const [registrationsRes, categoriesRes] = await Promise.all([
-    getEventRegistrationsAction(),
+  const [registrationsRes, categoriesRes, metricsRes] = await Promise.all([
+    getEventRegistrationsAction({ pageSize: REGISTRATIONS_PAGE_SIZE }),
     getEventCategoriesAction(),
+    getEventRegistrationsMetricsAction(),
   ]);
 
-  const registrations = registrationsRes.success ? registrationsRes.data : [];
+  const pageData = registrationsRes.success ? registrationsRes.data : null;
+  const registrations = pageData?.rows ?? [];
   const categories = categoriesRes.success ? categoriesRes.data : [];
+  const metrics = metricsRes.success
+    ? metricsRes.data
+    : {
+        total: 0,
+        paidCount: 0,
+        pendingVerificationCount: 0,
+        pendingCount: 0,
+        totalRevenue: 0,
+      };
 
   return (
     <main className="mx-auto max-w-7xl space-y-6">
@@ -62,6 +75,11 @@ export default async function EventRegistrationsPage() {
         </h2>
         <RegistrationTable
           initialRegistrations={registrations}
+          initialTotal={pageData?.total ?? registrations.length}
+          initialHasMore={pageData?.hasMore ?? false}
+          initialPage={pageData?.page ?? 0}
+          pageSize={pageData?.pageSize ?? REGISTRATIONS_PAGE_SIZE}
+          initialMetrics={metrics}
           categories={categories}
           isSuperAdmin={auth.isSuperAdmin}
         />

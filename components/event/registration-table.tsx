@@ -7,10 +7,13 @@ import {
   updatePaymentStatusAction,
   verifyManualPaymentAction,
   purgeOldEventDataAction,
+  getEventRegistrationsAction,
+  getEventRegistrationsExportAction,
 } from "@/lib/actions/event-admin";
 import type {
   EventRegistration,
   EventCategory,
+  EventRegistrationMetrics,
   PaymentStatus,
 } from "@/types/event-registration";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +39,16 @@ import { cn } from "@/lib/utils";
 
 interface RegistrationTableProps {
   initialRegistrations: EventRegistration[];
+  /** Total seluruh tim di server (untuk indikator X dari Y & paginasi). */
+  initialTotal: number;
+  /** Apakah masih ada baris berikutnya yang belum dimuat. */
+  initialHasMore: boolean;
+  /** Halaman (0-based) yang sedang dimuat. */
+  initialPage: number;
+  /** Ukuran halaman untuk permintaan "muat lebih banyak". */
+  pageSize: number;
+  /** Metrik ringkasan dari server (akurat lintas halaman). */
+  initialMetrics: EventRegistrationMetrics;
   categories?: EventCategory[];
   isSuperAdmin?: boolean;
 }
@@ -55,11 +68,23 @@ const statusStyle: Record<string, string> = {
 
 export function RegistrationTable({
   initialRegistrations,
+  initialTotal,
+  initialHasMore,
+  initialPage,
+  pageSize,
+  initialMetrics,
   categories = [],
   isSuperAdmin,
 }: RegistrationTableProps) {
   const [registrations, setRegistrations] =
     useState<EventRegistration[]>(initialRegistrations);
+  const [total, setTotal] = useState(initialTotal);
+  const [hasMore, setHasMore] = useState(initialHasMore);
+  const [page, setPage] = useState(initialPage);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [loadMoreError, setLoadMoreError] = useState<string | null>(null);
+  const [metrics, setMetrics] =
+    useState<EventRegistrationMetrics>(initialMetrics);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
@@ -79,6 +104,7 @@ export function RegistrationTable({
 
   const [isPurging, setIsPurging] = useState(false);
   const [purgeMessage, setPurgeMessage] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Filtered registrations
   const filtered = useMemo(() => {
@@ -105,32 +131,12 @@ export function RegistrationTable({
     });
   }, [registrations, search, statusFilter, categoryFilter]);
 
-  // Metric breakdown
-  const metrics = useMemo(() => {
-    const total = registrations.length;
-    const paid = registrations.filter((r) => r.payment_status === "paid");
-    const pendingVerification = registrations.filter(
-      (r) => r.payment_status === "pending_verification",
-    );
-    const pending = registrations.filter((r) => r.payment_status === "pending");
-    const totalRevenue = paid.reduce(
-      (acc, r) => acc + (Number(r.total_amount) || 0),
-      0,
-    );
-
-    return {
-      total,
-      paidCount: paid.length,
-      pendingVerificationCount: pendingVerification.length,
-      pendingCount: pending.length,
-      totalRevenue,
-    };
-  }, [registrations]);
-
   const handleStatusChange = async (
     regId: string,
     newStatus: PaymentStatus,
   ) => {
+    const previous = registrations.find((r) => r.id === regId);
+    const oldStatus = previous?.payment_status;
     const res = await updatePaymentStatusAction(regId, newStatus);
     if (res.success) {
       setRegistrations((prev) =>
@@ -138,9 +144,61 @@ export function RegistrationTable({
           r.id === regId ? { ...r, payment_status: newStatus } : r,
         ),
       );
+      // Sinkronkan metrik lokal agar kartu ringkasan tetap akurat tanpa refetch.
+      if (previous && oldStatus && oldStatus !== newStatus) {
+        setMetrics((m) => {
+          const next = { ...m };
+          const amount = Number(previous.total_amount) || 0;
+          if (oldStatus === "paid") {
+            next.paidCount -= 1;
+            next.totalRevenue -= amount;
+          } else if (oldStatus === "pending_verification") {
+            next.pendingVerificationCount -= 1;
+          } else if (oldStatus === "pending") {
+            next.pendingCount -= 1;
+          }
+          if (newStatus === "paid") {
+            next.paidCount += 1;
+            next.totalRevenue += amount;
+          } else if (newStatus === "pending_verification") {
+            next.pendingVerificationCount += 1;
+          } else if (newStatus === "pending") {
+            next.pendingCount += 1;
+          }
+          return next;
+        });
+      }
     } else {
       alert(res.error || "Gagal mengubah status pembayaran");
     }
+  };
+
+  const handleLoadMore = async () => {
+    if (isLoadingMore || !hasMore) return;
+    setIsLoadingMore(true);
+    setLoadMoreError(null);
+
+    const res = await getEventRegistrationsAction({
+      page: page + 1,
+      pageSize,
+    });
+
+    setIsLoadingMore(false);
+
+    if (!res.success) {
+      setLoadMoreError(res.error || "Gagal memuat data berikutnya.");
+      return;
+    }
+
+    // Hindari duplikasi baris bila ada perubahan di antara permintaan.
+    setRegistrations((prev) => {
+      const seen = new Set(prev.map((r) => r.id));
+      const appended = res.data.rows.filter((r) => !seen.has(r.id));
+      return [...prev, ...appended];
+    });
+    setTotal(res.data.total);
+    setHasMore(res.data.hasMore);
+    setPage(res.data.page);
   };
 
   const handleVerifyManualInModal = async (action: "approve" | "reject") => {
@@ -163,6 +221,8 @@ export function RegistrationTable({
     if (res.success) {
       const updatedStatus: PaymentStatus =
         action === "approve" ? "paid" : "rejected";
+      const oldStatus = selectedReg.payment_status;
+      const amount = Number(selectedReg.total_amount) || 0;
       setRegistrations((prev) =>
         prev.map((r) =>
           r.id === selectedReg.id
@@ -187,6 +247,23 @@ export function RegistrationTable({
             }
           : null,
       );
+      // Sinkronkan metrik lokal (verifikasi mengubah status pending -> paid/rejected).
+      setMetrics((m) => {
+        const next = { ...m };
+        if (oldStatus === "pending_verification") {
+          next.pendingVerificationCount -= 1;
+        } else if (oldStatus === "paid") {
+          next.paidCount -= 1;
+          next.totalRevenue -= amount;
+        } else if (oldStatus === "pending") {
+          next.pendingCount -= 1;
+        }
+        if (updatedStatus === "paid") {
+          next.paidCount += 1;
+          next.totalRevenue += amount;
+        }
+        return next;
+      });
       setShowRejectForm(false);
       setRejectionReason("");
     } else {
@@ -241,51 +318,32 @@ export function RegistrationTable({
     return `https://wa.me/${formattedPhone}?text=${message}`;
   };
 
-  const exportToCsv = () => {
-    if (filtered.length === 0) return;
+  const exportToCsv = async () => {
+    if (isExporting) return;
+    setIsExporting(true);
 
-    const headers = [
-      "Kode Registrasi",
-      "Nama Tim",
-      "Kategori",
-      "Instansi",
-      "Kota Asal",
-      "Email Tim",
-      "WhatsApp",
-      "Status Pembayaran",
-      "Total Biaya (Rp)",
-      "Tanggal Bayar",
-      "Tanggal Daftar",
-    ];
+    // Ekspor PENUH dari server (bukan hanya baris yang dimuat), lalu unduh
+    // di client lewat Blob. Ini menjaga berkas tetap lengkap walau daftar
+    // di layar terpaginasi.
+    const res = await getEventRegistrationsExportAction();
+    setIsExporting(false);
 
-    const rows = filtered.map((r) => [
-      `"${r.registration_code}"`,
-      `"${r.team_name.replace(/"/g, '""')}"`,
-      `"${(r.category?.name || "").replace(/"/g, '""')}"`,
-      `"${r.institution.replace(/"/g, '""')}"`,
-      `"${(r.origin_city || "").replace(/"/g, '""')}"`,
-      `"${r.team_email}"`,
-      `"${r.team_whatsapp}"`,
-      `"${r.payment_status}"`,
-      `"${r.total_amount}"`,
-      `"${r.paid_at ? new Date(r.paid_at).toLocaleString("id-ID") : ""}"`,
-      `"${r.created_at ? new Date(r.created_at).toLocaleString("id-ID") : ""}"`,
-    ]);
+    if (!res.success) {
+      alert(res.error || "Gagal mengekspor data pendaftaran.");
+      return;
+    }
 
-    const csvContent =
-      "\uFEFF" +
-      [headers.join(","), ...rows.map((row) => row.join(","))].join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob([res.data.csv], {
+      type: "text/csv;charset=utf-8;",
+    });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute(
-      "download",
-      `mrc-pendaftaran-${new Date().toISOString().slice(0, 10)}.csv`,
-    );
+    link.setAttribute("download", res.data.filename);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -444,17 +502,25 @@ export function RegistrationTable({
             variant="secondary"
             className="font-mono text-micro tabular-nums py-1.5 px-2.5"
           >
-            {filtered.length} / {registrations.length} tim
+            {filtered.length} / {registrations.length} ditampilkan
+            {registrations.length < total ? ` • ${total} total` : ""}
           </Badge>
 
           <button
             onClick={exportToCsv}
-            disabled={filtered.length === 0}
-            title="Ekspor daftar pendaftaran ke format file CSV"
+            disabled={isExporting || total === 0}
+            title="Ekspor SELURUH data pendaftaran ke format file CSV"
             className="inline-flex min-h-[44px] items-center gap-1.5 rounded-md border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-secondary disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <Download className="size-4 text-primary" aria-hidden="true" />
-            <span>Ekspor CSV</span>
+            {isExporting ? (
+              <Loader2
+                className="size-4 animate-spin text-primary"
+                aria-hidden="true"
+              />
+            ) : (
+              <Download className="size-4 text-primary" aria-hidden="true" />
+            )}
+            <span>{isExporting ? "Menyiapkan..." : "Ekspor CSV"}</span>
           </button>
 
           {isSuperAdmin && (
@@ -834,6 +900,44 @@ export function RegistrationTable({
           </table>
         </div>
       </div>
+
+      {/* ── Paginasi: Muat Lebih Banyak ── */}
+      {(hasMore || loadMoreError) && (
+        <div className="flex flex-col items-center gap-2">
+          {loadMoreError && (
+            <p role="alert" className="text-xs font-medium text-destructive">
+              {loadMoreError}
+            </p>
+          )}
+          {hasMore && (
+            <button
+              onClick={handleLoadMore}
+              disabled={isLoadingMore}
+              className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-border bg-card px-5 py-2.5 text-xs font-semibold text-foreground transition-colors hover:bg-secondary disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {isLoadingMore ? (
+                <>
+                  <Loader2
+                    className="size-4 animate-spin text-primary"
+                    aria-hidden="true"
+                  />
+                  <span>Memuat...</span>
+                </>
+              ) : (
+                <>
+                  <ArrowRight
+                    className="size-4 text-primary"
+                    aria-hidden="true"
+                  />
+                  <span>
+                    Muat Lebih Banyak ({registrations.length}/{total})
+                  </span>
+                </>
+              )}
+            </button>
+          )}
+        </div>
+      )}
 
       {/* ── Modal Pratinjau Lightbox Gambar Bukti Transfer ── */}
       {lightboxImage && (
