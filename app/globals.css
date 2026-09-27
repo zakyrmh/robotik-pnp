@@ -60,6 +60,7 @@
   --font-mono: ui-monospace, "SFMono-Regular", Menlo, monospace;
 
   /* Skala Font — mobile-first, pakai clamp() supaya tidak "meledak" di layar kecil */
+  --text-nano: 0.625rem; /* 10px — label eyebrow terkecil (mis. judul grup sidebar) */
   --text-micro: 0.6875rem; /* 11px */
   --text-sm: 0.8125rem; /* 13px */
   --text-base: clamp(0.875rem, 0.8rem + 0.2vw, 0.9375rem); /* 14–15px */
