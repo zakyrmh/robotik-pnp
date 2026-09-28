@@ -1,6 +1,5 @@
 import { vi, describe, it, expect, beforeEach } from "vitest";
 import { encryptToken, decryptToken } from "@/lib/utils/crypto";
-import { extractExifDateTime } from "@/lib/utils/exif";
 import {
   generateAttendanceQR,
   scanAttendanceQR,
@@ -94,54 +93,6 @@ describe("Symmetric Crypto Helper", () => {
 
   it("should throw an error for an invalid token format", () => {
     expect(() => decryptToken("invalidtoken")).toThrow("Invalid token format");
-  });
-});
-
-describe("EXIF JPEG DateTimeOriginal Parser", () => {
-  it("should return null for non-JPEG buffers", () => {
-    const fakeBuffer = Buffer.from([1, 2, 3, 4, 5]);
-    const date = extractExifDateTime(fakeBuffer);
-    expect(date).toBeNull();
-  });
-
-  it("should parse DateTimeOriginal from a custom Big-Endian EXIF JPEG buffer", () => {
-    // Construct a minimal valid JPEG buffer with APP1 EXIF segment (Big Endian)
-    const soi = [0xff, 0xd8];
-    const app1Marker = [0xff, 0xe1];
-    const app1Length = [0x00, 0x36];
-    const exifHeader = [0x45, 0x78, 0x69, 0x66, 0x00, 0x00];
-    const tiffHeader = [0x4d, 0x4d, 0x00, 0x2a, 0x00, 0x00, 0x00, 0x08];
-
-    const ifd0 = [
-      0x00, 0x01, 0x87, 0x69, 0x00, 0x04, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00,
-      0x00, 0x1a, 0x00, 0x00, 0x00, 0x00,
-    ];
-
-    const exifIfd = [
-      0x00, 0x01, 0x90, 0x03, 0x00, 0x02, 0x00, 0x00, 0x00, 0x14, 0x00, 0x00,
-      0x00, 0x2c, 0x00, 0x00, 0x00, 0x00,
-    ];
-
-    const dateStr = Array.from(Buffer.from("2026:05:27 12:00:00\0", "utf8"));
-
-    const fullArray = [
-      ...soi,
-      ...app1Marker,
-      ...app1Length,
-      ...exifHeader,
-      ...tiffHeader,
-      ...ifd0,
-      ...exifIfd,
-      ...dateStr,
-    ];
-    const buffer = Buffer.from(fullArray);
-
-    const date = extractExifDateTime(buffer);
-    expect(date).not.toBeNull();
-    expect(date?.getFullYear()).toBe(2026);
-    expect(date?.getMonth()).toBe(4);
-    expect(date?.getDate()).toBe(27);
-    expect(date?.getHours()).toBe(12);
   });
 });
 

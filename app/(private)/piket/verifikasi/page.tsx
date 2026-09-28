@@ -24,8 +24,6 @@ interface RawPiketLog {
   is_final: boolean;
   rejection_reason: string | null;
   verified_at: string | null;
-  photo_taken_at_before: string | null;
-  photo_taken_at_after: string | null;
   schedule_id: string | null;
   piket_schedules: {
     id: string;
@@ -191,8 +189,6 @@ export default async function PiketVerifikasiPage() {
       is_final,
       rejection_reason,
       verified_at,
-      photo_taken_at_before,
-      photo_taken_at_after,
       schedule_id,
       piket_schedules (
         id,
@@ -277,8 +273,6 @@ export default async function PiketVerifikasiPage() {
         is_final: log.is_final ?? false,
         rejection_reason: log.rejection_reason || "",
         verified_at: log.verified_at || "",
-        photo_taken_at_before: log.photo_taken_at_before || "",
-        photo_taken_at_after: log.photo_taken_at_after || "",
         schedule_id: log.schedule_id || "",
         academic_period:
           log.piket_schedules?.academic_period || availablePeriods[0],

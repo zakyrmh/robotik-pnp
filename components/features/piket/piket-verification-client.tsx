@@ -685,28 +685,6 @@ export function PiketVerificationClient({
                           <PiketLogStatusBadge status={status} />
                         </div>
 
-                        {(log.photo_taken_at_before ||
-                          log.photo_taken_at_after) && (
-                          <p className="text-[10px] font-mono text-slate-500 dark:text-slate-400">
-                            Foto diambil:{" "}
-                            {log.photo_taken_at_before
-                              ? new Date(
-                                  log.photo_taken_at_before,
-                                ).toLocaleDateString("id-ID", {
-                                  dateStyle: "medium",
-                                })
-                              : "-"}
-                            {" → "}
-                            {log.photo_taken_at_after
-                              ? new Date(
-                                  log.photo_taken_at_after,
-                                ).toLocaleDateString("id-ID", {
-                                  dateStyle: "medium",
-                                })
-                              : "-"}
-                          </p>
-                        )}
-
                         {status === "rejected" && log.rejection_reason && (
                           <div className="p-2 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-xs">
                             <p className="font-semibold text-red-700 dark:text-red-300 font-mono text-[10px] uppercase">
@@ -934,29 +912,6 @@ export function PiketVerificationClient({
                             </td>
                             <td className="p-3 font-mono text-slate-600 dark:text-slate-400">
                               {log.schedule_day}
-                              {(log.photo_taken_at_before ||
-                                log.photo_taken_at_after) && (
-                                <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
-                                  Foto:{" "}
-                                  {log.photo_taken_at_before
-                                    ? new Date(
-                                        log.photo_taken_at_before,
-                                      ).toLocaleDateString("id-ID", {
-                                        day: "numeric",
-                                        month: "short",
-                                      })
-                                    : "-"}
-                                  {" → "}
-                                  {log.photo_taken_at_after
-                                    ? new Date(
-                                        log.photo_taken_at_after,
-                                      ).toLocaleDateString("id-ID", {
-                                        day: "numeric",
-                                        month: "short",
-                                      })
-                                    : "-"}
-                                </span>
-                              )}
                             </td>
                             <td className="p-3">
                               <PiketLogStatusBadge status={status} />

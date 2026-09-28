@@ -10,7 +10,6 @@ import {
   voidPiketFine,
   getPiketComplianceAction,
 } from "./piket";
-import { extractExifDateTime } from "@/lib/utils/exif";
 import {
   getPiketWeekInfo,
   isDateInPiketWeek,
@@ -57,11 +56,6 @@ const { mockSupabase } = vi.hoisted(() => {
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn().mockResolvedValue(mockSupabase),
-}));
-
-// Mock EXIF utility
-vi.mock("@/lib/utils/exif", () => ({
-  extractExifDateTime: vi.fn(),
 }));
 
 // Mock Cloudflare R2 storage
@@ -342,156 +336,6 @@ describe("Piket Server Action - submitPiketReport", () => {
     expect(res.message).toContain("sudah mengunggah laporan piket");
   });
 
-  it("should reject if EXIF date is outside the current piket week", async () => {
-    mockSupabase.auth.getUser.mockResolvedValueOnce({
-      data: { user: { id: "user-id" } },
-    });
-    mockSupabase.single.mockResolvedValueOnce({ data: { role: "anggota" } }); // profile
-
-    const weekInfo = getPiketWeekInfo(new Date());
-    mockSupabase.single.mockResolvedValueOnce({
-      data: {
-        id: "sched-id",
-        week_number: weekInfo.weekNumber,
-        room_target: "workshop_dan_sekretariat",
-      },
-    }); // schedule
-
-    // Mock membership exists
-    mockSupabase.maybeSingle.mockResolvedValueOnce({
-      data: { id: "membership-id" },
-      error: null,
-    });
-
-    // Mock no existing weekly log
-    mockSupabase.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
-
-    // Mock EXIF date extractor to return a past date (2 weeks ago)
-    const pastDate = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
-    vi.mocked(extractExifDateTime).mockReturnValue(pastDate);
-
-    const formData = new FormData();
-    formData.append("schedule_id", "sched-id");
-    formData.append("notes", "cleaned the lab");
-    formData.append(
-      "photo_before",
-      new File([Buffer.from("before")], "before.jpg", { type: "image/jpeg" }),
-    );
-    formData.append(
-      "photo_after",
-      new File([Buffer.from("after")], "after.jpg", { type: "image/jpeg" }),
-    );
-
-    const res = await submitPiketReport(formData);
-    expect(res.success).toBe(false);
-    expect(res.error?.code).toBe("METADATA_MISMATCH");
-    expect(res.message).toContain(
-      "Tanggal pengambilan foto (EXIF) tidak cocok",
-    );
-  });
-
-  it("should accept an EXIF photo taken on a different day within the same week", async () => {
-    mockSupabase.auth.getUser.mockResolvedValueOnce({
-      data: { user: { id: "user-id" } },
-    });
-    mockSupabase.single.mockResolvedValueOnce({ data: { role: "anggota" } }); // profile
-
-    const weekInfo = getPiketWeekInfo(new Date());
-    mockSupabase.single.mockResolvedValueOnce({
-      data: {
-        id: "sched-id",
-        week_number: weekInfo.weekNumber,
-        room_target: "workshop_dan_sekretariat",
-      },
-    }); // schedule
-
-    // Mock membership exists
-    mockSupabase.maybeSingle.mockResolvedValueOnce({
-      data: { id: "membership-id" },
-      error: null,
-    });
-
-    // Mock no existing weekly log
-    mockSupabase.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
-
-    // Foto diambil awal pekan berjalan (Senin 00:01 waktu lokal — selalu
-    // di masa lalu dan dalam rentang pekan), upload di hari lain
-    // dalam pekan yang sama → tetap diterima.
-    const earlyInWeek = new Date(weekInfo.monday.getTime() + 60 * 1000);
-    vi.mocked(extractExifDateTime).mockReturnValue(earlyInWeek);
-
-    // Mock DB insertion
-    mockSupabase.insert.mockResolvedValueOnce({ error: null });
-
-    const formData = new FormData();
-    formData.append("schedule_id", "sched-id");
-    formData.append("notes", "cleaned the lab");
-    formData.append(
-      "photo_before",
-      new File([Buffer.from("before")], "before.jpg", { type: "image/jpeg" }),
-    );
-    formData.append(
-      "photo_after",
-      new File([Buffer.from("after")], "after.jpg", { type: "image/jpeg" }),
-    );
-
-    const res = await submitPiketReport(formData);
-    expect(res.success).toBe(true);
-    expect(res.message).toContain("Laporan piket kebersihan berhasil");
-  });
-
-  it("should accept HEIC-converted photos taken on a different day within the same week", async () => {
-    mockSupabase.auth.getUser.mockResolvedValueOnce({
-      data: { user: { id: "user-id" } },
-    });
-    mockSupabase.single.mockResolvedValueOnce({ data: { role: "anggota" } }); // profile
-
-    const weekInfo = getPiketWeekInfo(new Date());
-    mockSupabase.single.mockResolvedValueOnce({
-      data: {
-        id: "sched-id",
-        week_number: weekInfo.weekNumber,
-        room_target: "workshop_dan_sekretariat",
-      },
-    }); // schedule
-
-    // Mock membership exists
-    mockSupabase.maybeSingle.mockResolvedValueOnce({
-      data: { id: "membership-id" },
-      error: null,
-    });
-
-    // Mock no existing weekly log
-    mockSupabase.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
-
-    // Konversi HEIC menghilangkan EXIF → fallback tanggal file perangkat.
-    vi.mocked(extractExifDateTime).mockReturnValue(null);
-
-    // Mock DB insertion
-    mockSupabase.insert.mockResolvedValueOnce({ error: null });
-
-    const mondayMs = weekInfo.monday.getTime() + 60 * 1000;
-    const formData = new FormData();
-    formData.append("schedule_id", "sched-id");
-    formData.append("notes", "cleaned the lab");
-    formData.append(
-      "photo_before",
-      new File([Buffer.from("before")], "before.jpg", { type: "image/jpeg" }),
-    );
-    formData.append(
-      "photo_after",
-      new File([Buffer.from("after")], "after.jpg", { type: "image/jpeg" }),
-    );
-    formData.append("photo_before_was_heic", "1");
-    formData.append("photo_after_was_heic", "1");
-    formData.append("photo_before_taken_at", String(mondayMs));
-    formData.append("photo_after_taken_at", String(mondayMs));
-
-    const res = await submitPiketReport(formData);
-    expect(res.success).toBe(true);
-    expect(res.message).toContain("Laporan piket kebersihan berhasil");
-  });
-
   it("should reject identical before and after photos", async () => {
     mockSupabase.auth.getUser.mockResolvedValueOnce({
       data: { user: { id: "user-id" } },
@@ -515,9 +359,6 @@ describe("Piket Server Action - submitPiketReport", () => {
 
     // Mock no existing weekly log
     mockSupabase.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
-
-    // EXIF valid (today) agar sampai ke pengecekan hash
-    vi.mocked(extractExifDateTime).mockReturnValue(new Date());
 
     const formData = new FormData();
     formData.append("schedule_id", "sched-id");
@@ -565,8 +406,6 @@ describe("Piket Server Action - submitPiketReport", () => {
     // Mock no existing weekly log
     mockSupabase.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
 
-    vi.mocked(extractExifDateTime).mockReturnValue(new Date());
-
     // Mock hash reuse ditemukan
     mockSupabase.limit.mockResolvedValueOnce({
       data: [{ id: "old-log-id" }],
@@ -593,58 +432,6 @@ describe("Piket Server Action - submitPiketReport", () => {
     expect(res.success).toBe(false);
     expect(res.error?.code).toBe("BAD_REQUEST");
     expect(res.message).toContain("sudah pernah digunakan");
-  });
-
-  it("should reject when the after photo predates the before photo", async () => {
-    mockSupabase.auth.getUser.mockResolvedValueOnce({
-      data: { user: { id: "user-id" } },
-    });
-    mockSupabase.single.mockResolvedValueOnce({ data: { role: "anggota" } }); // profile
-
-    const weekInfo = getPiketWeekInfo(new Date());
-    mockSupabase.single.mockResolvedValueOnce({
-      data: {
-        id: "sched-id",
-        week_number: weekInfo.weekNumber,
-        room_target: "workshop_dan_sekretariat",
-      },
-    }); // schedule
-
-    // Mock membership exists
-    mockSupabase.maybeSingle.mockResolvedValueOnce({
-      data: { id: "membership-id" },
-      error: null,
-    });
-
-    // Mock no existing weekly log
-    mockSupabase.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
-
-    // before = Senin +2 mnt, after = Senin +1 mnt (after lebih tua)
-    const mondayMs = weekInfo.monday.getTime();
-    vi.mocked(extractExifDateTime)
-      .mockImplementationOnce(() => new Date(mondayMs + 2 * 60 * 1000))
-      .mockImplementationOnce(() => new Date(mondayMs + 60 * 1000));
-
-    const formData = new FormData();
-    formData.append("schedule_id", "sched-id");
-    formData.append("notes", "cleaned the lab");
-    formData.append(
-      "photo_before",
-      new File([Buffer.from("before-bytes")], "before.jpg", {
-        type: "image/jpeg",
-      }),
-    );
-    formData.append(
-      "photo_after",
-      new File([Buffer.from("after-bytes")], "after.jpg", {
-        type: "image/jpeg",
-      }),
-    );
-
-    const res = await submitPiketReport(formData);
-    expect(res.success).toBe(false);
-    expect(res.error?.code).toBe("BAD_REQUEST");
-    expect(res.message).toContain("Urutan foto tidak valid");
   });
 
   it("should reject when weekly upload attempts are exhausted", async () => {
@@ -723,8 +510,6 @@ describe("Piket Server Action - submitPiketReport", () => {
     // Mock no VALID weekly log (laporan ditolak dikecualikan query)
     mockSupabase.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
 
-    vi.mocked(extractExifDateTime).mockReturnValue(new Date());
-
     // Mock DB insertion
     mockSupabase.insert.mockResolvedValueOnce({ error: null });
 
@@ -772,9 +557,6 @@ describe("Piket Server Action - submitPiketReport", () => {
 
     // Mock no existing weekly log
     mockSupabase.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
-
-    // Mock EXIF date extractor to return today's date
-    vi.mocked(extractExifDateTime).mockReturnValue(new Date());
 
     // Mock DB insertion
     mockSupabase.insert.mockResolvedValueOnce({ error: null });

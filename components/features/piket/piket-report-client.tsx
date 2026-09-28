@@ -87,10 +87,6 @@ export function PiketReportClient({
   const [photoAfterPreview, setPhotoAfterPreview] = useState<string | null>(
     null,
   );
-  // Penanda asal HEIC: konversi HEIC -> JPEG menghilangkan EXIF sehingga
-  // server memakai jalur validasi fallback (tanggal file) untuk foto ini.
-  const [photoBeforeWasHeic, setPhotoBeforeWasHeic] = useState(false);
-  const [photoAfterWasHeic, setPhotoAfterWasHeic] = useState(false);
 
   // File Input Refs
   const fileBeforeRef = useRef<HTMLInputElement>(null);
@@ -148,16 +144,13 @@ export function PiketReportClient({
     type: "before" | "after",
     processedFile: File,
     previewUrl: string,
-    wasHeic: boolean,
   ) => {
     if (type === "before") {
       setPhotoBefore(processedFile);
       setPhotoBeforePreview(previewUrl);
-      setPhotoBeforeWasHeic(wasHeic);
     } else {
       setPhotoAfter(processedFile);
       setPhotoAfterPreview(previewUrl);
-      setPhotoAfterWasHeic(wasHeic);
     }
   };
 
@@ -182,7 +175,7 @@ export function PiketReportClient({
             : "Foto berhasil diproses & dikompresi.",
         );
 
-        storeProcessedPhoto(type, processedFile, previewUrl, wasHeic);
+        storeProcessedPhoto(type, processedFile, previewUrl);
       } catch (err: unknown) {
         toast.dismiss(loadToast);
         const errMsg = err instanceof Error ? err.message : String(err);
@@ -214,7 +207,7 @@ export function PiketReportClient({
             : "Foto berhasil diproses & dikompresi.",
         );
 
-        storeProcessedPhoto(type, processedFile, previewUrl, wasHeic);
+        storeProcessedPhoto(type, processedFile, previewUrl);
       } catch (err: unknown) {
         toast.dismiss(loadToast);
         const errMsg = err instanceof Error ? err.message : String(err);
@@ -227,12 +220,10 @@ export function PiketReportClient({
     if (type === "before") {
       setPhotoBefore(null);
       setPhotoBeforePreview(null);
-      setPhotoBeforeWasHeic(false);
       if (fileBeforeRef.current) fileBeforeRef.current.value = "";
     } else {
       setPhotoAfter(null);
       setPhotoAfterPreview(null);
-      setPhotoAfterWasHeic(false);
       if (fileAfterRef.current) fileAfterRef.current.value = "";
     }
   };
@@ -256,21 +247,13 @@ export function PiketReportClient({
     }
 
     setIsSubmitting(true);
-    const loadToast = toast.loading(
-      "Memvalidasi EXIF & mengunggah laporan piket ke R2...",
-    );
+    const loadToast = toast.loading("Mengunggah laporan piket ke R2...");
 
     const formData = new FormData();
     formData.append("schedule_id", currentWeekAssignment.schedule_id);
     formData.append("notes", notes);
     formData.append("photo_before", photoBefore);
     formData.append("photo_after", photoAfter);
-    // Metadata asal HEIC + tanggal file untuk jalur validasi fallback server
-    // (konversi HEIC -> JPEG menghilangkan EXIF DateTimeOriginal).
-    formData.append("photo_before_was_heic", photoBeforeWasHeic ? "1" : "0");
-    formData.append("photo_after_was_heic", photoAfterWasHeic ? "1" : "0");
-    formData.append("photo_before_taken_at", String(photoBefore.lastModified));
-    formData.append("photo_after_taken_at", String(photoAfter.lastModified));
 
     try {
       const res = await submitPiketReport(formData);
@@ -281,10 +264,8 @@ export function PiketReportClient({
         setNotes("");
         setPhotoBefore(null);
         setPhotoBeforePreview(null);
-        setPhotoBeforeWasHeic(false);
         setPhotoAfter(null);
         setPhotoAfterPreview(null);
-        setPhotoAfterWasHeic(false);
         router.refresh();
       } else {
         toast.error(res.message || "Gagal mengirim laporan.");
@@ -615,20 +596,18 @@ export function PiketReportClient({
             </CardHeader>
             <form onSubmit={handleSubmitReport}>
               <CardContent className="space-y-4 pt-4">
-                {/* Warning EXIF Alert */}
+                {/* Warning Photo Alert */}
                 <div className="p-3 bg-[#ffedd5] dark:bg-orange-950/40 border border-orange-200 dark:border-orange-900/60 rounded-lg flex items-start gap-2.5 text-xs text-[#c2410c] dark:text-orange-300 font-mono">
                   <span className="font-bold shrink-0 mt-0.5">⚠️ PENTING:</span>
                   <p className="leading-relaxed font-body">
-                    Unggah foto asli bertipe JPG/JPEG langsung dari kamera HP
-                    Anda. Pengguna iPhone (HEIC/HEIF) otomatis dikonversi ke JPG
-                    di perangkat sebelum diunggah. Foto boleh diambil di hari
-                    berbeda selama masih dalam pekan Senin–Minggu yang sama
-                    dengan pekan tugas Anda (misal: foto Senin, upload Rabu
-                    tetap diterima). Sistem mengonfirmasi tanggal pengambilan
-                    foto via metadata EXIF (untuk foto konversi HEIC dipakai
-                    tanggal file perangkat). Tangkapan layar / unduhan WA dan
-                    foto dari pekan lain akan ditolak. Foto otomatis disimpan ke
-                    Cloudflare R2.
+                    Unggah dua foto berbeda (kondisi sebelum & sesudah
+                    dibersihkan) langsung dari kamera HP Anda. Pengguna iPhone
+                    (HEIC/HEIF) otomatis dikonversi ke JPG di perangkat sebelum
+                    diunggah. Pastikan foto diambil pada pekan tugas yang sedang
+                    berjalan ({weekInfo.dateRangeFormatted}). Foto akan ditolak
+                    jika kedua foto identik, pernah dipakai pada laporan
+                    sebelumnya, atau berupa tangkapan layar/daur ulang. Foto
+                    otomatis disimpan ke Cloudflare R2.
                   </p>
                 </div>
 
@@ -834,28 +813,6 @@ export function PiketReportClient({
                         <PiketLogStatusBadge status={status} />
                       </div>
 
-                      {(log.photo_taken_at_before ||
-                        log.photo_taken_at_after) && (
-                        <p className="text-[10px] font-mono text-slate-500 dark:text-slate-400">
-                          Foto diambil:{" "}
-                          {log.photo_taken_at_before
-                            ? new Date(
-                                log.photo_taken_at_before,
-                              ).toLocaleDateString("id-ID", {
-                                dateStyle: "medium",
-                              })
-                            : "-"}
-                          {" → "}
-                          {log.photo_taken_at_after
-                            ? new Date(
-                                log.photo_taken_at_after,
-                              ).toLocaleDateString("id-ID", {
-                                dateStyle: "medium",
-                              })
-                            : "-"}
-                        </p>
-                      )}
-
                       {status === "rejected" && log.rejection_reason && (
                         <div className="p-2 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-xs">
                           <p className="font-semibold text-red-700 dark:text-red-300 font-mono text-[10px] uppercase">
@@ -1008,29 +965,6 @@ export function PiketReportClient({
                           </td>
                           <td className="p-3 font-mono text-slate-600 dark:text-slate-400">
                             {log.schedule_day}
-                            {(log.photo_taken_at_before ||
-                              log.photo_taken_at_after) && (
-                              <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
-                                Foto:{" "}
-                                {log.photo_taken_at_before
-                                  ? new Date(
-                                      log.photo_taken_at_before,
-                                    ).toLocaleDateString("id-ID", {
-                                      day: "numeric",
-                                      month: "short",
-                                    })
-                                  : "-"}
-                                {" → "}
-                                {log.photo_taken_at_after
-                                  ? new Date(
-                                      log.photo_taken_at_after,
-                                    ).toLocaleDateString("id-ID", {
-                                      day: "numeric",
-                                      month: "short",
-                                    })
-                                  : "-"}
-                              </span>
-                            )}
                           </td>
                           <td className="p-3">
                             <PiketLogStatusBadge status={status} />

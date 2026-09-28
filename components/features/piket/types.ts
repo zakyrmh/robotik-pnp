@@ -48,8 +48,6 @@ export interface PiketLog {
   is_final: boolean;
   rejection_reason: string;
   verified_at: string;
-  photo_taken_at_before: string;
-  photo_taken_at_after: string;
   schedule_id: string;
   academic_period?: string;
   schedule_day: string;

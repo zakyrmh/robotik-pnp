@@ -3,13 +3,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { ServerActionResponse } from "@/lib/types/action";
 import type { ActionResult } from "@/types/event-registration";
-import { extractExifDateTime } from "@/lib/utils/exif";
 import type { PiketComplianceRow } from "@/lib/repositories/piket";
 import { getPiketComplianceReport } from "@/lib/repositories/piket";
 import { z } from "zod";
 import {
   getPiketWeekInfo,
-  isDateInPiketWeek,
   isMemberOnInternship,
   MAX_PIKET_ATTEMPTS_PER_WEEK,
   DEFAULT_PIKET_FINE_AMOUNT,
@@ -31,8 +29,9 @@ function toIsoDate(d: Date): string {
 
 /**
  * ACT-03: Submit piket report.
- * Validates scheduling, checks weekly cycles, extracts JPEG EXIF DateTimeOriginal,
- * and uploads files to Cloudflare R2 bucket.
+ * Validates scheduling, checks weekly cycles, verifies photo integrity
+ * (size, before/after distinctness, hash reuse), and uploads files to
+ * Cloudflare R2 bucket. Tanggal pengambilan foto tidak lagi divalidasi.
  */
 export async function submitPiketReport(
   formData: FormData,
@@ -204,13 +203,11 @@ export async function submitPiketReport(
       };
     }
 
-    // 4. EXIF Verification
-    // Foto HEIC/HEIF iPhone dikonversi ke JPEG di client via heic2any, dan
-    // proses konversi tersebut MENGHILANGKAN EXIF DateTimeOriginal. Untuk foto
-    // hasil konversi HEIC, validasi memakai tanggal file perangkat (taken_at)
-    // yang dikirim client sebagai fallback, bukan EXIF.
+    // 4. Photo integrity verification
     const bufferBefore = Buffer.from(await photoBefore.arrayBuffer());
     const bufferAfter = Buffer.from(await photoAfter.arrayBuffer());
+
+    const todayStr = new Date().toISOString().split("T")[0];
 
     const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
     if (
@@ -224,139 +221,7 @@ export async function submitPiketReport(
       };
     }
 
-    const beforeWasHeic = formData.get("photo_before_was_heic") === "1";
-    const afterWasHeic = formData.get("photo_after_was_heic") === "1";
-
-    const parseTakenAt = (value: FormDataEntryValue | null, file: File) => {
-      const fromField = typeof value === "string" ? Number(value) : NaN;
-      if (Number.isFinite(fromField) && fromField > 0) return fromField;
-      return typeof file.lastModified === "number" && file.lastModified > 0
-        ? file.lastModified
-        : NaN;
-    };
-
-    const dateBefore = extractExifDateTime(bufferBefore);
-    const dateAfter = extractExifDateTime(bufferAfter);
-
-    const todayStr = new Date().toISOString().split("T")[0];
-
-    // Tanggal pengambilan foto hasil validasi (EXIF atau fallback taken_at).
-    // Disimpan ke kolom photo_taken_at_* agar Kestari bisa menilainya.
-    let photoDateBefore: Date | null = null;
-    let photoDateAfter: Date | null = null;
-
-    // Kebijakan: bukti foto boleh diambil di hari berbeda, selama masih dalam
-    // rentang pekan piket berjalan (Senin–Minggu). Contoh: Naufal piket Pekan 3,
-    // foto diambil Senin, baru upload Rabu → tetap diterima.
-    // Foto dari pekan lain atau bertanggal masa depan tetap ditolak.
-    const isWithinPiketWeek = (d: Date) => isDateInPiketWeek(d, weekInfo);
-
-    // Tanggal file perangkat (jalur HEIC) dianggap valid bila masuk rentang
-    // pekan — toleransi UTC/WIB untuk selisih zona waktu client vs server.
-    const isTakenAtWithinPiketWeek = (takenAtMs: number) => {
-      if (!Number.isFinite(takenAtMs) || takenAtMs <= 0) return false;
-      return isDateInPiketWeek(new Date(takenAtMs), weekInfo);
-    };
-
-    const isJpeg = (buf: Buffer) =>
-      buf.length >= 2 && buf[0] === 0xff && buf[1] === 0xd8;
-
-    if (!dateBefore || !dateAfter) {
-      // Jalur fallback: kedua foto berasal dari konversi HEIC client.
-      if (beforeWasHeic && afterWasHeic) {
-        const beforeTakenAt = parseTakenAt(
-          formData.get("photo_before_taken_at"),
-          photoBefore,
-        );
-        const afterTakenAt = parseTakenAt(
-          formData.get("photo_after_taken_at"),
-          photoAfter,
-        );
-
-        if (
-          !isTakenAtWithinPiketWeek(beforeTakenAt) ||
-          !isTakenAtWithinPiketWeek(afterTakenAt)
-        ) {
-          return {
-            success: false,
-            message: `Tanggal file foto (HEIC) tidak berada dalam pekan piket ini (Pekan ${weekInfo.weekNumber}, ${weekInfo.dateRangeFormatted}). Foto boleh diambil di hari berbeda selama masih dalam pekan Senin–Minggu yang sama.`,
-            error: {
-              code: "METADATA_MISMATCH",
-              details: `Before taken_at: ${beforeTakenAt}, After taken_at: ${afterTakenAt}, Week range: ${weekInfo.startIsoDate}..${weekInfo.endIsoDate}`,
-            },
-          };
-        }
-        // Lolos via fallback HEIC — lanjut ke upload.
-        photoDateBefore = new Date(beforeTakenAt);
-        photoDateAfter = new Date(afterTakenAt);
-      } else {
-        // File HEIC mentah lolos ke server (konversi client gagal): parser
-        // EXIF hanya mendukung JPEG, beri pesan yang jelas.
-        if (!isJpeg(bufferBefore) || !isJpeg(bufferAfter)) {
-          return {
-            success: false,
-            message:
-              "Foto HEIC/HEIF gagal dikonversi otomatis di perangkat Anda. Aktifkan koneksi internet, perbarui browser, atau ubah format kamera iPhone ke JPEG (Settings > Camera > Formats > Most Compatible), lalu coba lagi.",
-            error: {
-              code: "INVALID_METADATA",
-              details: "HEIC conversion failed on client; non-JPEG received",
-            },
-          };
-        }
-        return {
-          success: false,
-          message:
-            "Gagal mendeteksi metadata EXIF foto. Pastikan Anda mengunggah foto asli (bukan screenshot atau kompresi eksternal).",
-          error: {
-            code: "INVALID_METADATA",
-            details: "Could not parse DateTimeOriginal from photo EXIF",
-          },
-        };
-      }
-    } else {
-      if (!isWithinPiketWeek(dateBefore) || !isWithinPiketWeek(dateAfter)) {
-        const dateBeforeStr = dateBefore.toISOString().split("T")[0];
-        const dateAfterStr = dateAfter.toISOString().split("T")[0];
-        return {
-          success: false,
-          message: `Tanggal pengambilan foto (EXIF) tidak cocok dengan pekan piket ini (Pekan ${weekInfo.weekNumber}, ${weekInfo.dateRangeFormatted}). Foto boleh diambil di hari berbeda selama masih dalam pekan Senin–Minggu yang sama.`,
-          error: {
-            code: "METADATA_MISMATCH",
-            details: `Before photo date: ${dateBeforeStr}, After photo date: ${dateAfterStr}, Week range: ${weekInfo.startIsoDate}..${weekInfo.endIsoDate}`,
-          },
-        };
-      }
-      photoDateBefore = dateBefore;
-      photoDateAfter = dateAfter;
-    }
-
-    if (!photoDateBefore || !photoDateAfter) {
-      return {
-        success: false,
-        message:
-          "Gagal mendeteksi metadata EXIF foto. Pastikan Anda mengunggah foto asli (bukan screenshot atau kompresi eksternal).",
-        error: {
-          code: "INVALID_METADATA",
-          details: "Photo capture date could not be resolved",
-        },
-      };
-    }
-
-    // 4b. Urutan waktu: foto sesudah tidak boleh diambil lebih dulu
-    // daripada foto sebelum.
-    if (photoDateAfter.getTime() < photoDateBefore.getTime()) {
-      return {
-        success: false,
-        message:
-          "Urutan foto tidak valid: foto Sesudah diambil lebih dulu daripada foto Sebelum. Pastikan foto Sebelum adalah kondisi kotor dan foto Sesudah adalah kondisi bersih.",
-        error: {
-          code: "BAD_REQUEST",
-          details: "After photo predates before photo",
-        },
-      };
-    }
-
-    // 4c. Hash anti-duplikat: before vs after identik → tolak; hash yang
+    // 4b. Hash anti-duplikat: before vs after identik → tolak; hash yang
     // sudah pernah dipakai di laporan manapun (termasuk anggota lain) → tolak.
     const hashBefore = sha256Hex(bufferBefore);
     const hashAfter = sha256Hex(bufferAfter);
@@ -438,8 +303,6 @@ export async function submitPiketReport(
       notes: notes.trim(),
       proof_image_before_url: beforeUrl,
       proof_image_url: afterUrl,
-      photo_taken_at_before: toIsoDate(photoDateBefore),
-      photo_taken_at_after: toIsoDate(photoDateAfter),
       photo_hash_before: hashBefore,
       photo_hash_after: hashAfter,
       is_verified: true,

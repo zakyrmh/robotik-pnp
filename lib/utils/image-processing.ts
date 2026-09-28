@@ -5,8 +5,6 @@ interface ProcessImageResult {
   previewUrl: string;
   /** True jika file asli berformat HEIC/HEIF dan dikonversi ke JPEG. */
   wasHeic: boolean;
-  /** lastModified file asli (waktu ambil foto menurut perangkat), epoch ms. */
-  takenAtMs: number;
 }
 
 type Heic2AnyFn = (options: {
@@ -40,10 +38,7 @@ async function getHeic2AnyConverter(): Promise<Heic2AnyFn | null> {
 /**
  * Utility to process user-uploaded image files:
  * 1. Automatically converts iPhone HEIC / HEIF files to JPEG format.
- *    NOTE: konversi HEIC -> JPEG via heic2any TIDAK mempertahankan EXIF
- *    DateTimeOriginal, sehingga caller wajib memakai flag `wasHeic` +
- *    `takenAtMs` untuk jalur validasi fallback di server.
- * 2. Compresses image files to < 1MB while preserving EXIF metadata (JPEG path).
+ * 2. Compresses image files to < 1MB (JPEG path).
  * 3. Generates a data URL preview for client-side display.
  */
 export async function processPiketImage(
@@ -94,7 +89,7 @@ export async function processPiketImage(
     }
   }
 
-  // 2. Compress image using browser-image-compression with EXIF preservation
+  // 2. Compress image using browser-image-compression
   try {
     const compressedFile = await imageCompression(fileToProcess, {
       maxSizeMB: 0.8,
@@ -133,7 +128,6 @@ export async function processPiketImage(
       file: finalFile,
       previewUrl,
       wasHeic: convertedFromHeic,
-      takenAtMs,
     };
   } catch (error) {
     console.error("Gagal mengompresi gambar:", error);
@@ -147,7 +141,6 @@ export async function processPiketImage(
       file: fileToProcess,
       previewUrl,
       wasHeic: convertedFromHeic,
-      takenAtMs,
     };
   }
 }
