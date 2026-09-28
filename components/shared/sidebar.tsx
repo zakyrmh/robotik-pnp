@@ -15,6 +15,7 @@ import {
   AlertTriangle,
   SprayCan,
   ClipboardList,
+  ClipboardCheck,
   Users,
   UsersRound,
   Briefcase,
@@ -73,9 +74,19 @@ type ModuleKey = keyof typeof moduleGroups;
 // ─────────────────────────────────────────────────────────────
 // Katalog menu — sumber tunggal untuk metadata, ikon, modul & gating.
 // `adminOnly` = hanya super-admin.
+// `kestariOnly` = hanya super-admin & admin-kestari.
 // Ikon memakai lucide-react (lihat DESIGN.md §9 — Ikon & Ilustrasi).
 // ─────────────────────────────────────────────────────────────
-const allMenuItems = {
+interface MenuItem {
+  title: string;
+  href: string;
+  icon: LucideIcon;
+  module: ModuleKey;
+  adminOnly: boolean;
+  kestariOnly?: boolean;
+}
+
+const allMenuItems: Record<string, MenuItem> = {
   dashboard: {
     title: "Dashboard",
     href: "/dashboard",
@@ -140,6 +151,22 @@ const allMenuItems = {
     icon: SprayCan,
     module: "kebersihan" as ModuleKey,
     adminOnly: false,
+  },
+  piketVerifikasi: {
+    title: "Verifikasi Piket",
+    href: "/piket/verifikasi",
+    icon: ClipboardCheck,
+    module: "kebersihan" as ModuleKey,
+    adminOnly: false,
+    kestariOnly: true,
+  },
+  piketKelola: {
+    title: "Kelola Piket",
+    href: "/piket/kelola",
+    icon: Settings,
+    module: "kebersihan" as ModuleKey,
+    adminOnly: false,
+    kestariOnly: true,
   },
 
   dashboardPendaftaranCaang: {
@@ -223,7 +250,15 @@ type MenuKey = keyof typeof allMenuItems;
 const roleMenuKeys: Record<string, MenuKey[]> = {
   caang: ["dashboard", "kegiatan", "presensi", "manajemenMagang"],
   anggota: ["dashboard", "kegiatan", "presensi", "piket"],
-  "admin-kestari": ["dashboard", "kegiatan", "presensi", "piket"],
+  "admin-divisi": ["dashboard", "kegiatan", "presensi", "piket"],
+  "admin-kestari": [
+    "dashboard",
+    "kegiatan",
+    "presensi",
+    "piket",
+    "piketVerifikasi",
+    "piketKelola",
+  ],
   "admin-komdis": [
     "dashboard",
     "kegiatan",
@@ -262,6 +297,8 @@ const roleMenuKeys: Record<string, MenuKey[]> = {
     "perizinan",
     "kedisiplinan",
     "piket",
+    "piketVerifikasi",
+    "piketKelola",
     "dashboardPendaftaranCaang",
     "manajemenCaang",
     "manajemenKelompokCaang",
@@ -292,7 +329,7 @@ const menuOrderWithinModule: Record<ModuleKey, MenuKey[]> = {
     "auditLogSistem",
   ],
   kedisiplinan: ["kegiatan", "presensi", "perizinan", "kedisiplinan"],
-  kebersihan: ["piket"],
+  kebersihan: ["piket", "piketVerifikasi", "piketKelola"],
   openRecruitment: [
     "dashboardPendaftaranCaang",
     "manajemenCaang",
@@ -314,7 +351,8 @@ interface ModuleSection {
   keys: MenuKey[];
 }
 
-// Aturan visibilitas tunggal: item `adminOnly` hanya untuk super-admin.
+// Aturan visibilitas tunggal: item `adminOnly` hanya untuk super-admin,
+// item `kestariOnly` hanya untuk super-admin & admin-kestari.
 function resolveVisibleKeys(
   role: string | undefined,
   isOnboarded: boolean | undefined,
@@ -325,6 +363,8 @@ function resolveVisibleKeys(
   return base.filter((key) => {
     const item = allMenuItems[key];
     if (item.adminOnly && role !== "super-admin") return false;
+    if (item.kestariOnly && role !== "super-admin" && role !== "admin-kestari")
+      return false;
     return true;
   });
 }
