@@ -36,6 +36,7 @@ import {
   imposePiketFine,
   markPiketFinePaid,
   voidPiketFine,
+  getPiketComplianceAction,
 } from "@/lib/actions/piket";
 import { getPiketWeekInfo } from "@/lib/utils/piket-date";
 import { getPublicR2Url } from "@/lib/storage/r2";
@@ -55,7 +56,10 @@ export interface PiketVerificationClientProps {
   fines: PiketFine[];
   schedules: PiketSchedule[];
   compliance: PiketComplianceRow[];
+  complianceError?: string | null;
 }
+
+type ComplianceFilter = "semua" | "belum-lapor" | "magang";
 
 export function PiketVerificationClient({
   profile,
@@ -64,6 +68,7 @@ export function PiketVerificationClient({
   fines,
   schedules,
   compliance,
+  complianceError = null,
 }: PiketVerificationClientProps) {
   const router = useRouter();
 
@@ -77,6 +82,50 @@ export function PiketVerificationClient({
   const [selectedPeriod, setSelectedPeriod] = useState<string>(
     availablePeriods[0] || "2026/2027",
   );
+
+  // Compliance data: SSR seed for the default period, then server-action fetch
+  // on period change (Finding 2). `isComplianceLoading` covers the transition.
+  const [complianceRows, setComplianceRows] =
+    useState<PiketComplianceRow[]>(compliance);
+  const [isComplianceLoading, setIsComplianceLoading] = useState(false);
+  const [complianceErrorState, setComplianceErrorState] = useState<
+    string | null
+  >(complianceError);
+  const [complianceFilter, setComplianceFilter] =
+    useState<ComplianceFilter>("semua");
+
+  const handlePeriodChange = async (period: string) => {
+    setSelectedPeriod(period);
+    setComplianceFilter("semua");
+
+    if (period === availablePeriods[0]) {
+      // Default period: reuse the SSR seed (already fetched by the RSC).
+      setComplianceRows(compliance);
+      setComplianceErrorState(complianceError);
+      return;
+    }
+
+    setIsComplianceLoading(true);
+    setComplianceErrorState(null);
+    try {
+      const res = await getPiketComplianceAction(period);
+      if (res.success) {
+        setComplianceRows(res.data);
+      } else {
+        setComplianceRows([]);
+        setComplianceErrorState(
+          "Gagal memuat laporan kepatuhan. Coba muat ulang.",
+        );
+      }
+    } catch {
+      setComplianceRows([]);
+      setComplianceErrorState(
+        "Gagal memuat laporan kepatuhan. Coba muat ulang.",
+      );
+    } finally {
+      setIsComplianceLoading(false);
+    }
+  };
 
   // Filter logs and fines by selected period
   const periodLogs = logs.filter(
@@ -125,8 +174,10 @@ export function PiketVerificationClient({
       (!f.academic_period || f.academic_period === selectedPeriod),
   );
 
-  // Kepatuhan rows for selected period + quick-count summary
-  const periodCompliance = compliance.filter(
+  // Kepatuhan rows for selected period + quick-count summary.
+  // Rows are already scoped to the selected period by the fetch, but we filter
+  // defensively in case the SSR seed holds a different period.
+  const periodCompliance = complianceRows.filter(
     (r) => r.academicPeriod === selectedPeriod,
   );
   const complianceCounts = {
@@ -137,6 +188,38 @@ export function PiketVerificationClient({
     sudahLapor: periodCompliance.filter((r) => r.status === "sudah-lapor")
       .length,
   };
+
+  // Aggregate "Belum Piket" (spec §7.1): anggota dengan NOL baris "sudah-lapor"
+  // di seluruh periode. Dikelompokkan per orang.
+  const compliantProfileIds = new Set(
+    periodCompliance
+      .filter((r) => r.status === "sudah-lapor")
+      .map((r) => r.profileId),
+  );
+  const memberAggregate = new Map<
+    string,
+    { memberName: string; nim: string | null }
+  >();
+  for (const r of periodCompliance) {
+    if (!memberAggregate.has(r.profileId)) {
+      memberAggregate.set(r.profileId, {
+        memberName: r.memberName,
+        nim: r.nim,
+      });
+    }
+  }
+  const belumPiketMembers = Array.from(memberAggregate.entries())
+    .filter(([profileId]) => !compliantProfileIds.has(profileId))
+    .map(([profileId, info]) => ({ profileId, ...info }));
+
+  // Quick filter (spec §7.4): Semua / Belum Lapor (alpha+berlangsung) / Magang.
+  const filteredCompliance = periodCompliance.filter((r) => {
+    if (complianceFilter === "belum-lapor") {
+      return r.status === "alpha" || r.status === "berlangsung";
+    }
+    if (complianceFilter === "magang") return r.status === "magang";
+    return true;
+  });
 
   // Kestari: setujui / tolak laporan
   const handleReviewConfirm = async () => {
@@ -327,8 +410,9 @@ export function PiketVerificationClient({
           </span>
           <select
             value={selectedPeriod}
-            onChange={(e) => setSelectedPeriod(e.target.value)}
-            className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs font-mono font-medium text-[#0a192f] dark:text-slate-100 outline-none focus:ring-2 focus:ring-[#1e3a8a] cursor-pointer"
+            onChange={(e) => void handlePeriodChange(e.target.value)}
+            disabled={isComplianceLoading}
+            className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs font-mono font-medium text-[#0a192f] dark:text-slate-100 outline-none focus:ring-2 focus:ring-[#1e3a8a] cursor-pointer disabled:opacity-60"
           >
             {availablePeriods.map((p) => (
               <option key={p} value={p}>
@@ -382,99 +466,172 @@ export function PiketVerificationClient({
             </CardDescription>
           </CardHeader>
           <CardContent className="p-4 sm:p-6 space-y-4">
-            {/* Quick-count summary */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60">
-                <span className="text-[10px] font-mono uppercase tracking-widest text-red-700 dark:text-red-300 block">
-                  Alpha
-                </span>
-                <span className="font-display font-medium text-lg text-red-700 dark:text-red-300">
-                  {complianceCounts.alpha}
-                </span>
-              </div>
-              <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60">
-                <span className="text-[10px] font-mono uppercase tracking-widest text-amber-700 dark:text-amber-300 block">
-                  Berlangsung
-                </span>
-                <span className="font-display font-medium text-lg text-amber-700 dark:text-amber-300">
-                  {complianceCounts.berlangsung}
-                </span>
-              </div>
-              <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700">
-                <span className="text-[10px] font-mono uppercase tracking-widest text-slate-600 dark:text-slate-300 block">
-                  Magang
-                </span>
-                <span className="font-display font-medium text-lg text-slate-600 dark:text-slate-300">
-                  {complianceCounts.magang}
-                </span>
-              </div>
-              <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60">
-                <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-700 dark:text-emerald-300 block">
-                  Sudah Lapor
-                </span>
-                <span className="font-display font-medium text-lg text-emerald-700 dark:text-emerald-300">
-                  {complianceCounts.sudahLapor}
-                </span>
-              </div>
-            </div>
-
-            {periodCompliance.length === 0 ? (
+            {isComplianceLoading ? (
               <div className="p-8 text-center text-slate-500 dark:text-slate-400 font-mono text-xs">
-                Belum ada data piket untuk periode {selectedPeriod}.
+                Memuat laporan kepatuhan periode {selectedPeriod}...
+              </div>
+            ) : complianceErrorState ? (
+              <div
+                role="alert"
+                className="p-4 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-red-700 dark:text-red-300 font-mono text-xs"
+              >
+                {complianceErrorState}
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 font-mono text-[11px] uppercase tracking-wider text-slate-600 dark:text-slate-400">
-                      <th className="p-3">Anggota</th>
-                      <th className="p-3">NIM</th>
-                      <th className="p-3">Pekan</th>
-                      <th className="p-3">Ruang</th>
-                      <th className="p-3">Rentang</th>
-                      <th className="p-3">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                    {periodCompliance.map((r) => (
-                      <tr
-                        key={`${r.profileId}-${r.weekNumber}-${r.roomTarget}-${r.startIsoDate}`}
-                        className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
-                      >
-                        <td className="p-3">
-                          <span className="font-display font-medium text-[#0a192f] dark:text-slate-100 block">
-                            {r.memberName}
-                          </span>
-                        </td>
-                        <td className="p-3 font-mono text-slate-600 dark:text-slate-400">
-                          {r.nim || "-"}
-                        </td>
-                        <td className="p-3 font-mono text-slate-700 dark:text-slate-300">
-                          Pekan {r.weekNumber}
-                        </td>
-                        <td className="p-3 font-mono text-slate-600 dark:text-slate-400">
-                          {r.roomTarget}
-                        </td>
-                        <td className="p-3 font-mono text-slate-600 dark:text-slate-400">
-                          {new Date(r.startIsoDate).toLocaleDateString(
-                            "id-ID",
-                            {
-                              dateStyle: "medium",
-                            },
-                          )}
-                          {" – "}
-                          {new Date(r.endIsoDate).toLocaleDateString("id-ID", {
-                            dateStyle: "medium",
-                          })}
-                        </td>
-                        <td className="p-3">
-                          <PiketComplianceBadge status={r.status} />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <>
+                {/* Quick-count summary */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <div className="p-3 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60">
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-red-700 dark:text-red-300 block">
+                      Alpha
+                    </span>
+                    <span className="font-display font-medium text-lg text-red-700 dark:text-red-300">
+                      {complianceCounts.alpha}
+                    </span>
+                  </div>
+                  <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60">
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-amber-700 dark:text-amber-300 block">
+                      Berlangsung
+                    </span>
+                    <span className="font-display font-medium text-lg text-amber-700 dark:text-amber-300">
+                      {complianceCounts.berlangsung}
+                    </span>
+                  </div>
+                  <div className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700">
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-slate-600 dark:text-slate-300 block">
+                      Magang
+                    </span>
+                    <span className="font-display font-medium text-lg text-slate-600 dark:text-slate-300">
+                      {complianceCounts.magang}
+                    </span>
+                  </div>
+                  <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/60">
+                    <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-700 dark:text-emerald-300 block">
+                      Sudah Lapor
+                    </span>
+                    <span className="font-display font-medium text-lg text-emerald-700 dark:text-emerald-300">
+                      {complianceCounts.sudahLapor}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Aggregate "Belum Piket" (spec §7.1) */}
+                <div
+                  data-testid="piket-belum-piket"
+                  className="p-3 rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700"
+                >
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-slate-600 dark:text-slate-300 block">
+                    Belum Piket ({belumPiketMembers.length} orang)
+                  </span>
+                  {belumPiketMembers.length === 0 ? (
+                    <span className="text-xs font-mono text-emerald-700 dark:text-emerald-300 mt-1 block">
+                      Semua anggota sudah melapor minimal sekali.
+                    </span>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5 mt-1.5">
+                      {belumPiketMembers.map((m) => (
+                        <Badge
+                          key={m.profileId}
+                          className="bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 text-[10px] font-mono rounded-full"
+                        >
+                          {m.memberName}
+                          {m.nim ? ` • ${m.nim}` : ""}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Quick filters (spec §7.4) */}
+                <div className="flex flex-wrap gap-2">
+                  {(
+                    [
+                      { key: "semua", label: "Semua" },
+                      { key: "belum-lapor", label: "Belum Lapor" },
+                      { key: "magang", label: "Magang" },
+                    ] as { key: ComplianceFilter; label: string }[]
+                  ).map((f) => (
+                    <button
+                      key={f.key}
+                      type="button"
+                      onClick={() => setComplianceFilter(f.key)}
+                      className={`px-3 py-1.5 rounded-lg font-mono text-[11px] uppercase tracking-wider transition-all cursor-pointer border ${
+                        complianceFilter === f.key
+                          ? "bg-[#1e3a8a] dark:bg-blue-600 text-white border-[#1e3a8a] dark:border-blue-600"
+                          : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"
+                      }`}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+
+                {filteredCompliance.length === 0 ? (
+                  <div className="p-8 text-center text-slate-500 dark:text-slate-400 font-mono text-xs">
+                    Belum ada data piket untuk periode {selectedPeriod}.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse text-xs">
+                      <thead>
+                        <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 font-mono text-[11px] uppercase tracking-wider text-slate-600 dark:text-slate-400">
+                          <th className="p-3">Anggota</th>
+                          <th className="p-3">NIM</th>
+                          <th className="p-3">Bulan</th>
+                          <th className="p-3">Pekan</th>
+                          <th className="p-3">Ruang</th>
+                          <th className="p-3">Rentang</th>
+                          <th className="p-3">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+                        {filteredCompliance.map((r) => (
+                          <tr
+                            key={`${r.profileId}-${r.weekNumber}-${r.roomTarget}-${r.startIsoDate}`}
+                            className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
+                          >
+                            <td className="p-3">
+                              <span className="font-display font-medium text-[#0a192f] dark:text-slate-100 block">
+                                {r.memberName}
+                              </span>
+                            </td>
+                            <td className="p-3 font-mono text-slate-600 dark:text-slate-400">
+                              {r.nim || "-"}
+                            </td>
+                            <td className="p-3 font-mono text-slate-700 dark:text-slate-300">
+                              {r.cycleMonthLabel}
+                            </td>
+                            <td className="p-3 font-mono text-slate-700 dark:text-slate-300">
+                              Pekan {r.weekNumber}
+                            </td>
+                            <td className="p-3 font-mono text-slate-600 dark:text-slate-400">
+                              {r.roomTarget}
+                            </td>
+                            <td className="p-3 font-mono text-slate-600 dark:text-slate-400">
+                              {new Date(r.startIsoDate).toLocaleDateString(
+                                "id-ID",
+                                {
+                                  dateStyle: "medium",
+                                },
+                              )}
+                              {" – "}
+                              {new Date(r.endIsoDate).toLocaleDateString(
+                                "id-ID",
+                                {
+                                  dateStyle: "medium",
+                                },
+                              )}
+                            </td>
+                            <td className="p-3">
+                              <PiketComplianceBadge status={r.status} />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>

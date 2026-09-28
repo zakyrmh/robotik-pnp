@@ -156,70 +156,64 @@ export function getPiketWeekInfo(targetDate: Date = new Date()): PiketWeekInfo {
   };
 }
 
-/**
- * Mengembalikan rentang tanggal (Senin–Minggu) untuk pekan ke-N pada sebuah
- * periode akademik. `piket_schedules` tidak menyimpan tanggal, sehingga rentang
- * harus direkonstruksi dari aturan:
- *   Pekan 1 bulan siklus = pekan yang memuat Kamis pertama bulan itu.
- * Bulan siklus yang dipakai adalah Juli dari tahun kedua periode
- * (mis. periode "2026/2027" → Juli 2027).
- */
-export function getPiketWeekInfoForPeriod(
-  academicPeriod: string,
-  weekNumber: number,
-): { startIsoDate: string; endIsoDate: string; weekNumber: number } {
-  const clampedWeek = Math.min(4, Math.max(1, Math.floor(weekNumber)));
+/** Rentang tanggal (Senin–Minggu) untuk satu pekan dalam sebuah bulan siklus. */
+export interface PiketMonthWeek {
+  weekNumber: number; // 1..4
+  startIsoDate: string; // YYYY-MM-DD (Senin)
+  endIsoDate: string; // YYYY-MM-DD (Minggu)
+}
 
-  const match = /^(\d{4})\/(\d{4})$/.exec(academicPeriod);
-  let cycleYear: number;
-  let cycleMonth: number; // 0-indexed
-
-  if (match) {
-    cycleYear = Number(match[2]);
-    cycleMonth = 6; // Juli
-  } else {
-    cycleYear = new Date().getFullYear();
-    cycleMonth = 0; // Januari (fallback)
-  }
-
-  // Monday pekan 1 bulan siklus (pekan yang memuat Kamis pertama)
-  const firstOfMonth = new Date(cycleYear, cycleMonth, 1);
+/** Monday pekan 1 sebuah bulan siklus = pekan yang memuat Kamis pertama bulan itu. */
+function getWeek1Monday(cycleYear: number, cycleMonthIndex0: number): Date {
+  const firstOfMonth = new Date(cycleYear, cycleMonthIndex0, 1);
   const firstOfMonthDay = firstOfMonth.getDay(); // 0=Min..6=Sab
   const firstMondayDiff = 1 - (firstOfMonthDay === 0 ? 6 : firstOfMonthDay - 1);
-  const week1Monday = new Date(
-    cycleYear,
-    cycleMonth,
-    firstMondayDiff,
-    0,
-    0,
-    0,
-    0,
-  );
+  return new Date(cycleYear, cycleMonthIndex0, firstMondayDiff, 0, 0, 0, 0);
+}
 
-  const monday = new Date(
-    week1Monday.getFullYear(),
-    week1Monday.getMonth(),
-    week1Monday.getDate() + (clampedWeek - 1) * 7,
-    0,
-    0,
-    0,
-    0,
-  );
-  const sunday = new Date(
-    monday.getFullYear(),
-    monday.getMonth(),
-    monday.getDate() + 6,
-    23,
-    59,
-    59,
-    999,
-  );
+/**
+ * Mengembalikan rentang tanggal (Senin–Minggu) untuk pekan 1..4 pada sebuah
+ * bulan siklus, memakai aturan yang SAMA dengan {@link getPiketWeekInfo}:
+ *   Pekan 1 bulan siklus = pekan (Senin–Minggu) yang memuat Kamis pertama
+ *   bulan tersebut. Pekan 2 = +7 hari, dst.
+ *
+ * `piket_schedules` tidak menyimpan tanggal, sehingga compliance dibangun
+ * ulang per bulan kalender dari template `week_number` (1–4) yang berulang
+ * setiap bulan.
+ */
+export function getPiketWeeksForMonth(
+  year: number,
+  monthIndex0: number,
+): PiketMonthWeek[] {
+  const week1Monday = getWeek1Monday(year, monthIndex0);
 
-  return {
-    startIsoDate: formatLocalDate(monday),
-    endIsoDate: formatLocalDate(sunday),
-    weekNumber: clampedWeek,
-  };
+  const weeks: PiketMonthWeek[] = [];
+  for (let i = 0; i < 4; i++) {
+    const monday = new Date(
+      week1Monday.getFullYear(),
+      week1Monday.getMonth(),
+      week1Monday.getDate() + i * 7,
+      0,
+      0,
+      0,
+      0,
+    );
+    const sunday = new Date(
+      monday.getFullYear(),
+      monday.getMonth(),
+      monday.getDate() + 6,
+      23,
+      59,
+      59,
+      999,
+    );
+    weeks.push({
+      weekNumber: i + 1,
+      startIsoDate: formatLocalDate(monday),
+      endIsoDate: formatLocalDate(sunday),
+    });
+  }
+  return weeks;
 }
 
 /** Toleransi jam untuk perbedaan clock client vs server (5 menit). */

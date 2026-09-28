@@ -8,6 +8,7 @@ import {
   imposePiketFine,
   markPiketFinePaid,
   voidPiketFine,
+  getPiketComplianceAction,
 } from "./piket";
 import { extractExifDateTime } from "@/lib/utils/exif";
 import {
@@ -72,6 +73,14 @@ vi.mock("@/lib/storage/r2", () => ({
 // Mock Audit Logger
 vi.mock("@/lib/audit", () => ({
   recordAuditLog: vi.fn().mockResolvedValue(undefined),
+}));
+
+// Mock repository (compliance report) agar tidak perlu rantai query Supabase.
+const { mockGetPiketComplianceReport } = vi.hoisted(() => ({
+  mockGetPiketComplianceReport: vi.fn(),
+}));
+vi.mock("@/lib/repositories/piket", () => ({
+  getPiketComplianceReport: mockGetPiketComplianceReport,
 }));
 
 describe("Piket Date Utility - getPiketWeekInfo", () => {
@@ -1122,5 +1131,90 @@ describe("Kestari Management Actions - assignPiketMember & removePiketMember", (
     const res = await removePiketMember("membership-id");
     expect(res.success).toBe(true);
     expect(res.message).toContain("Penugasan piket anggota berhasil dihapus");
+  });
+});
+
+describe("Piket Server Action - getPiketComplianceAction", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockSupabase.from.mockReturnThis();
+    mockSupabase.select.mockReturnThis();
+    mockSupabase.eq.mockReturnThis();
+  });
+
+  it("should reject invalid academic period format (Zod)", async () => {
+    const res = await getPiketComplianceAction("bogus-period");
+    expect(res.success).toBe(false);
+    if (!res.success) expect(res.error).toContain("Format periode DPH");
+  });
+
+  it("should reject unauthenticated calls", async () => {
+    mockSupabase.auth.getUser.mockResolvedValueOnce({
+      data: { user: null },
+      error: new Error("No session"),
+    });
+
+    const res = await getPiketComplianceAction("2026/2027");
+    expect(res.success).toBe(false);
+    if (!res.success) expect(res.error).toContain("Sesi tidak ditemukan");
+  });
+
+  it("should reject non-kestari roles (RBAC)", async () => {
+    mockSupabase.auth.getUser.mockResolvedValueOnce({
+      data: { user: { id: "user-id" } },
+    });
+    mockSupabase.single.mockResolvedValueOnce({ data: { role: "anggota" } });
+
+    const res = await getPiketComplianceAction("2026/2027");
+    expect(res.success).toBe(false);
+    if (!res.success) expect(res.error).toContain("Akses ditolak");
+    expect(mockGetPiketComplianceReport).not.toHaveBeenCalled();
+  });
+
+  it("should allow admin-kestari and return compliance rows", async () => {
+    mockSupabase.auth.getUser.mockResolvedValueOnce({
+      data: { user: { id: "kestari-id" } },
+    });
+    mockSupabase.single.mockResolvedValueOnce({
+      data: { role: "admin-kestari" },
+    });
+    mockGetPiketComplianceReport.mockResolvedValueOnce([
+      {
+        profileId: "p-1",
+        memberName: "Andi",
+        nim: "210109001",
+        academicPeriod: "2026/2027",
+        weekNumber: 1,
+        roomTarget: "Workshop",
+        startIsoDate: "2026-06-29",
+        endIsoDate: "2026-07-05",
+        cycleMonthLabel: "Juli 2026",
+        status: "alpha",
+      },
+    ]);
+
+    const res = await getPiketComplianceAction("2026/2027");
+    expect(res.success).toBe(true);
+    if (res.success) {
+      expect(res.data).toHaveLength(1);
+      expect(res.data[0].cycleMonthLabel).toBe("Juli 2026");
+    }
+    expect(mockGetPiketComplianceReport).toHaveBeenCalledWith("2026/2027");
+  });
+
+  it("should surface repository errors as failure", async () => {
+    mockSupabase.auth.getUser.mockResolvedValueOnce({
+      data: { user: { id: "kestari-id" } },
+    });
+    mockSupabase.single.mockResolvedValueOnce({
+      data: { role: "super-admin" },
+    });
+    mockGetPiketComplianceReport.mockRejectedValueOnce(
+      new Error("boom dari DB"),
+    );
+
+    const res = await getPiketComplianceAction("2026/2027");
+    expect(res.success).toBe(false);
+    if (!res.success) expect(res.error).toContain("Gagal memuat laporan");
   });
 });

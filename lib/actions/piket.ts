@@ -2,7 +2,11 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { ServerActionResponse } from "@/lib/types/action";
+import type { ActionResult } from "@/types/event-registration";
 import { extractExifDateTime } from "@/lib/utils/exif";
+import type { PiketComplianceRow } from "@/lib/repositories/piket";
+import { getPiketComplianceReport } from "@/lib/repositories/piket";
+import { z } from "zod";
 import {
   getPiketWeekInfo,
   isDateInPiketWeek,
@@ -704,7 +708,9 @@ export async function imposePiketFine(
     const todayStr = toIsoDate(new Date());
     const { data: targetProfile } = await supabase
       .from("profiles")
-      .select("id, is_on_internship, internship_start_date, internship_end_date")
+      .select(
+        "id, is_on_internship, internship_start_date, internship_end_date",
+      )
       .eq("id", profileId)
       .maybeSingle();
 
@@ -1057,6 +1063,60 @@ export async function finalizeExpiredPiketReviews(): Promise<
       success: false,
       message: "Gagal memfinalisasi laporan kedaluwarsa.",
       error: { code: "SERVER_ERROR", details: errMsg },
+    };
+  }
+}
+
+const academicPeriodSchema = z
+  .string()
+  .trim()
+  .regex(/^\d{4}\/\d{4}$/, "Format periode DPH harus YYYY/YYYY.");
+
+/**
+ * SPEC §7.3: Mengambil laporan kepatuhan piket untuk periode terpilih.
+ * RBAC: hanya Kestari / Super Admin. Payload divalidasi Zod.
+ */
+export async function getPiketComplianceAction(
+  academicPeriod: string,
+): Promise<ActionResult<PiketComplianceRow[]>> {
+  try {
+    const parsed = academicPeriodSchema.safeParse(academicPeriod);
+    if (!parsed.success) {
+      return {
+        success: false,
+        error: "Format periode DPH tidak valid. Gunakan format YYYY/YYYY.",
+        fieldErrors: { academicPeriod: ["Format periode DPH tidak valid."] },
+      };
+    }
+
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return {
+        success: false,
+        error: "Sesi tidak ditemukan. Silakan login kembali.",
+      };
+    }
+
+    if (!(await requireKestariManager(supabase, user.id))) {
+      return {
+        success: false,
+        error:
+          "Akses ditolak. Hanya Kestari dan Super Admin yang dapat melihat laporan kepatuhan piket.",
+      };
+    }
+
+    const rows = await getPiketComplianceReport(parsed.data);
+    return { success: true, data: rows };
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    return {
+      success: false,
+      error: `Gagal memuat laporan kepatuhan: ${errMsg}`,
     };
   }
 }

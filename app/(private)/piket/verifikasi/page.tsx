@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { finalizeExpiredPiketReviews } from "@/lib/actions/piket";
 import { getPiketComplianceReport } from "@/lib/repositories/piket";
+import type { PiketComplianceRow } from "@/lib/repositories/piket";
 import { PiketVerificationClient } from "@/components/features/piket/piket-verification-client";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -340,7 +341,14 @@ export default async function PiketVerifikasiPage() {
     })),
   }));
 
-  const compliance = await getPiketComplianceReport(availablePeriods[0]);
+  let compliance: PiketComplianceRow[] = [];
+  let complianceError: string | null = null;
+  try {
+    compliance = await getPiketComplianceReport(availablePeriods[0]);
+  } catch (err: unknown) {
+    console.error("[PIKET_PAGE_ERROR] Compliance query error:", err);
+    complianceError = "Gagal memuat laporan kepatuhan. Coba muat ulang.";
+  }
 
   return (
     <Suspense fallback={<VerifikasiSkeleton />}>
@@ -356,6 +364,7 @@ export default async function PiketVerifikasiPage() {
         fines={formattedFines}
         schedules={formattedSchedules}
         compliance={compliance}
+        complianceError={complianceError}
       />
     </Suspense>
   );

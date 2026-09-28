@@ -1,14 +1,13 @@
 import { describe, it, expect } from "vitest";
-import { getPiketWeekInfo, getPiketWeekInfoForPeriod } from "./piket-date";
+import { getPiketWeekInfo, getPiketWeeksForMonth } from "./piket-date";
 
-describe("getPiketWeekInfoForPeriod", () => {
-  it("mengembalikan rentang Senin–Minggu untuk pekan 1..4", () => {
-    for (let w = 1; w <= 4; w++) {
-      const info = getPiketWeekInfoForPeriod("2026/2027", w);
-      expect(info.weekNumber).toBe(w);
-      // start harus Senin, end harus Minggu (selisih 6 hari)
-      const start = new Date(info.startIsoDate + "T00:00:00");
-      const end = new Date(info.endIsoDate + "T00:00:00");
+describe("getPiketWeeksForMonth", () => {
+  it("mengembalikan pekan 1..4 dengan rentang Senin–Minggu", () => {
+    const weeks = getPiketWeeksForMonth(2026, 6); // Juli 2026
+    expect(weeks.map((w) => w.weekNumber)).toEqual([1, 2, 3, 4]);
+    for (const w of weeks) {
+      const start = new Date(w.startIsoDate + "T00:00:00");
+      const end = new Date(w.endIsoDate + "T00:00:00");
       const diffDays =
         (end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24);
       expect(diffDays).toBe(6);
@@ -17,18 +16,19 @@ describe("getPiketWeekInfoForPeriod", () => {
     }
   });
 
-  it("konsisten dengan getPiketWeekInfo pada tanggal tengah pekan yang sama", () => {
-    // 2027-07-05 adalah Senin pekan 1 Juli 2027 (siklus 2026/2027)
-    const direct = getPiketWeekInfo(new Date(2027, 6, 7)); // Rabu
-    const period = getPiketWeekInfoForPeriod("2026/2027", direct.weekNumber);
-    expect(period.startIsoDate).toBe(direct.startIsoDate);
-    expect(period.endIsoDate).toBe(direct.endIsoDate);
+  it("konsisten dengan getPiketWeekInfo pada tanggal di bulan yang sama", () => {
+    // 2026-07-07 (Selasa) berada di Pekan 2 Juli 2026 (6–12 Jul).
+    const direct = getPiketWeekInfo(new Date(2026, 6, 7));
+    const weeks = getPiketWeeksForMonth(2026, 6);
+    const match = weeks.find((w) => w.weekNumber === direct.weekNumber);
+    expect(match?.startIsoDate).toBe(direct.startIsoDate);
+    expect(match?.endIsoDate).toBe(direct.endIsoDate);
   });
 
-  it("fallback aman untuk format periode tidak dikenal", () => {
-    const info = getPiketWeekInfoForPeriod("bogus", 1);
-    expect(info.weekNumber).toBe(1);
-    expect(info.startIsoDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    expect(info.endIsoDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  it("pekan 1 = pekan yang memuat Kamis pertama bulan itu", () => {
+    // Kamis pertama September 2026 = 3 September → Pekan 1 mulai 31 Agu.
+    const weeks = getPiketWeeksForMonth(2026, 8); // September 2026
+    expect(weeks[0].startIsoDate).toBe("2026-08-31");
+    expect(weeks[0].endIsoDate).toBe("2026-09-06");
   });
 });
