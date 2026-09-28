@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import fc from "fast-check";
 import {
   classifyPiketCompliance,
   buildComplianceRows,
@@ -120,5 +121,29 @@ describe("buildComplianceRows", () => {
       rows.map((r) => [r.profileId, r.status]),
     );
     expect(byProfile["p-1"]).toBe("alpha");
+  });
+});
+describe("classifyPiketCompliance — invariant", () => {
+  it("selalu mengembalikan salah satu dari 4 status & tidak pernah alpha saat pekan berlangsung", () => {
+    fc.assert(
+      fc.property(
+        fc.boolean(),
+        fc.boolean(),
+        fc.boolean(),
+        (hasValidLog, onInternship, weekEnded) => {
+          const status = classifyPiketCompliance(
+            hasValidLog,
+            onInternship,
+            weekEnded,
+          );
+          expect(["sudah-lapor", "alpha", "berlangsung", "magang"]).toContain(
+            status,
+          );
+          if (!weekEnded && !hasValidLog && !onInternship) {
+            expect(status).toBe("berlangsung");
+          }
+        },
+      ),
+    );
   });
 });
