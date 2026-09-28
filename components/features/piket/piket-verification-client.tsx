@@ -434,7 +434,7 @@ export function PiketVerificationClient({
                   <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
                     {periodCompliance.map((r) => (
                       <tr
-                        key={`${r.profileId}-${r.weekNumber}`}
+                        key={`${r.profileId}-${r.weekNumber}-${r.roomTarget}-${r.startIsoDate}`}
                         className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
                       >
                         <td className="p-3">

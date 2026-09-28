@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { PiketVerificationClient } from "./piket-verification-client";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
@@ -48,6 +48,7 @@ describe("PiketVerificationClient", () => {
         ]}
       />,
     );
+    fireEvent.click(screen.getByRole("button", { name: /Kepatuhan/i }));
     expect(screen.getByText("Budi Alpha")).toBeTruthy();
     expect(screen.getByText("ALPHA")).toBeTruthy();
   });
