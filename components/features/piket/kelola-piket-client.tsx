@@ -217,13 +217,23 @@ export function KelolaPiketClient({
   return (
     <div className="space-y-6 w-full max-w-5xl mx-auto px-2 sm:px-4 lg:px-6">
       {/* Back Navigation Link */}
-      <div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           href="/piket"
           className="inline-flex items-center gap-1.5 text-xs font-mono font-medium text-slate-600 dark:text-slate-400 hover:text-[#1e3a8a] dark:hover:text-blue-400 transition-colors"
         >
           <HugeiconsIcon icon={ArrowLeft01Icon} size={16} />
           Kembali ke Halaman Piket
+        </Link>
+
+        <Link href="/piket/verifikasi">
+          <Button
+            variant="outline"
+            size="sm"
+            className="min-h-[44px] font-mono text-xs"
+          >
+            Verifikasi &amp; Denda
+          </Button>
         </Link>
       </div>
 

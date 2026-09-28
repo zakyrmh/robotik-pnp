@@ -62,7 +62,7 @@ The system enforces strict access boundaries across 5 core roles. All Route Hand
 | `WF-ATT-03` | Approve Attendance Leave (Izin/Sakit)       |     [x]     |   [-]    |     [x]      |   [-]   |  [-]  |
 | `WF-PIK-01` | Schedule Laboratory Shifts (Piket)          |     [x]     |   [-]    |     [x]      |   [-]   |  [-]  |
 | `WF-PIK-02` | Upload Shift Photo Evidence                 |     [-]     |   [-]    |     [-]      |   [-]   |  [x]  |
-| `WF-PIK-03` | Verify Shift & Impose Fine (Denda Rp10.000) |     [x]     |   [-]    |     [x]      |   [-]   |  [-]  |
+| `WF-PIK-03` | Verify Shift & Impose Fine (Denda Rp10.000) |     [x]     |   [-]    |     [-]      |   [-]   |  [-]  |
 | `WF-REC-01` | Publish Open Recruitment Window             |     [x]     |   [x]    |     [-]      |   [-]   |  [-]  |
 | `WF-REC-02` | Document Screening & Interview Scoring      |     [x]     |   [x]    |     [x]      |   [-]   |  [-]  |
 | `WF-REC-03` | Upload Signed Member Decree (SK Pelantikan) |     [x]     |   [x]    |     [-]      |   [-]   |  [-]  |
