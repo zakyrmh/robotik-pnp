@@ -48,7 +48,27 @@ describe("PiketVerificationClient", () => {
         ]}
       />,
     );
+
+    // Before clicking the tab, the kepatuhan panel is inert (aria-hidden) and
+    // the verifikasi panel is active.
+    expect(
+      screen.getByTestId("piket-kepatuhan-panel").getAttribute("aria-hidden"),
+    ).toBe("true");
+    expect(
+      screen.getByTestId("piket-verifikasi-panel").getAttribute("aria-hidden"),
+    ).toBe("false");
+
     fireEvent.click(screen.getByRole("button", { name: /Kepatuhan/i }));
+
+    // After clicking, the tab state flips: kepatuhan becomes active and
+    // verifikasi becomes inert. This makes the click load-bearing.
+    expect(
+      screen.getByTestId("piket-kepatuhan-panel").getAttribute("aria-hidden"),
+    ).toBe("false");
+    expect(
+      screen.getByTestId("piket-verifikasi-panel").getAttribute("aria-hidden"),
+    ).toBe("true");
+
     expect(screen.getByText("Budi Alpha")).toBeTruthy();
     expect(screen.getByText("ALPHA")).toBeTruthy();
   });

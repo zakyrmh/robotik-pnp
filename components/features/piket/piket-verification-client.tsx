@@ -366,7 +366,11 @@ export function PiketVerificationClient({
       </div>
 
       {/* Kepatuhan panel (kept mounted; hidden via CSS when inactive) */}
-      <div className={activeSection === "kepatuhan" ? "block" : "hidden"}>
+      <div
+        data-testid="piket-kepatuhan-panel"
+        aria-hidden={activeSection !== "kepatuhan"}
+        className={activeSection === "kepatuhan" ? "block" : "hidden"}
+      >
         <Card className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xs">
           <CardHeader className="border-b border-slate-100 dark:border-slate-800 pb-4">
             <CardTitle className="text-base font-display font-medium text-[#0a192f] dark:text-slate-100">
@@ -478,6 +482,8 @@ export function PiketVerificationClient({
 
       {/* Verifikasi & Denda panel (kept mounted; hidden via CSS when inactive) */}
       <div
+        data-testid="piket-verifikasi-panel"
+        aria-hidden={activeSection !== "verifikasi"}
         className={
           activeSection === "verifikasi" ? "block space-y-6" : "hidden"
         }
