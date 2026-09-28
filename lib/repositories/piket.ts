@@ -71,9 +71,11 @@ export function buildComplianceRows(input: {
   const today = input.today ?? new Date();
   const todayIso = formatIso(today);
 
+  // Hanya log valid (bukan ditolak) yang dihitung. `is_verified === false`
+  // berarti log ditolak (lihat lib/actions/piket.ts: .neq("is_verified", false)).
   const reportedSet = new Set(
     input.logs
-      .filter((l) => l.reported_by && l.schedule_id)
+      .filter((l) => l.reported_by && l.schedule_id && l.is_verified !== false)
       .map((l) => `${l.schedule_id}::${l.reported_by}`),
   );
 

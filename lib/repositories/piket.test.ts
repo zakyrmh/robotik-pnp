@@ -21,7 +21,6 @@ describe("classifyPiketCompliance", () => {
     expect(classifyPiketCompliance(false, false, false)).toBe("berlangsung");
   });
 });
-
 describe("buildComplianceRows", () => {
   const schedules: RawComplianceSchedule[] = [
     {
@@ -105,5 +104,21 @@ describe("buildComplianceRows", () => {
       logs,
     });
     expect(rows).toEqual([]);
+  });
+
+  it("log ditolak (is_verified false) tidak membuat status sudah-lapor", () => {
+    const rejectedLogs: RawComplianceLog[] = [
+      { schedule_id: "sched-1", reported_by: "p-1", is_verified: false },
+    ];
+    const rows = buildComplianceRows({
+      academicPeriod: "2026/2027",
+      schedules,
+      logs: rejectedLogs,
+      today: new Date(2027, 8, 1), // setelah pekan 1 berakhir
+    });
+    const byProfile = Object.fromEntries(
+      rows.map((r) => [r.profileId, r.status]),
+    );
+    expect(byProfile["p-1"]).toBe("alpha");
   });
 });
