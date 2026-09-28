@@ -2,8 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { finalizeExpiredPiketReviews } from "@/lib/actions/piket";
-import { PiketClient } from "@/components/features/piket/piket-client";
+import { PiketReportClient } from "@/components/features/piket/piket-report-client";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const metadata: Metadata = {
@@ -133,12 +132,6 @@ export default async function PiketPage() {
     redirect("/login");
   }
 
-  // Lazy auto-finalisasi: laporan auto-terverifikasi yang pekannya sudah
-  // berakhir difinalisasi sistem saat halaman dilihat Kestari / Super Admin.
-  if (profile.role === "super-admin" || profile.role === "admin-kestari") {
-    await finalizeExpiredPiketReviews();
-  }
-
   // 1. Fetch all schedules across all periods (same source of truth as /piket/kelola)
   const { data: schedules, error: schedulesError } = await supabase
     .from("piket_schedules")
@@ -205,7 +198,7 @@ export default async function PiketPage() {
     );
   }
 
-  // 3. Fetch piket logs (all logs, order by date desc)
+  // 3. Fetch the current user's piket logs, order by date desc
   const { data: logs, error: logsError } = await supabase
     .from("piket_logs")
     .select(
@@ -247,13 +240,14 @@ export default async function PiketPage() {
       )
     `,
     )
+    .eq("reported_by", user.id)
     .order("duty_date", { ascending: false });
 
   if (logsError) {
     console.error("[PIKET_PAGE_ERROR] Logs query error:", logsError);
   }
 
-  // 4. Fetch piket fines (denda administratif, dikelola Kestari)
+  // 4. Fetch the current user's piket fines (denda administratif)
   const { data: fines, error: finesError } = await supabase
     .from("piket_fines")
     .select(
@@ -283,69 +277,64 @@ export default async function PiketPage() {
       )
     `,
     )
+    .eq("profile_id", user.id)
     .order("created_at", { ascending: false });
 
   if (finesError) {
     console.error("[PIKET_PAGE_ERROR] Fines query error:", finesError);
   }
 
-  // Format logs data
-  const formattedLogs = ((logs as unknown as RawPiketLog[]) || []).map(
-    (log) => {
-      const weekNumber = log.piket_schedules?.week_number;
-      const scheduleLabel =
-        typeof weekNumber === "number" ? `PEKAN ${weekNumber}` : "JADWAL PIKET";
-      return {
-        id: log.id,
-        duty_date: log.duty_date,
-        notes: log.notes || "",
-        proof_image_url: log.proof_image_url || "",
-        proof_image_before_url: log.proof_image_before_url || "",
-        is_verified: log.is_verified ?? true,
-        is_final: log.is_final ?? false,
-        rejection_reason: log.rejection_reason || "",
-        verified_at: log.verified_at || "",
-        photo_taken_at_before: log.photo_taken_at_before || "",
-        photo_taken_at_after: log.photo_taken_at_after || "",
-        schedule_id: log.schedule_id || "",
-        academic_period:
-          log.piket_schedules?.academic_period || availablePeriods[0],
-        schedule_day: scheduleLabel,
-        reporter_id: log.reported_by || "",
-        reporter_name:
-          log.profiles?.full_name ||
-          log.profiles?.registrations?.full_name ||
-          "Anggota",
-        reporter_nim: log.profiles?.nim || "",
-        verifier_name:
-          log.verifier?.full_name ||
-          log.verifier?.registrations?.full_name ||
-          "",
-      };
-    },
-  );
-
-  // Format fines data
-  const formattedFines = ((fines as unknown as RawPiketFine[]) || []).map(
-    (fine) => ({
-      id: fine.id,
-      amount: fine.amount,
-      status: fine.status,
-      notes: fine.notes || "",
-      imposed_by: fine.imposed_by || "",
-      paid_at: fine.paid_at || "",
-      created_at: fine.created_at,
-      profile_id: fine.profile_id,
-      schedule_id: fine.schedule_id || "",
-      academic_period: fine.piket_schedules?.academic_period || "",
-      week_number: fine.piket_schedules?.week_number ?? 0,
-      member_name:
-        fine.profiles?.full_name ||
-        fine.profiles?.registrations?.full_name ||
+  // Format the current user's logs data
+  const myLogs = ((logs as unknown as RawPiketLog[]) || []).map((log) => {
+    const weekNumber = log.piket_schedules?.week_number;
+    const scheduleLabel =
+      typeof weekNumber === "number" ? `PEKAN ${weekNumber}` : "JADWAL PIKET";
+    return {
+      id: log.id,
+      duty_date: log.duty_date,
+      notes: log.notes || "",
+      proof_image_url: log.proof_image_url || "",
+      proof_image_before_url: log.proof_image_before_url || "",
+      is_verified: log.is_verified ?? true,
+      is_final: log.is_final ?? false,
+      rejection_reason: log.rejection_reason || "",
+      verified_at: log.verified_at || "",
+      photo_taken_at_before: log.photo_taken_at_before || "",
+      photo_taken_at_after: log.photo_taken_at_after || "",
+      schedule_id: log.schedule_id || "",
+      academic_period:
+        log.piket_schedules?.academic_period || availablePeriods[0],
+      schedule_day: scheduleLabel,
+      reporter_id: log.reported_by || "",
+      reporter_name:
+        log.profiles?.full_name ||
+        log.profiles?.registrations?.full_name ||
         "Anggota",
-      member_nim: fine.profiles?.nim || "",
-    }),
-  );
+      reporter_nim: log.profiles?.nim || "",
+      verifier_name:
+        log.verifier?.full_name || log.verifier?.registrations?.full_name || "",
+    };
+  });
+
+  // Format the current user's fines data
+  const myFines = ((fines as unknown as RawPiketFine[]) || []).map((fine) => ({
+    id: fine.id,
+    amount: fine.amount,
+    status: fine.status,
+    notes: fine.notes || "",
+    imposed_by: fine.imposed_by || "",
+    paid_at: fine.paid_at || "",
+    created_at: fine.created_at,
+    profile_id: fine.profile_id,
+    schedule_id: fine.schedule_id || "",
+    academic_period: fine.piket_schedules?.academic_period || "",
+    week_number: fine.piket_schedules?.week_number ?? 0,
+    member_name:
+      fine.profiles?.full_name ||
+      fine.profiles?.registrations?.full_name ||
+      "Anggota",
+    member_nim: fine.profiles?.nim || "",
+  }));
 
   // Format schedules data — keep real week_number / academic_period from DB
   const formattedSchedules = (
@@ -382,7 +371,7 @@ export default async function PiketPage() {
 
   return (
     <Suspense fallback={<PiketSkeleton />}>
-      <PiketClient
+      <PiketReportClient
         profile={{
           id: profile.id,
           email: profile.email,
@@ -395,8 +384,8 @@ export default async function PiketPage() {
         availablePeriods={availablePeriods}
         schedules={formattedSchedules}
         myAssignments={userAssignments}
-        logs={formattedLogs}
-        fines={formattedFines}
+        myLogs={myLogs}
+        myFines={myFines}
       />
     </Suspense>
   );
