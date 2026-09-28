@@ -86,7 +86,7 @@ interface MenuItem {
   kestariOnly?: boolean;
 }
 
-const allMenuItems: Record<string, MenuItem> = {
+const allMenuItems = {
   dashboard: {
     title: "Dashboard",
     href: "/dashboard",
@@ -240,7 +240,7 @@ const allMenuItems: Record<string, MenuItem> = {
     module: "mrc" as ModuleKey,
     adminOnly: false,
   },
-} as const;
+} satisfies Record<string, MenuItem>;
 
 type MenuKey = keyof typeof allMenuItems;
 
@@ -361,7 +361,10 @@ function resolveVisibleKeys(
   const base: MenuKey[] =
     role && roleMenuKeys[role] ? roleMenuKeys[role] : ["dashboard"];
   return base.filter((key) => {
-    const item = allMenuItems[key];
+    const item = allMenuItems[key] as {
+      adminOnly?: boolean;
+      kestariOnly?: boolean;
+    };
     if (item.adminOnly && role !== "super-admin") return false;
     if (item.kestariOnly && role !== "super-admin" && role !== "admin-kestari")
       return false;
