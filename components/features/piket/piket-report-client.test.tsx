@@ -22,7 +22,11 @@ describe("PiketReportClient", () => {
         myFines={[]}
       />,
     );
-    expect(screen.queryByText(/verifikasi/i)).toBeNull();
+    expect(
+      screen.queryByText(
+        /menunggu review|setujui|aksi kestari|kelola penjadwalan|batalkan denda|tandai lunas/i,
+      ),
+    ).toBeNull();
   });
 
   it("menampilkan judul modul lapor piket", () => {
