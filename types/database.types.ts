@@ -616,6 +616,9 @@ export type Database = {
           midtrans_snap_token: string | null;
           origin_city: string | null;
           paid_at: string | null;
+          payment_bank_account_holder: string | null;
+          payment_bank_account_number: string | null;
+          payment_bank_name: string | null;
           payment_status: string;
           registration_batch: string | null;
           registration_code: string;
@@ -643,6 +646,9 @@ export type Database = {
           midtrans_snap_token?: string | null;
           origin_city?: string | null;
           paid_at?: string | null;
+          payment_bank_account_holder?: string | null;
+          payment_bank_account_number?: string | null;
+          payment_bank_name?: string | null;
           payment_status?: string;
           registration_batch?: string | null;
           registration_code: string;
@@ -670,6 +676,9 @@ export type Database = {
           midtrans_snap_token?: string | null;
           origin_city?: string | null;
           paid_at?: string | null;
+          payment_bank_account_holder?: string | null;
+          payment_bank_account_number?: string | null;
+          payment_bank_name?: string | null;
           payment_status?: string;
           registration_batch?: string | null;
           registration_code?: string;
@@ -1580,6 +1589,7 @@ export type Database = {
           proof_follow_mrc: string | null;
           proof_follow_robotik: string | null;
           proof_sub_yt: string | null;
+          revision_notes: string | null;
           status: Database["public"]["Enums"]["reg_status"] | null;
           study_program_id: string | null;
           updated_at: string | null;
@@ -1611,6 +1621,7 @@ export type Database = {
           proof_follow_mrc?: string | null;
           proof_follow_robotik?: string | null;
           proof_sub_yt?: string | null;
+          revision_notes?: string | null;
           status?: Database["public"]["Enums"]["reg_status"] | null;
           study_program_id?: string | null;
           updated_at?: string | null;
@@ -1642,6 +1653,7 @@ export type Database = {
           proof_follow_mrc?: string | null;
           proof_follow_robotik?: string | null;
           proof_sub_yt?: string | null;
+          revision_notes?: string | null;
           status?: Database["public"]["Enums"]["reg_status"] | null;
           study_program_id?: string | null;
           updated_at?: string | null;
@@ -1881,36 +1893,7 @@ export type Database = {
           old_value?: Json | null;
           target_user_id?: string | null;
         };
-        Relationships: [
-          {
-            foreignKeyName: "system_audit_logs_actor_id_fkey";
-            columns: ["actor_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "system_audit_logs_actor_id_fkey";
-            columns: ["actor_id"];
-            isOneToOne: false;
-            referencedRelation: "v_user_discipline_summary";
-            referencedColumns: ["profile_id"];
-          },
-          {
-            foreignKeyName: "system_audit_logs_target_user_id_fkey";
-            columns: ["target_user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "system_audit_logs_target_user_id_fkey";
-            columns: ["target_user_id"];
-            isOneToOne: false;
-            referencedRelation: "v_user_discipline_summary";
-            referencedColumns: ["profile_id"];
-          },
-        ];
+        Relationships: [];
       };
       task_submissions: {
         Row: {
@@ -2091,6 +2074,14 @@ export type Database = {
         Returns: string;
       };
       slugify: { Args: { v_text: string }; Returns: string };
+      update_caang_registration_status: {
+        Args: {
+          p_profile_id: string;
+          p_revision_notes?: string;
+          p_status: Database["public"]["Enums"]["reg_status"];
+        };
+        Returns: Json;
+      };
     };
     Enums: {
       activity_target: "caang" | "anggota";
@@ -2110,7 +2101,7 @@ export type Database = {
         | "Jumat"
         | "Sabtu"
         | "Minggu";
-      reg_status: "process" | "pending" | "verified" | "rejected";
+      reg_status: "process" | "pending" | "verified" | "rejected" | "revision";
       task_status: "belum_selesai" | "diperiksa" | "selesai" | "revisi";
       user_role:
         | "super-admin"
@@ -2266,7 +2257,7 @@ export const Constants = {
         "Sabtu",
         "Minggu",
       ],
-      reg_status: ["process", "pending", "verified", "rejected"],
+      reg_status: ["process", "pending", "verified", "rejected", "revision"],
       task_status: ["belum_selesai", "diperiksa", "selesai", "revisi"],
       user_role: [
         "super-admin",

@@ -93,6 +93,10 @@ export interface EventRegistration {
   midtrans_payment_type: string | null;
   paid_at: string | null;
   manual_payment_proof_url: string | null;
+  /** Snapshot rekening bank panitia tujuan transfer (diisi admin). */
+  payment_bank_name: string | null;
+  payment_bank_account_number: string | null;
+  payment_bank_account_holder: string | null;
   rejection_reason: string | null;
   rules_version_id: string | null;
   rules_accepted_at: string | null;

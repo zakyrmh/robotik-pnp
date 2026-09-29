@@ -1,7 +1,11 @@
 import { notFound } from "next/navigation";
 import { ShieldAlert } from "lucide-react";
 import { requireEventAdminOrRedirect } from "@/lib/event-auth";
-import { getEventRegistrationByIdAction } from "@/lib/actions/event-admin";
+import {
+  getEventRegistrationByIdAction,
+  getEventSettingsAction,
+} from "@/lib/actions/event-admin";
+import { resolveBankAccounts } from "@/lib/event-bank";
 import { RegistrationDetailView } from "@/components/event/registration-detail-view";
 
 export default async function EventRegistrationDetailPage({
@@ -44,12 +48,18 @@ export default async function EventRegistrationDetailPage({
     notFound();
   }
 
+  const settingsRes = await getEventSettingsAction();
+  const bankAccounts = resolveBankAccounts(
+    settingsRes.success ? settingsRes.data : null,
+  );
+
   return (
     <main className="mx-auto max-w-7xl space-y-6">
       <RegistrationDetailView
         registration={res.data}
         roleEvent={auth.roleEvent}
         isSuperAdmin={auth.isSuperAdmin}
+        bankAccounts={bankAccounts}
       />
     </main>
   );

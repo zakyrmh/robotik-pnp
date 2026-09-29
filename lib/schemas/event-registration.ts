@@ -193,6 +193,17 @@ export const manualPaymentVerificationSchema = z.object({
   manual_payment_proof_url: z.string().url("URL bukti pembayaran harus valid"),
 });
 
+/**
+ * Penetapan rekening bank tujuan transfer untuk sebuah pendaftaran.
+ *
+ * Hanya diisi oleh `panitia-pendaftaran` / super-admin dari halaman detail.
+ * `bank` boleh `null` untuk mengosongkan kembali pilihan rekening.
+ */
+export const eventPaymentBankSchema = z.object({
+  registration_id: z.string().uuid("ID Pendaftaran tidak valid"),
+  bank: bankAccountSchema.nullable(),
+});
+
 export const faceVerificationSchema = z.object({
   member_qr_token: z.string().uuid("QR Token anggota tidak valid"),
   result: z.enum(["verified", "mismatch"]),
@@ -292,5 +303,6 @@ export type BankAccountInput = z.infer<typeof bankAccountSchema>;
 export type ManualPaymentVerificationInput = z.infer<
   typeof manualPaymentVerificationSchema
 >;
+export type EventPaymentBankInput = z.infer<typeof eventPaymentBankSchema>;
 export type FaceVerificationInput = z.infer<typeof faceVerificationSchema>;
 export type EventViolationInput = z.infer<typeof eventViolationSchema>;

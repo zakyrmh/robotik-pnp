@@ -615,10 +615,12 @@ export function RegistrationTable({
                 </div>
                 <div className="text-right">
                   <span className="text-muted-foreground block text-micro">
-                    Kontak & Anggota:
+                    Rekening Tujuan:
                   </span>
                   <span className="text-xs text-foreground font-medium">
-                    {reg.members?.length || 0} anggota
+                    {reg.payment_bank_name
+                      ? `${reg.payment_bank_name} · ${reg.payment_bank_account_number || "-"}`
+                      : "Belum ditetapkan"}
                   </span>
                 </div>
               </div>
@@ -718,6 +720,9 @@ export function RegistrationTable({
                   Total Biaya
                 </th>
                 <th scope="col" className="p-3.5">
+                  Rekening Tujuan
+                </th>
+                <th scope="col" className="p-3.5">
                   Status Pembayaran
                 </th>
                 <th scope="col" className="p-3.5 text-right">
@@ -729,7 +734,7 @@ export function RegistrationTable({
               {filtered.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="p-8 text-center text-muted-foreground text-sm font-medium"
                   >
                     Tidak ada pendaftaran tim yang sesuai dengan kriteria
@@ -796,6 +801,24 @@ export function RegistrationTable({
                       {reg.total_amount > 0
                         ? `Rp ${Number(reg.total_amount).toLocaleString("id-ID")}`
                         : "Gratis"}
+                    </td>
+
+                    {/* Rekening Tujuan */}
+                    <td className="p-3.5 text-xs">
+                      {reg.payment_bank_name ? (
+                        <div className="space-y-0.5">
+                          <span className="block font-semibold text-foreground">
+                            {reg.payment_bank_name}
+                          </span>
+                          <span className="block font-mono text-muted-foreground">
+                            {reg.payment_bank_account_number || "-"}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground italic">
+                          Belum ditetapkan
+                        </span>
+                      )}
                     </td>
 
                     {/* Status Pembayaran */}
@@ -1015,6 +1038,17 @@ export function RegistrationTable({
                     {selectedReg.category?.name || "-"}
                   </strong>{" "}
                   · {selectedReg.institution} ({selectedReg.origin_city || "-"})
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Rekening Tujuan:{" "}
+                  {selectedReg.payment_bank_name ? (
+                    <strong className="text-foreground font-mono">
+                      {selectedReg.payment_bank_name} ·{" "}
+                      {selectedReg.payment_bank_account_number || "-"}
+                    </strong>
+                  ) : (
+                    <span className="italic">Belum ditetapkan</span>
+                  )}
                 </p>
               </div>
 

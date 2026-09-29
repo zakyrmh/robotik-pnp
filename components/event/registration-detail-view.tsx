@@ -4,8 +4,16 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
-import { verifyManualPaymentAction } from "@/lib/actions/event-admin";
-import type { EventRegistration, RoleEvent } from "@/types/event-registration";
+import {
+  setRegistrationPaymentBankAction,
+  verifyManualPaymentAction,
+} from "@/lib/actions/event-admin";
+import { formatBankAccountLabel } from "@/lib/event-bank";
+import type {
+  BankAccount,
+  EventRegistration,
+  RoleEvent,
+} from "@/types/event-registration";
 import {
   ArrowLeft,
   Building2,
@@ -14,6 +22,7 @@ import {
   Copy,
   ExternalLink,
   FileText,
+  Landmark,
   Mail,
   MapPin,
   MessageSquare,
@@ -24,6 +33,7 @@ import {
   AlertCircle,
   Eye,
   Check,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -31,6 +41,8 @@ interface RegistrationDetailViewProps {
   registration: EventRegistration;
   roleEvent?: RoleEvent;
   isSuperAdmin?: boolean;
+  /** Daftar rekening bank panitia untuk dipilih sebagai tujuan transfer. */
+  bankAccounts?: BankAccount[];
 }
 
 const statusBadgeStyle: Record<string, string> = {
@@ -49,6 +61,9 @@ const statusBadgeStyle: Record<string, string> = {
 
 export function RegistrationDetailView({
   registration: initialReg,
+  roleEvent,
+  isSuperAdmin,
+  bankAccounts = [],
 }: RegistrationDetailViewProps) {
   const [reg, setReg] = useState<EventRegistration>(initialReg);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -57,10 +72,43 @@ export function RegistrationDetailView({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [copiedCode, setCopiedCode] = useState(false);
+
+  // Penetapan rekening tujuan transfer (hanya panitia-pendaftaran / super-admin).
+  const canManageBank = roleEvent === "panitia-pendaftaran" || isSuperAdmin;
+  const [selectedBankIndex, setSelectedBankIndex] = useState(() => {
+    const idx = bankAccounts.findIndex(
+      (acc) =>
+        acc.bank_name === reg.payment_bank_name &&
+        acc.account_number === reg.payment_bank_account_number,
+    );
+    return idx >= 0 ? idx : -1;
+  });
+  const [isSavingBank, setIsSavingBank] = useState(false);
+  const [bankError, setBankError] = useState<string | null>(null);
+  const hasAssignedBank = Boolean(reg.payment_bank_name);
+
   const [lightboxImg, setLightboxImg] = useState<{
     url: string;
     title: string;
   } | null>(null);
+
+  const handleSaveBank = async () => {
+    setIsSavingBank(true);
+    setBankError(null);
+    setSuccessMsg(null);
+
+    const bank =
+      selectedBankIndex >= 0 ? bankAccounts[selectedBankIndex] : null;
+    const res = await setRegistrationPaymentBankAction(reg.id, bank);
+    setIsSavingBank(false);
+
+    if (res.success) {
+      setReg(res.data);
+      setSuccessMsg(res.message || "Rekening tujuan berhasil disimpan.");
+    } else {
+      setBankError(res.error || "Gagal menyimpan rekening tujuan.");
+    }
+  };
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(reg.registration_code);
@@ -510,6 +558,111 @@ export function RegistrationDetailView({
                 )}
               </div>
             </div>
+          </section>
+
+          {/* Panel Rekening Tujuan Transfer */}
+          <section className="rounded-lg border border-border bg-card p-5 sm:p-6 space-y-4 shadow-xs">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <h2 className="font-display text-md font-bold text-foreground flex items-center gap-2">
+                <Landmark className="size-5 text-primary" aria-hidden="true" />
+                Rekening Tujuan Transfer
+              </h2>
+              <Badge
+                variant="outline"
+                className={cn(
+                  "font-mono text-micro",
+                  hasAssignedBank
+                    ? "border-success/30 bg-success-soft text-success"
+                    : "text-muted-foreground",
+                )}
+              >
+                {hasAssignedBank ? "Sudah Ditetapkan" : "Belum Ditetapkan"}
+              </Badge>
+            </div>
+
+            {bankError && (
+              <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-xs font-medium text-destructive">
+                <AlertCircle className="size-4 shrink-0" aria-hidden="true" />
+                <span>{bankError}</span>
+              </div>
+            )}
+
+            {/* Rekening tersimpan saat ini */}
+            <div className="rounded-lg border border-border bg-secondary/40 p-4 text-xs space-y-1">
+              {hasAssignedBank ? (
+                <>
+                  <span className="block font-semibold uppercase tracking-wide text-primary text-micro">
+                    {reg.payment_bank_name}
+                  </span>
+                  <span className="block font-mono text-base font-bold text-foreground tracking-wide">
+                    {reg.payment_bank_account_number || "-"}
+                  </span>
+                  <span className="block text-muted-foreground">
+                    a.n {reg.payment_bank_account_holder || "-"}
+                  </span>
+                </>
+              ) : (
+                <span className="text-muted-foreground">
+                  Peserta ini belum ditetapkan rekening tujuan transfernya.
+                </span>
+              )}
+            </div>
+
+            {canManageBank ? (
+              <div className="space-y-3">
+                <label
+                  htmlFor="payment-bank-select"
+                  className="block text-xs font-semibold text-foreground"
+                >
+                  Pilih rekening bank panitia yang digunakan:
+                </label>
+                {bankAccounts.length === 0 ? (
+                  <p className="rounded-md border border-dashed border-border bg-secondary/30 p-3 text-xs text-muted-foreground">
+                    Belum ada rekening panitia yang dikonfigurasi pada
+                    pengaturan pembayaran event.
+                  </p>
+                ) : (
+                  <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
+                    <select
+                      id="payment-bank-select"
+                      value={selectedBankIndex}
+                      onChange={(e) =>
+                        setSelectedBankIndex(Number(e.target.value))
+                      }
+                      className="min-h-[44px] flex-1 rounded-md border border-input bg-background px-3 py-2 text-xs sm:text-sm font-medium text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
+                    >
+                      <option value={-1}>— Tidak ada / kosongkan —</option>
+                      {bankAccounts.map((acc, idx) => (
+                        <option key={idx} value={idx}>
+                          {formatBankAccountLabel(acc)}
+                        </option>
+                      ))}
+                    </select>
+
+                    <button
+                      type="button"
+                      onClick={handleSaveBank}
+                      disabled={isSavingBank}
+                      className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-md bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary-hover transition-colors disabled:opacity-50"
+                    >
+                      {isSavingBank ? (
+                        <Loader2
+                          className="size-4 animate-spin"
+                          aria-hidden="true"
+                        />
+                      ) : (
+                        <Check className="size-4" aria-hidden="true" />
+                      )}
+                      <span>Simpan Rekening</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <p className="text-micro text-muted-foreground italic">
+                Hanya panitia pendaftaran yang dapat menetapkan rekening tujuan.
+              </p>
+            )}
           </section>
 
           {/* Panel Anggota Tim */}

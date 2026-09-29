@@ -5,6 +5,7 @@ import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { untypedFrom } from "@/lib/supabase/untyped";
 import {
   eventCategorySchema,
+  eventPaymentBankSchema,
   eventSettingsSchema,
   type EventCategoryInput,
   type EventSettingsInput,
@@ -12,6 +13,7 @@ import {
 import { sendETicketEmail } from "@/lib/services/resend";
 import type {
   ActionResult,
+  BankAccount,
   EventCategory,
   EventRegistration,
   EventRegistrationMetrics,
@@ -365,6 +367,9 @@ const REGISTRATION_LIST_SELECT = `
   payment_status,
   total_amount,
   manual_payment_proof_url,
+  payment_bank_name,
+  payment_bank_account_number,
+  payment_bank_account_holder,
   access_token,
   created_at,
   category_id,
@@ -540,6 +545,8 @@ export async function getEventRegistrationsExportAction(): Promise<
       total_amount,
       paid_at,
       created_at,
+      payment_bank_name,
+      payment_bank_account_number,
       category:event_categories(name)
     `,
     )
@@ -557,6 +564,8 @@ export async function getEventRegistrationsExportAction(): Promise<
           | "total_amount"
           | "paid_at"
           | "created_at"
+          | "payment_bank_name"
+          | "payment_bank_account_number"
         > & { category: { name: string } | null })[]
       | null;
     error: unknown;
@@ -576,6 +585,7 @@ export async function getEventRegistrationsExportAction(): Promise<
     "WhatsApp",
     "Status Pembayaran",
     "Total Biaya (Rp)",
+    "Rekening Tujuan",
     "Tanggal Bayar",
     "Tanggal Daftar",
   ];
@@ -593,6 +603,11 @@ export async function getEventRegistrationsExportAction(): Promise<
       escape(r.team_whatsapp),
       escape(r.payment_status),
       escape(String(r.total_amount ?? "")),
+      escape(
+        r.payment_bank_name
+          ? `${r.payment_bank_name} - ${r.payment_bank_account_number ?? ""}`.trim()
+          : "",
+      ),
       escape(r.paid_at ? new Date(r.paid_at).toLocaleString("id-ID") : ""),
       escape(
         r.created_at ? new Date(r.created_at).toLocaleString("id-ID") : "",
@@ -865,6 +880,80 @@ export async function verifyManualPaymentAction(
       action === "approve"
         ? "Pembayaran berhasil diverifikasi (Disetujui)."
         : "Bukti pembayaran ditolak.",
+  };
+}
+
+// --------------------------------------------------------
+// Payment Bank Account Assignment (Panitia Pendaftaran / Super Admin)
+// --------------------------------------------------------
+
+/**
+ * Tetapkan / kosongkan rekening bank tujuan transfer untuk sebuah pendaftaran.
+ *
+ * Hanya boleh dilakukan `panitia-pendaftaran` (dan super-admin lewat
+ * `checkEventRole`). Nilai disimpan sebagai snapshot 3 kolom agar riwayat
+ * rekening tetap utuh walau daftar rekening panitia berubah di kemudian hari.
+ *
+ * @param bank `null` untuk mengosongkan pilihan rekening.
+ */
+export async function setRegistrationPaymentBankAction(
+  registrationId: string,
+  bank: BankAccount | null,
+): Promise<ActionResult<EventRegistration>> {
+  const check = await checkEventRole(["panitia-pendaftaran"]);
+  if (!check.authorized) {
+    return { success: false, error: check.error || "Akses ditolak." };
+  }
+
+  const validated = eventPaymentBankSchema.safeParse({
+    registration_id: registrationId,
+    bank,
+  });
+  if (!validated.success) {
+    const firstIssue = validated.error.issues[0];
+    return {
+      success: false,
+      error: firstIssue?.message || "Data rekening tidak valid.",
+    };
+  }
+
+  const { bank: validBank } = validated.data;
+
+  const adminSupabase = createAdminClient();
+  const { data, error } = await (untypedFrom(
+    adminSupabase,
+    "event_registrations",
+  )
+    .update({
+      payment_bank_name: validBank?.bank_name ?? null,
+      payment_bank_account_number: validBank?.account_number ?? null,
+      payment_bank_account_holder: validBank?.account_holder ?? null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", registrationId)
+    .select(
+      `
+      *,
+      category:event_categories(*)
+    `,
+    )
+    .single() as unknown as Promise<{
+    data: EventRegistration | null;
+    error: unknown;
+  }>);
+
+  if (error || !data) {
+    return { success: false, error: "Gagal menyimpan rekening tujuan." };
+  }
+
+  revalidatePath("/manajemen-event/pendaftaran");
+  revalidatePath(`/manajemen-event/pendaftaran/${registrationId}`);
+  return {
+    success: true,
+    data,
+    message: validBank
+      ? "Rekening tujuan berhasil disimpan."
+      : "Rekening tujuan berhasil dikosongkan.",
   };
 }
 
