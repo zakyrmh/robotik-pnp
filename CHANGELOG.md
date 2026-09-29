@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.13.0](https://github.com/zakyrmh/robotik-pnp/compare/v0.12.3...v0.13.0) (2026-09-29)
+
+### Added
+
+- **Penetapan Rekening Tujuan Transfer per Pendaftaran MRC (`supabase/migrations/20260925000000_add_payment_bank_to_event_registrations.sql` baru, `lib/actions/event-admin.ts`, `lib/event-bank.ts` baru, `lib/schemas/event-registration.ts`, `components/event/registration-detail-view.tsx`, `components/event/registration-table.tsx`, `types/database.types.ts`, `types/event-registration.ts`)**: Admin `panitia-pendaftaran` (dan super-admin) kini dapat menetapkan rekening bank panitia mana yang dipakai sebuah tim untuk transfer, langsung dari halaman detail pendaftaran. Rekening disimpan sebagai **snapshot 3 kolom** (`payment_bank_name`, `payment_bank_account_number`, `payment_bank_account_holder`) agar riwayat rekening tetap utuh walau daftar rekening panitia berubah di kemudian hari, lalu ditampilkan pada tabel desktop, kartu mobile, modal pratinjau, dan sebagai kolom baru **"Rekening Tujuan"** pada ekspor CSV. Server Action baru `setRegistrationPaymentBankAction` divalidasi Zod dan mencakup fallback daftar rekening dari `event_settings.bank_accounts` maupun kolom tunggal `bank_name/bank_account_number/bank_account_holder`. Tipe database disinkronkan via `pnpm gen:types`.
+- **Grafik Tren Pendaftaran Harian Dashboard MRC (`components/event/mrc-registration-trend-chart.tsx` baru, `lib/mrc-analytics.ts` baru, `lib/mrc-analytics.test.ts` baru)**: Menambahkan visualisasi tren pendaftaran per hari pada dashboard manajemen event MRC, dengan modul analitik teruji untuk agregasi harian sehingga panitia dapat memantau laju pendaftaran secara real-time.
+- **Pemisahan Panel Admin MRC Menjadi 5 Halaman + Menu Sidebar (`app/(private)/manajemen-event/kategori/page.tsx`, `app/(private)/manajemen-event/pembayaran/page.tsx`, `app/(private)/manajemen-event/timeline/page.tsx`, `app/(private)/manajemen-event/pendaftaran/page.tsx`, `app/(private)/manajemen-event/pendaftaran/[id]/page.tsx`, `components/event/event-payment-form.tsx` baru, `components/event/event-timeline-form.tsx` baru, `components/event/mrc-dashboard-overview.tsx` baru, `components/event/registration-detail-view.tsx` baru, `components/shared/sidebar.tsx`)**: Panel admin MRC yang sebelumnya berupa satu halaman tab kini dipecah menjadi halaman terpisah (ringkasan dashboard, kategori, timeline, pembayaran, serta pendaftaran & transaksi) dengan navigasi sidebar tersendiri dan guard RBAC berbasis `lib/event-auth.ts`.
+- **Halaman Verifikasi & Kepatuhan Piket dengan Guard RBAC (`app/(private)/piket/verifikasi/page.tsx` baru, `components/features/piket/piket-verification-client.tsx` baru, `lib/repositories/piket.ts` baru)**: Memisahkan alur **lapor** (milik anggota/kestari) dari alur **verifikasi & kepatuhan**, dengan klasifikasi status kepatuhan per periode akademik dan penegakan wewenang RBAC yang ketat antar-role.
+- **Repositori Laporan Kepatuhan Piket + Klasifikasi Status (`lib/repositories/piket.ts`, `lib/repositories/piket.test.ts`)**: Modul data kepatuhan piket dengan logika klasifikasi status (sudah lapor / ditolak / belum lapor) beserta karakterisasi status kepatuhan per bulan siklus.
+- **Helper Rentang Tanggal Pekan per Periode Akademik (`lib/utils/piket-date.ts`)**: Perhitungan rentang pekan Senin–Minggu yang dipetakan ke periode akademik untuk kebutuhan kepatuhan piket.
+- **Wajib Minimal 2 Anggota Tim pada Pendaftaran (`lib/schemas/event-registration.ts`, `lib/actions/event-registration.ts`, `components/event/registration-form.tsx`, `lib/schemas/event-registration.test.ts`, `lib/schemas/event-registration.security.test.ts`)**: Validasi berlapis (UI, skema Zod, dan Server Action) yang menolak pendaftaran tim dengan anggota kurang dari 2 (Ketua Tim + 1 anggota), disertai test regresi.
+- **Menu Verifikasi & Kelola Piket Khusus Kestari (`components/shared/sidebar.tsx`)**: Menambahkan menu khusus `admin-kestari` untuk verifikasi piket dan kelola piket, sedangkan admin-divisi hanya sebagai pelapor.
+
+### Changed
+
+- **Paginasi, Metrik Server & Ekspor Penuh Data Pendaftar (`components/event/registration-table.tsx`, `app/(private)/manajemen-event/pendaftaran/page.tsx`)**: Daftar pendaftar kini dimuat bertahap ("Muat Lebih Banyak"), metrik ringkasan (total/lunas/pending) dihitung di server agar tetap akurat lintas halaman, dan ekspor CSV menarik seluruh data dari server — menjaga payload tetap kecil untuk dataset besar.
+- **Index Database & Proyeksi Ringan + Cache Query Dashboard (`supabase/migrations/20260924000000_add_event_registration_indexes.sql` baru, `lib/actions/event-admin.ts`, `components/event/mrc-dashboard-overview.tsx`)**: Menambahkan indeks pada `event_registrations`, proyeksi kolom ringan (tanpa kolom berat), dan cache `unstable_cache` untuk query pengaturan/kategori guna menekan bandwidth (Supabase Free Plan).
+- **Penyederhanaan Navigasi Sidebar (`components/shared/sidebar.tsx`)**: Navigasi disederhanakan menjadi grup statis tanpa kolom pencarian menu; titik masuk menu MRC & piket disesuaikan per-role.
+- **Sederhanakan Compliance Piket per Bulan Siklus & Aksi Periode (`lib/utils/piket-date.ts`, `lib/actions/piket.ts`, `lib/repositories/piket.ts`, `components/features/piket/piket-verification-client.tsx`)**: Perhitungan kepatuhan diselaraskan ke siklus per bulan, ditambah aksi pemilihan periode dan perbaikan UX halaman kepatuhan.
+- **Sinkronisasi Tipe Database (`types/database.types.ts`)**: Regenerasi tipe via `pnpm gen:types` untuk menyertakan kolom `payment_bank_*`, indeks, dan penyesuaian skema terbaru.
+
+### Fixed
+
+- **Perbaikan URL Folder Google Drive Dokumen Lengkap MRC (`components/event/mrc-rules-section.tsx`)**: Menyinkronkan tautan folder publik Google Drive dokumen lengkap MRC.
+- **Kecualikan Log Ditolak dari Status "Sudah Lapor" (`lib/repositories/piket.ts`)**: Status kepatuhan tidak lagi menghitung laporan yang ditolak sebagai "sudah lapor".
+- **Guard Anti-Kebocoran Admin pada PiketReportClient (`components/features/piket/piket-report-client.tsx`)**: Memastikan data laporan yang tampil ke admin-divisi hanya mencakup laporan miliknya.
+- **Literal Union `MenuKey` Sidebar dengan `satisfies` (`components/shared/sidebar.tsx`)**: Mempertahankan tipe literal union agar aman terhadap penambahan menu baru.
+
+### Removed
+
+- **Verifikasi EXIF Tanggal Foto Lapor Piket (`lib/utils/exif.ts` dihapus, `lib/actions/piket.ts`, `lib/utils/image-processing.ts`, `components/features/piket/piket-report-client.tsx`, `components/features/piket/piket-verification-client.tsx`)**: Verifikasi tanggal berbasis metadata EXIF dihapus karena tidak andal lintas perangkat; validasi tanggal foto kini mengandalkan rentang pekan periode akademik.
+- **Komponen Lapor Piket Lama (`components/features/piket/piket-client.tsx` dihapus, `components/features/piket/kelola-piket-client.tsx`)**: Mengganti komponen monolitik lama dengan `PiketReportClient` dan `PiketVerificationClient` yang terpisah per-domain.
+
 ## [0.12.3](https://github.com/zakyrmh/robotik-pnp/compare/v0.12.2...v0.12.3) (2026-09-24)
 
 ### Added
