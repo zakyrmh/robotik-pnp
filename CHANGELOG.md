@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [Unreleased]
+
+### Fixed
+
+- **Koreksi deskripsi Technical Meeting MRC (`components/event/mrc-timeline.tsx`)**: Menyesuaikan teks agenda agar mencerminkan bahwa Technical Meeting dilaksanakan secara daring dan membahas ulang aturan lomba serta pembagian grup peserta.
+
 ## [0.13.0](https://github.com/zakyrmh/robotik-pnp/compare/v0.12.3...v0.13.0) (2026-09-29)
 
 ### Added

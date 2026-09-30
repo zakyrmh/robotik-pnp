@@ -53,7 +53,8 @@ function buildTimeline(
         date: `${formatIdDate(settings.batch1_start)} – ${formatIdDate(settings.batch1_end)}`,
         isoDate: settings.batch1_start.slice(0, 10),
         isoDateEnd: settings.batch1_end.slice(0, 10),
-        description: "Gelombang pertama pendaftaran tim Minangkabau Robot Contest.",
+        description:
+          "Gelombang pertama pendaftaran tim Minangkabau Robot Contest.",
         icon: Clock,
       });
     }
@@ -69,7 +70,8 @@ function buildTimeline(
         date: `${formatIdDate(settings.batch2_start)} – ${formatIdDate(settings.batch2_end)}`,
         isoDate: settings.batch2_start.slice(0, 10),
         isoDateEnd: settings.batch2_end.slice(0, 10),
-        description: "Gelombang kedua pendaftaran tim Minangkabau Robot Contest.",
+        description:
+          "Gelombang kedua pendaftaran tim Minangkabau Robot Contest.",
         icon: Layers,
       });
     }
@@ -88,7 +90,7 @@ function buildTimeline(
         isoDate: settings.technical_meeting_start.slice(0, 10),
         isoDateEnd: tmEnd.slice(0, 10),
         description:
-          "Uji coba lintasan/lapangan, verifikasi fisik tim, dan pembagian urutan tampil.",
+          "Technical meeting dilaksanakan secara online untuk membahas ulang aturan lomba dan pembagian grup peserta.",
         icon: MapPin,
       });
     }
@@ -124,12 +126,12 @@ function buildTimeline(
       icon: Clock,
     },
     {
-      title: "Technical Meeting & Verification",
+      title: "Technical Meeting",
       date: "13 – 14 Oktober 2026",
       isoDate: "2026-10-13",
       isoDateEnd: "2026-10-14",
       description:
-        "Uji coba lintasan/lapangan, verifikasi fisik, dan pembagian urutan tampil.",
+        "Technical meeting dilaksanakan secara online untuk membahas ulang aturan lomba dan pembagian grup peserta.",
       icon: MapPin,
     },
     {
@@ -138,7 +140,7 @@ function buildTimeline(
       isoDate: "2026-10-15",
       isoDateEnd: "2026-10-17",
       description:
-        "Babak penyisihan hingga final di Gedung Kampus Politeknik Negeri Padang.",
+        "Babak penyisihan hingga final di Gedung PKM Kampus Politeknik Negeri Padang.",
       icon: Flag,
     },
   ];
