@@ -9,6 +9,7 @@ import type {
   EventRegistrationSummary,
   RoleEvent,
 } from "@/types/event-registration";
+import type { BankAccountFinance } from "@/lib/actions/event-finance";
 import {
   Users,
   CheckCircle2,
@@ -20,12 +21,14 @@ import {
   Building2,
 } from "lucide-react";
 import { MrcRegistrationTrendChart } from "@/components/event/mrc-registration-trend-chart";
+import { BankAccountFinanceCard } from "@/components/event/bank-account-finance-card";
 
 interface MrcDashboardOverviewProps {
   settings: EventSettings | null;
   categories: EventCategory[];
   registrations: EventRegistrationSummary[];
   roleEvent: RoleEvent | undefined;
+  bankFinances?: BankAccountFinance[];
 }
 
 export function MrcDashboardOverview({
@@ -33,6 +36,7 @@ export function MrcDashboardOverview({
   categories,
   registrations,
   roleEvent,
+  bankFinances = [],
 }: MrcDashboardOverviewProps) {
   const currentPhase = getBatchPhase(settings);
   const pendingCount = registrations.filter(
@@ -316,6 +320,16 @@ export function MrcDashboardOverview({
           </div>
         </div>
       </div>
+
+      {/* ── Ringkasan Keuangan Per Rekening Bank ── */}
+      {bankFinances && bankFinances.length > 0 && (
+        <div className="rounded-lg border border-border bg-card p-5 sm:p-6 shadow-xs">
+          <BankAccountFinanceCard
+            bankFinances={bankFinances}
+            totalIncome={totalIncome}
+          />
+        </div>
+      )}
 
       {/* ── 5 Pendaftaran Terbaru ── */}
       <div className="space-y-4">

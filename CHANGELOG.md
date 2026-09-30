@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.14.0](https://github.com/zakyrmh/robotik-pnp/compare/v0.13.1...v0.14.0) (2026-09-30)
+
+### Added
+
+- **Ringkasan Keuangan Per Rekening Bank pada Dashboard Event Admin (`lib/actions/event-finance.ts` baru, `components/event/bank-account-finance-card.tsx` baru, `supabase/migrations/20260930000000_add_event_finance_aggregation_function.sql` baru, `types/database.types.ts`)**: Admin `panitia-pendaftaran` (dan super-admin) dapat melihat ringkasan pendapatan per rekening bank pada dashboard manajemen event. Section baru **"Ringkasan Keuangan Per Rekening"** menampilkan kartu per rekening dengan detail: nama bank (misal "Bank BRI"), nama pemegang ("a.n. Zaky"), nomor rekening, total pendapatan (format Rp), jumlah transaksi, dan progress bar persentase dari total income. Kartu ditampilkan dalam grid responsif (1 kolom mobile, 2 kolom tablet, 3+ kolom desktop) dan diurutkan berdasarkan nama bank (abjad).
+
+### Changed
+
+- **Optimisasi Query Keuangan untuk Supabase Free Plan (`lib/actions/event-finance.ts`, `supabase/migrations/20260930000000_add_event_finance_aggregation_function.sql`)**: Agregasi data keuangan kini dilakukan di database level via SQL function `get_event_finance_summary_by_bank()` alih-alih mengambil semua rows kemudian aggregate di client. Perbaikan ini mengurangi jumlah queries dari 2 menjadi 1, dan mengurangi data transfer hingga 80-90% karena hanya hasil agregat yang ditransfer. Benefit utama: hemat bandwidth, rate limit lebih efisien, dan performa lebih cepat untuk dataset besar.
+
 ## [0.13.1](https://github.com/zakyrmh/robotik-pnp/compare/v0.13.0...v0.13.1) (2026-09-30)
 
 ### Fixed

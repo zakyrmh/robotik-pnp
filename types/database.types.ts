@@ -2039,6 +2039,16 @@ export type Database = {
           member_data: Json;
         }[];
       };
+      get_event_finance_summary_by_bank: {
+        Args: never;
+        Returns: {
+          account_holder: string;
+          account_number: string;
+          bank_name: string;
+          total_amount: number;
+          transaction_count: number;
+        }[];
+      };
       get_my_role: {
         Args: never;
         Returns: Database["public"]["Enums"]["user_role"];

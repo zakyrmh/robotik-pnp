@@ -5,6 +5,7 @@ import {
   getEventRegistrationsSummaryAction,
   getEventSettingsAction,
 } from "@/lib/actions/event-admin";
+import { getEventFinanceSummaryByBankAction } from "@/lib/actions/event-finance";
 import { MrcDashboardOverview } from "@/components/event/mrc-dashboard-overview";
 
 export default async function EventManagementDashboardPage() {
@@ -33,11 +34,13 @@ export default async function EventManagementDashboardPage() {
     );
   }
 
-  const [categoriesRes, registrationsRes, settingsRes] = await Promise.all([
-    getEventCategoriesAction(),
-    getEventRegistrationsSummaryAction(),
-    getEventSettingsAction(),
-  ]);
+  const [categoriesRes, registrationsRes, settingsRes, financeRes] =
+    await Promise.all([
+      getEventCategoriesAction(),
+      getEventRegistrationsSummaryAction(),
+      getEventSettingsAction(),
+      getEventFinanceSummaryByBankAction(),
+    ]);
 
   return (
     <main className="mx-auto max-w-7xl space-y-6">
@@ -46,6 +49,7 @@ export default async function EventManagementDashboardPage() {
         categories={categoriesRes.success ? categoriesRes.data : []}
         registrations={registrationsRes.success ? registrationsRes.data : []}
         roleEvent={auth.roleEvent}
+        bankFinances={financeRes.success ? financeRes.data : []}
       />
     </main>
   );
