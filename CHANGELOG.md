@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [Unreleased](https://github.com/zakyrmh/robotik-pnp/compare/v0.14.0...HEAD)
+
+### Fixed
+
+- **Kartu "Ringkasan Keuangan Per Rekening Bank" Selalu Error (`RPC error: {}`) (`supabase/migrations/20261001000000_fix_event_finance_summary_include_unassigned.sql` baru, `lib/actions/event-finance.ts`, `types/database.types.ts`)**: Kartu ringkasan keuangan di dashboard `/manajemen-event` gagal memuat karena **RPC `get_event_finance_summary_by_bank()` tidak pernah ada di database** — migrasi `20260930000000` masih pending (`remote: ""`) padahal sudah tercatat di riwayat kode, sehingga PostgREST membalas "function not found" dan `supabase-js` men-serialisasi error tersebut menjadi objek kosong `{}`. Selain itu, badan fungsi versi lama memilih kolom `VARCHAR(50/100)` (`payment_bank_*`) ke parameter `RETURNS TABLE` bertipe `TEXT` sehingga **selalu gagal** dengan `structure of query does not match function result type` walau migrasinya sudah diterapkan. Perbaikan: cast eksplisit `::TEXT`, `SUM(total_amount)` dikembalikan sebagai `NUMERIC` (bukan `BIGINT`, agar sen tidak terpotong), dan migrasi diverifikasi benar-benar teraplikasi (`pg_get_functiondef`) karena `supabase migration up` dapat mencatat migrasi sebagai "applied" meski SQL-nya gagal.
+- **Rekening Panitia Tidak Muncul / Total Tidak Merekonstruksi 100% (`supabase/migrations/20261002000000_event_finance_list_all_configured_banks.sql` baru, `lib/event-finance.ts` baru, `components/event/bank-account-finance-card.tsx`, `components/event/mrc-dashboard-overview.tsx`)**: Fungsi sebelumnya hanya meng-`GROUP BY` snapshot `event_registrations.payment_bank_*`, sehingga **(1)** rekening resmi yang sudah dikonfigurasi panitia di `event_settings.bank_accounts` tidak pernah tampil bila belum ada tim yang transfer ke rekening itu (mis. "Bank BRI" dengan Rp 0), dan **(2)** tim `paid` yang belum ditetapkan rekeningnya hilang dari rincian — padahal uangnya tetap dihitung pada `totalIncome`, sehingga jumlah persentase kartu < 100% dan pendapatan tampak kurang dari seharusnya. Perbaikan: daftar rekening kini bersumber dari **konfigurasi panitia** (`event_settings.bank_accounts`, fallback ke kolom tunggal `bank_name`/`bank_account_number`/`bank_account_holder`), setiap rekening resmi **selalu tampil walau Rp 0**, rekening **historis** dari snapshot yang sudah tidak terkonfigurasi tetap ditampilkan, dan ditambahkan satu baris agregat **"Belum ditetapkan rekening"** (`is_unassigned = true`) sehingga Σ rincian = total pendapatan `paid` (rekonsiliasi 100%). Nama kolom internal CTE di-rename (`sum_amount`/`txn_count`) untuk menghindari error `column reference "total_amount" is ambiguous` pada PL/pgSQL (nama OUT parameter diperlakukan sebagai variabel).
+
+### Added
+
+- **Modul & Test Ringkasan Keuangan Per Rekening (`lib/event-finance.ts` baru, `lib/event-finance.test.ts` baru, `lib/actions/event-finance.test.ts` baru, `components/event/bank-account-finance-card.test.tsx` baru)**: Helper murni yang dapat diuji langsung — `financePercentage` (persentase aman, tidak pernah `NaN`), `sumFinanceTotal` (uji rekonsiliasi), `sortFinanceRows` (rekening abjad + baris "belum ditetapkan" selalu terakhir), dan konstanta `UNASSIGNED_BANK_LABEL`. Menambahkan 16 test (unit, server action, dan render komponen) yang mengunci perilaku: format `Rp400.000`, persentase `40%`, empty state, dan tidak ada `NaN` saat total 0.
+
+### Changed
+
+- **Tampilan Kartu Keuangan Per Rekening (`components/event/bank-account-finance-card.tsx`, `components/event/mrc-dashboard-overview.tsx`)**: Baris agregat "Belum ditetapkan rekening" dirender dengan gaya peringatan (ikon `AlertCircle`, aksen `warning`) tanpa nomor rekening agar panitia langsung melihat adanya pendapatan yang belum diatribusikan. Section ringkasan keuangan kini **selalu dirender** (empty state ditangani kartu) sehingga tidak lagi menjadi _dead code_, dan pembungkus kartu bersarang (`bg-card` ganda) dihapus agar border tidak bertumpuk.
+- **Pengerasan `.gitignore` (`.gitignore`)**: Menambahkan `/supabase/backups/` ke daftar abaikan. Folder ini menyimpan hasil `supabase db dump` yang memuat **PII dan hash password `auth.users`**, sehingga tidak boleh ikut ter-commit.
+- **Dokumentasi RPC (`docs/08-tech-references/database.md`)**: Memperbarui deskripsi `get_event_finance_summary_by_bank()` agar mencerminkan sumber daftar rekening dari konfigurasi panitia, keberadaan rekening historis, dan baris agregat `is_unassigned` beserta jaminan rekonsiliasi 100%.
+
 ## [0.14.0](https://github.com/zakyrmh/robotik-pnp/compare/v0.13.1...v0.14.0) (2026-09-30)
 
 ### Added
@@ -612,7 +629,7 @@ All notable changes to this project will be documented in this file. See [standa
 - Setup Husky pre-commit hook dan Commitlint.
 - Setup Next.js dengan pnpm.
 
-[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.12.0...HEAD
+[Unreleased]: https://github.com/zakyrmh/robotik-pnp/compare/v0.14.0...HEAD
 [0.12.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/zakyrmh/robotik-pnp/compare/v0.9.4...v0.10.0

@@ -322,14 +322,13 @@ export function MrcDashboardOverview({
       </div>
 
       {/* ── Ringkasan Keuangan Per Rekening Bank ── */}
-      {bankFinances && bankFinances.length > 0 && (
-        <div className="rounded-lg border border-border bg-card p-5 sm:p-6 shadow-xs">
-          <BankAccountFinanceCard
-            bankFinances={bankFinances}
-            totalIncome={totalIncome}
-          />
-        </div>
-      )}
+      {/* Section selalu dirender agar keadaan kosong (belum ada pendapatan)
+          tetap terlihat oleh panitia; kartu menangani empty state-nya sendiri.
+          Tanpa pembungkus ber-border agar tidak menghasilkan kartu bersarang. */}
+      <BankAccountFinanceCard
+        bankFinances={bankFinances}
+        totalIncome={totalIncome}
+      />
 
       {/* ── 5 Pendaftaran Terbaru ── */}
       <div className="space-y-4">

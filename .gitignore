@@ -43,6 +43,9 @@ next-env.d.ts
 # Supabase data dumps (ignore all data SQL files)
 data*.sql
 
+# Supabase local backups (mengandung PII + password hash auth.users)
+/supabase/backups/
+
 # Sentry wizard error logs
 sentry-wizard-installation-error-*.log
 

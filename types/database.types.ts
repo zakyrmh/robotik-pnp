@@ -2045,6 +2045,7 @@ export type Database = {
           account_holder: string;
           account_number: string;
           bank_name: string;
+          is_unassigned: boolean;
           total_amount: number;
           transaction_count: number;
         }[];

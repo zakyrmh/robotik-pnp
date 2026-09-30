@@ -2,10 +2,18 @@
 
 import { createAdminClient } from "@/lib/supabase/server";
 import type { ActionResult, BankAccount } from "@/types/event-registration";
+import { sortFinanceRows } from "@/lib/event-finance";
 
 export interface BankAccountFinance extends BankAccount {
   total_amount: number;
   transaction_count: number;
+  /**
+   * `true` untuk baris agregat "belum ditetapkan rekening" — pendapatan dari tim
+   * `paid` yang belum diberi rekening tujuan transfer. Baris ini tidak punya
+   * nomor rekening dan ditampilkan paling akhir agar total rincian tetap
+   * merekonsiliasi `totalIncome` (100%).
+   */
+  is_unassigned: boolean;
 }
 
 /**
@@ -29,11 +37,12 @@ export async function getEventFinanceSummaryByBankAction(): Promise<
       "get_event_finance_summary_by_bank",
     ) as unknown as Promise<{
       data: Array<{
-        account_number: string;
-        bank_name: string;
-        account_holder: string;
+        account_number: string | null;
+        bank_name: string | null;
+        account_holder: string | null;
         total_amount: number;
         transaction_count: number;
+        is_unassigned: boolean;
       }> | null;
       error: unknown;
     }>);
@@ -46,16 +55,23 @@ export async function getEventFinanceSummaryByBankAction(): Promise<
       };
     }
 
-    // Transform hasil dari RPC ke format BankAccountFinance
-    const result: BankAccountFinance[] = (data || []).map((item) => ({
-      bank_name: item.bank_name || "Tidak diketahui",
-      account_number: item.account_number,
-      account_holder: item.account_holder || "Tidak diketahui",
-      total_amount: item.total_amount || 0,
-      transaction_count: item.transaction_count || 0,
-    }));
+    // Transform hasil dari RPC ke format BankAccountFinance.
+    const mapped: BankAccountFinance[] = (data || []).map((item) => {
+      const isUnassigned = item.is_unassigned === true;
+      return {
+        is_unassigned: isUnassigned,
+        bank_name: isUnassigned ? "" : item.bank_name || "Tidak diketahui",
+        account_number: item.account_number || "",
+        account_holder: isUnassigned
+          ? ""
+          : item.account_holder || "Tidak diketahui",
+        total_amount: item.total_amount || 0,
+        transaction_count: item.transaction_count || 0,
+      };
+    });
 
-    return { success: true, data: result };
+    // Rekening nyata diurutkan abjad; baris "belum ditetapkan" selalu di akhir.
+    return { success: true, data: sortFinanceRows(mapped) };
   } catch (error) {
     console.error("Error in getEventFinanceSummaryByBankAction:", error);
     return {
