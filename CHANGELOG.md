@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.16.1](https://github.com/zakyrmh/robotik-pnp/compare/v0.16.0...v0.16.1) (2026-10-03)
+
+### Fixed
+
+- **Admin Tidak Mengetahui Adanya Permohonan Perbaikan Data (`lib/actions/event-admin.ts`, `lib/actions/event-registration.ts`, `app/(private)/layout.tsx`, `app/(private)/manajemen-event/pendaftaran/page.tsx`, `components/event/registration-table.tsx`, `components/shared/sidebar.tsx`)**: Setelah fitur permohonan perbaikan data dirilis, panitia tidak mendapat indikator apa pun saat peserta mengajukan perubahan — harus membuka halaman Detail tim secara kebetulan. Perbaikan berupa indikator in-app (tanpa email):
+  - **Badge baris di Data Pendaftar**: tim yang memiliki permohonan `pending` kini ditandai badge **"Perbaikan Data"** (ikon `FilePenLine`) pada kolom "Kode & Tim" (desktop) dan pada kartu (mobile).
+  - **Badge angka di sidebar**: menu **"Data Pendaftar"** menampilkan jumlah permohonan yang menunggu tinjauan (tone warning), melunasi utang teknis `badgeCounts` yang sebelumnya belum disuplai `layout.tsx`.
+  - **Server action baru `getPendingChangeRequestMapAction`** mengembalikan `{ ids, count }` (guard `panitia-pendaftaran`, `ids` unik). `submitRegistrationChangeRequestAction` kini juga memanggil `revalidatePath("/manajemen-event/pendaftaran")` agar badge muncul seketika setelah peserta mengirim. Sidebar `badgeCounts` disuplai dari `layout.tsx` (gagal-diam 0 untuk role non-panitia). Badge hilang otomatis setelah admin menyetujui/menolak.
+  - **3 unit test baru** mengunci perilaku penghitung (guard role, hitung registrasi unik, 0 saat kosong).
+
 ## [0.16.0](https://github.com/zakyrmh/robotik-pnp/compare/v0.15.1...v0.16.0) (2026-10-03)
 
 ### Added

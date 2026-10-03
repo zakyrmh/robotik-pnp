@@ -4,6 +4,7 @@ import {
   getEventCategoriesAction,
   getEventRegistrationsAction,
   getEventRegistrationsMetricsAction,
+  getPendingChangeRequestMapAction,
 } from "@/lib/actions/event-admin";
 import { REGISTRATIONS_PAGE_SIZE } from "@/types/event-registration";
 import { RegistrationTable } from "@/components/event/registration-table";
@@ -38,15 +39,20 @@ export default async function EventRegistrationsPage() {
     );
   }
 
-  const [registrationsRes, categoriesRes, metricsRes] = await Promise.all([
-    getEventRegistrationsAction({ pageSize: REGISTRATIONS_PAGE_SIZE }),
-    getEventCategoriesAction(),
-    getEventRegistrationsMetricsAction(),
-  ]);
+  const [registrationsRes, categoriesRes, metricsRes, pendingReqRes] =
+    await Promise.all([
+      getEventRegistrationsAction({ pageSize: REGISTRATIONS_PAGE_SIZE }),
+      getEventCategoriesAction(),
+      getEventRegistrationsMetricsAction(),
+      getPendingChangeRequestMapAction(),
+    ]);
 
   const pageData = registrationsRes.success ? registrationsRes.data : null;
   const registrations = pageData?.rows ?? [];
   const categories = categoriesRes.success ? categoriesRes.data : [];
+  const pendingChangeRequestIds = pendingReqRes.success
+    ? pendingReqRes.data.ids
+    : [];
   const metrics = metricsRes.success
     ? metricsRes.data
     : {
@@ -82,6 +88,7 @@ export default async function EventRegistrationsPage() {
           initialMetrics={metrics}
           categories={categories}
           isSuperAdmin={auth.isSuperAdmin}
+          pendingChangeRequestIds={pendingChangeRequestIds}
         />
       </section>
     </main>

@@ -828,7 +828,12 @@ function CollapseToggle({
   );
 }
 
-export function Sidebar() {
+export function Sidebar({
+  badgeCounts,
+}: {
+  /** Jumlah item menunggu tindakan per menu (ditentukan server di layout). */
+  badgeCounts?: Partial<Record<MenuKey, number>>;
+} = {}) {
   const pathname = usePathname();
   const { user, loading } = useAuth();
   const reduceMotion = useReducedMotion();
@@ -897,6 +902,7 @@ export function Sidebar() {
             loading={loading}
             pathname={pathname}
             collapsed={collapsed}
+            badgeCounts={badgeCounts}
           />
 
           {collapsed && (
@@ -935,6 +941,7 @@ export function Sidebar() {
               loading={loading}
               pathname={pathname}
               collapsed={false}
+              badgeCounts={badgeCounts}
               onNavigate={handleNavigate}
             />
           </div>

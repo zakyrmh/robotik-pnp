@@ -1202,6 +1202,40 @@ export async function getRegistrationChangeRequestsAction(
 }
 
 /**
+ * Peta permohonan perbaikan data yang masih `pending`.
+ *
+ * Dipakai untuk indikator in-app: badge pada baris tabel Data Pendaftar
+ * (`ids`) dan badge angka pada menu sidebar (`count`). Non-panitia
+ * mengembalikan `success:false` agar pemanggil (mis. layout) dapat gagal-diam.
+ */
+export async function getPendingChangeRequestMapAction(): Promise<
+  ActionResult<{ ids: string[]; count: number }>
+> {
+  const check = await checkEventRole(["panitia-pendaftaran"]);
+  if (!check.authorized) {
+    return { success: false, error: check.error || "Akses ditolak." };
+  }
+
+  const adminSupabase = createAdminClient();
+  const { data, error } = (await untypedFrom(
+    adminSupabase,
+    "event_registration_change_requests",
+  )
+    .select("registration_id")
+    .eq("status", "pending")) as unknown as {
+    data: { registration_id: string }[] | null;
+    error: unknown;
+  };
+
+  if (error || !data) {
+    return { success: false, error: "Gagal mengambil permohonan pending." };
+  }
+
+  const ids = [...new Set(data.map((r) => r.registration_id))];
+  return { success: true, data: { ids, count: ids.length } };
+}
+
+/**
  * Tinjau (setujui/tolak) permohonan perbaikan data.
  *
  * - approve: terapkan perubahan secara ATOMIK via RPC

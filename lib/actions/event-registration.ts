@@ -919,6 +919,8 @@ export async function submitRegistrationChangeRequestAction(
   }
 
   revalidatePath(`/mrc/tiket/${accessToken}`);
+  // Segarkan panel admin agar badge "Perbaikan Data" muncul di Data Pendaftar.
+  revalidatePath("/manajemen-event/pendaftaran");
   return {
     success: true,
     data: { requestId: created.id },

@@ -34,6 +34,7 @@ import {
   DollarSign,
   Users,
   ArrowRight,
+  FilePenLine,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -51,6 +52,8 @@ interface RegistrationTableProps {
   initialMetrics: EventRegistrationMetrics;
   categories?: EventCategory[];
   isSuperAdmin?: boolean;
+  /** ID registrasi yang memiliki permohonan perbaikan data menunggu tinjauan. */
+  pendingChangeRequestIds?: string[];
 }
 
 const statusStyle: Record<string, string> = {
@@ -75,7 +78,12 @@ export function RegistrationTable({
   initialMetrics,
   categories = [],
   isSuperAdmin,
+  pendingChangeRequestIds = [],
 }: RegistrationTableProps) {
+  const pendingChangeSet = useMemo(
+    () => new Set(pendingChangeRequestIds),
+    [pendingChangeRequestIds],
+  );
   const [registrations, setRegistrations] =
     useState<EventRegistration[]>(initialRegistrations);
   const [total, setTotal] = useState(initialTotal);
@@ -581,6 +589,15 @@ export function RegistrationTable({
                         Bukti Transfer
                       </Badge>
                     )}
+                    {pendingChangeSet.has(reg.id) && (
+                      <Badge
+                        variant="outline"
+                        className="inline-flex items-center gap-1 text-micro font-medium border-primary/30 bg-primary-soft text-primary"
+                      >
+                        <FilePenLine className="size-3" aria-hidden="true" />
+                        Perbaikan Data
+                      </Badge>
+                    )}
                   </div>
                   <h3 className="truncate font-display text-md font-semibold text-foreground">
                     {reg.team_name}
@@ -762,6 +779,18 @@ export function RegistrationTable({
                             className="text-micro font-medium border-warning/30 bg-warning-soft text-warning"
                           >
                             Bukti Transfer
+                          </Badge>
+                        )}
+                        {pendingChangeSet.has(reg.id) && (
+                          <Badge
+                            variant="outline"
+                            className="inline-flex items-center gap-1 text-micro font-medium border-primary/30 bg-primary-soft text-primary"
+                          >
+                            <FilePenLine
+                              className="size-3"
+                              aria-hidden="true"
+                            />
+                            Perbaikan Data
                           </Badge>
                         )}
                       </div>

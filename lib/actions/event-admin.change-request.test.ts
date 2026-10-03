@@ -31,6 +31,7 @@ const state = vi.hoisted(() => ({
   } | null,
   request: null as Record<string, unknown> | null,
   rejectError: null as unknown,
+  pendingRows: [] as { registration_id: string }[],
 }));
 
 vi.mock("@/lib/supabase/server", () => ({
@@ -54,7 +55,10 @@ vi.mock("@/lib/supabase/server", () => ({
       b.update = vi.fn(chain);
       b.maybeSingle = vi.fn(async () => ({ data: state.request, error: null }));
       b.then = (resolve: (v: unknown) => void) =>
-        resolve({ data: state.request, error: state.rejectError });
+        resolve({
+          data: state.request ?? state.pendingRows,
+          error: state.rejectError,
+        });
       return b;
     },
     rpc: mockRpc,
@@ -67,7 +71,10 @@ vi.mock("@/lib/supabase/untyped", () => ({
     (client.rpc as (a: unknown) => unknown)(args),
 }));
 
-import { reviewRegistrationChangeRequestAction } from "./event-admin";
+import {
+  reviewRegistrationChangeRequestAction,
+  getPendingChangeRequestMapAction,
+} from "./event-admin";
 
 const REQ_ID = "550e8400-e29b-41d4-a716-446655440000";
 
@@ -144,5 +151,45 @@ describe("reviewRegistrationChangeRequestAction", () => {
     });
     expect(res.success).toBe(true);
     expect(mockRecordAuditLog).toHaveBeenCalled();
+  });
+});
+
+describe("getPendingChangeRequestMapAction", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    state.user = { id: "admin-1" };
+    state.profile = { role: "super-admin", role_event: "panitia-pendaftaran" };
+    state.request = null;
+    state.pendingRows = [];
+  });
+
+  it("menolak bila role tidak berwenang", async () => {
+    state.profile = { role: "anggota", role_event: null };
+    const res = await getPendingChangeRequestMapAction();
+    expect(res.success).toBe(false);
+  });
+
+  it("menghitung registrasi unik dengan permohonan pending", async () => {
+    state.pendingRows = [
+      { registration_id: "reg-1" },
+      { registration_id: "reg-2" },
+      { registration_id: "reg-1" }, // duplikat → tetap 2 unik
+    ];
+    const res = await getPendingChangeRequestMapAction();
+    expect(res.success).toBe(true);
+    if (res.success) {
+      expect(res.data.count).toBe(2);
+      expect(res.data.ids.sort()).toEqual(["reg-1", "reg-2"]);
+    }
+  });
+
+  it("mengembalikan 0 bila tidak ada permohonan pending", async () => {
+    state.pendingRows = [];
+    const res = await getPendingChangeRequestMapAction();
+    expect(res.success).toBe(true);
+    if (res.success) {
+      expect(res.data.count).toBe(0);
+      expect(res.data.ids).toEqual([]);
+    }
   });
 });
