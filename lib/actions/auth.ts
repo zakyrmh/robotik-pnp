@@ -17,6 +17,7 @@ import {
   loginSchema,
   forgotPasswordSchema,
   updatePasswordSchema,
+  confirmRecoverySchema,
 } from "@/lib/schemas/auth";
 
 async function getClientIp(): Promise<string> {
@@ -433,4 +434,59 @@ export async function updatePassword(
   await supabase.auth.signOut();
 
   redirect("/login?message=Password+berhasil+diperbarui.+Silakan+login.");
+}
+
+// ============================================================
+// Confirm Recovery Link Action (Konfirmasi Link Pemulihan)
+// ============================================================
+
+/**
+ * Menukar `token_hash` recovery menjadi sesi, HANYA setelah user menekan
+ * tombol di halaman perantara `/reset-password`.
+ *
+ * Alasan desain: link email mengarah ke halaman perantara, bukan langsung ke
+ * endpoint verifikasi. Dengan begitu, bot prefetch email (mis. Microsoft
+ * Defender Safe Links) yang otomatis membuka link TIDAK mengonsumsi token
+ * sekali-pakai. Token baru dikonsumsi di sini — pada aksi eksplisit user —
+ * sehingga tetap valid berdasarkan waktu (TTL, mis. 1 jam) dan bisa dibuka
+ * berkali-kali dalam rentang tersebut.
+ */
+export async function confirmRecoveryAction(
+  prevState: RegisterState,
+  formData: FormData,
+) {
+  const tokenHash = (formData.get("token_hash") as string) || "";
+  const type = (formData.get("type") as string) || "recovery";
+
+  const validation = confirmRecoverySchema.safeParse({
+    token_hash: tokenHash,
+    type,
+  });
+
+  if (!validation.success) {
+    return {
+      error:
+        validation.error.issues[0]?.message ||
+        "Token pemulihan tidak valid. Silakan minta link baru.",
+    };
+  }
+
+  const supabase = await createClient();
+
+  const { error } = await supabase.auth.verifyOtp({
+    type: "recovery",
+    token_hash: validation.data.token_hash,
+  });
+
+  if (error) {
+    // Jangan bocorkan detail internal; arahkan user minta link baru.
+    console.error("Confirm recovery error:", error.message);
+    return {
+      error:
+        "Link reset password sudah kedaluwarsa atau tidak valid. Silakan minta link baru.",
+    };
+  }
+
+  // VerifyOtp sudah menyimpan sesi recovery ke cookie via createServerClient.
+  redirect("/update-password");
 }

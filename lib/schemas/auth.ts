@@ -73,3 +73,17 @@ export const updatePasswordSchema = z
   });
 
 export type UpdatePasswordInput = z.infer<typeof updatePasswordSchema>;
+
+/**
+ * Konfirmasi link pemulihan password (recovery).
+ *
+ * Dipakai oleh halaman perantara `/reset-password` untuk menukar `token_hash`
+ * menjadi sesi recovery HANYA setelah user menekan tombol. Ini mencegah
+ * email prefetcher (scanner keamanan) mengonsumsi token sekali-pakai.
+ */
+export const confirmRecoverySchema = z.object({
+  token_hash: z.string().min(1, "Token pemulihan tidak ditemukan."),
+  type: z.literal("recovery"),
+});
+
+export type ConfirmRecoveryInput = z.infer<typeof confirmRecoverySchema>;

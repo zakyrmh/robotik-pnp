@@ -19,11 +19,12 @@
 
 ### Riwayat Perubahan Dokumen (_Change History_)
 
-|  Versi   |  Tanggal   | Penulis            | Ringkasan Perubahan                                                                                                                                                                                                                                   |
-| :------: | :--------: | :----------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `v1.0.0` | 02/08/2026 | System Analyst     | Draf awal aturan password minimal 8 karakter.                                                                                                                                                                                                         |
-| `v1.1.0` | 02/08/2026 | Security Architect | Penambahan rate limit Upstash & bot protection Turnstile.                                                                                                                                                                                             |
-| `v2.0.0` | 03/08/2026 | Security Architect | Revisi Total: Penyesuaian penuh dengan NIST SP 800-63B (menghapus aturan komposisi kaku, menambah breached password checking via HaveIBeenPwned k-Anonymity API), estimator zxcvbn, wajib MFA Admin, rate limit per-akun, dan TTL token reset 15-30m. |
+|  Versi   |  Tanggal   | Penulis            | Ringkasan Perubahan                                                                                                                                                                                                                                                                      |
+| :------: | :--------: | :----------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `v1.0.0` | 02/08/2026 | System Analyst     | Draf awal aturan password minimal 8 karakter.                                                                                                                                                                                                                                            |
+| `v1.1.0` | 02/08/2026 | Security Architect | Penambahan rate limit Upstash & bot protection Turnstile.                                                                                                                                                                                                                                |
+| `v2.0.0` | 03/08/2026 | Security Architect | Revisi Total: Penyesuaian penuh dengan NIST SP 800-63B (menghapus aturan komposisi kaku, menambah breached password checking via HaveIBeenPwned k-Anonymity API), estimator zxcvbn, wajib MFA Admin, rate limit per-akun, dan TTL token reset 15-30m.                                    |
+| `v2.1.0` | 03/10/2026 | Security Architect | Penyesuaian §6: link reset password memakai halaman konfirmasi perantara `{{ .SiteURL }}/reset-password` (anti email-prefetch), token dikonsumsi hanya saat user menekan tombol, dan TTL ditetapkan berbasis waktu menjadi **1 jam** (dapat dibuka berkali-kali dalam rentang tersebut). |
 
 ---
 
@@ -105,9 +106,10 @@ Untuk menangkal _Brute Force_ terdistribusi dan _Credential Stuffing_:
 
 ## 6. Spesifikasi Token Reset Password
 
-1. **Masa Berlaku Token (TTL)**: Token reset password berlaku maksimal **15 – 30 menit**.
-2. **Sekali Pakai (_Single-Use_)**: Token langsung hangus setelah digunakan atau setelah kata sandi berhasil diperbarui.
-3. **Invalidasi Sesi**: Pembaruan password memicu pencabutan sesi recovery otomatis (`supabase.auth.signOut()`).
+1. **Masa Berlaku Token (TTL)**: Token reset password berlaku maksimal **1 jam**, dihitung **berdasarkan waktu** sejak link dikirim (bukan sejak link dibuka). Selama belum melewati TTL, link dapat dibuka berkali-kali tanpa membuat token hangus.
+2. **Sekali Pakai (_Single-Use_)**: Token **dikonsumsi hanya saat user menekan tombol konfirmasi** di halaman perantara `/reset-password` (yang memanggil `supabase.auth.verifyOtp`), atau setelah kata sandi berhasil diperbarui. Token tidak dikonsumsi saat link hanya dibuka (GET).
+3. **Halaman Konfirmasi Perantara (_Anti-Prefetch Intermediary_)**: Link di email mengarah ke halaman `{{ .SiteURL }}/reset-password?token_hash=...&type=recovery`, bukan langsung ke endpoint verifikasi. Ini mencegah **email prefetching** — bot/scanner keamanan email (mis. Microsoft Defender Safe Links) yang otomatis membuka link tidak akan mengonsumsi token sekali-pakai sebelum user asli. Token baru ditukar menjadi sesi pada aksi eksplisit user.
+4. **Invalidasi Sesi**: Pembaruan password memicu pencabutan sesi recovery otomatis (`supabase.auth.signOut()`).
 
 ---
 

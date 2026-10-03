@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.14.2](https://github.com/zakyrmh/robotik-pnp/compare/v0.14.1...v0.14.2) (2026-10-03)
+
+### Fixed
+
+- **Link Reset Password Langsung "Expired" Saat Pertama Diklik (`supabase/templates/reset_password.html`, `app/(auth)/reset-password/page.tsx` baru, `components/features/auth/confirm-reset-button.tsx` baru, `lib/actions/auth.ts`, `lib/schemas/auth.ts`, `lib/actions/auth.test.ts`)**: Pengguna melaporkan link reset password dari email **langsung tidak valid saat pertama dibuka** ("Token has expired or is invalid"). Akar masalah (terkonfirmasi dari dokumentasi resmi Supabase) adalah **email prefetching**: template email memakai `{{ .ConfirmationURL }}` yang **langsung mengonsumsi** token OTP sekali-pakai saat link dibuka — sehingga klien email / scanner keamanan (mis. Microsoft Defender Safe Links) yang otomatis membuka link menghabiskan token sebelum user asli. **Bukan** bug timer TTL. Perbaikan memakai pola **halaman konfirmasi perantara**: kedua tautan template diarahkan ke `{{ .SiteURL }}/reset-password?token_hash={{ .TokenHash }}&type=recovery&next=/update-password`; halaman perantara (RSC, `ƒ` Dynamic) **tidak** memverifikasi apa pun saat render, sehingga token tidak dikonsumsi oleh prefetcher. Token baru ditukar menjadi sesi **hanya saat user menekan tombol** melalui Server Action `confirmRecoveryAction` (`supabase.auth.verifyOtp({ type: 'recovery', token_hash })` → redirect `/update-password`). Efeknya: token berlaku **berdasarkan waktu** (TTL 1 jam) dan dapat dibuka berkali-kali dalam rentang tersebut. Pesan error dibuat generik (tidak membocorkan `error.message` Supabase). Ditambah 4 test regresi (TC-CR1..4) yang mengunci perilaku (dan terbukti gagal bila redirect dihapus); `recovery-hash-listener` dipertahankan sebagai jaring pengaman alur hash lama.
+
+### Documentation
+
+- **Penegakan Memori Jangka Panjang Berlapis (`~/.config/opencode/AGENTS.md`, `AGENTS.md`, `.gitignore`)**: Menambahkan direktif memori di config **global** (berlaku semua project), menambah §11.4 "Definition of Done & Checklist Memori" di `AGENTS.md` robotik-pnp, serta mendokumentasikan protokol Read/Write di vault `~/Documents/opencode_brain/02_agent_memory/Preferences.md`. Aturan: **selalu** cek vault sebelum task non-trivial; **tulis** catatan baru hanya saat subtle bug / ADR / optimization, lalu daftarkan `[[wikilink]]` di `Index.md` dan bump tanggalnya.
+- **Kebijakan Standar Keamanan Kata Sandi & Alur Kerja (`docs/07-compliance-security/security-policies/password-security-standards.md` v2.1.0, `docs/04-process-view/workflow-documentation.md`)**: Memperbarui §6 (TTL token reset **1 jam** berbasis waktu, single-use saat tombol ditekan, halaman konfirmasi perantara anti-prefetch) beserta entri Change History; menambahkan §7.5 alur verifikasi link pemulihan pada dokumentasi alur kerja.
+
 ## [0.14.1](https://github.com/zakyrmh/robotik-pnp/compare/v0.14.0...v0.14.1) (2026-10-03)
 
 ### Fixed

@@ -302,6 +302,7 @@ Sebelum mengerjakan tugas yang melibatkan salah satu dari domain berikut:
 - `robotik-pnp-supabase-cloud-to-local-sync`
 - `robotik-pnp-mrc-admin-panel-5-halaman`
 - `robotik-pnp-mrc-rules-section-and-faq`
+- `robotik-pnp-bugfix-mrc-stale-quota-isr`
 
 ### 11.3 Protokol Menulis Memori (Write Protocol)
 
@@ -352,3 +353,17 @@ Poin penting yang harus diingat agen di sesi berikutnya agar tidak mengulangi ke
 ```
 
 > **Konvensi tambahan:** akhiri setiap catatan dengan blok `## Lihat juga` berisi tautan `[[wikilink]]` ke catatan robotik-pnp terkait, mengikuti gaya catatan yang sudah ada di `02_agent_memory/`.
+
+### 11.4 Definition of Done & Checklist Memori (WAJIB)
+
+Aturan memori ini **mengikat** dan berlaku untuk setiap sesi di repo ini. Sumber otoritas tertinggi adalah `~/Documents/opencode_brain/02_agent_memory/Preferences.md` (dibaca saat sesi dimulai). Sebuah task **belum dianggap selesai** sebelum seluruh checklist berikut terpenuhi:
+
+- [ ] **Cek (READ):** sebelum mulai, telusuri `02_agent_memory/` untuk catatan relevan dengan domain/tugas (lihat §11.2). Gunakan keputusan, gotchas, dan solusi terdahulu.
+- [ ] **Kerjakan task** sesuai standar proyek.
+- [ ] **Klasifikasi (WRITE?):** tentukan apakah hasil kerja memenuhi kriteria §11.3 (subtle bug / ADR / optimization).
+- [ ] **Jika ya — tulis catatan** `robotik-pnp-<kategori>-<topik>.md` dengan format §11.3, lalu:
+  - [ ] daftarkan `[[wikilink]]`-nya di `Index.md` (bagian `02_agent_memory` **dan** daftar proyek Robotik-PNP);
+  - [ ] perbarui baris `*Last updated*` di `Index.md`.
+- [ ] **Jika tidak — nyatakan eksplisit** bahwa tidak ada catatan memori baru yang perlu dibuat, beserta alasannya.
+
+Jangan menunda atau melewati langkah ini "karena tugas kecil" — disiplin ini yang menjaga _context awareness_ lintas sesi.

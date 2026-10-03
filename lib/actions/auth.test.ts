@@ -36,6 +36,10 @@ let mockResetPasswordResult: { error: { message: string } | null } = {
 let mockUpdateUserResult: { error: { message: string } | null } = {
   error: null,
 };
+let mockVerifyOtpResult: { error: { message: string } | null } = {
+  error: null,
+};
+let mockVerifyOtpArgs: Record<string, unknown> | null = null;
 let mockOrSettingsResult: {
   status_pendaftaran: boolean;
   tanggal_mulai: string | null;
@@ -88,6 +92,10 @@ vi.mock("@/lib/supabase/server", () => ({
       getUser: vi.fn(async () => mockGetUserResult),
       updateUser: vi.fn(async () => mockUpdateUserResult),
       resetPasswordForEmail: vi.fn(async () => mockResetPasswordResult),
+      verifyOtp: vi.fn(async (args: Record<string, unknown>) => {
+        mockVerifyOtpArgs = args;
+        return mockVerifyOtpResult;
+      }),
     },
     from: vi.fn(() => ({
       select: vi.fn(() => ({
@@ -165,6 +173,7 @@ import {
   login,
   forgotPassword,
   updatePassword,
+  confirmRecoveryAction,
 } from "@/lib/actions/auth";
 
 // =======================================================================
@@ -689,6 +698,78 @@ describe("C. Server Actions: forgotPassword() & updatePassword()", () => {
     const res = await updatePassword(null, fd);
 
     expect(res?.error).toContain("simbol");
+    expect(mockRedirectCalled).toBe(false);
+  });
+});
+
+// =======================================================================
+// D. KONFIRMASI LINK RECOVERY (anti email-prefetch)
+// =======================================================================
+describe("D. Server Action: confirmRecoveryAction()", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockRedirectCalled = false;
+    mockRedirectTarget = "";
+    mockVerifyOtpResult = { error: null };
+    mockVerifyOtpArgs = null;
+  });
+
+  it("[TC-CR1] Happy path: token_hash valid + type=recovery → verifyOtp dipanggil, redirect /update-password", async () => {
+    const fd = createFormData({
+      token_hash: "abc123hash",
+      type: "recovery",
+    });
+
+    const res = await confirmRecoveryAction(null, fd);
+
+    expect(res).toBeUndefined();
+    expect(mockRedirectCalled).toBe(true);
+    expect(mockRedirectTarget).toBe("/update-password");
+    // Token HARUS ditukar lewat verifyOtp dengan tipe recovery
+    expect(mockVerifyOtpArgs).toEqual({
+      type: "recovery",
+      token_hash: "abc123hash",
+    });
+  });
+
+  it("[TC-CR2] token_hash kosong → validasi menolak, verifyOtp TIDAK dipanggil", async () => {
+    const fd = createFormData({ token_hash: "", type: "recovery" });
+
+    const res = await confirmRecoveryAction(null, fd);
+
+    expect(res?.error).toBeTruthy();
+    expect(mockVerifyOtpArgs).toBeNull();
+    expect(mockRedirectCalled).toBe(false);
+  });
+
+  it("[TC-CR3] type bukan 'recovery' → validasi menolak", async () => {
+    const fd = createFormData({
+      token_hash: "abc123hash",
+      type: "signup",
+    });
+
+    const res = await confirmRecoveryAction(null, fd);
+
+    expect(res?.error).toBeTruthy();
+    expect(mockVerifyOtpArgs).toBeNull();
+    expect(mockRedirectCalled).toBe(false);
+  });
+
+  it("[TC-CR4] Token kedaluwarsa/invalid dari Supabase → pesan generik, tanpa redirect", async () => {
+    mockVerifyOtpResult = {
+      error: { message: "Token has expired or is invalid" },
+    };
+
+    const fd = createFormData({
+      token_hash: "expiredHash",
+      type: "recovery",
+    });
+
+    const res = await confirmRecoveryAction(null, fd);
+
+    expect(res?.error).toContain("kedaluwarsa");
+    // Pesan generik: jangan bocorkan detail internal Supabase
+    expect(res?.error).not.toContain("Token has expired");
     expect(mockRedirectCalled).toBe(false);
   });
 });

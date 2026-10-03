@@ -342,6 +342,9 @@ Seluruh alur kerja didukung oleh otomatisasi logika serverless yang tangguh:
 4. **Disciplinary & Audit Engine**:
    - Kalkulasi otomatis akumulasi poin kedisiplinan dan auto-generate draf SP Komdis sesuai ambang batas SOP.
    - Pencatatan log mutasi administrasi ke dalam tabel `audit_logs` yang bersifat _append-only_ / terlindungi pemicu anti-mutasi.
+5. **Verifikasi Link Pemulihan Password (_Anti Email-Prefetch_)**:
+   - Link reset password pada email mengarah ke halaman konfirmasi perantara `{{ .SiteURL }}/reset-password?token_hash=...&type=recovery`, **bukan** langsung ke endpoint verifikasi.
+   - Token sekali-pakai baru ditukar menjadi sesi recovery ketika user menekan tombol (Server Action `confirmRecoveryAction` → `supabase.auth.verifyOtp`), sehingga bot/scanner keamanan email yang otomatis membuka link tidak menghabiskan token sebelum user asli. TTL token berbasis waktu (1 jam) dan dapat dibuka berkali-kali dalam rentang tersebut.
 
 ---
 
