@@ -2,15 +2,18 @@
 
 import { revalidatePath, updateTag, unstable_cache } from "next/cache";
 import { createClient, createAdminClient } from "@/lib/supabase/server";
-import { untypedFrom } from "@/lib/supabase/untyped";
+import { untypedFrom, untypedRpc } from "@/lib/supabase/untyped";
 import {
   eventCategorySchema,
   eventPaymentBankSchema,
   eventSettingsSchema,
+  reviewChangeRequestSchema,
   type EventCategoryInput,
   type EventSettingsInput,
+  type ReviewChangeRequestInput,
 } from "@/lib/schemas/event-registration";
 import { sendETicketEmail } from "@/lib/services/resend";
+import { recordAuditLog } from "@/lib/audit";
 import type {
   ActionResult,
   BankAccount,
@@ -22,6 +25,7 @@ import type {
   EventSettings,
   EventTeamMember,
   PaymentStatus,
+  RegistrationChangeRequest,
   RoleEvent,
 } from "@/types/event-registration";
 import { REGISTRATIONS_PAGE_SIZE } from "@/types/event-registration";
@@ -1157,5 +1161,152 @@ export async function purgeOldEventDataAction(): Promise<
     success: true,
     data: { deletedCount: ids.length },
     message: `Berhasil menghapus ${ids.length} pendaftaran lama.`,
+  };
+}
+
+// --------------------------------------------------------
+// Permohonan Perbaikan Data Pendaftaran (review oleh Panitia Pendaftaran)
+// --------------------------------------------------------
+
+/**
+ * Daftar permohonan perbaikan data, terbaru lebih dulu.
+ * @param statusFilter `pending` | `approved` | `rejected`; kosong = semua.
+ */
+export async function getRegistrationChangeRequestsAction(
+  statusFilter?: "pending" | "approved" | "rejected",
+): Promise<ActionResult<RegistrationChangeRequest[]>> {
+  const check = await checkEventRole(["panitia-pendaftaran"]);
+  if (!check.authorized) {
+    return { success: false, error: check.error || "Akses ditolak." };
+  }
+
+  const adminSupabase = createAdminClient();
+  let query = untypedFrom(adminSupabase, "event_registration_change_requests")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (statusFilter) {
+    query = query.eq("status", statusFilter);
+  }
+
+  const { data, error } = (await query) as unknown as {
+    data: RegistrationChangeRequest[] | null;
+    error: unknown;
+  };
+
+  if (error) {
+    return { success: false, error: "Gagal mengambil permohonan perbaikan." };
+  }
+
+  return { success: true, data: data ?? [] };
+}
+
+/**
+ * Tinjau (setujui/tolak) permohonan perbaikan data.
+ *
+ * - approve: terapkan perubahan secara ATOMIK via RPC
+ *   `apply_registration_change_request` (update kolom tim + ganti anggota
+ *   dalam satu transaksi).
+ * - reject: tandai `rejected` beserta catatan.
+ *
+ * Wajib audit trail (AGENTS.md §5).
+ */
+export async function reviewRegistrationChangeRequestAction(
+  rawInput: ReviewChangeRequestInput,
+): Promise<ActionResult<{ success: boolean }>> {
+  const check = await checkEventRole(["panitia-pendaftaran"]);
+  if (!check.authorized || !check.user) {
+    return { success: false, error: check.error || "Akses ditolak." };
+  }
+
+  const validated = reviewChangeRequestSchema.safeParse(rawInput);
+  if (!validated.success) {
+    return {
+      success: false,
+      error: validated.error.issues[0]?.message || "Input tidak valid.",
+    };
+  }
+
+  const { request_id, action, note } = validated.data;
+
+  if (action === "reject" && (!note || note.trim().length === 0)) {
+    return { success: false, error: "Alasan penolakan wajib diisi." };
+  }
+
+  const adminSupabase = createAdminClient();
+
+  // Ambil permohonan untuk validasi status & target audit.
+  const { data: request } = (await untypedFrom(
+    adminSupabase,
+    "event_registration_change_requests",
+  )
+    .select("*")
+    .eq("id", request_id)
+    .maybeSingle()) as unknown as { data: RegistrationChangeRequest | null };
+
+  if (!request) {
+    return { success: false, error: "Permohonan tidak ditemukan." };
+  }
+  if (request.status !== "pending") {
+    return {
+      success: false,
+      error: "Permohonan ini sudah ditinjau sebelumnya.",
+    };
+  }
+
+  if (action === "approve") {
+    try {
+      await untypedRpc<string>(
+        adminSupabase,
+        "apply_registration_change_request",
+        { p_request_id: request_id, p_reviewer_id: check.user.id },
+      );
+    } catch (err) {
+      console.error("apply_registration_change_request error:", err);
+      return {
+        success: false,
+        error: "Gagal menerapkan perubahan data pendaftaran.",
+      };
+    }
+  } else {
+    const { error } = await (untypedFrom(
+      adminSupabase,
+      "event_registration_change_requests",
+    )
+      .update({
+        status: "rejected",
+        review_note: note?.trim() ?? null,
+        reviewed_by: check.user.id,
+        reviewed_at: new Date().toISOString(),
+      })
+      .eq("id", request_id) as unknown as Promise<{ error: unknown }>);
+
+    if (error) {
+      return { success: false, error: "Gagal menolak permohonan." };
+    }
+  }
+
+  await recordAuditLog({
+    actorId: check.user.id,
+    actionType: "UPDATE_APPLICANT_STATUS",
+    oldValue: { change_request_status: "pending" },
+    newValue: {
+      change_request_status: action === "approve" ? "approved" : "rejected",
+      registration_id: request.registration_id,
+    },
+    details: `Permohonan perbaikan data ${action === "approve" ? "disetujui" : "ditolak"}`,
+  });
+
+  revalidatePath("/manajemen-event");
+  revalidatePath("/manajemen-event/pendaftaran");
+  revalidatePath(`/manajemen-event/pendaftaran/${request.registration_id}`);
+
+  return {
+    success: true,
+    data: { success: true },
+    message:
+      action === "approve"
+        ? "Perubahan data berhasil diterapkan."
+        : "Permohonan perbaikan ditolak.",
   };
 }

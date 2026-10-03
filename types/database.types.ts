@@ -551,6 +551,54 @@ export type Database = {
         };
         Relationships: [];
       };
+      event_registration_change_requests: {
+        Row: {
+          created_at: string;
+          id: string;
+          registration_id: string;
+          requested_data: Json;
+          review_note: string | null;
+          reviewed_at: string | null;
+          reviewed_by: string | null;
+          status: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          registration_id: string;
+          requested_data: Json;
+          review_note?: string | null;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          status?: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          registration_id?: string;
+          requested_data?: Json;
+          review_note?: string | null;
+          reviewed_at?: string | null;
+          reviewed_by?: string | null;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "event_registration_change_requests_registration_id_fkey";
+            columns: ["registration_id"];
+            isOneToOne: false;
+            referencedRelation: "event_registrations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "event_registration_change_requests_reviewed_by_fkey";
+            columns: ["reviewed_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       event_member_verifications: {
         Row: {
           id: string;
@@ -2032,6 +2080,10 @@ export type Database = {
       };
     };
     Functions: {
+      apply_registration_change_request: {
+        Args: { p_request_id: string; p_reviewer_id: string };
+        Returns: string;
+      };
       check_legacy_member: {
         Args: { input_nim: string };
         Returns: {

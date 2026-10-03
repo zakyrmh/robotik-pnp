@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import type { EventRegistration } from "@/types/event-registration";
 import { submitManualPaymentProofAction } from "@/lib/actions/event-registration";
+import { RegistrationChangeRequestForm } from "@/components/event/registration-change-request-form";
 import {
   CheckCircle2,
   Clock,
@@ -11,18 +12,28 @@ import {
   Share2,
   Upload,
   ExternalLink,
+  PencilLine,
 } from "lucide-react";
 
 interface ETicketClientViewProps {
   registration: EventRegistration;
+  /** Apakah batch pendaftaran masih aktif (menentukan boleh ajukan perbaikan). */
+  registrationOpen?: boolean;
+  /** Ada permohonan perbaikan yang sedang menunggu tinjauan. */
+  hasPendingChangeRequest?: boolean;
 }
 
-export function ETicketClientView({ registration }: ETicketClientViewProps) {
+export function ETicketClientView({
+  registration,
+  registrationOpen = false,
+  hasPendingChangeRequest = false,
+}: ETicketClientViewProps) {
   const [proofUrl, setProofUrl] = useState(
     registration.manual_payment_proof_url || "",
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [showChangeForm, setShowChangeForm] = useState(false);
 
   const handleManualProofSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -225,6 +236,44 @@ export function ETicketClientView({ registration }: ETicketClientViewProps) {
           </div>
         )}
 
+        {/* Perbaikan Data Pendaftaran */}
+        <div className="border-t border-border pt-6 space-y-3">
+          <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+            <PencilLine className="size-4 text-primary" aria-hidden="true" />
+            Perbaikan Data Pendaftaran
+          </h3>
+
+          {hasPendingChangeRequest ? (
+            <div className="flex items-start gap-2 rounded-md border border-warning/30 bg-warning-soft p-3 text-xs font-medium text-warning">
+              <Clock className="size-4 shrink-0" aria-hidden="true" />
+              <span>
+                Permohonan perbaikan data Anda sedang ditinjau panitia.
+                Perubahan akan diterapkan setelah disetujui.
+              </span>
+            </div>
+          ) : registrationOpen ? (
+            <>
+              <p className="text-xs text-muted-foreground">
+                Ada kesalahan pada data tim, anggota, kontak, atau foto? Ajukan
+                perbaikan — panitia akan meninjau sebelum menerapkan.
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowChangeForm(true)}
+                className="w-full sm:w-auto min-h-[44px] inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-secondary hover:bg-muted text-secondary-foreground border border-border rounded-md text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <PencilLine className="size-4" aria-hidden="true" />
+                Ajukan Perbaikan Data
+              </button>
+            </>
+          ) : (
+            <p className="rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground">
+              Pendaftaran sudah ditutup. Perbaikan data tidak dapat diajukan.
+              Silakan hubungi panitia.
+            </p>
+          )}
+        </div>
+
         {/* Share Button & WhatsApp Reminder */}
         <div className="border-t border-border pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <a
@@ -247,6 +296,12 @@ export function ETicketClientView({ registration }: ETicketClientViewProps) {
             )}
         </div>
       </div>
+
+      <RegistrationChangeRequestForm
+        registration={registration}
+        open={showChangeForm}
+        onOpenChange={setShowChangeForm}
+      />
     </div>
   );
 }

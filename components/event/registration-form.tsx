@@ -2,21 +2,20 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import imageCompression from "browser-image-compression";
 import { Turnstile } from "@marsidev/react-turnstile";
-import {
-  uploadMemberPhotoAction,
-  uploadMemberIdentityCardAction,
-} from "@/lib/actions/mrc-image-upload";
 import { registerEventAction } from "@/lib/actions/event-registration";
 import { MIN_TEAM_MEMBERS } from "@/lib/schemas/event-registration";
 import {
   MRC_ACCEPT_ATTR,
-  MRC_ALLOWED_EXTENSIONS,
-  MRC_MAX_RAW_BYTES,
   mrcMaxRawLabel,
   type MrcImageKind,
 } from "@/lib/mrc-image-config";
+import {
+  createEmptyMember,
+  createInitialMembers,
+  uploadMemberImage,
+  type MemberFormState,
+} from "@/lib/event-member-form";
 import type {
   EventCategory,
   EventRulesVersion,
@@ -64,108 +63,6 @@ interface RegisterFormProps {
   activeFee?: number | null;
 }
 
-interface MemberFormState {
-  full_name: string;
-  photo_url: string;
-  identity_card_url: string;
-  birth_date: string;
-  role_in_team: string;
-  isUploading: boolean;
-  uploadError?: string;
-  isUploadingIdCard: boolean;
-  uploadIdCardError?: string;
-}
-
-/**
- * Validasi client-side (UX cepat) — BUKAN pengganti validasi server.
- * Server selalu memvalidasi ulang berbasis magic bytes via `file-type`,
- * karena `File.type`/ekstensi dari browser mudah dipalsukan.
- */
-function getFileExtension(fileName: string): string {
-  const dot = fileName.lastIndexOf(".");
-  return dot >= 0 ? fileName.slice(dot).toLowerCase() : "";
-}
-
-function isHeicFile(file: File): boolean {
-  const ext = getFileExtension(file.name);
-  const type = (file.type || "").toLowerCase();
-  return (
-    ext === ".heic" ||
-    ext === ".heif" ||
-    type.includes("heic") ||
-    type.includes("heif")
-  );
-}
-
-function validateImageFileClient(
-  file: File,
-  kind: MrcImageKind,
-): string | null {
-  const label = kind === "photo" ? "Pas foto" : "Foto kartu identitas";
-  if (file.size === 0) return `${label} kosong atau tidak terbaca.`;
-  if (file.size > MRC_MAX_RAW_BYTES[kind]) {
-    return `${label} melebihi batas ${mrcMaxRawLabel(kind)}. Silakan pilih file yang lebih kecil.`;
-  }
-  if (file.type && !file.type.toLowerCase().startsWith("image/")) {
-    return `${label} harus berupa file gambar (JPG, PNG, WebP, atau HEIC).`;
-  }
-  const ext = getFileExtension(file.name);
-  if (ext && !(MRC_ALLOWED_EXTENSIONS as readonly string[]).includes(ext)) {
-    return `${label} berekstensi "${ext}" yang tidak didukung. Gunakan JPG, PNG, WebP, atau HEIC.`;
-  }
-  return null;
-}
-
-/** Konversi HEIC/HEIF (foto iPhone) → JPEG via `heic2any` sebelum kompresi. */
-async function convertHeicToJpegIfNeeded(file: File): Promise<File> {
-  if (!isHeicFile(file)) return file;
-  try {
-    const { default: heic2any } = await import("heic2any");
-    const converted = await heic2any({
-      blob: file,
-      toType: "image/jpeg",
-      quality: 0.85,
-    });
-    const blob = Array.isArray(converted) ? converted[0] : converted;
-    const baseName = file.name.replace(/\.(heic|heif)$/i, "") || "photo";
-    return new File([blob], `${baseName}.jpg`, {
-      type: "image/jpeg",
-      lastModified: Date.now(),
-    });
-  } catch {
-    throw new Error(
-      "Gagal mengonversi foto iPhone (HEIC). Silakan pilih file JPG/PNG manual.",
-    );
-  }
-}
-
-/**
- * Kompresi + konversi ke WebP di client-side (mirip onboarding).
- * Server hanya upload buffer ke R2 — TANPA sharp/file-type.
- */
-async function compressToWebp(file: File, kind: MrcImageKind): Promise<File> {
-  const normalized = await convertHeicToJpegIfNeeded(file);
-  try {
-    const compressed = await imageCompression(normalized, {
-      maxSizeMB: kind === "photo" ? 1 : 1.5,
-      maxWidthOrHeight: kind === "photo" ? 1280 : 1920,
-      useWebWorker: true,
-      fileType: "image/webp",
-    });
-    const baseName =
-      (compressed as File)?.name?.replace(/\.[^.]+$/, "") ||
-      normalized.name?.replace(/\.[^.]+$/, "") ||
-      "photo";
-    return new File([compressed], `${baseName}.webp`, {
-      type: "image/webp",
-      lastModified: Date.now(),
-    });
-  } catch {
-    // Fallback: return normalized file (server akan validasi MIME)
-    return normalized;
-  }
-}
-
 export function RegistrationForm({
   category,
   rulesVersion,
@@ -191,26 +88,9 @@ export function RegistrationForm({
 
   const isJuniorLineFollower = category.slug === "line-follower-junior";
 
-  const [members, setMembers] = useState<MemberFormState[]>([
-    {
-      full_name: "",
-      photo_url: "",
-      identity_card_url: "",
-      birth_date: "",
-      role_in_team: "Ketua Tim",
-      isUploading: false,
-      isUploadingIdCard: false,
-    },
-    {
-      full_name: "",
-      photo_url: "",
-      identity_card_url: "",
-      birth_date: "",
-      role_in_team: "Anggota",
-      isUploading: false,
-      isUploadingIdCard: false,
-    },
-  ]);
+  const [members, setMembers] = useState<MemberFormState[]>(() =>
+    createInitialMembers(),
+  );
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -223,18 +103,7 @@ export function RegistrationForm({
 
   const addMember = () => {
     if (members.length >= category.max_team_members) return;
-    setMembers([
-      ...members,
-      {
-        full_name: "",
-        photo_url: "",
-        identity_card_url: "",
-        birth_date: "",
-        role_in_team: "Anggota",
-        isUploading: false,
-        isUploadingIdCard: false,
-      },
-    ]);
+    setMembers([...members, createEmptyMember("Anggota")]);
   };
 
   const removeMember = (index: number) => {
@@ -273,28 +142,9 @@ export function RegistrationForm({
     };
 
     try {
-      const clientError = validateImageFileClient(file, kind);
-      if (clientError) {
-        setUploadError(clientError);
-        return;
-      }
-
-      const lightFile = await compressToWebp(file, kind);
-
-      const formData = new FormData();
-      formData.append("file", lightFile);
-
-      const res =
-        kind === "photo"
-          ? await uploadMemberPhotoAction(formData)
-          : await uploadMemberIdentityCardAction(formData);
-
-      if (res.success) {
-        if (kind === "photo") next[index].photo_url = res.data;
-        else next[index].identity_card_url = res.data;
-      } else {
-        setUploadError(res.error || "Gagal mengunggah file.");
-      }
+      const url = await uploadMemberImage(file, kind);
+      if (kind === "photo") next[index].photo_url = url;
+      else next[index].identity_card_url = url;
     } catch (err: unknown) {
       setUploadError((err as Error).message || "Gagal memproses file.");
     } finally {

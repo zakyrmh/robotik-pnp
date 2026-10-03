@@ -55,7 +55,7 @@ const faqItems = [
   {
     question: "Apakah data pendaftaran masih bisa diubah setelah dikirim?",
     answer:
-      "Data pendaftaran yang sudah dikirim tidak bisa Anda ubah sendiri lewat halaman pendaftaran. Jika ada kesalahan, seperti salah menulis nama, data anggota, atau foto yang perlu diganti, silakan hubungi panitia melalui kontak di halaman ini. Panitia bisa membantu memperbaikinya selama masa pendaftaran masih dibuka.",
+      'Bisa, tetapi tidak langsung berubah. Buka halaman E-Tiket tim Anda (link yang dikirim ke email), lalu tekan tombol "Ajukan Perbaikan Data". Anda dapat mengubah nama tim, data anggota, kontak, hingga mengganti foto. Permohonan Anda akan ditinjau panitia terlebih dahulu sebelum diterapkan. Perbaikan hanya dapat diajukan selama masa pendaftaran masih dibuka. Jika pendaftaran sudah ditutup, silakan hubungi panitia melalui kontak di halaman ini.',
   },
   {
     question: "Apakah ada batas usia untuk peserta?",

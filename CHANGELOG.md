@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.16.0](https://github.com/zakyrmh/robotik-pnp/compare/v0.15.1...v0.16.0) (2026-10-03)
+
+### Added
+
+- **Permohonan Perbaikan Data Pendaftaran MRC (`supabase/migrations/20261003000000_add_registration_change_requests.sql` baru, `lib/schemas/event-registration.ts`, `lib/actions/event-registration.ts`, `lib/actions/event-admin.ts`, `lib/event-member-form.ts` baru, `components/event/registration-change-request-form.tsx` baru, `components/event/change-request-diff.tsx` baru, `components/event/change-request-review-panel.tsx` baru, `types/database.types.ts`, `types/event-registration.ts`)**: Peserta MRC tidak memiliki akun login (akses hanya via tautan tiket `access_token`), sehingga perbaikan data tidak bisa dilakukan sendiri. Fitur ini memberi jalur resmi **"ajukan → tinjau (approve/reject)"** sesuai hak perbaikan data UU PDP Pasal 30, tanpa mengorbankan kontrol panitia:
+  - **Peserta** (halaman `/mrc/tiket/[token]`): tombol **"Ajukan Perbaikan Data"** (tampil selama batch pendaftaran aktif) membuka modal berisi data tim & anggota yang dapat diedit (nama tim, instansi, kota, pembina, kontak, nama/peran/tanggal lahir anggota, ganti pas foto & kartu identitas). Perubahan **TIDAK** langsung diterapkan — dikirim sebagai permohonan `pending`. Bila ada permohonan menunggu, ditampilkan badge kuning "sedang ditinjau".
+  - **Admin** (`panitia-pendaftaran`/super-admin, halaman detail `[id]`): panel **"Permohonan Perbaikan Data"** dengan **diff Sebelum → Sesudah** (per field + pratinjau foto) dan tombol **Setujui & Terapkan** / **Tolak** (dengan alasan wajib) melalui Dialog UI.
+  - **Persetujuan bersifat ATOMIK** via RPC `apply_registration_change_request` (update kolom tim + ganti seluruh anggota dalam satu transaksi, `FOR UPDATE` anti double-apply). Setiap keputusan dicatat di audit log (`UPDATE_APPLICANT_STATUS`).
+  - **Guard**: hanya selama batch pendaftaran aktif (`getActiveBatch`), maksimal satu permohonan `pending` per tim, validasi Zod berlapis (regex WhatsApp, anti-SSRF pada URL gambar, batas anggota), RLS tabel baru khusus panitia pendaftaran & super-admin.
+  - **Refactor DRY**: logika form anggota (state, validasi file, konversi HEIC→JPEG, kompresi WebP, upload) diekstrak ke `lib/event-member-form.ts` dan dipakai bersama oleh form pendaftaran & form perbaikan.
+  - **22 unit test baru** (10 skema, 6 action peserta, 6 action admin) mengunci guard, validasi, dan alur approve/reject.
+
+### Changed
+
+- **Refactor Form Pendaftaran (`components/event/registration-form.tsx`)**: Menghapus duplikasi helper gambar & state anggota dengan memakai modul bersama `lib/event-member-form.ts` (nol regresi perilaku).
+- **FAQ MRC (`components/event/mrc-faq-accordion.tsx`)**: Memperbarui jawaban "Apakah data pendaftaran masih bisa diubah?" agar mengarahkan peserta ke jalur resmi "Ajukan Perbaikan Data" melalui halaman E-Tiket (menggantikan instruksi "hubungi panitia" manual).
+
 ## [0.15.1](https://github.com/zakyrmh/robotik-pnp/compare/v0.15.0...v0.15.1) (2026-10-03)
 
 ### Changed

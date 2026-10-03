@@ -6,9 +6,11 @@ import { headers } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/server";
 import {
   eventRegistrationSchema,
+  registrationChangeRequestSchema,
   isMrcImageUrl,
   MIN_TEAM_MEMBERS,
   type EventRegistrationInput,
+  type RegistrationChangeRequestInput,
 } from "@/lib/schemas/event-registration";
 import {
   createMidtransSnapTransaction,
@@ -33,6 +35,7 @@ import type {
   EventCategory,
   EventSettings,
   PaymentStatus,
+  RegistrationChangeRequest,
 } from "@/types/event-registration";
 
 /**
@@ -790,3 +793,174 @@ import {
 export const uploadMemberPhotoAction = _uploadMemberPhotoAction;
 export const uploadMemberIdentityCardAction = _uploadMemberIdentityCardAction;
 export const uploadPaymentProofAction = _uploadPaymentProofAction;
+
+// ============================================================
+// Permohonan Perbaikan Data (Peserta, berbasis access_token)
+// ============================================================
+
+/**
+ * Ajukan perbaikan data pendaftaran.
+ *
+ * Perubahan TIDAK langsung diterapkan — disimpan sebagai permohonan `pending`
+ * yang harus disetujui `panitia-pendaftaran`. Hanya boleh diajukan selama
+ * batch pendaftaran masih aktif.
+ */
+export async function submitRegistrationChangeRequestAction(
+  accessToken: string,
+  payload: RegistrationChangeRequestInput,
+): Promise<ActionResult<{ requestId: string }>> {
+  if (!accessToken) {
+    return { success: false, error: "Token akses tidak valid." };
+  }
+
+  const validated = registrationChangeRequestSchema.safeParse(payload);
+  if (!validated.success) {
+    return {
+      success: false,
+      error: validated.error.issues[0]?.message || "Data tidak valid.",
+    };
+  }
+
+  const adminSupabase = createAdminClient();
+
+  // 1) Resolve registrasi via token.
+  const { data: reg, error: regError } = await (untypedFrom(
+    adminSupabase,
+    "event_registrations",
+  )
+    .select("id, team_name")
+    .eq("access_token", accessToken)
+    .maybeSingle() as unknown as Promise<{
+    data: { id: string; team_name: string } | null;
+    error: unknown;
+  }>);
+
+  if (regError || !reg) {
+    return { success: false, error: "Pendaftaran tidak ditemukan." };
+  }
+
+  // 2) Guard: pendaftaran harus masih dibuka (batch aktif).
+  const { data: settings } = await (untypedFrom(adminSupabase, "event_settings")
+    .select("*")
+    .eq("id", 1)
+    .maybeSingle() as unknown as Promise<{
+    data: EventSettings | null;
+  }>);
+
+  if (!getActiveBatch(settings ?? null, new Date())) {
+    return {
+      success: false,
+      error: "Pendaftaran sudah ditutup. Perbaikan data tidak dapat diajukan.",
+    };
+  }
+
+  // 3) Guard: hindari permohonan menumpuk.
+  const { data: existing } = await (untypedFrom(
+    adminSupabase,
+    "event_registration_change_requests",
+  )
+    .select("id")
+    .eq("registration_id", reg.id)
+    .eq("status", "pending")
+    .maybeSingle() as unknown as Promise<{ data: { id: string } | null }>);
+
+  if (existing) {
+    return {
+      success: false,
+      error:
+        "Masih ada permohonan perbaikan yang menunggu tinjauan panitia. Tunggu keputusan sebelum mengajukan lagi.",
+    };
+  }
+
+  // 4) Simpan permohonan.
+  const { members, ...team } = validated.data;
+  const requestedData = {
+    team: {
+      team_name: team.team_name,
+      institution: team.institution,
+      origin_city: team.origin_city,
+      advisor_name: team.advisor_name ?? "",
+      team_email: team.team_email,
+      team_whatsapp: team.team_whatsapp,
+    },
+    members: members.map((m) => ({
+      full_name: m.full_name,
+      photo_url: m.photo_url,
+      identity_card_url: m.identity_card_url ?? "",
+      birth_date: m.birth_date ?? "",
+      role_in_team: m.role_in_team,
+    })),
+  };
+
+  const { data: created, error: insertError } = await (untypedFrom(
+    adminSupabase,
+    "event_registration_change_requests",
+  )
+    .insert({
+      registration_id: reg.id,
+      requested_data: requestedData,
+      status: "pending",
+    })
+    .select("id")
+    .single() as unknown as Promise<{
+    data: { id: string } | null;
+    error: unknown;
+  }>);
+
+  if (insertError || !created) {
+    console.error(
+      "submitRegistrationChangeRequestAction insert error:",
+      insertError,
+    );
+    return {
+      success: false,
+      error: "Gagal mengirim permohonan perbaikan. Silakan coba lagi.",
+    };
+  }
+
+  revalidatePath(`/mrc/tiket/${accessToken}`);
+  return {
+    success: true,
+    data: { requestId: created.id },
+    message: "Permohonan perbaikan data terkirim. Menunggu tinjauan panitia.",
+  };
+}
+
+/** Ambil permohonan perbaikan terbaru untuk sebuah pendaftaran (via token). */
+export async function getRegistrationChangeRequestAction(
+  accessToken: string,
+): Promise<ActionResult<RegistrationChangeRequest | null>> {
+  if (!accessToken) {
+    return { success: false, error: "Token akses tidak valid." };
+  }
+
+  const adminSupabase = createAdminClient();
+
+  const { data: reg } = await (untypedFrom(adminSupabase, "event_registrations")
+    .select("id")
+    .eq("access_token", accessToken)
+    .maybeSingle() as unknown as Promise<{ data: { id: string } | null }>);
+
+  if (!reg) {
+    return { success: false, error: "Pendaftaran tidak ditemukan." };
+  }
+
+  const { data, error } = await (untypedFrom(
+    adminSupabase,
+    "event_registration_change_requests",
+  )
+    .select("*")
+    .eq("registration_id", reg.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle() as unknown as Promise<{
+    data: RegistrationChangeRequest | null;
+    error: unknown;
+  }>);
+
+  if (error) {
+    return { success: false, error: "Gagal mengambil status permohonan." };
+  }
+
+  return { success: true, data: data ?? null };
+}

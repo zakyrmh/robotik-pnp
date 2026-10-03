@@ -159,6 +159,68 @@ export const eventRegistrationSchema = z.object({
     ),
 });
 
+/**
+ * Permohonan perbaikan data pendaftaran oleh peserta.
+ *
+ * Peserta mengubah field tim & anggota; perubahan TIDAK langsung diterapkan,
+ * melainkan disimpan sebagai permohonan yang menunggu persetujuan admin.
+ * `members` memakai skema anggota yang sama dengan pendaftaran awal.
+ */
+export const registrationChangeRequestSchema = z.object({
+  team_name: z
+    .string()
+    .min(2, "Nama tim minimal 2 karakter")
+    .max(100, "Nama tim maksimal 100 karakter"),
+  institution: z
+    .string()
+    .min(2, "Nama instansi minimal 2 karakter")
+    .max(150, "Nama instansi maksimal 150 karakter"),
+  origin_city: z
+    .string()
+    .min(2, "Kota asal minimal 2 karakter")
+    .max(100, "Kota asal maksimal 100 karakter"),
+  advisor_name: z
+    .string()
+    .max(100, "Nama pembimbing maksimal 100 karakter")
+    .optional(),
+  team_email: z
+    .string()
+    .email("Email tim tidak valid")
+    .max(254, "Email terlalu panjang"),
+  team_whatsapp: z
+    .string()
+    .trim()
+    .regex(
+      /^(\+62|62|0)8[1-9][0-9]{6,11}$/,
+      "Nomor WhatsApp tidak valid (contoh: 08123456789)",
+    ),
+  members: z
+    .array(eventMemberSchema)
+    .min(
+      MIN_TEAM_MEMBERS,
+      `Minimal ${MIN_TEAM_MEMBERS} anggota tim (Ketua Tim + 1 anggota)`,
+    )
+    .max(
+      HARD_MAX_TEAM_MEMBERS,
+      `Jumlah anggota tim tidak boleh melebihi ${HARD_MAX_TEAM_MEMBERS} orang`,
+    ),
+});
+
+export type RegistrationChangeRequestInput = z.infer<
+  typeof registrationChangeRequestSchema
+>;
+
+/** Review permohonan perbaikan oleh admin. */
+export const reviewChangeRequestSchema = z.object({
+  request_id: z.string().uuid("ID permohonan tidak valid"),
+  action: z.enum(["approve", "reject"]),
+  note: z.string().max(500, "Catatan maksimal 500 karakter").optional(),
+});
+
+export type ReviewChangeRequestInput = z.infer<
+  typeof reviewChangeRequestSchema
+>;
+
 export const eventCategorySchema = z.object({
   slug: z.string().min(2, "Slug minimal 2 karakter"),
   name: z.string().min(2, "Nama kategori minimal 2 karakter"),

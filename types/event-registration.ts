@@ -197,3 +197,40 @@ export interface EventViolation {
   status: ViolationStatus;
   created_at: string;
 }
+
+export type ChangeRequestStatus = "pending" | "approved" | "rejected";
+
+/** Field tim yang dapat diajukan perbaikannya oleh peserta. */
+export interface ChangeRequestTeamData {
+  team_name: string;
+  institution: string;
+  origin_city: string;
+  advisor_name?: string;
+  team_email: string;
+  team_whatsapp: string;
+}
+
+export interface ChangeRequestMemberData {
+  full_name: string;
+  photo_url: string;
+  identity_card_url?: string;
+  birth_date?: string;
+  role_in_team: string;
+}
+
+/** Payload lengkap permohonan perbaikan data. */
+export interface ChangeRequestData {
+  team: ChangeRequestTeamData;
+  members: ChangeRequestMemberData[];
+}
+
+export interface RegistrationChangeRequest {
+  id: string;
+  registration_id: string;
+  requested_data: ChangeRequestData;
+  status: ChangeRequestStatus;
+  review_note: string | null;
+  reviewed_by: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+}

@@ -4,9 +4,11 @@ import { requireEventAdminOrRedirect } from "@/lib/event-auth";
 import {
   getEventRegistrationByIdAction,
   getEventSettingsAction,
+  getRegistrationChangeRequestsAction,
 } from "@/lib/actions/event-admin";
 import { resolveBankAccounts } from "@/lib/event-bank";
 import { RegistrationDetailView } from "@/components/event/registration-detail-view";
+import { ChangeRequestReviewPanel } from "@/components/event/change-request-review-panel";
 
 export default async function EventRegistrationDetailPage({
   params,
@@ -48,9 +50,15 @@ export default async function EventRegistrationDetailPage({
     notFound();
   }
 
-  const settingsRes = await getEventSettingsAction();
+  const [settingsRes, changeReqRes] = await Promise.all([
+    getEventSettingsAction(),
+    getRegistrationChangeRequestsAction(),
+  ]);
   const bankAccounts = resolveBankAccounts(
     settingsRes.success ? settingsRes.data : null,
+  );
+  const changeRequests = (changeReqRes.success ? changeReqRes.data : []).filter(
+    (r) => r.registration_id === res.data.id,
   );
 
   return (
@@ -61,6 +69,13 @@ export default async function EventRegistrationDetailPage({
         isSuperAdmin={auth.isSuperAdmin}
         bankAccounts={bankAccounts}
       />
+
+      {(auth.roleEvent === "panitia-pendaftaran" || auth.isSuperAdmin) && (
+        <ChangeRequestReviewPanel
+          registration={res.data}
+          changeRequests={changeRequests}
+        />
+      )}
     </main>
   );
 }
