@@ -476,6 +476,8 @@ export async function registerEventAction(
     }
 
     revalidatePath("/manajemen-event");
+    // Slot kategori baru ditempati — segarkan kuota publik di /mrc.
+    revalidatePath("/mrc");
 
     return {
       success: true,
@@ -759,6 +761,8 @@ export async function submitManualPaymentProofAction(
   });
 
   revalidatePath("/manajemen-event");
+  // Status menjadi `pending_verification` (menahan slot permanen) — segarkan /mrc.
+  revalidatePath("/mrc");
 
   return {
     success: true,

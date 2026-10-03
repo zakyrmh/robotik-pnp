@@ -8,6 +8,17 @@ import { MrcRulesSection } from "@/components/event/mrc-rules-section";
 import { MrcFaqAccordion } from "@/components/event/mrc-faq-accordion";
 import { MrcContactSection } from "@/components/event/mrc-contact-section";
 
+/**
+ * Sisa slot & statistik kuota di halaman ini HARUS selalu segar dari database.
+ *
+ * `revalidate = 0` memaksa render per-request (dynamic), bukan disajikan dari
+ * snapshot statis/ISR. Tanpa ini, halaman yang datanya diambil via
+ * `createAdminClient()` (tanpa cookies / Request-time API) akan di-prerender
+ * dan menampilkan sisa slot yang basi hingga ~5 menit setelah pendaftaran —
+ * menyebabkan kategori yang sudah penuh tetap tampak punya slot.
+ */
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title:
     "Minangkabau Robot Contest 2026 - UKM Robotik Politeknik Negeri Padang",
