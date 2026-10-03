@@ -55,6 +55,9 @@ sentry-wizard-installation-error-*.log
 /.hermes/
 /.impeccable/
 
+# Long-term memory vault symlink (../opencode_brain) — never commit
+/.brain
+
 # ===== Editor / IDE =====
 .idea/
 .vscode/*.local.json

@@ -274,50 +274,59 @@ AI Agents should reference and execute the specialized skills installed in `.age
 
 ---
 
-# 11. Integrasi Memori Jangka Panjang (Obsidian Vault & Antigravity)
+# 11. Integrasi Memori Jangka Panjang (Obsidian Vault)
 
-Untuk mempertahankan _context awareness_ lintas sesi terminal, AI Agent diinstruksikan untuk menggunakan **Obsidian Vault** sebagai media penyimpanan memori jangka panjang (_Long-term Memory_).
+Untuk mempertahankan _context awareness_ lintas sesi terminal, AI Agent diinstruksikan untuk menggunakan **Obsidian Vault `opencode_brain`** sebagai media penyimpanan memori jangka panjang (_Long-term Memory_).
 
 ### 11.1 Lokasi Direktori Vault
 
-- **Path Utama (Absolute):** `~/Documents/Antigravity_Brain/`
-- **Sub-folder Memori:** `~/Documents/Antigravity_Brain/02_Agent_Memory/`
-- **Sub-folder Referensi/Knowledge:** `~/Documents/Antigravity_Brain/01_Knowledge/`
+- **Path Utama (Absolute):** `~/Documents/opencode_brain/`
+- **Sub-folder Memori:** `~/Documents/opencode_brain/02_agent_memory/`
+- **Sub-folder Referensi/Knowledge:** `~/Documents/opencode_brain/01_knowledge/`
+- **Sub-folder Dokumen Proyek (symlink):** `~/Documents/opencode_brain/04_projects/robotik-pnp/` → `~/Documents/Project/robotik-pnp/docs/` (seluruh `docs/` proyek ini tersedia di dalam vault).
 
-_(Catatan: Jika terdapat symlink `./.brain/` di root proyek, agen diizinkan membaca/menulis langsung melalui `./.brain/`)_.
+_(Catatan: Di root proyek ini tersedia symlink `./.brain/` yang menunjuk ke root vault. Agen diizinkan membaca/menulis langsung melalui `./.brain/`, misal `./.brain/02_agent_memory/`. Symlink ini di-gitignore dan tidak boleh di-commit)._
 
 ### 11.2 Protokol Membaca Memori (Read Protocol)
 
-Sebelum mengerjakan tugas yang melibatkan:
+Sebelum mengerjakan tugas yang melibatkan salah satu dari domain berikut:
 
-1. Refactoring arsitektur atau state global (`MedicalProfileContext`).
-2. Debugging masalah hardware (WebRTC camera stream, Web Audio API, MediaPipe pose detection).
-3. Modifikasi rumus kinematika atau batasan klinis OA.
+1. Supabase SSR / Auth / RLS, atau pola Server Actions + validasi Zod.
+2. Logika RBAC & domain inti (piket, absensi QR dinamis, kedisiplinan/SP, oprec).
+3. Styling Tailwind CSS v4 & design system (`@theme`, token `--color-*`).
 
-**AI Agent WAJIB memeriksa catatan terdahulu** di `~/Documents/Antigravity_Brain/02_Agent_Memory/` untuk melihat apakah ada keputusan teknis, gotchas, atau solusi bug serupa yang pernah dicatat sebelumnya.
+**AI Agent WAJIB memeriksa catatan terdahulu** di `~/Documents/opencode_brain/02_agent_memory/` untuk melihat apakah ada keputusan teknis, gotchas, atau solusi bug serupa yang pernah dicatat sebelumnya. Catatan relevan yang sudah ada antara lain:
+
+- `robotik-pnp-security-audit-mrc-form`
+- `robotik-pnp-qa-security-fixes-idor-ssrf-quota`
+- `robotik-pnp-supabase-cloud-to-local-sync`
+- `robotik-pnp-mrc-admin-panel-5-halaman`
+- `robotik-pnp-mrc-rules-section-and-faq`
 
 ### 11.3 Protokol Menulis Memori (Write Protocol)
 
 AI Agent **WAJIB membuat catatan baru** ketika:
 
-1. Menemukan dan menyelesaikan _subtle bug_ atau _quirk_ khusus browser (misal: autoplay audio policy, mobile camera orientation).
+1. Menemukan dan menyelesaikan _subtle bug_ atau _quirk_ khusus (misal: perilaku Supabase SSR cookie, kamera/QR mobile, autoplay audio policy).
 2. Mengambil keputusan arsitektur baru (_Architectural Decision Record_ / ADR).
 3. Menyelesaikan optimasi performa komputasi atau bundler.
 
+Setelah menulis catatan baru, **daftarkan tautannya di `Index.md`** vault (bagian `02_agent_memory` dan daftar proyek Robotik-PNP).
+
 #### Format Standar File Memori:
 
-- **Lokasi Simpan:** `~/Documents/Antigravity_Brain/02_Agent_Memory/oa-motion-<kategori>-<topik-singkat>.md`
+- **Lokasi Simpan:** `~/Documents/opencode_brain/02_agent_memory/robotik-pnp-<kategori>-<topik-singkat>.md`
 - **Struktur Markdown & YAML Frontmatter:**
 
 ```markdown
 ---
 title: "Deskripsi Singkat Solusi / Keputusan"
-project: "oa-motion"
+project: "robotik-pnp"
 date: YYYY-MM-DD
 type: "bugfix" # Pilihan: bugfix | adr | gotcha | optimization
 tags:
-  - oa-motion
-  - kinematics # sesuaikan topik (misal: webrtc, audio, react19, styling)
+  - robotik-pnp
+  - supabase-ssr # sesuaikan topik (misal: rls, server-actions, zod, piket, tailwind-v4, qr-absensi)
   - agent-memory
 ---
 
@@ -336,4 +345,10 @@ Rincian perubahan kode, file yang terpengaruh, atau snippet penting.
 ## 4. Pelajaran Penting (Gotchas untuk Sesi Mendatang)
 
 Poin penting yang harus diingat agen di sesi berikutnya agar tidak mengulangi kesalahan yang sama.
+
+## Lihat juga
+
+- [[catatan-robotik-pnp-relevan-lainnya]]
 ```
+
+> **Konvensi tambahan:** akhiri setiap catatan dengan blok `## Lihat juga` berisi tautan `[[wikilink]]` ke catatan robotik-pnp terkait, mengikuti gaya catatan yang sudah ada di `02_agent_memory/`.
