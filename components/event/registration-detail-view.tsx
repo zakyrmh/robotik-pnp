@@ -9,6 +9,7 @@ import {
   verifyManualPaymentAction,
 } from "@/lib/actions/event-admin";
 import { formatBankAccountLabel } from "@/lib/event-bank";
+import { buildCommunityWaUrl } from "@/lib/event-wa";
 import type {
   BankAccount,
   EventRegistration,
@@ -86,6 +87,8 @@ export function RegistrationDetailView({
   const [isSavingBank, setIsSavingBank] = useState(false);
   const [bankError, setBankError] = useState<string | null>(null);
   const hasAssignedBank = Boolean(reg.payment_bank_name);
+  // Aksi gabungan: simpan rekening lalu setujui pembayaran dalam satu klik.
+  const [isApprovingWithBank, setIsApprovingWithBank] = useState(false);
 
   const [lightboxImg, setLightboxImg] = useState<{
     url: string;
@@ -107,6 +110,60 @@ export function RegistrationDetailView({
       setSuccessMsg(res.message || "Rekening tujuan berhasil disimpan.");
     } else {
       setBankError(res.error || "Gagal menyimpan rekening tujuan.");
+    }
+  };
+
+  /**
+   * Aksi gabungan: simpan rekening tujuan lalu setujui pembayaran.
+   *
+   * Jika penyimpanan rekening gagal, proses DIHENTIKAN (tidak melanjutkan ke
+   * approve) agar tidak ada pendaftaran berstatus `paid` tanpa rekening tujuan.
+   */
+  const handleApproveWithBank = async () => {
+    if (
+      !confirm(
+        "Setujui pembayaran tim ini dan simpan rekening tujuan yang dipilih?",
+      )
+    )
+      return;
+
+    setIsApprovingWithBank(true);
+    setErrorMsg(null);
+    setSuccessMsg(null);
+    setBankError(null);
+
+    // 1) Simpan rekening tujuan (bila panitia mengelola rekening).
+    if (canManageBank) {
+      const bank =
+        selectedBankIndex >= 0 ? bankAccounts[selectedBankIndex] : null;
+      const bankRes = await setRegistrationPaymentBankAction(reg.id, bank);
+      if (!bankRes.success) {
+        setIsApprovingWithBank(false);
+        setBankError(
+          bankRes.error ||
+            "Gagal menyimpan rekening tujuan. Verifikasi dibatalkan.",
+        );
+        return;
+      }
+      setReg(bankRes.data);
+    }
+
+    // 2) Setujui pembayaran (set paid + kirim email e-ticket).
+    const res = await verifyManualPaymentAction(reg.id, "approve");
+    setIsApprovingWithBank(false);
+
+    if (res.success) {
+      setSuccessMsg(
+        "Pembayaran disetujui (PAID). Email e-ticket terkirim. Lanjutkan dengan mengirim undangan grup WhatsApp komunitas.",
+      );
+      setReg((prev) => ({
+        ...prev,
+        payment_status: "paid",
+        paid_at: new Date().toISOString(),
+        rejection_reason: null,
+      }));
+    } else {
+      setErrorMsg(res.error || "Gagal memproses verifikasi.");
     }
   };
 
@@ -173,6 +230,7 @@ export function RegistrationDetailView({
     }
   };
 
+  // Tombol WA kontak biasa (pesan singkat) — tetap dipertahankan.
   const formattedPhone = reg.team_whatsapp.replace(/[^0-9]/g, "");
   const waNumber = formattedPhone.startsWith("0")
     ? `62${formattedPhone.slice(1)}`
@@ -180,6 +238,12 @@ export function RegistrationDetailView({
   const waUrl = `https://wa.me/${waNumber}?text=Halo%20Tim%20${encodeURIComponent(
     reg.team_name,
   )}%20(${encodeURIComponent(reg.registration_code)})%20panitia%20MRC...`;
+
+  // Undangan grup komunitas WhatsApp (pesan terisi otomatis, link dari kategori).
+  const communityWaUrl = buildCommunityWaUrl({
+    teamWhatsapp: reg.team_whatsapp,
+    groupUrl: reg.category?.whatsapp_group_url,
+  });
 
   return (
     <div className="space-y-6">
@@ -277,6 +341,43 @@ export function RegistrationDetailView({
           <CheckCircle2 className="size-4 shrink-0" aria-hidden="true" />
           <span>{successMsg}</span>
         </div>
+      )}
+
+      {/* ── CTA Undangan Grup WhatsApp Komunitas (tampil setelah lunas) ── */}
+      {reg.payment_status === "paid" && (
+        <section className="rounded-lg border border-success/30 bg-success-soft/40 p-5 space-y-3 shadow-xs">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="size-5 text-success" aria-hidden="true" />
+            <h2 className="font-display text-sm font-bold text-foreground">
+              Undang Tim ke Grup Komunitas WhatsApp
+            </h2>
+          </div>
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Kirim undangan grup komunitas sesuai divisi lomba. Pesan sudah
+            terisi otomatis — Anda cukup menekan tombol dan mengirim di
+            WhatsApp.
+          </p>
+          {communityWaUrl ? (
+            <a
+              href={communityWaUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-md bg-success px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-success/90 transition-colors"
+            >
+              <MessageSquare className="size-4" aria-hidden="true" />
+              <span>Kirim Undangan Grup WA ke Tim</span>
+              <ExternalLink className="size-3.5" aria-hidden="true" />
+            </a>
+          ) : (
+            <div className="flex items-center gap-2 rounded-md border border-warning/30 bg-warning-soft p-3 text-xs font-medium text-warning">
+              <AlertCircle className="size-4 shrink-0" aria-hidden="true" />
+              <span>
+                Link grup WhatsApp untuk kategori ini belum diatur. Silakan atur
+                di menu Kategori Lomba terlebih dahulu.
+              </span>
+            </div>
+          )}
+        </section>
       )}
 
       {/* ── Main Content 2-Column Grid ── */}
@@ -501,27 +602,56 @@ export function RegistrationDetailView({
                 {/* Form Aksi Approve / Reject */}
                 {reg.payment_status !== "paid" && (
                   <div className="space-y-3 pt-2">
-                    <div className="flex items-center gap-2">
+                    {canManageBank ? (
+                      <button
+                        type="button"
+                        onClick={handleApproveWithBank}
+                        disabled={isApprovingWithBank || isVerifying}
+                        className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-md bg-success px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-success/90 transition-colors disabled:opacity-50"
+                      >
+                        {isApprovingWithBank ? (
+                          <Loader2
+                            className="size-4 animate-spin"
+                            aria-hidden="true"
+                          />
+                        ) : (
+                          <CheckCircle2 className="size-4" aria-hidden="true" />
+                        )}
+                        <span>
+                          {isApprovingWithBank
+                            ? "Memproses..."
+                            : "Setujui & Simpan Rekening"}
+                        </span>
+                      </button>
+                    ) : (
                       <button
                         type="button"
                         onClick={handleApprovePayment}
                         disabled={isVerifying}
-                        className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-md bg-success px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-success/90 transition-colors disabled:opacity-50"
+                        className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-md bg-success px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-success/90 transition-colors disabled:opacity-50"
                       >
                         <CheckCircle2 className="size-4" aria-hidden="true" />
                         <span>Setujui Pembayaran</span>
                       </button>
+                    )}
 
-                      <button
-                        type="button"
-                        onClick={() => setShowRejectForm(!showRejectForm)}
-                        disabled={isVerifying}
-                        className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-xs font-semibold text-destructive hover:bg-destructive/20 transition-colors disabled:opacity-50"
-                      >
-                        <XCircle className="size-4" aria-hidden="true" />
-                        <span>Tolak Bukti</span>
-                      </button>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowRejectForm(!showRejectForm)}
+                      disabled={isVerifying || isApprovingWithBank}
+                      className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-xs font-semibold text-destructive hover:bg-destructive/20 transition-colors disabled:opacity-50"
+                    >
+                      <XCircle className="size-4" aria-hidden="true" />
+                      <span>Tolak Bukti</span>
+                    </button>
+
+                    {canManageBank && (
+                      <p className="text-micro text-muted-foreground leading-relaxed">
+                        Tombol di atas menyimpan rekening tujuan yang dipilih
+                        sekaligus menyetujui pembayaran (status PAID + email
+                        e-ticket terkirim) dalam satu langkah.
+                      </p>
+                    )}
 
                     {showRejectForm && (
                       <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 space-y-3 animate-in fade-in-50">

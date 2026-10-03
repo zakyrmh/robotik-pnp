@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.15.0](https://github.com/zakyrmh/robotik-pnp/compare/v0.14.2...v0.15.0) (2026-10-03)
+
+### Added
+
+- **Helper Pesan Undangan Grup WhatsApp Komunitas MRC (`lib/event-wa.ts` baru, `lib/event-wa.test.ts` baru)**: Modul murni `buildCommunityWaUrl({ teamWhatsapp, groupUrl })` yang menyusun tautan `wa.me/<nomor tim>` dengan pesan undangan komunitas **sudah terisi otomatis** (teks resmi panitia MRC 2026, konstanta `MRC_COMMUNITY_WA_TEMPLATE`), hanya link grup yang disubstitusi dari `event_categories.whatsapp_group_url` per kategori. Menormalkan nomor telepon `0…` → `62…` dan mengembalikan `null` bila nomor/link grup tidak tersedia. Disertai 8 unit test (teks persis, substitusi link, encoding, normalisasi nomor, fallback).
+
+### Changed
+
+- **Penyederhanaan Alur Verifikasi Pembayaran Manual (`components/event/registration-detail-view.tsx`)**: Admin kini memverifikasi tim dengan **~3 klik** alih-alih ~9 langkah. (1) Tombol **"Setujui & Simpan Rekening"** menggabungkan penetapan rekening tujuan (`setRegistrationPaymentBankAction`) dan persetujuan pembayaran (`verifyManualPaymentAction`) dalam satu aksi — **fail-fast**: bila penyimpanan rekening gagal, proses approval dihentikan agar tidak ada pendaftaran berstatus `paid` tanpa rekening. (2) Kartu **"Undang Tim ke Grup Komunitas WhatsApp"** tampil setelah status `paid`, dengan tombol yang membuka WhatsApp ke nomor tim berisi pesan undangan lengkap — menghapus kebiasaan administratif menyalin-menempel template pesan secara manual. Bila link grup kategori belum dikonfigurasi, ditampilkan peringatan yang mengarahkan ke menu Kategori Lomba (bukan tombol rusak). Role selain panitia-pendaftaran tetap memakai tombol "Setujui Pembayaran" tanpa penetapan rekening.
+
 ## [0.14.2](https://github.com/zakyrmh/robotik-pnp/compare/v0.14.1...v0.14.2) (2026-10-03)
 
 ### Fixed
