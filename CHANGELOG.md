@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.16.2](https://github.com/zakyrmh/robotik-pnp/compare/v0.16.1...v0.16.2) (2026-10-03)
+
+### Fixed
+
+- **Tidak Ada Cara Memfilter Tim yang Butuh Validasi Perbaikan Data (`components/event/registration-table.tsx`)**: Rilis sebelumnya hanya menambah badge penanda, tanpa cara menyaring. Sekarang halaman Data Pendaftar menyediakan **filter "Perbaikan Data"**: (1) **kartu metrik ke-5** pada ribbon ringkasan (muncul otomatis hanya bila ada permohonan menunggu) yang menampilkan jumlah tim butuh validasi dan dapat diklik sebagai filter, dan (2) **toggle chip** di toolbar dengan angka. Saat aktif, tabel hanya menampilkan tim yang memiliki permohonan perbaikan `pending`. Filter dapat dimatikan dengan klik ulang, dan otomatis tersembunyi bila tidak ada permohonan menunggu.
+
 ## [0.16.1](https://github.com/zakyrmh/robotik-pnp/compare/v0.16.0...v0.16.1) (2026-10-03)
 
 ### Fixed

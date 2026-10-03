@@ -96,6 +96,10 @@ export function RegistrationTable({
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  // Filter khusus permohonan perbaikan data: "all" | "pending".
+  const [changeRequestFilter, setChangeRequestFilter] = useState<
+    "all" | "pending"
+  >("all");
   const [selectedReg, setSelectedReg] = useState<EventRegistration | null>(
     null,
   );
@@ -135,9 +139,26 @@ export function RegistrationTable({
         reg.category?.name === categoryFilter ||
         reg.category?.id === categoryFilter;
 
-      return matchesSearch && matchesStatus && matchesCategory;
+      const matchesChangeRequest =
+        changeRequestFilter === "all" || pendingChangeSet.has(reg.id);
+
+      return (
+        matchesSearch &&
+        matchesStatus &&
+        matchesCategory &&
+        matchesChangeRequest
+      );
     });
-  }, [registrations, search, statusFilter, categoryFilter]);
+  }, [
+    registrations,
+    search,
+    statusFilter,
+    categoryFilter,
+    changeRequestFilter,
+    pendingChangeSet,
+  ]);
+
+  const pendingChangeCount = pendingChangeSet.size;
 
   const handleStatusChange = async (
     regId: string,
@@ -357,7 +378,12 @@ export function RegistrationTable({
   return (
     <div className="space-y-6">
       {/* ── Metric Filter Cards Ribbon ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div
+        className={cn(
+          "grid grid-cols-2 gap-3",
+          pendingChangeCount > 0 ? "sm:grid-cols-5" : "sm:grid-cols-4",
+        )}
+      >
         <button
           onClick={() => setStatusFilter("all")}
           className={cn(
@@ -449,6 +475,37 @@ export function RegistrationTable({
             Belum transfer
           </p>
         </button>
+
+        {pendingChangeCount > 0 && (
+          <button
+            onClick={() =>
+              setChangeRequestFilter((prev) =>
+                prev === "pending" ? "all" : "pending",
+              )
+            }
+            aria-pressed={changeRequestFilter === "pending"}
+            className={cn(
+              "rounded-lg border p-3.5 text-left transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              changeRequestFilter === "pending"
+                ? "border-primary bg-primary-soft"
+                : "border-border bg-card hover:bg-secondary",
+            )}
+          >
+            <div className="flex items-center justify-between text-xs text-muted-foreground mb-1">
+              <span>Perbaikan Data</span>
+              <FilePenLine
+                className="size-3.5 text-primary"
+                aria-hidden="true"
+              />
+            </div>
+            <div className="font-mono text-xl font-bold tabular-nums text-primary">
+              {pendingChangeCount}
+            </div>
+            <p className="text-micro text-muted-foreground mt-0.5">
+              Butuh validasi
+            </p>
+          </button>
+        )}
       </div>
 
       {/* ── Toolbar: Search + Multi-Filter + CSV Export + Retensi Data ── */}
@@ -501,6 +558,32 @@ export function RegistrationTable({
                 </option>
               ))}
             </select>
+          )}
+
+          {/* Toggle Filter: Perbaikan Data menunggu validasi */}
+          {pendingChangeCount > 0 && (
+            <button
+              type="button"
+              onClick={() =>
+                setChangeRequestFilter((prev) =>
+                  prev === "pending" ? "all" : "pending",
+                )
+              }
+              aria-pressed={changeRequestFilter === "pending"}
+              title="Tampilkan hanya tim dengan permohonan perbaikan data yang menunggu validasi"
+              className={cn(
+                "inline-flex min-h-[44px] items-center gap-1.5 rounded-md border px-3 py-2 text-xs sm:text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+                changeRequestFilter === "pending"
+                  ? "border-primary bg-primary-soft text-primary"
+                  : "border-border bg-background text-foreground hover:bg-secondary",
+              )}
+            >
+              <FilePenLine className="size-4" aria-hidden="true" />
+              <span>Perbaikan Data</span>
+              <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-micro font-bold text-primary-foreground">
+                {pendingChangeCount}
+              </span>
+            </button>
           )}
         </div>
 
