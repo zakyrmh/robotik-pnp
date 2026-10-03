@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.15.1](https://github.com/zakyrmh/robotik-pnp/compare/v0.15.0...v0.15.1) (2026-10-03)
+
+### Changed
+
+- **Penyempurnaan UI Verifikasi Pembayaran Manual MRC (`components/event/registration-detail-view.tsx`)**: Mengganti tombol gabungan multi-aksi menjadi **dua tombol terpisah yang eksplisit** sesuai preferensi alur kerja admin. (1) Tombol **"Verifikasi Pembayaran"** kini membuka **pop-up modal** berisi ringkasan tagihan dan pilihan rekening; admin memilih rekening lalu menekan **"Simpan & Verifikasi"** (menetapkan rekening + menyetujui pembayaran/status PAID + kirim email e-ticket dalam satu langkah, fail-fast bila penyimpanan rekening gagal). (2) Tombol **"Kirim Undangan Grup WhatsApp"** ditampilkan **selalu** (tidak hanya setelah status `paid`) sebagai aksi redirect terpisah. Panel **"Rekening Tujuan Transfer"** diubah menjadi **hanya-baca** — pengubahan rekening hanya melalui modal verifikasi. Tombol "Tolak Bukti" tetap terpisah di luar modal. Menghapus fungsi `handleSaveBank` dan state `isSavingBank` yang tidak lagi terpakai.
+
 ## [0.15.0](https://github.com/zakyrmh/robotik-pnp/compare/v0.14.2...v0.15.0) (2026-10-03)
 
 ### Added

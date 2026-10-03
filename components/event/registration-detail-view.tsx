@@ -5,6 +5,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
+import {
   setRegistrationPaymentBankAction,
   verifyManualPaymentAction,
 } from "@/lib/actions/event-admin";
@@ -84,49 +93,26 @@ export function RegistrationDetailView({
     );
     return idx >= 0 ? idx : -1;
   });
-  const [isSavingBank, setIsSavingBank] = useState(false);
   const [bankError, setBankError] = useState<string | null>(null);
   const hasAssignedBank = Boolean(reg.payment_bank_name);
   // Aksi gabungan: simpan rekening lalu setujui pembayaran dalam satu klik.
   const [isApprovingWithBank, setIsApprovingWithBank] = useState(false);
+  // Modal verifikasi pembayaran (pilih rekening → simpan & verifikasi).
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
 
   const [lightboxImg, setLightboxImg] = useState<{
     url: string;
     title: string;
   } | null>(null);
 
-  const handleSaveBank = async () => {
-    setIsSavingBank(true);
-    setBankError(null);
-    setSuccessMsg(null);
-
-    const bank =
-      selectedBankIndex >= 0 ? bankAccounts[selectedBankIndex] : null;
-    const res = await setRegistrationPaymentBankAction(reg.id, bank);
-    setIsSavingBank(false);
-
-    if (res.success) {
-      setReg(res.data);
-      setSuccessMsg(res.message || "Rekening tujuan berhasil disimpan.");
-    } else {
-      setBankError(res.error || "Gagal menyimpan rekening tujuan.");
-    }
-  };
-
   /**
-   * Aksi gabungan: simpan rekening tujuan lalu setujui pembayaran.
+   * Aksi gabungan (dipanggil dari modal verifikasi): simpan rekening tujuan
+   * lalu setujui pembayaran.
    *
    * Jika penyimpanan rekening gagal, proses DIHENTIKAN (tidak melanjutkan ke
    * approve) agar tidak ada pendaftaran berstatus `paid` tanpa rekening tujuan.
    */
   const handleApproveWithBank = async () => {
-    if (
-      !confirm(
-        "Setujui pembayaran tim ini dan simpan rekening tujuan yang dipilih?",
-      )
-    )
-      return;
-
     setIsApprovingWithBank(true);
     setErrorMsg(null);
     setSuccessMsg(null);
@@ -153,6 +139,7 @@ export function RegistrationDetailView({
     setIsApprovingWithBank(false);
 
     if (res.success) {
+      setShowVerifyModal(false);
       setSuccessMsg(
         "Pembayaran disetujui (PAID). Email e-ticket terkirim. Lanjutkan dengan mengirim undangan grup WhatsApp komunitas.",
       );
@@ -341,43 +328,6 @@ export function RegistrationDetailView({
           <CheckCircle2 className="size-4 shrink-0" aria-hidden="true" />
           <span>{successMsg}</span>
         </div>
-      )}
-
-      {/* ── CTA Undangan Grup WhatsApp Komunitas (tampil setelah lunas) ── */}
-      {reg.payment_status === "paid" && (
-        <section className="rounded-lg border border-success/30 bg-success-soft/40 p-5 space-y-3 shadow-xs">
-          <div className="flex items-center gap-2">
-            <MessageSquare className="size-5 text-success" aria-hidden="true" />
-            <h2 className="font-display text-sm font-bold text-foreground">
-              Undang Tim ke Grup Komunitas WhatsApp
-            </h2>
-          </div>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Kirim undangan grup komunitas sesuai divisi lomba. Pesan sudah
-            terisi otomatis — Anda cukup menekan tombol dan mengirim di
-            WhatsApp.
-          </p>
-          {communityWaUrl ? (
-            <a
-              href={communityWaUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-md bg-success px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-success/90 transition-colors"
-            >
-              <MessageSquare className="size-4" aria-hidden="true" />
-              <span>Kirim Undangan Grup WA ke Tim</span>
-              <ExternalLink className="size-3.5" aria-hidden="true" />
-            </a>
-          ) : (
-            <div className="flex items-center gap-2 rounded-md border border-warning/30 bg-warning-soft p-3 text-xs font-medium text-warning">
-              <AlertCircle className="size-4 shrink-0" aria-hidden="true" />
-              <span>
-                Link grup WhatsApp untuk kategori ini belum diatur. Silakan atur
-                di menu Kategori Lomba terlebih dahulu.
-              </span>
-            </div>
-          )}
-        </section>
       )}
 
       {/* ── Main Content 2-Column Grid ── */}
@@ -605,23 +555,12 @@ export function RegistrationDetailView({
                     {canManageBank ? (
                       <button
                         type="button"
-                        onClick={handleApproveWithBank}
-                        disabled={isApprovingWithBank || isVerifying}
+                        onClick={() => setShowVerifyModal(true)}
+                        disabled={isVerifying || isApprovingWithBank}
                         className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-md bg-success px-4 py-2.5 text-xs font-semibold text-white shadow-xs hover:bg-success/90 transition-colors disabled:opacity-50"
                       >
-                        {isApprovingWithBank ? (
-                          <Loader2
-                            className="size-4 animate-spin"
-                            aria-hidden="true"
-                          />
-                        ) : (
-                          <CheckCircle2 className="size-4" aria-hidden="true" />
-                        )}
-                        <span>
-                          {isApprovingWithBank
-                            ? "Memproses..."
-                            : "Setujui & Simpan Rekening"}
-                        </span>
+                        <CheckCircle2 className="size-4" aria-hidden="true" />
+                        <span>Verifikasi Pembayaran</span>
                       </button>
                     ) : (
                       <button
@@ -644,14 +583,6 @@ export function RegistrationDetailView({
                       <XCircle className="size-4" aria-hidden="true" />
                       <span>Tolak Bukti</span>
                     </button>
-
-                    {canManageBank && (
-                      <p className="text-micro text-muted-foreground leading-relaxed">
-                        Tombol di atas menyimpan rekening tujuan yang dipilih
-                        sekaligus menyetujui pembayaran (status PAID + email
-                        e-ticket terkirim) dalam satu langkah.
-                      </p>
-                    )}
 
                     {showRejectForm && (
                       <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 space-y-3 animate-in fade-in-50">
@@ -685,6 +616,30 @@ export function RegistrationDetailView({
                       </div>
                     )}
                   </div>
+                )}
+
+                {/* Tombol redirect ke WhatsApp (undangan grup komunitas) — selalu tampil */}
+                {communityWaUrl ? (
+                  <a
+                    href={communityWaUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-md border border-success/30 bg-success-soft px-4 py-2.5 text-xs font-semibold text-success hover:bg-success/20 transition-colors"
+                  >
+                    <MessageSquare className="size-4" aria-hidden="true" />
+                    <span>Kirim Undangan Grup WhatsApp</span>
+                    <ExternalLink className="size-3.5" aria-hidden="true" />
+                  </a>
+                ) : (
+                  <button
+                    type="button"
+                    disabled
+                    title="Link grup WhatsApp kategori ini belum diatur. Atur di menu Kategori Lomba."
+                    className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-md border border-border bg-muted px-4 py-2.5 text-xs font-medium text-muted-foreground cursor-not-allowed"
+                  >
+                    <MessageSquare className="size-4" aria-hidden="true" />
+                    <span>Link Grup WA Belum Diatur</span>
+                  </button>
                 )}
               </div>
             </div>
@@ -738,61 +693,14 @@ export function RegistrationDetailView({
               )}
             </div>
 
-            {canManageBank ? (
-              <div className="space-y-3">
-                <label
-                  htmlFor="payment-bank-select"
-                  className="block text-xs font-semibold text-foreground"
-                >
-                  Pilih rekening bank panitia yang digunakan:
-                </label>
-                {bankAccounts.length === 0 ? (
-                  <p className="rounded-md border border-dashed border-border bg-secondary/30 p-3 text-xs text-muted-foreground">
-                    Belum ada rekening panitia yang dikonfigurasi pada
-                    pengaturan pembayaran event.
-                  </p>
-                ) : (
-                  <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center">
-                    <select
-                      id="payment-bank-select"
-                      value={selectedBankIndex}
-                      onChange={(e) =>
-                        setSelectedBankIndex(Number(e.target.value))
-                      }
-                      className="min-h-[44px] flex-1 rounded-md border border-input bg-background px-3 py-2 text-xs sm:text-sm font-medium text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
-                    >
-                      <option value={-1}>— Tidak ada / kosongkan —</option>
-                      {bankAccounts.map((acc, idx) => (
-                        <option key={idx} value={idx}>
-                          {formatBankAccountLabel(acc)}
-                        </option>
-                      ))}
-                    </select>
-
-                    <button
-                      type="button"
-                      onClick={handleSaveBank}
-                      disabled={isSavingBank}
-                      className="inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-md bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary-hover transition-colors disabled:opacity-50"
-                    >
-                      {isSavingBank ? (
-                        <Loader2
-                          className="size-4 animate-spin"
-                          aria-hidden="true"
-                        />
-                      ) : (
-                        <Check className="size-4" aria-hidden="true" />
-                      )}
-                      <span>Simpan Rekening</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <p className="text-micro text-muted-foreground italic">
-                Hanya panitia pendaftaran yang dapat menetapkan rekening tujuan.
-              </p>
-            )}
+            <p className="text-micro text-muted-foreground leading-relaxed">
+              Rekening tujuan ditetapkan melalui tombol{" "}
+              <strong className="font-semibold text-foreground">
+                Verifikasi Pembayaran
+              </strong>{" "}
+              di panel verifikasi (pilih rekening lalu simpan sekaligus
+              menyetujui pembayaran).
+            </p>
           </section>
 
           {/* Panel Anggota Tim */}
@@ -959,6 +867,105 @@ export function RegistrationDetailView({
           </div>
         </div>
       )}
+
+      {/* ── Modal Verifikasi Pembayaran (pilih rekening → simpan & verifikasi) ── */}
+      <Dialog open={showVerifyModal} onOpenChange={setShowVerifyModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display font-bold">
+              Verifikasi Pembayaran
+            </DialogTitle>
+            <DialogDescription>
+              {reg.registration_code} · {reg.team_name}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-1">
+            <div className="rounded-lg border border-border bg-secondary/40 p-4 text-xs space-y-1.5">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Total Tagihan:</span>
+                <span className="font-mono font-bold text-foreground">
+                  Rp {reg.total_amount.toLocaleString("id-ID")}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Status Saat Ini:</span>
+                <span className="font-mono font-semibold uppercase">
+                  {reg.payment_status}
+                </span>
+              </div>
+            </div>
+
+            {bankError && (
+              <div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-xs font-medium text-destructive">
+                <AlertCircle className="size-4 shrink-0" aria-hidden="true" />
+                <span>{bankError}</span>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label
+                htmlFor="verify-bank-select"
+                className="block text-xs font-semibold text-foreground"
+              >
+                Pilih rekening bank panitia yang digunakan:
+              </label>
+              {bankAccounts.length === 0 ? (
+                <p className="rounded-md border border-dashed border-border bg-secondary/30 p-3 text-xs text-muted-foreground">
+                  Belum ada rekening panitia yang dikonfigurasi pada pengaturan
+                  pembayaran event.
+                </p>
+              ) : (
+                <select
+                  id="verify-bank-select"
+                  value={selectedBankIndex}
+                  onChange={(e) => setSelectedBankIndex(Number(e.target.value))}
+                  className="min-h-[44px] w-full rounded-md border border-input bg-background px-3 py-2 text-xs sm:text-sm font-medium text-foreground focus:ring-2 focus:ring-ring focus:outline-none"
+                >
+                  <option value={-1}>— Tidak ada / kosongkan —</option>
+                  {bankAccounts.map((acc, idx) => (
+                    <option key={idx} value={idx}>
+                      {formatBankAccountLabel(acc)}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+
+            <p className="text-micro text-muted-foreground leading-relaxed">
+              Menyimpan akan menetapkan rekening tujuan sekaligus menyetujui
+              pembayaran (status PAID) dan mengirim email e-ticket ke tim.
+            </p>
+          </div>
+
+          <DialogFooter>
+            <DialogClose asChild>
+              <button
+                type="button"
+                disabled={isApprovingWithBank}
+                className="inline-flex min-h-[44px] items-center justify-center rounded-md border border-border bg-background px-4 py-2 text-xs font-semibold text-foreground hover:bg-secondary transition-colors disabled:opacity-50"
+              >
+                Batal
+              </button>
+            </DialogClose>
+            <button
+              type="button"
+              onClick={handleApproveWithBank}
+              disabled={isApprovingWithBank || bankAccounts.length === 0}
+              className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md bg-success px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-success/90 transition-colors disabled:opacity-50"
+            >
+              {isApprovingWithBank ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <Check className="size-4" aria-hidden="true" />
+              )}
+              <span>
+                {isApprovingWithBank ? "Memproses..." : "Simpan & Verifikasi"}
+              </span>
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
