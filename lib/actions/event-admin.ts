@@ -14,9 +14,11 @@ import {
 } from "@/lib/schemas/event-registration";
 import { sendETicketEmail } from "@/lib/services/resend";
 import { recordAuditLog } from "@/lib/audit";
+import { isRegistrationExpired } from "@/lib/event-quota";
 import type {
   ActionResult,
   BankAccount,
+  CategoryQuotaSummary,
   EventCategory,
   EventRegistration,
   EventRegistrationMetrics,
@@ -514,6 +516,107 @@ export async function getEventRegistrationsMetricsAction(): Promise<
 }
 
 /**
+ * Laporan over-quota per kategori.
+ *
+ * Menghitung, untuk SETIAP kategori, jumlah pendaftaran yang menahan slot
+ * PERMANEN (`paid` + `pending_verification`) lalu membandingkannya dengan kuota.
+ * Bila `holdingCount > quota` (overflow > 0) kategori ditandai `isOverquota`
+ * agar panitia dapat menindak (mis. menolak/refund, atau membiarkan bila sudah
+ * ada kesepakatan). Tindakan itu SEMENTARA manual: aksi ini tidak mengubah data.
+ *
+ * Latar belakang: insiden over-booking (Line Follower Umum 39/36) terjadi karena
+ * kuota tidak ditegakkan saat pembayaran/verifikasi — lihat migrasi
+ * 20261004000000_enforce_quota_at_payment_and_1h_hold.sql. Aksi ini hanya
+ * melaporkan kondisi terkini untuk ditinjau.
+ */
+export async function getOverquotaCategoriesAction(): Promise<
+  ActionResult<CategoryQuotaSummary[]>
+> {
+  const check = await checkEventRole([
+    "panitia-pendaftaran",
+    "panitia-verifikasi",
+    "panitia-pertandingan",
+  ]);
+  if (!check.authorized) {
+    return { success: false, error: check.error || "Akses ditolak." };
+  }
+
+  const adminSupabase = createAdminClient();
+
+  const [
+    { data: categories, error: catError },
+    { data: regs, error: regError },
+  ] = await Promise.all([
+    untypedFrom(adminSupabase, "event_categories").select(
+      "id, name, quota",
+    ) as unknown as Promise<{
+      data: Pick<EventCategory, "id" | "name" | "quota">[] | null;
+      error: unknown;
+    }>,
+    untypedFrom(adminSupabase, "event_registrations").select(
+      "category_id, payment_status, created_at",
+    ) as unknown as Promise<{
+      data:
+        | Pick<
+            EventRegistration,
+            "category_id" | "payment_status" | "created_at"
+          >[]
+        | null;
+      error: unknown;
+    }>,
+  ]);
+
+  if (catError || !categories) {
+    return { success: false, error: "Gagal mengambil data kategori." };
+  }
+  if (regError || !regs) {
+    return { success: false, error: "Gagal mengambil data pendaftaran." };
+  }
+
+  const now = new Date();
+  const summaries: CategoryQuotaSummary[] = categories.map((cat) => {
+    let holdingCount = 0;
+    let unpaidCount = 0;
+    let unpaidExpiredCount = 0;
+
+    for (const r of regs) {
+      if (r.category_id !== cat.id) continue;
+      if (
+        r.payment_status === "paid" ||
+        r.payment_status === "pending_verification"
+      ) {
+        holdingCount += 1;
+      } else if (
+        r.payment_status === "unpaid" ||
+        r.payment_status === "pending"
+      ) {
+        unpaidCount += 1;
+        if (isRegistrationExpired(r, now)) {
+          unpaidExpiredCount += 1;
+        }
+      }
+    }
+
+    const overflow = holdingCount - cat.quota;
+    return {
+      categoryId: cat.id,
+      categoryName: cat.name,
+      quota: cat.quota,
+      holdingCount,
+      overflow,
+      unpaidCount,
+      unpaidExpiredCount,
+      isOverquota: overflow > 0,
+    };
+  });
+
+  // Kategori over-quota lebih dulu, lalu overflow terbesar.
+  summaries.sort((a, b) => b.overflow - a.overflow);
+
+  return { success: true, data: summaries };
+}
+
+/**
  * Ekspor SELURUH data pendaftaran sebagai CSV (Q1: ekspor penuh).
  *
  * Hanya kolom yang dibutuhkan berkas CSV (tanpa anggota/foto/token) sehingga
@@ -822,35 +925,75 @@ export async function verifyManualPaymentAction(
 
   const adminSupabase = createAdminClient();
 
-  const newStatus: PaymentStatus = action === "approve" ? "paid" : "rejected";
-  const updatePayload: Record<string, unknown> = {
-    payment_status: newStatus,
-    rejection_reason: action === "reject" ? rejectionReason?.trim() : null,
-    updated_at: new Date().toISOString(),
-  };
-
   if (action === "approve") {
-    updatePayload.paid_at = new Date().toISOString();
+    // Menyetujui pembayaran menandai pendaftaran menahan slot secara PERMANEN.
+    // Cek kuota dilakukan atomik di database (row-lock kategori) agar jumlah
+    // `paid` tidak pernah melebihi kuota. Admin DIBLOKIR TOTAL saat kuota penuh
+    // (tidak ada override) — lihat migrasi
+    // 20261004000000_enforce_quota_at_payment_and_1h_hold.sql.
+    const { error: rpcError } = await untypedRpc<{
+      data: null;
+      error: { message: string } | null;
+    }>(adminSupabase, "verify_payment_with_quota", {
+      p_registration_id: registrationId,
+    });
+
+    if (rpcError) {
+      const message = rpcError.message || "";
+      if (message.includes("quota_full")) {
+        return {
+          success: false,
+          error:
+            "Kuota kategori ini sudah penuh (jumlah lunas + menunggu verifikasi telah mencapai kuota). Verifikasi pembayaran tidak dapat disetujui.",
+        };
+      }
+      if (message.includes("registration_not_found")) {
+        return { success: false, error: "Pendaftaran tidak ditemukan." };
+      }
+      console.error("verify_payment_with_quota RPC error:", message);
+      return {
+        success: false,
+        error: "Gagal memproses verifikasi pembayaran.",
+      };
+    }
+  } else {
+    // Penolakan tidak menahan slot, cukup update langsung.
+    const { error: rejectError } = await untypedFrom(
+      adminSupabase,
+      "event_registrations",
+    )
+      .update({
+        payment_status: "rejected",
+        rejection_reason: rejectionReason?.trim() || null,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", registrationId);
+
+    if (rejectError) {
+      return {
+        success: false,
+        error: "Gagal memproses verifikasi pembayaran.",
+      };
+    }
   }
 
-  const { data: updatedReg, error } = await (untypedFrom(
+  // Ambil data terbaru (dengan kategori) untuk email notifikasi.
+  const { data: updatedReg } = await (untypedFrom(
     adminSupabase,
     "event_registrations",
   )
-    .update(updatePayload)
-    .eq("id", registrationId)
     .select(
       `
       *,
       category:event_categories(*)
     `,
     )
+    .eq("id", registrationId)
     .single() as unknown as Promise<{
     data: EventRegistration | null;
-    error: unknown;
   }>);
 
-  if (error || !updatedReg) {
+  if (!updatedReg) {
     return { success: false, error: "Gagal memproses verifikasi pembayaran." };
   }
 

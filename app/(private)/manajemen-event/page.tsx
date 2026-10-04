@@ -7,6 +7,7 @@ import {
 } from "@/lib/actions/event-admin";
 import { getEventFinanceSummaryByBankAction } from "@/lib/actions/event-finance";
 import { MrcDashboardOverview } from "@/components/event/mrc-dashboard-overview";
+import { QuotaOverflowBanner } from "@/components/event/quota-overflow-banner";
 
 export default async function EventManagementDashboardPage() {
   const auth = await requireEventAdminOrRedirect();
@@ -44,6 +45,7 @@ export default async function EventManagementDashboardPage() {
 
   return (
     <main className="mx-auto max-w-7xl space-y-6">
+      <QuotaOverflowBanner />
       <MrcDashboardOverview
         settings={settingsRes.success ? settingsRes.data : null}
         categories={categoriesRes.success ? categoriesRes.data : []}

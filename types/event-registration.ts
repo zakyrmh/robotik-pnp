@@ -171,6 +171,23 @@ export interface EventRegistrationMetrics {
 }
 
 /**
+ * Ringkasan over-quota satu kategori. `holdingCount` = jumlah pendaftaran yang
+ * menahan slot PERMANEN (`paid` + `pending_verification`); `overflow` =
+ * `holdingCount - quota` (positif berarti melebihi kuota). `unpaidCount` dan
+ * `unpaidExpiredCount` membantu panitia meninjau pendaftar yang belum membayar.
+ */
+export interface CategoryQuotaSummary {
+  categoryId: string;
+  categoryName: string;
+  quota: number;
+  holdingCount: number;
+  overflow: number;
+  unpaidCount: number;
+  unpaidExpiredCount: number;
+  isOverquota: boolean;
+}
+
+/**
  * Ukuran halaman default untuk daftar pendaftaran admin.
  *
  * Ditempatkan di modul tipe (bukan `lib/actions/event-admin.ts` yang ber-`"use

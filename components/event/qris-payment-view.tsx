@@ -13,6 +13,7 @@ import type {
   EventSettings,
   BankAccount,
 } from "@/types/event-registration";
+import { getRemainingHoldMs, isRegistrationExpired } from "@/lib/event-quota";
 import {
   CheckCircle2,
   Clock,
@@ -38,6 +39,16 @@ function formatRupiah(amount: number): string {
   }).format(amount);
 }
 
+/** Format sisa waktu milidetik menjadi `HH:MM:SS`. */
+function formatCountdown(ms: number): string {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+}
+
 export function QrisPaymentView({
   initialRegistration,
   eventSettings,
@@ -56,9 +67,15 @@ export function QrisPaymentView({
   const [isSubmittingProof, setIsSubmittingProof] = useState(false);
   const [copiedBankIndex, setCopiedBankIndex] = useState<number | null>(null);
 
+  // Sisa waktu masa tahan slot (ms). 0 = kedaluwarsa / bukan status sementara.
+  const [remainingHoldMs, setRemainingHoldMs] = useState(() =>
+    getRemainingHoldMs(reg),
+  );
+
   const tickRef = useRef(0);
 
   const isManualBankMode = eventSettings?.payment_mode === "manual_bank";
+  const isHoldExpired = isRegistrationExpired(reg) || remainingHoldMs <= 0;
 
   // Build List of Bank Accounts
   const availableBankAccounts: BankAccount[] = (() => {
@@ -137,6 +154,14 @@ export function QrisPaymentView({
       clearInterval(id);
     };
   }, [reg.payment_status, reg.access_token]);
+
+  // Hitung mundur masa tahan slot, diperbarui tiap detik.
+  useEffect(() => {
+    const id = setInterval(() => {
+      setRemainingHoldMs(getRemainingHoldMs(reg));
+    }, 1000);
+    return () => clearInterval(id);
+  }, [reg]);
 
   const handleOpenSnapModal = () => {
     if (!reg.midtrans_snap_token) {
@@ -325,6 +350,9 @@ export function QrisPaymentView({
   if (isManualBankMode) {
     const isPendingVerification = reg.payment_status === "pending_verification";
     const isRejected = reg.payment_status === "rejected";
+    // Kedaluwarsa hanya relevan bila peserta belum mengirim bukti bayar.
+    const showCountdown = !isPendingVerification && !isRejected;
+    const isUrgent = remainingHoldMs > 0 && remainingHoldMs < 15 * 60 * 1000;
 
     return (
       <div className="bg-card rounded-xl border border-border shadow-soft p-6 sm:p-8 space-y-6">
@@ -339,6 +367,60 @@ export function QrisPaymentView({
             Kode: {reg.registration_code} • Tim {reg.team_name}
           </p>
         </div>
+
+        {/* COUNTDOWN MASA TAHAN SLOT (1 jam) */}
+        {showCountdown && isHoldExpired && (
+          <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-xl text-center space-y-2">
+            <div className="inline-flex p-2 bg-destructive/15 text-destructive rounded-full">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+            <h3 className="text-sm font-bold text-destructive">
+              Pendaftaran Kedaluwarsa
+            </h3>
+            <p className="text-xs text-destructive/90 max-w-md mx-auto">
+              Waktu pembayaran <strong>1 jam</strong> telah habis dan slot
+              pendaftaran Anda telah dilepas. Silakan{" "}
+              <strong>daftar ulang</strong> bila kuota masih tersedia.
+            </p>
+            <a
+              href="/mrc"
+              className="inline-flex min-h-[44px] items-center justify-center px-5 py-2.5 mt-1 bg-primary hover:bg-primary-hover text-primary-foreground text-sm font-semibold rounded-md transition-colors"
+            >
+              Daftar Ulang
+            </a>
+          </div>
+        )}
+
+        {showCountdown && !isHoldExpired && (
+          <div
+            className={`p-4 rounded-xl text-center space-y-1 border ${
+              isUrgent
+                ? "bg-destructive/10 border-destructive/30"
+                : "bg-primary/5 border-primary/20"
+            }`}
+            role="timer"
+            aria-live="polite"
+          >
+            <p
+              className={`text-xs font-semibold flex items-center justify-center gap-1.5 ${
+                isUrgent ? "text-destructive" : "text-primary"
+              }`}
+            >
+              <Clock className="w-4 h-4" /> Sisa waktu pembayaran
+            </p>
+            <p
+              className={`font-mono text-3xl font-extrabold tracking-tight ${
+                isUrgent ? "text-destructive" : "text-foreground"
+              }`}
+            >
+              {formatCountdown(remainingHoldMs)}
+            </p>
+            <p className="text-[11px] text-muted-foreground max-w-md mx-auto">
+              Selesaikan transfer & unggah bukti sebelum waktu habis. Setelah
+              habis, slot dilepas dan Anda harus mendaftar ulang.
+            </p>
+          </div>
+        )}
 
         {/* STATUS BADGE SUMMARY */}
         {isPendingVerification && (
@@ -431,7 +513,7 @@ export function QrisPaymentView({
         </div>
 
         {/* FORM UPLOAD BUKTI TRANSFER */}
-        {(!isPendingVerification || isRejected) && (
+        {(!isPendingVerification || isRejected) && !isHoldExpired && (
           <form
             onSubmit={handleSubmitProof}
             className="space-y-4 pt-2 border-t border-border"

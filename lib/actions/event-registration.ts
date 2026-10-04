@@ -716,30 +716,70 @@ export async function submitManualPaymentProofAction(
 
   const adminSupabase = createAdminClient();
 
-  const { data: updatedReg, error } = await (untypedFrom(
+  // Transisi ke `pending_verification` menahan slot secara PERMANEN, karena itu
+  // wajib dicek kuota & masa tahan secara atomik di database (row-lock kategori).
+  // RPC inilah yang menutup celah over-booking: peserta yang masa tahannya habis
+  // (`hold_expired`) atau mendaftar saat kuota penuh (`quota_full`) ditolak.
+  const { error: rpcError } = await untypedRpc<{
+    data: string | null;
+    error: { message: string } | null;
+  }>(adminSupabase, "reserve_slot_for_payment", {
+    p_access_token: accessToken,
+    p_proof_url: proofUrl,
+  });
+
+  if (rpcError) {
+    const message = rpcError.message || "";
+    if (message.includes("hold_expired")) {
+      return {
+        success: false,
+        error:
+          "Waktu pembayaran (1 jam) sudah habis dan slot Anda telah dilepas. Silakan daftar ulang bila kuota masih tersedia.",
+      };
+    }
+    if (message.includes("quota_full")) {
+      return {
+        success: false,
+        error:
+          "Maaf, kuota pendaftaran kategori ini sudah penuh sehingga bukti pembayaran tidak dapat diterima.",
+      };
+    }
+    if (
+      message.includes("registration_closed") ||
+      message.includes("registration_not_found")
+    ) {
+      return {
+        success: false,
+        error:
+          "Pendaftaran ini sudah tidak aktif. Silakan daftar ulang bila kuota masih tersedia.",
+      };
+    }
+    // Jangan bocorkan pesan database mentah ke pengguna; catat di server.
+    console.error("reserve_slot_for_payment RPC error:", message);
+    return {
+      success: false,
+      error: "Gagal menyimpan bukti pembayaran manual.",
+    };
+  }
+
+  // Ambil data terbaru (dengan kategori) untuk email notifikasi.
+  const { data: updatedReg } = await (untypedFrom(
     adminSupabase,
     "event_registrations",
   )
-    .update({
-      manual_payment_proof_url: proofUrl,
-      payment_status: "pending_verification",
-      rejection_reason: null,
-      updated_at: new Date().toISOString(),
-    })
-    // Kunci otorisasi: token akses, bukan ID yang mudah dikenali.
-    .eq("access_token", accessToken)
     .select(
       `
       *,
       category:event_categories(*)
     `,
     )
+    // Kunci otorisasi: token akses, bukan ID yang mudah dikenali.
+    .eq("access_token", accessToken)
     .single() as unknown as Promise<{
     data: EventRegistration | null;
-    error: unknown;
   }>);
 
-  if (error || !updatedReg) {
+  if (!updatedReg) {
     return {
       success: false,
       error: "Gagal menyimpan bukti pembayaran manual.",

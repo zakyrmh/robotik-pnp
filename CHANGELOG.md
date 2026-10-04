@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.17.0](https://github.com/zakyrmh/robotik-pnp/compare/v0.16.2...v0.17.0) (2026-10-04)
+
+### Fixed
+
+- **Over-booking Kuota Pendaftaran MRC (Pendaftaran Melebihi Slot per Kategori) (`supabase/migrations/20261004000000_enforce_quota_at_payment_and_1h_hold.sql` baru, `lib/event-quota.ts`, `lib/actions/event-registration.ts`, `lib/actions/event-admin.ts`, `components/event/qris-payment-view.tsx`, `components/event/e-ticket-view.tsx`, `components/event/quota-overflow-banner.tsx` baru, `app/(private)/manajemen-event/page.tsx`, `types/event-registration.ts`)**: Kategori **Line Follower Umum memuat 39 tim padahal kuota 36** (Soccer Bot 32/30). Akar masalah: kuota **hanya** dicek di satu titik saat submit form (`register_team`), sedangkan transisi ke status yang **menahan slot permanen** (`pending_verification` saat peserta mengunggah bukti bayar, `paid` saat admin memverifikasi) dilakukan **tanpa cek kuota & tanpa cek masa tahan**. Karena pendaftaran `unpaid` yang lewat batas tidak lagi dihitung saat submit, slot tampak kosong dan diisi pendaftar baru — tetapi pendaftar lama yang lewat batas tetap bisa bayar dan menahan slot permanen, sehingga jumlah `paid` melampaui kuota. Perbaikan:
+  - **Aturan tunggal penahan slot** disatukan di `lib/event-quota.ts` dan RPC database: `paid`/`pending_verification` menahan **permanen**; `unpaid`/`pending` menahan **sementara 1 jam**; setelah lewat, slot **dilepas** dan pendaftaran **ditutup permanen** (peserta harus daftar ulang). Status final-gagal (`rejected`, `expired`, `failed`) tidak menahan.
+  - **Dua RPC penegak baru** (atomik, `FOR UPDATE` pada baris kategori): `reserve_slot_for_payment(access_token, proof_url)` menegakkan `hold_expired` & `quota_full` sebelum set `pending_verification`; `verify_payment_with_quota(registration_id)` menegakkan `quota_full` sebelum set `paid`. **Admin diblokir total** saat kuota penuh (tanpa override). Karena hanya `paid`/`pending_verification` yang menahan permanen dan setiap transisi dicek, `paid + pending_verification` tidak dapat melebihi kuota.
+  - **Masa tahan dipersingkat dari 5 jam menjadi 1 jam**, disertai **countdown timer** di halaman tiket pembayaran (`/mrc/bayar/[token]`, fallback `/mrc/tiket/[token]`). Setelah habis, form unggah disembunyikan dan diganti pesan "daftar ulang". Countdown bersifat UX saja — penegakan sesungguhnya ada di RPC.
+  - **`submitManualPaymentProofAction`** kini memakai RPC `reserve_slot_for_payment` dan menerjemahkan error `quota_full`/`hold_expired`/`registration_closed` menjadi pesan yang ramah, alih-alih `.update()` polos tanpa cek. **`verifyManualPaymentAction`** (approve) memakai RPC `verify_payment_with_quota`.
+  - **Banner laporan over-quota** (`getOverquotaCategoriesAction` → `QuotaOverflowBanner` di `/manajemen-event`) menandai kategori dengan `paid + pending_verification > kuota`. Data yang sudah over-quota **TIDAK** diubah otomatis — keputusan penindakan tetap di tangan panitia.
+  - **Bukti perilaku RPC** diuji di DB lokal dalam `BEGIN...ROLLBACK` (6 skenario lulus): `unpaid` baru menahan; `unpaid` kedaluwarsa tidak menahan; `reserve_slot_for_payment` → `hold_expired`; → `quota_full`; `verify_payment_with_quota` → `quota_full`; `register_team` → `quota_full`. Ditambah **24 test regresi** (`lib/event-quota.test.ts`, `lib/actions/event-registration.revalidate.test.ts`, `lib/actions/event-admin.quota.test.ts`).
+
+### Documentation
+
+- **Arsitektur Registrasi & Pembayaran (`docs/architecture-event-registration-payment.md`)**: Menambahkan §4.1 — aturan tunggal penahan slot, tabel dua RPC penegak, countdown UI, dan penanganan data over-quota; memperbarui definisi `register_team` (interval 1 jam, status `paid`/`pending_verification` permanen).
+
 ## [0.16.2](https://github.com/zakyrmh/robotik-pnp/compare/v0.16.1...v0.16.2) (2026-10-03)
 
 ### Fixed

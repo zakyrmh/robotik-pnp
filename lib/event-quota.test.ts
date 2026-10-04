@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
   isRegistrationHoldingSlot,
+  isRegistrationExpired,
+  getRemainingHoldMs,
   MASA_TUNGGU_SLOT_MS,
 } from "@/lib/event-quota";
 
@@ -9,8 +11,8 @@ const hoursAgo = (h: number) =>
   new Date(now.getTime() - h * 60 * 60 * 1000).toISOString();
 
 describe("event-quota: kriteria penahanan slot", () => {
-  it("MASA_TUNGGU_SLOT_MS = 5 jam", () => {
-    expect(MASA_TUNGGU_SLOT_MS).toBe(5 * 60 * 60 * 1000);
+  it("MASA_TUNGGU_SLOT_MS = 1 jam", () => {
+    expect(MASA_TUNGGU_SLOT_MS).toBe(1 * 60 * 60 * 1000);
   });
 
   it("status permanen (paid, pending_verification) selalu menahan", () => {
@@ -24,19 +26,19 @@ describe("event-quota: kriteria penahanan slot", () => {
     }
   });
 
-  it("unpaid baru (<5 jam) menahan slot", () => {
+  it("unpaid baru (<1 jam) menahan slot", () => {
     expect(
       isRegistrationHoldingSlot(
-        { payment_status: "unpaid", created_at: hoursAgo(1) },
+        { payment_status: "unpaid", created_at: hoursAgo(0.5) },
         now,
       ),
     ).toBe(true);
   });
 
-  it("unpaid lama (6 jam) tidak menahan slot", () => {
+  it("unpaid lama (2 jam) tidak menahan slot", () => {
     expect(
       isRegistrationHoldingSlot(
-        { payment_status: "unpaid", created_at: hoursAgo(6) },
+        { payment_status: "unpaid", created_at: hoursAgo(2) },
         now,
       ),
     ).toBe(false);
@@ -45,13 +47,13 @@ describe("event-quota: kriteria penahanan slot", () => {
   it("pending mengikuti aturan masa tunggu yang sama", () => {
     expect(
       isRegistrationHoldingSlot(
-        { payment_status: "pending", created_at: hoursAgo(4) },
+        { payment_status: "pending", created_at: hoursAgo(0.75) },
         now,
       ),
     ).toBe(true);
     expect(
       isRegistrationHoldingSlot(
-        { payment_status: "pending", created_at: hoursAgo(5.5) },
+        { payment_status: "pending", created_at: hoursAgo(1.5) },
         now,
       ),
     ).toBe(false);
@@ -61,24 +63,23 @@ describe("event-quota: kriteria penahanan slot", () => {
     for (const s of ["rejected", "expired", "failed"]) {
       expect(
         isRegistrationHoldingSlot(
-          { payment_status: s, created_at: hoursAgo(1) },
+          { payment_status: s, created_at: hoursAgo(0.5) },
           now,
         ),
       ).toBe(false);
     }
   });
 
-  it("wilayah sepertiga dari fitur quota", () => {
-    // Batas tepat 5 jam: belum menahan (menahan butuh created_at > now - 5h)
+  it("batas tepat 1 jam: tidak menahan (butuh created_at > now - 1h)", () => {
     expect(
       isRegistrationHoldingSlot(
-        { payment_status: "unpaid", created_at: hoursAgo(5) },
+        { payment_status: "unpaid", created_at: hoursAgo(1) },
         now,
       ),
     ).toBe(false);
     expect(
       isRegistrationHoldingSlot(
-        { payment_status: "unpaid", created_at: hoursAgo(4.99) },
+        { payment_status: "unpaid", created_at: hoursAgo(0.99) },
         now,
       ),
     ).toBe(true);
@@ -91,5 +92,85 @@ describe("event-quota: kriteria penahanan slot", () => {
         now,
       ),
     ).toBe(false);
+  });
+});
+
+describe("event-quota: kedaluwarsa masa tahan (penutupan permanen)", () => {
+  it("unpaid >1 jam dianggap kedaluwarsa", () => {
+    expect(
+      isRegistrationExpired(
+        { payment_status: "unpaid", created_at: hoursAgo(1.5) },
+        now,
+      ),
+    ).toBe(true);
+  });
+
+  it("unpaid <1 jam belum kedaluwarsa", () => {
+    expect(
+      isRegistrationExpired(
+        { payment_status: "unpaid", created_at: hoursAgo(0.5) },
+        now,
+      ),
+    ).toBe(false);
+  });
+
+  it("status permanen tidak pernah 'kedaluwarsa' (tetap menahan)", () => {
+    for (const s of ["paid", "pending_verification"]) {
+      expect(
+        isRegistrationExpired(
+          { payment_status: s, created_at: hoursAgo(999) },
+          now,
+        ),
+      ).toBe(false);
+    }
+  });
+
+  it("status final-gagal bukan 'kedaluwarsa' (sudah mati di jalur lain)", () => {
+    for (const s of ["rejected", "expired", "failed"]) {
+      expect(
+        isRegistrationExpired(
+          { payment_status: s, created_at: hoursAgo(999) },
+          now,
+        ),
+      ).toBe(false);
+    }
+  });
+
+  it("data tanggal cacat tidak dianggap kedaluwarsa (fail-safe)", () => {
+    expect(
+      isRegistrationExpired(
+        { payment_status: "unpaid", created_at: "bukan-tanggal" },
+        now,
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("event-quota: sisa waktu countdown", () => {
+  it("unpaid <1 jam menyisakan waktu > 0", () => {
+    const remaining = getRemainingHoldMs(
+      { payment_status: "unpaid", created_at: hoursAgo(0.25) },
+      now,
+    );
+    expect(remaining).toBeGreaterThan(0);
+    expect(remaining).toBeLessThanOrEqual(MASA_TUNGGU_SLOT_MS);
+  });
+
+  it("unpaid >1 jam menyisakan 0", () => {
+    expect(
+      getRemainingHoldMs(
+        { payment_status: "unpaid", created_at: hoursAgo(2) },
+        now,
+      ),
+    ).toBe(0);
+  });
+
+  it("status permanen menyisakan 0 (tidak ada countdown)", () => {
+    expect(
+      getRemainingHoldMs(
+        { payment_status: "paid", created_at: hoursAgo(0.25) },
+        now,
+      ),
+    ).toBe(0);
   });
 });

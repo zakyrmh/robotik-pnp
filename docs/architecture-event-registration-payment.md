@@ -170,8 +170,8 @@ BEGIN
     SELECT count(*) INTO v_taken FROM event_registrations
         WHERE category_id = p_category_id
         AND (
-            payment_status = 'paid'
-            OR (payment_status = 'pending' AND created_at > now() - interval '2 hours')
+            payment_status IN ('paid', 'pending_verification')
+            OR (payment_status IN ('unpaid', 'pending') AND created_at > now() - interval '1 hour')
         );
 
     IF v_taken >= v_quota THEN
@@ -184,7 +184,30 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 ```
 
-`FOR UPDATE` pada baris kategori mengunci secara alami saat dua submit bersamaan. Baris `pending` yang lewat 2 jam otomatis tidak dihitung sebagai kuota terpakai â€” **tanpa bergantung pada cron job apa pun**, karena Vercel Hobby hanya mengizinkan cron 1Ã—/hari yang terlalu jarang untuk pelepasan kuota real-time. Cron harian tetap dipasang, tapi hanya untuk mengubah status jadi `'expired'` demi kerapian tampilan admin â€” bukan untuk korektnya sistem.
+`FOR UPDATE` pada baris kategori mengunci secara alami saat dua submit bersamaan. Baris `unpaid`/`pending` yang lewat 1 jam otomatis tidak dihitung sebagai kuota terpakai â€” **tanpa bergantung pada cron job apa pun**, karena Vercel Hobby hanya mengizinkan cron 1Ã—/hari yang terlalu jarang untuk pelepasan kuota real-time.
+
+### 4.1 Penegakan Kuota di Titik Pembayaran & Verifikasi (anti over-booking)
+
+**Insiden & akar masalah.** Insiden produksi (Line Follower Umum 39 tim dari kuota 36) terjadi karena kuota **hanya** dicek saat submit form di `register_team`. Transisi ke status yang **menahan slot permanen** (`pending_verification` saat peserta mengunggah bukti bayar, dan `paid` saat admin memverifikasi) dilakukan tanpa cek kuota. Karena pendaftaran `unpaid` yang lewat batas tidak lagi dihitung saat submit, slot tampak kosong dan diisi pendaftar baru â€” tetapi pendaftar lama yang lewat batas tetap bisa mengunggah bukti bayar dan menahan slot permanen. Hasilnya jumlah `paid` melampaui kuota.
+
+**Aturan tunggal (satu-satunya definisi penahanan slot).** Diterapkan identik di `lib/event-quota.ts` dan RPC database (migrasi `20261004000000_enforce_quota_at_payment_and_1h_hold.sql`):
+
+- `paid` dan `pending_verification` â†’ menahan slot **permanen**.
+- `unpaid` dan `pending` â†’ menahan slot **sementara 1 jam**. Setelah lewat, slot **dilepas** dan pendaftaran **ditutup permanen** (peserta harus mendaftar ulang bila kuota masih tersedia).
+- `rejected`, `expired`, `failed` â†’ **tidak** menahan.
+
+**Dua RPC penegak (atomik, `FOR UPDATE` pada baris kategori):**
+
+| RPC                                                 | Dipanggil dari                                          | Menegakkan                                                                                      |
+| --------------------------------------------------- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `reserve_slot_for_payment(access_token, proof_url)` | `submitManualPaymentProofAction` (peserta upload bukti) | `hold_expired` (masa tahan habis, 1 jam) & `quota_full` sebelum set `pending_verification`      |
+| `verify_payment_with_quota(registration_id)`        | `verifyManualPaymentAction` (admin approve)             | `quota_full` sebelum set `paid`. **Admin diblokir total** saat kuota penuh (tidak ada override) |
+
+Karena `paid`/`pending_verification` adalah satu-satunya status penahan permanen dan setiap transisi ke sana selalu dicek kuota, jumlah `paid + pending_verification` **tidak dapat melebihi kuota**.
+
+**UI peserta.** Halaman tiket pembayaran (`/mrc/bayar/[token]` `QrisPaymentView`, dan fallback di `/mrc/tiket/[token]`) menampilkan **countdown 1 jam** dari `created_at`; setelah habis form upload disembunyikan dan diganti pesan "daftar ulang". Countdown murni UX â€” penegakan sesungguhnya ada di RPC.
+
+**Data yang sudah over-quota** tidak diubah otomatis; panitia mendapat **banner laporan** (`getOverquotaCategoriesAction` â†’ `QuotaOverflowBanner` di `/manajemen-event`).
 
 ---
 
@@ -314,14 +337,14 @@ Peserta menyetujui `event_rules_versions` tertentu saat mendaftar (`rules_versio
 
 ## 9. Optimasi Resource (Supabase Free + Vercel Hobby)
 
-| Area                             | Risiko                                                      | Mitigasi                                                                                                        |
-| :------------------------------- | :---------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------- |
-| Storage foto (1GB limit)         | Foto resolusi tinggi menghabiskan kuota cepat               | Kompresi client-side sebelum upload: resize maks lebar 480px, WebP, target <150KB/foto                          |
-| Egress (5GB/bulan)               | Serving foto berulang                                       | Signed URL berumur pendek dari Storage, bukan public bucket                                                     |
-| Vercel Cron (1Ã—/hari di Hobby)  | Tidak cukup untuk pelepasan kuota real-time                 | Korektnya sistem tidak bergantung cron (lihat Â§4); cron hanya kosmetik                                         |
-| DB size (500MB limit)            | Tidak signifikan                                            | Skema ini murni metadata teks; foto disimpan di Storage, bukan DB â€” jauh di bawah limit untuk skala Â±100 tim |
-| Project auto-pause (7 hari idle) | Cron/job terjadwal bisa gagal diam-diam saat project paused | Retensi data (Â§10) sengaja dibuat manual (tombol admin), bukan cron, agar tidak bergantung uptime otomatis     |
-| WhatsApp otomatis                | Butuh API berbayar                                          | Tidak diotomatiskan â€” tautan `wa.me` siap kirim di halaman konfirmasi                                         |
+| Area                             | Risiko                                                      | Mitigasi                                                                                                                                                                |
+| :------------------------------- | :---------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Storage foto (1GB limit)         | Foto resolusi tinggi menghabiskan kuota cepat               | Kompresi client-side sebelum upload: resize maks lebar 480px, WebP, target <150KB/foto                                                                                  |
+| Egress (5GB/bulan)               | Serving foto berulang                                       | Signed URL berumur pendek dari Storage, bukan public bucket                                                                                                             |
+| Vercel Cron (1Ã—/hari di Hobby)  | Tidak cukup untuk pelepasan kuota real-time                 | Korektnya sistem tidak bergantung cron (lihat Â§4 & Â§4.1); pelepasan & penegakan kuota dilakukan lazy di RPC (`reserve_slot_for_payment`, `verify_payment_with_quota`) |
+| DB size (500MB limit)            | Tidak signifikan                                            | Skema ini murni metadata teks; foto disimpan di Storage, bukan DB â€” jauh di bawah limit untuk skala Â±100 tim                                                         |
+| Project auto-pause (7 hari idle) | Cron/job terjadwal bisa gagal diam-diam saat project paused | Retensi data (Â§10) sengaja dibuat manual (tombol admin), bukan cron, agar tidak bergantung uptime otomatis                                                             |
+| WhatsApp otomatis                | Butuh API berbayar                                          | Tidak diotomatiskan â€” tautan `wa.me` siap kirim di halaman konfirmasi                                                                                                 |
 
 ---
 
