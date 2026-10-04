@@ -600,7 +600,7 @@ export function RegistrationTable({
           <button
             onClick={exportToCsv}
             disabled={isExporting || total === 0}
-            title="Ekspor SELURUH data pendaftaran ke format file CSV"
+            title="Ekspor SELURUH data pendaftaran (tim, anggota, pembayaran, verifikasi, metadata) ke CSV"
             className="inline-flex min-h-[44px] items-center gap-1.5 rounded-md border border-border bg-background px-3 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-secondary disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             {isExporting ? (
@@ -611,7 +611,7 @@ export function RegistrationTable({
             ) : (
               <Download className="size-4 text-primary" aria-hidden="true" />
             )}
-            <span>{isExporting ? "Menyiapkan..." : "Ekspor CSV"}</span>
+            <span>{isExporting ? "Menyiapkan..." : "Ekspor CSV Lengkap"}</span>
           </button>
 
           {isSuperAdmin && (

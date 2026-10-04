@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file. See [standa
 
 ## [0.17.0](https://github.com/zakyrmh/robotik-pnp/compare/v0.16.2...v0.17.0) (2026-10-04)
 
+### Added
+
+- **Ekspor CSV Lengkap Data Pendaftaran MRC (`lib/actions/event-admin.ts`, `components/event/registration-table.tsx`, `lib/actions/event-admin.export.test.ts` baru)**: Ekspor CSV pada halaman **Data Pendaftar** (`/manajemen-event/pendaftaran`) kini memuat **seluruh data form pendaftaran** — bukan lagi 12 kolom tingkat tim. Bentuk tetap **satu baris per tim**, dengan data anggota disebar ke kolom berulang `Anggota 1 - …` s.d. `Anggota 20 - …` (plafon keras `HARD_MAX_TEAM_MEMBERS`, posisi kolom stabil antar kategori). Cakupan kolom:
+  - **Identitas & metadata tim**: ID pendaftaran, kode registrasi, access token, nama tim, kategori (+slug), instansi, kota asal, nama pembimbing, email & WhatsApp tim, jumlah anggota, batch, status pembayaran, total biaya, tanggal daftar & terakhir diperbarui.
+  - **Pembayaran**: tanggal bayar, rekening panitia (bank/nomor/atas nama), URL bukti bayar, Midtrans order ID/payment type/QR URL/QR expiry, alasan penolakan.
+  - **Rules & persetujuan**: rules version ID, waktu persetujuan rules.
+  - **Anggota** (per anggota, 9 kolom): ID, nama, peran, tanggal lahir, status verifikasi, QR token, URL foto, URL kartu identitas, waktu terdaftar.
+  - Header kini ikut di-escape agar aman terhadap koma/kutip. Nama berkas menjadi `mrc-pendaftaran-lengkap-<tanggal>.csv`. Ditambah **5 test regresi** yang mengunci kelengkapan header, pengisian data anggota, dan escaping CSV.
+
 ### Fixed
 
 - **Over-booking Kuota Pendaftaran MRC (Pendaftaran Melebihi Slot per Kategori) (`supabase/migrations/20261004000000_enforce_quota_at_payment_and_1h_hold.sql` baru, `lib/event-quota.ts`, `lib/actions/event-registration.ts`, `lib/actions/event-admin.ts`, `components/event/qris-payment-view.tsx`, `components/event/e-ticket-view.tsx`, `components/event/quota-overflow-banner.tsx` baru, `app/(private)/manajemen-event/page.tsx`, `types/event-registration.ts`)**: Kategori **Line Follower Umum memuat 39 tim padahal kuota 36** (Soccer Bot 32/30). Akar masalah: kuota **hanya** dicek di satu titik saat submit form (`register_team`), sedangkan transisi ke status yang **menahan slot permanen** (`pending_verification` saat peserta mengunggah bukti bayar, `paid` saat admin memverifikasi) dilakukan **tanpa cek kuota & tanpa cek masa tahan**. Karena pendaftaran `unpaid` yang lewat batas tidak lagi dihitung saat submit, slot tampak kosong dan diisi pendaftar baru — tetapi pendaftar lama yang lewat batas tetap bisa bayar dan menahan slot permanen, sehingga jumlah `paid` melampaui kuota. Perbaikan:

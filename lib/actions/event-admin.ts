@@ -8,6 +8,7 @@ import {
   eventPaymentBankSchema,
   eventSettingsSchema,
   reviewChangeRequestSchema,
+  HARD_MAX_TEAM_MEMBERS,
   type EventCategoryInput,
   type EventSettingsInput,
   type ReviewChangeRequestInput,
@@ -619,9 +620,15 @@ export async function getOverquotaCategoriesAction(): Promise<
 /**
  * Ekspor SELURUH data pendaftaran sebagai CSV (Q1: ekspor penuh).
  *
- * Hanya kolom yang dibutuhkan berkas CSV (tanpa anggota/foto/token) sehingga
- * payload tetap kecil. CSV dibentuk di server; unduhan dilakukan di client
- * lewat Blob, menghindari beban di sisi klien untuk dataset besar.
+ * Bentuk: **satu baris per tim**. Seluruh data form pendaftaran (tim + anggota),
+ * data pembayaran, verifikasi anggota, rules, dan metadata internal disertakan.
+ * Data anggota (yang jumlahnya bervariasi) disebar ke kolom berulang
+ * `Anggota N – …` sebanyak `HARD_MAX_TEAM_MEMBERS` (plafon keras), sehingga posisi
+ * kolom tetap stabil antar kategori. Anggota diurutkan `created_at` menaik agar
+ * urutannya konsisten (anggota pertama = Ketua Tim bila diisi lebih dulu).
+ *
+ * CSV dibentuk di server; unduhan dilakukan di client lewat Blob, menghindari
+ * beban di sisi klien untuk dataset besar.
  */
 export async function getEventRegistrationsExportAction(): Promise<
   ActionResult<{ csv: string; filename: string; rowCount: number }>
@@ -642,39 +649,13 @@ export async function getEventRegistrationsExportAction(): Promise<
   )
     .select(
       `
-      registration_code,
-      team_name,
-      institution,
-      origin_city,
-      team_email,
-      team_whatsapp,
-      payment_status,
-      total_amount,
-      paid_at,
-      created_at,
-      payment_bank_name,
-      payment_bank_account_number,
-      category:event_categories(name)
+      *,
+      category:event_categories(*),
+      members:event_team_members(*)
     `,
     )
     .order("created_at", { ascending: false }) as unknown as Promise<{
-    data:
-      | (Pick<
-          EventRegistration,
-          | "registration_code"
-          | "team_name"
-          | "institution"
-          | "origin_city"
-          | "team_email"
-          | "team_whatsapp"
-          | "payment_status"
-          | "total_amount"
-          | "paid_at"
-          | "created_at"
-          | "payment_bank_name"
-          | "payment_bank_account_number"
-        > & { category: { name: string } | null })[]
-      | null;
+    data: EventRegistration[] | null;
     error: unknown;
   }>);
 
@@ -682,54 +663,131 @@ export async function getEventRegistrationsExportAction(): Promise<
     return { success: false, error: "Gagal mengekspor data pendaftaran." };
   }
 
+  const escape = (value: string | number | null | undefined) =>
+    `"${String(value ?? "").replace(/"/g, '""')}"`;
+
+  const fmtDateTime = (iso: string | null | undefined) =>
+    iso ? new Date(iso).toLocaleString("id-ID") : "";
+  const fmtDate = (iso: string | null | undefined) =>
+    iso ? new Date(iso).toLocaleDateString("id-ID") : "";
+
+  // ── Header ────────────────────────────────────────────────────────────────
   const headers = [
+    // Identitas & Metadata Tim
+    "ID Pendaftaran",
     "Kode Registrasi",
+    "Access Token",
     "Nama Tim",
     "Kategori",
+    "Kategori Slug",
     "Instansi",
     "Kota Asal",
+    "Nama Pembimbing",
     "Email Tim",
-    "WhatsApp",
+    "WhatsApp Tim",
+    "Jumlah Anggota",
+    "Batch Pendaftaran",
     "Status Pembayaran",
     "Total Biaya (Rp)",
-    "Rekening Tujuan",
-    "Tanggal Bayar",
     "Tanggal Daftar",
+    "Terakhir Diperbarui",
+    // Pembayaran
+    "Tanggal Bayar",
+    "Rekening Bank (Panitia)",
+    "Nomor Rekening (Panitia)",
+    "Atas Nama Rekening (Panitia)",
+    "Bukti Bayar (URL)",
+    "Midtrans Order ID",
+    "Midtrans Payment Type",
+    "Midtrans QR URL",
+    "Midtrans QR Expiry",
+    "Alasan Penolakan",
+    // Rules & Persetujuan
+    "Rules Version ID",
+    "Rules Disetujui Pada",
   ];
 
-  const escape = (value: string) => `"${value.replace(/"/g, '""')}"`;
+  // ── Kolom anggota berulang (stabil sebanyak plafon keras) ─────────────────
+  for (let i = 1; i <= HARD_MAX_TEAM_MEMBERS; i++) {
+    headers.push(
+      `Anggota ${i} - ID`,
+      `Anggota ${i} - Nama`,
+      `Anggota ${i} - Peran`,
+      `Anggota ${i} - Tanggal Lahir`,
+      `Anggota ${i} - Status Verifikasi`,
+      `Anggota ${i} - QR Token`,
+      `Anggota ${i} - URL Foto`,
+      `Anggota ${i} - URL Kartu Identitas`,
+      `Anggota ${i} - Terdaftar Pada`,
+    );
+  }
 
-  const rows = data.map((r) =>
-    [
-      escape(r.registration_code),
-      escape(r.team_name),
-      escape(r.category?.name || ""),
-      escape(r.institution),
-      escape(r.origin_city || ""),
-      escape(r.team_email),
-      escape(r.team_whatsapp),
-      escape(r.payment_status),
-      escape(String(r.total_amount ?? "")),
-      escape(
-        r.payment_bank_name
-          ? `${r.payment_bank_name} - ${r.payment_bank_account_number ?? ""}`.trim()
-          : "",
-      ),
-      escape(r.paid_at ? new Date(r.paid_at).toLocaleString("id-ID") : ""),
-      escape(
-        r.created_at ? new Date(r.created_at).toLocaleString("id-ID") : "",
-      ),
-    ].join(","),
-  );
+  // ── Baris data ────────────────────────────────────────────────────────────
+  const rows = data.map((r) => {
+    const members = [...(r.members ?? [])].sort(
+      (a, b) =>
+        new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+    );
+
+    const cells: (string | number | null | undefined)[] = [
+      r.id,
+      r.registration_code,
+      r.access_token,
+      r.team_name,
+      r.category?.name || "",
+      r.category?.slug || "",
+      r.institution,
+      r.origin_city,
+      r.advisor_name,
+      r.team_email,
+      r.team_whatsapp,
+      members.length,
+      r.registration_batch || "",
+      r.payment_status,
+      r.total_amount,
+      fmtDateTime(r.created_at),
+      fmtDateTime(r.updated_at),
+      fmtDateTime(r.paid_at),
+      r.payment_bank_name,
+      r.payment_bank_account_number,
+      r.payment_bank_account_holder,
+      r.manual_payment_proof_url,
+      r.midtrans_order_id,
+      r.midtrans_payment_type,
+      r.midtrans_qr_url,
+      fmtDateTime(r.midtrans_qr_expiry),
+      r.rejection_reason,
+      r.rules_version_id,
+      fmtDateTime(r.rules_accepted_at),
+    ];
+
+    for (let i = 0; i < HARD_MAX_TEAM_MEMBERS; i++) {
+      const m = members[i];
+      cells.push(
+        m?.id ?? "",
+        m?.full_name ?? "",
+        m?.role_in_team ?? "",
+        fmtDate(m?.birth_date),
+        m?.verification_status ?? "",
+        m?.member_qr_token ?? "",
+        m?.photo_url ?? "",
+        m?.identity_card_url ?? "",
+        fmtDateTime(m?.created_at),
+      );
+    }
+
+    return cells.map(escape).join(",");
+  });
 
   // BOM agar Excel membaca UTF-8 dengan benar (tetap sesuai perilaku lama).
-  const csv = "\uFEFF" + [headers.join(","), ...rows].join("\n");
+  // Header juga di-escape agar aman bila di masa depan memuat koma/kutip.
+  const csv = "\uFEFF" + [headers.map(escape).join(","), ...rows].join("\n");
 
   return {
     success: true,
     data: {
       csv,
-      filename: `mrc-pendaftaran-${new Date().toISOString().slice(0, 10)}.csv`,
+      filename: `mrc-pendaftaran-lengkap-${new Date().toISOString().slice(0, 10)}.csv`,
       rowCount: data.length,
     },
   };
