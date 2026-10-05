@@ -9,6 +9,7 @@ import {
   markPiketFinePaid,
   voidPiketFine,
   getPiketComplianceAction,
+  getPiketMemberHistoryAction,
 } from "./piket";
 import {
   getPiketWeekInfo,
@@ -70,11 +71,15 @@ vi.mock("@/lib/audit", () => ({
 }));
 
 // Mock repository (compliance report) agar tidak perlu rantai query Supabase.
-const { mockGetPiketComplianceReport } = vi.hoisted(() => ({
-  mockGetPiketComplianceReport: vi.fn(),
-}));
+const { mockGetPiketComplianceReport, mockGetPiketMemberHistory } = vi.hoisted(
+  () => ({
+    mockGetPiketComplianceReport: vi.fn(),
+    mockGetPiketMemberHistory: vi.fn(),
+  }),
+);
 vi.mock("@/lib/repositories/piket", () => ({
   getPiketComplianceReport: mockGetPiketComplianceReport,
+  getPiketMemberHistory: mockGetPiketMemberHistory,
 }));
 
 describe("Piket Date Utility - getPiketWeekInfo", () => {
@@ -998,5 +1003,101 @@ describe("Piket Server Action - getPiketComplianceAction", () => {
     const res = await getPiketComplianceAction("2026/2027");
     expect(res.success).toBe(false);
     if (!res.success) expect(res.error).toContain("Gagal memuat laporan");
+  });
+});
+
+describe("Piket Server Action - getPiketMemberHistoryAction", () => {
+  const VALID_PROFILE_ID = "00000000-0000-4000-8000-000000000000";
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockSupabase.from.mockReturnThis();
+    mockSupabase.select.mockReturnThis();
+    mockSupabase.eq.mockReturnThis();
+    mockGetPiketMemberHistory.mockReset();
+  });
+
+  it("menolak role non-kestari", async () => {
+    mockSupabase.auth.getUser.mockResolvedValueOnce({
+      data: { user: { id: "user-id" } },
+    });
+    mockSupabase.single.mockResolvedValueOnce({ data: { role: "anggota" } });
+
+    const res = await getPiketMemberHistoryAction(VALID_PROFILE_ID);
+    expect(res.success).toBe(false);
+    expect(res.message).toMatch(/akses ditolak/i);
+    expect(mockGetPiketMemberHistory).not.toHaveBeenCalled();
+  });
+
+  it("menolak profileId bukan uuid (Zod)", async () => {
+    mockSupabase.auth.getUser.mockResolvedValueOnce({
+      data: { user: { id: "kestari-id" } },
+    });
+    mockSupabase.single.mockResolvedValueOnce({
+      data: { role: "admin-kestari" },
+    });
+
+    const res = await getPiketMemberHistoryAction("not-a-uuid");
+    expect(res.success).toBe(false);
+    expect(res.error?.code).toBe("BAD_REQUEST");
+    // Validasi Zod berjalan setelah auth/guard, sebelum akses repo.
+    expect(mockGetPiketMemberHistory).not.toHaveBeenCalled();
+  });
+
+  it("mengembalikan data untuk super-admin", async () => {
+    mockSupabase.auth.getUser.mockResolvedValueOnce({
+      data: { user: { id: "super-id" } },
+    });
+    mockSupabase.single.mockResolvedValueOnce({
+      data: { role: "super-admin" },
+    });
+    mockGetPiketMemberHistory.mockResolvedValueOnce([
+      {
+        id: "log-1",
+        scheduleId: "sched-1",
+        academicPeriod: "2026/2027",
+        weekNumber: 1,
+        roomTarget: "workshop_dan_sekretariat",
+        dutyDate: "2026-09-01",
+        status: "approved",
+        rejectionReason: "",
+        verifierName: "Admin Kestari",
+        notes: "bersih",
+        proofImageUrl: "https://r2/proof.jpg",
+        proofImageBeforeUrl: "https://r2/before.jpg",
+        createdAt: "2026-09-01T10:00:00Z",
+      },
+    ]);
+
+    const res = await getPiketMemberHistoryAction(VALID_PROFILE_ID);
+    expect(res.success).toBe(true);
+    expect(res.data).toHaveLength(1);
+    expect(res.data?.[0].status).toBe("approved");
+    expect(mockGetPiketMemberHistory).toHaveBeenCalledWith(VALID_PROFILE_ID);
+  });
+
+  it("menolak sesi tidak ditemukan", async () => {
+    mockSupabase.auth.getUser.mockResolvedValueOnce({
+      data: { user: null },
+      error: new Error("No session"),
+    });
+
+    const res = await getPiketMemberHistoryAction(VALID_PROFILE_ID);
+    expect(res.success).toBe(false);
+    expect(mockGetPiketMemberHistory).not.toHaveBeenCalled();
+  });
+
+  it("menampilkan kegagalan repository sebagai error", async () => {
+    mockSupabase.auth.getUser.mockResolvedValueOnce({
+      data: { user: { id: "kestari-id" } },
+    });
+    mockSupabase.single.mockResolvedValueOnce({
+      data: { role: "admin-kestari" },
+    });
+    mockGetPiketMemberHistory.mockRejectedValueOnce(new Error("boom"));
+
+    const res = await getPiketMemberHistoryAction(VALID_PROFILE_ID);
+    expect(res.success).toBe(false);
+    expect(res.message).toMatch(/gagal/i);
   });
 });

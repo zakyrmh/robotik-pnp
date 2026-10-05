@@ -1,7 +1,10 @@
 // components/features/piket/types.ts
-import type { PiketComplianceStatus } from "@/lib/repositories/piket";
+import type {
+  PiketComplianceStatus,
+  PiketLogStatus,
+} from "@/lib/repositories/piket";
 
-export type PiketLogStatus = "approved" | "pending" | "rejected" | "auto_final";
+export type { PiketComplianceStatus, PiketLogStatus };
 
 export interface PiketProfile {
   id: string;
@@ -72,8 +75,6 @@ export interface PiketFine {
   member_name: string;
   member_nim: string;
 }
-
-export type { PiketComplianceStatus };
 
 export function getPiketLogStatus(log: {
   is_verified: boolean;

@@ -25,6 +25,7 @@ import {
   CreditCard,
   PanelLeftClose,
   PanelLeftOpen,
+  History,
   type LucideIcon,
 } from "lucide-react";
 import Image from "next/image";
@@ -168,6 +169,14 @@ const allMenuItems = {
     adminOnly: false,
     kestariOnly: true,
   },
+  piketRiwayat: {
+    title: "Riwayat Piket",
+    href: "/piket/riwayat",
+    icon: History,
+    module: "kebersihan" as ModuleKey,
+    adminOnly: false,
+    kestariOnly: true,
+  },
 
   dashboardPendaftaranCaang: {
     title: "Dashboard Pendaftaran",
@@ -257,6 +266,7 @@ const roleMenuKeys: Record<string, MenuKey[]> = {
     "presensi",
     "piket",
     "piketVerifikasi",
+    "piketRiwayat",
     "piketKelola",
   ],
   "admin-komdis": [
@@ -298,6 +308,7 @@ const roleMenuKeys: Record<string, MenuKey[]> = {
     "kedisiplinan",
     "piket",
     "piketVerifikasi",
+    "piketRiwayat",
     "piketKelola",
     "dashboardPendaftaranCaang",
     "manajemenCaang",
@@ -329,7 +340,7 @@ const menuOrderWithinModule: Record<ModuleKey, MenuKey[]> = {
     "auditLogSistem",
   ],
   kedisiplinan: ["kegiatan", "presensi", "perizinan", "kedisiplinan"],
-  kebersihan: ["piket", "piketVerifikasi", "piketKelola"],
+  kebersihan: ["piket", "piketVerifikasi", "piketRiwayat", "piketKelola"],
   openRecruitment: [
     "dashboardPendaftaranCaang",
     "manajemenCaang",

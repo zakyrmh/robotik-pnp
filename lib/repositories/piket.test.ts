@@ -1,11 +1,25 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import fc from "fast-check";
 import {
   classifyPiketCompliance,
   buildComplianceRows,
+  filterPiketLogs,
+  filterComplianceRows,
+  getPiketMemberHistory,
   type RawComplianceSchedule,
   type RawComplianceLog,
+  type PiketHistoryLog,
+  type PiketComplianceRow,
 } from "./piket";
+
+const { mockRpc, mockCreateClient } = vi.hoisted(() => {
+  const mockRpc = vi.fn();
+  return { mockRpc, mockCreateClient: vi.fn() };
+});
+
+vi.mock("@/lib/supabase/server", () => ({
+  createClient: mockCreateClient,
+}));
 
 describe("classifyPiketCompliance", () => {
   it("sudah lapor bila ada log valid", () => {
@@ -228,5 +242,187 @@ describe("classifyPiketCompliance — invariant", () => {
         },
       ),
     );
+  });
+});
+
+describe("filterPiketLogs / filterComplianceRows", () => {
+  const logs: PiketHistoryLog[] = [
+    mkLog("2026-09-19", 3), // Sep 2026, pekan 3
+    mkLog("2026-10-03", 1), // Okt 2026, pekan 1
+    mkLog("2025-09-19", 3), // Sep 2025
+  ];
+  function mkLog(dutyDate: string, weekNumber: number): PiketHistoryLog {
+    return {
+      id: `l-${dutyDate}`,
+      scheduleId: "s-1",
+      academicPeriod: "2026/2027",
+      weekNumber,
+      roomTarget: "workshop_dan_sekretariat",
+      dutyDate,
+      reportedById: "p-1",
+      reporterName: "A",
+      reporterNim: "1",
+      status: "approved",
+      rejectionReason: "",
+      verifiedAt: "",
+      verifierName: "",
+      notes: "",
+      proofImageUrl: "",
+      proofImageBeforeUrl: "",
+      createdAt: "",
+    };
+  }
+
+  it("filter tahun kalender", () => {
+    expect(
+      filterPiketLogs(logs, { academicPeriod: "2026/2027", year: 2026 }).map(
+        (l) => l.dutyDate,
+      ),
+    ).toEqual(["2026-10-03", "2026-09-19"]);
+  });
+  it("filter bulan (0-based) & pekan", () => {
+    expect(
+      filterPiketLogs(logs, {
+        academicPeriod: "2026/2027",
+        monthIndex0: 8,
+        weekNumber: 3,
+      }).map((l) => l.id),
+    ).toEqual(["l-2026-09-19"]);
+  });
+  it("null = tanpa filter", () => {
+    expect(filterPiketLogs(logs, { academicPeriod: "2026/2027" })).toHaveLength(
+      3,
+    );
+  });
+  it("compliance difilter dari bulan siklus (bukan startIsoDate)", () => {
+    const rows = [
+      {
+        profileId: "p1",
+        memberName: "A",
+        nim: null,
+        academicPeriod: "2026/2027",
+        weekNumber: 3,
+        roomTarget: "x",
+        startIsoDate: "2026-09-14",
+        endIsoDate: "2026-09-20",
+        cycleMonthLabel: "September 2026",
+        status: "alpha",
+      },
+      {
+        // Pekan 1 bulan siklus OKTOBER 2026 (start 28 Sep 2026), namun
+        // `startIsoDate` berada di bulan kalender September.
+        profileId: "p2",
+        memberName: "B",
+        nim: null,
+        academicPeriod: "2026/2027",
+        weekNumber: 1,
+        roomTarget: "x",
+        startIsoDate: "2026-09-28",
+        endIsoDate: "2026-10-04",
+        cycleMonthLabel: "Oktober 2026",
+        status: "sudah-lapor",
+      },
+    ] as PiketComplianceRow[];
+    expect(
+      filterComplianceRows(rows, {
+        academicPeriod: "2026/2027",
+        monthIndex0: 9,
+        weekNumber: 1,
+      }).map((r) => r.profileId),
+    ).toEqual(["p2"]);
+  });
+
+  // REGRESSION (off-by-one): pekan 1 bulan siklus September 2026 dimulai pada
+  // 2026-08-31 (bulan kalender Agustus), sehingga filter harus memakai bulan
+  // SIKLUS, bukan bulan `startIsoDate`.
+  it("baris cycleMonthLabel September cocok monthIndex0=8 walau startIsoDate Agustus", () => {
+    const rows = [
+      {
+        profileId: "sep1",
+        memberName: "Sep Pekan 1",
+        nim: null,
+        academicPeriod: "2026/2027",
+        weekNumber: 1,
+        roomTarget: "x",
+        startIsoDate: "2026-08-31",
+        endIsoDate: "2026-09-06",
+        cycleMonthLabel: "September 2026",
+        status: "alpha",
+      },
+    ] as PiketComplianceRow[];
+
+    expect(
+      filterComplianceRows(rows, {
+        academicPeriod: "2026/2027",
+        year: 2026,
+        monthIndex0: 8,
+      }).map((r) => r.profileId),
+    ).toEqual(["sep1"]);
+
+    expect(
+      filterComplianceRows(rows, {
+        academicPeriod: "2026/2027",
+        year: 2026,
+        monthIndex0: 7,
+      }),
+    ).toEqual([]);
+  });
+});
+
+describe("getPiketMemberHistory", () => {
+  beforeEach(() => {
+    mockRpc.mockReset();
+    mockCreateClient.mockReset();
+    mockCreateClient.mockResolvedValue({ rpc: mockRpc });
+  });
+
+  it("memetakan kolom RPC ke PiketMemberHistoryEntry memakai id asli", async () => {
+    mockRpc.mockResolvedValueOnce({
+      data: [
+        {
+          id: "log-real-1",
+          schedule_id: "sched-1",
+          academic_period: "2026/2027",
+          week_number: 2,
+          room_target: "workshop_dan_sekretariat",
+          duty_date: "2026-09-14",
+          is_verified: true,
+          is_final: true,
+          rejection_reason: null,
+          verified_by: "verifier-1",
+          verifier_name: "Admin Kestari",
+          notes: "bersih",
+          proof_image_url: "https://r2/proof.jpg",
+          proof_image_before_url: "https://r2/before.jpg",
+          created_at: "2026-09-14T10:00:00Z",
+        },
+      ],
+      error: null,
+    });
+
+    const entries = await getPiketMemberHistory(
+      "00000000-0000-4000-8000-000000000000",
+    );
+
+    expect(mockRpc).toHaveBeenCalledWith("get_piket_member_history", {
+      p_profile_id: "00000000-0000-4000-8000-000000000000",
+    });
+    expect(entries).toHaveLength(1);
+    // id berasal langsung dari kolom RPC (bukan sintetis scheduleId::createdAt).
+    expect(entries[0].id).toBe("log-real-1");
+    expect(entries[0].scheduleId).toBe("sched-1");
+    expect(entries[0].status).toBe("approved");
+    expect(entries[0].verifierName).toBe("Admin Kestari");
+  });
+
+  it("melempar PiketHistoryError saat RPC gagal", async () => {
+    mockRpc.mockResolvedValueOnce({
+      data: null,
+      error: { message: "boom" },
+    });
+
+    await expect(
+      getPiketMemberHistory("00000000-0000-4000-8000-000000000000"),
+    ).rejects.toThrow(/Gagal memuat histori piket anggota/);
   });
 });
