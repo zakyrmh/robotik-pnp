@@ -294,7 +294,7 @@ describe("filterPiketLogs / filterComplianceRows", () => {
       3,
     );
   });
-  it("compliance difilter dari startIsoDate", () => {
+  it("compliance difilter dari bulan siklus (bukan startIsoDate)", () => {
     const rows = [
       {
         profileId: "p1",
@@ -309,6 +309,8 @@ describe("filterPiketLogs / filterComplianceRows", () => {
         status: "alpha",
       },
       {
+        // Pekan 1 bulan siklus OKTOBER 2026 (start 28 Sep 2026), namun
+        // `startIsoDate` berada di bulan kalender September.
         profileId: "p2",
         memberName: "B",
         nim: null,
@@ -317,17 +319,53 @@ describe("filterPiketLogs / filterComplianceRows", () => {
         roomTarget: "x",
         startIsoDate: "2026-09-28",
         endIsoDate: "2026-10-04",
-        cycleMonthLabel: "September 2026",
+        cycleMonthLabel: "Oktober 2026",
         status: "sudah-lapor",
       },
     ] as PiketComplianceRow[];
     expect(
       filterComplianceRows(rows, {
         academicPeriod: "2026/2027",
-        monthIndex0: 8,
+        monthIndex0: 9,
         weekNumber: 1,
       }).map((r) => r.profileId),
     ).toEqual(["p2"]);
+  });
+
+  // REGRESSION (off-by-one): pekan 1 bulan siklus September 2026 dimulai pada
+  // 2026-08-31 (bulan kalender Agustus), sehingga filter harus memakai bulan
+  // SIKLUS, bukan bulan `startIsoDate`.
+  it("baris cycleMonthLabel September cocok monthIndex0=8 walau startIsoDate Agustus", () => {
+    const rows = [
+      {
+        profileId: "sep1",
+        memberName: "Sep Pekan 1",
+        nim: null,
+        academicPeriod: "2026/2027",
+        weekNumber: 1,
+        roomTarget: "x",
+        startIsoDate: "2026-08-31",
+        endIsoDate: "2026-09-06",
+        cycleMonthLabel: "September 2026",
+        status: "alpha",
+      },
+    ] as PiketComplianceRow[];
+
+    expect(
+      filterComplianceRows(rows, {
+        academicPeriod: "2026/2027",
+        year: 2026,
+        monthIndex0: 8,
+      }).map((r) => r.profileId),
+    ).toEqual(["sep1"]);
+
+    expect(
+      filterComplianceRows(rows, {
+        academicPeriod: "2026/2027",
+        year: 2026,
+        monthIndex0: 7,
+      }),
+    ).toEqual([]);
   });
 });
 

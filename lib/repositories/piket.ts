@@ -79,6 +79,22 @@ function parseIsoDate(iso: string): { y: number; m0: number } | null {
 }
 
 /**
+ * Parse label bulan siklus (mis. "September 2026") → `{ y, m0 }`; null bila
+ * tidak valid. Dipakai filter compliance karena pekan 1 sebuah bulan siklus
+ * sering dimulai pada bulan kalender SEBELUMNYA (mis. Sep 2026 pekan 1 mulai
+ * 2026-08-31), sehingga `startIsoDate` tidak merepresentasikan bulan siklus.
+ */
+function parseCycleMonthLabel(label: string): { y: number; m0: number } | null {
+  const match = /^([A-Za-z]+)\s+(\d{4})$/.exec(label.trim());
+  if (!match) return null;
+  const m0 = MONTH_NAMES_ID.indexOf(
+    match[1] as (typeof MONTH_NAMES_ID)[number],
+  );
+  if (m0 < 0) return null;
+  return { y: Number(match[2]), m0 };
+}
+
+/**
  * Apakah `(y, m0)` berada di dalam rentang periode akademik "YYYY/YYYY"
  * (1 Juli tahun pertama s.d. 30 Juni tahun kedua). Bila periode tak
  * terparsir, anggap cocok (jangan saring keluar).
@@ -132,7 +148,13 @@ export function filterPiketLogs(
     );
 }
 
-/** Saring baris compliance berdasarkan periode akademik + tahun/bulan/pekan (murni). */
+/**
+ * Saring baris compliance berdasarkan periode akademik + tahun/bulan/pekan
+ * (murni). Tahun/bulan diturunkan dari `cycleMonthLabel` (bulan siklus), bukan
+ * dari `startIsoDate`: pekan 1 sebuah bulan siklus kerap dimulai pada bulan
+ * kalender sebelumnya (mis. Sep 2026 pekan 1 mulai 2026-08-31). `weekNumber`
+ * tetap dari kolom `row.weekNumber`.
+ */
 export function filterComplianceRows(
   rows: PiketComplianceRow[],
   f: PiketHistoryFilter,
@@ -140,7 +162,11 @@ export function filterComplianceRows(
   return rows.filter(
     (row) =>
       row.academicPeriod === f.academicPeriod &&
-      matchesFilter(parseIsoDate(row.startIsoDate), f, row.weekNumber),
+      matchesFilter(
+        parseCycleMonthLabel(row.cycleMonthLabel),
+        f,
+        row.weekNumber,
+      ),
   );
 }
 
