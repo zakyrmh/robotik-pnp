@@ -2117,6 +2117,50 @@ export type Database = {
         Args: { v_current_nim: string; v_name: string };
         Returns: string;
       };
+      get_piket_history_logs: {
+        Args: { p_academic_period?: string };
+        Returns: {
+          academic_period: string;
+          created_at: string;
+          duty_date: string;
+          id: string;
+          is_final: boolean;
+          is_verified: boolean;
+          notes: string;
+          proof_image_before_url: string;
+          proof_image_url: string;
+          rejection_reason: string;
+          reported_by: string;
+          reporter_name: string;
+          reporter_nim: string;
+          room_target: string;
+          schedule_id: string;
+          verified_at: string;
+          verified_by: string;
+          verifier_name: string;
+          week_number: number;
+        }[];
+      };
+      get_piket_member_history: {
+        Args: { p_profile_id: string };
+        Returns: {
+          academic_period: string;
+          created_at: string;
+          duty_date: string;
+          id: string;
+          is_final: boolean;
+          is_verified: boolean;
+          notes: string;
+          proof_image_before_url: string;
+          proof_image_url: string;
+          rejection_reason: string;
+          room_target: string;
+          schedule_id: string;
+          verified_by: string;
+          verifier_name: string;
+          week_number: number;
+        }[];
+      };
       get_piket_person_names: {
         Args: { p_ids: string[] };
         Returns: {
