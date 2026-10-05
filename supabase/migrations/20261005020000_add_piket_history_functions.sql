@@ -74,6 +74,7 @@ DROP FUNCTION IF EXISTS public.get_piket_member_history(uuid);
 
 CREATE OR REPLACE FUNCTION public.get_piket_member_history(p_profile_id uuid)
 RETURNS TABLE (
+  id uuid,
   schedule_id uuid,
   academic_period text,
   week_number integer,
@@ -95,7 +96,7 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
   SELECT
-    l.schedule_id, s.academic_period, s.week_number, s.room_target, l.duty_date,
+    l.id, l.schedule_id, s.academic_period, s.week_number, s.room_target, l.duty_date,
     l.is_verified, l.is_final, l.rejection_reason, l.verified_by,
     COALESCE(vp.full_name, (SELECT r2.full_name FROM public.registrations r2
         WHERE r2.profile_id = vp.id AND r2.deleted_at IS NULL

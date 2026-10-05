@@ -1274,21 +1274,13 @@ export async function removePiketMember(
 /**
  * SPEC drawer riwayat anggota: ambil histori log piket seorang anggota lintas
  * periode. Read-only, dipanggil lazy oleh drawer (Task 7).
- * RBAC: hanya Kestari / Super Admin. `profileId` divalidasi Zod sebelum DB.
+ * RBAC: hanya Kestari / Super Admin. Urutan guard mengikuti plan:
+ * auth (`getUser`) → RBAC (`requireKestariManager`) → Zod → repo.
  */
 export async function getPiketMemberHistoryAction(
   profileId: string,
 ): Promise<ServerActionResponse<PiketMemberHistoryEntry[]>> {
   try {
-    const parsed = piketMemberHistorySchema.safeParse({ profileId });
-    if (!parsed.success) {
-      return {
-        success: false,
-        message: "ID anggota tidak valid.",
-        error: { code: "BAD_REQUEST", details: "profileId is not a UUID" },
-      };
-    }
-
     const supabase = await createClient();
 
     const {
@@ -1309,6 +1301,15 @@ export async function getPiketMemberHistoryAction(
         message:
           "Akses ditolak. Hanya Kestari dan Super Admin yang dapat melihat histori piket anggota.",
         error: { code: "FORBIDDEN", details: "User role is not authorized" },
+      };
+    }
+
+    const parsed = piketMemberHistorySchema.safeParse({ profileId });
+    if (!parsed.success) {
+      return {
+        success: false,
+        message: "ID anggota tidak valid.",
+        error: { code: "BAD_REQUEST", details: "profileId is not a UUID" },
       };
     }
 

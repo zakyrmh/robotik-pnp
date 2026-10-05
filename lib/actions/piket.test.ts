@@ -1030,10 +1030,17 @@ describe("Piket Server Action - getPiketMemberHistoryAction", () => {
   });
 
   it("menolak profileId bukan uuid (Zod)", async () => {
+    mockSupabase.auth.getUser.mockResolvedValueOnce({
+      data: { user: { id: "kestari-id" } },
+    });
+    mockSupabase.single.mockResolvedValueOnce({
+      data: { role: "admin-kestari" },
+    });
+
     const res = await getPiketMemberHistoryAction("not-a-uuid");
     expect(res.success).toBe(false);
-    // Validasi Zod berjalan sebelum auth / DB.
-    expect(mockSupabase.auth.getUser).not.toHaveBeenCalled();
+    expect(res.error?.code).toBe("BAD_REQUEST");
+    // Validasi Zod berjalan setelah auth/guard, sebelum akses repo.
     expect(mockGetPiketMemberHistory).not.toHaveBeenCalled();
   });
 

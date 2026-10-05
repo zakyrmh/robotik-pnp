@@ -1,15 +1,25 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import fc from "fast-check";
 import {
   classifyPiketCompliance,
   buildComplianceRows,
   filterPiketLogs,
   filterComplianceRows,
+  getPiketMemberHistory,
   type RawComplianceSchedule,
   type RawComplianceLog,
   type PiketHistoryLog,
   type PiketComplianceRow,
 } from "./piket";
+
+const { mockRpc, mockCreateClient } = vi.hoisted(() => {
+  const mockRpc = vi.fn();
+  return { mockRpc, mockCreateClient: vi.fn() };
+});
+
+vi.mock("@/lib/supabase/server", () => ({
+  createClient: mockCreateClient,
+}));
 
 describe("classifyPiketCompliance", () => {
   it("sudah lapor bila ada log valid", () => {
@@ -318,5 +328,63 @@ describe("filterPiketLogs / filterComplianceRows", () => {
         weekNumber: 1,
       }).map((r) => r.profileId),
     ).toEqual(["p2"]);
+  });
+});
+
+describe("getPiketMemberHistory", () => {
+  beforeEach(() => {
+    mockRpc.mockReset();
+    mockCreateClient.mockReset();
+    mockCreateClient.mockResolvedValue({ rpc: mockRpc });
+  });
+
+  it("memetakan kolom RPC ke PiketMemberHistoryEntry memakai id asli", async () => {
+    mockRpc.mockResolvedValueOnce({
+      data: [
+        {
+          id: "log-real-1",
+          schedule_id: "sched-1",
+          academic_period: "2026/2027",
+          week_number: 2,
+          room_target: "workshop_dan_sekretariat",
+          duty_date: "2026-09-14",
+          is_verified: true,
+          is_final: true,
+          rejection_reason: null,
+          verified_by: "verifier-1",
+          verifier_name: "Admin Kestari",
+          notes: "bersih",
+          proof_image_url: "https://r2/proof.jpg",
+          proof_image_before_url: "https://r2/before.jpg",
+          created_at: "2026-09-14T10:00:00Z",
+        },
+      ],
+      error: null,
+    });
+
+    const entries = await getPiketMemberHistory(
+      "00000000-0000-4000-8000-000000000000",
+    );
+
+    expect(mockRpc).toHaveBeenCalledWith("get_piket_member_history", {
+      p_profile_id: "00000000-0000-4000-8000-000000000000",
+    });
+    expect(entries).toHaveLength(1);
+    // id berasal langsung dari kolom RPC (bukan sintetis scheduleId::createdAt).
+    expect(entries[0].id).toBe("log-real-1");
+    expect(entries[0].scheduleId).toBe("sched-1");
+    expect(entries[0].status).toBe("approved");
+    expect(entries[0].verifierName).toBe("Admin Kestari");
+  });
+
+  it("melempar PiketHistoryError saat RPC gagal", async () => {
+    mockRpc.mockResolvedValueOnce({
+      data: null,
+      error: { message: "boom" },
+    });
+
+    await expect(
+      getPiketMemberHistory("00000000-0000-4000-8000-000000000000"),
+    ).rejects.toThrow(/Gagal memuat histori piket anggota/);
   });
 });

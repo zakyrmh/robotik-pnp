@@ -594,10 +594,6 @@ export async function getPiketHistoryCompliance(
 /**
  * Entri histori piket seorang anggota lintas periode, siap-pakai untuk
  * drawer riwayat anggota (`getPiketMemberHistory`).
- *
- * `id` bersifat sintetis (`${scheduleId ?? "no-schedule"}::${createdAt}`) karena
- * RPC `get_piket_member_history` tidak memproyeksikan `piket_logs.id`;
- * kombinasi jadwal + waktu dibuat unik dan stabil sebagai React key.
  */
 export interface PiketMemberHistoryEntry {
   id: string;
@@ -617,6 +613,7 @@ export interface PiketMemberHistoryEntry {
 
 /** Baris hasil RPC `get_piket_member_history` (SECURITY DEFINER). */
 interface RawPiketMemberHistoryRow {
+  id: string;
   schedule_id: string | null;
   academic_period: string | null;
   week_number: number | null;
@@ -662,7 +659,7 @@ export async function getPiketMemberHistory(
     const rejectionReason = row.rejection_reason ?? "";
     const createdAt = row.created_at ?? "";
     return {
-      id: `${row.schedule_id ?? "no-schedule"}::${createdAt}`,
+      id: row.id,
       scheduleId: row.schedule_id,
       academicPeriod: row.academic_period ?? "",
       weekNumber: row.week_number ?? 0,
