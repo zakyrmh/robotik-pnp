@@ -181,42 +181,55 @@ LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
 
 ### 6.2 Data-layer
 
-- `lib/repositories/piket.ts`: tambah `getPiketHistory(params)` yang memanggil
-  RPC & memetakan hasil ke tipe domain (`PiketHistoryEntry`).
-- Tipe baru `PiketHistoryEntry` di `lib/repositories/piket.ts` / `types.ts`.
+- `lib/repositories/piket.ts`:
+  - `getPiketHistory(params)` — memanggil RPC gabungan, memetakan ke tipe
+    domain `PiketHistoryEntry` (dipakai untuk **tab Kepatuhan & tab Log**).
+  - `getPiketMemberHistory(profileId)` — memanggil RPC/ server action khusus
+    riwayat satu anggota **lintas semua periode** (dipakai **lazy** oleh
+    drawer). Mengembalikan `PiketMemberHistoryEntry[]`.
+- Tipe baru `PiketHistoryEntry`, `PiketMemberHistoryEntry` di
+  `lib/repositories/piket.ts` / `components/features/piket/types.ts`.
 - `types/database.types.ts`: regenerate via `pnpm gen:types` setelah migration
   di-push, atau tambahkan manual sementara.
 
-### 6.3 Aliran data
+### 6.3 Server Actions (baca, untuk drawer lazy)
+
+- `lib/actions/piket.ts`: tambah `getPiketMemberHistoryAction(profileId)` —
+  guard `requireKestariManager`, memanggil `getPiketMemberHistory`, mengembalikan
+  `{ success, data }` (pola `ActionResult`). Read-only (tidak menulis).
+
+### 6.4 Aliran data
 
 ```
 RSC /piket/riwayat
   ├── guard getUser() + profiles.role ∈ {super-admin, admin-kestari}
   ├── ambil daftar availablePeriods (dari piket_schedules)
-  ├── baca searchParams: ?period=&year=&month=&week=&status=&q=
+  ├── baca searchParams: ?period=&year=&month=&week=&status=&q=&tab=
   ├── getPiketHistory({period, year, month, week})
   └── render <PiketHistoryClient entries=... ... />
         ├── filter bar (periode/tahun/bulan/pekan/status/pencarian)
         │     → memperbarui searchParams (router.replace) → RSC refetch
-        ├── tabel gabungan: kolom anggota, pekan, bulan, status, aksi
-        └── klik baris → <PiketHistoryMemberDrawer /> (open)
-              └── getPiketMemberHistory(profileId) — RPC/ server action
+        ├── Tabs: "Kepatuhan" | "Log"
+        │     ├── Kepatuhan: baris petugas × bulan × pekan (kolom ala verifikasi)
+        │     └── Log: baris log aktual (kolom ala verifikasi)
+        └── klik anggota → <PiketHistoryMemberDrawer profileId=... /> (open)
+              └── getPiketMemberHistoryAction(profileId)  — LAZY, semua periode
 ```
 
 - **Filter berat (waktu) lewat URL searchParams → server** (agar data ter-scope
   di DB). **Filter ringan (teks/pencarian nama di hasil)** boleh client-side.
-- **Drawer** memuat histori anggota via server action / RPC terpisah
-  (`getPiketMemberHistory(profileId)`) saat dibuka (lazy), atau di-seed dari
-  data yang sudah dimuat bila memadai.
+- **Drawer** memuat histori anggota **saat dibuka** (lazy) via server action,
+  mencakup **semua periode akademik**.
 
 ---
 
 ## 7. Komponen UI
 
 - `components/features/piket/piket-history-client.tsx` (baru) — filter bar +
-  tabel gabungan + ringkasan (count per status).
+  **Tabs** (Kepatuhan | Log) + ringkasan (count per status).
 - `components/features/piket/piket-history-member-drawer.tsx` (baru) — drawer
-  histori per anggota (timeline log + status + bukti foto + catatan).
+  histori per anggota (timeline log + status + bukti foto + catatan),
+  **lazy fetch semua periode**.
 - `components/features/piket/piket-status-badge.tsx` (existing) — dipakai ulang
   untuk badge status log.
 - `PiketComplianceBadge` (existing, di dalam verification client) — ekstrak ke
@@ -243,25 +256,42 @@ RSC /piket/riwayat
 
 - **Unit** `lib/repositories/piket.ts`: pemetaan RPC → tipe domain;
   filter pekan/bulan/tahun (bila dihitung di TS) via `getPiketWeeksForMonth`.
+- **Unit** `lib/actions/piket.ts`: `getPiketMemberHistoryAction` guard role +
+  pemetaan hasil.
 - **Unit/RSC** `app/(private)/piket/riwayat/page.test.tsx`: guard RBAC
   (redirect role non-berhak; lolos untuk super-admin/admin-kestari) — meniru
   pola `verifikasi/page.test.tsx`.
-- **Komponen** `piket-history-client.test.tsx`: render baris + status benar;
-  filter mengubah hasil.
-- **DB** (opsional): verifikasi RPC `get_piket_history` di DB lokal dalam
-  `BEGIN...ROLLBACK` untuk beberapa kombinasi filter.
+- **Komponen** `piket-history-client.test.tsx`: render baris tab Kepatuhan &
+  Log + status benar; perpindahan tab; filter mengubah hasil.
+- **DB** (opsional): verifikasi RPC `get_piket_history` &
+  `get_piket_member_history` di DB lokal dalam `BEGIN...ROLLBACK` untuk
+  beberapa kombinasi filter.
 
 Target: tanpa regresi pada `npm run typecheck`, `npm run lint`, `npm run test`.
 
 ---
 
-## 10. Pertanyaan Terbuka (mohon dikonfirmasi saat review)
+## 10. Keputusan Terkonfirmasi (review 2026-10-05)
 
-1. **Tahun** = tahun kalender `duty_date` (asumsi) — setuju?
-2. **Definition pending/rejected/approved** pada §3.3 — setuju?
-3. **"Belum"** = petugas terjadwal tanpa log valid (alpha/berlangsung) — setuju?
-4. **Export CSV** ditunda ke iterasi berikutnya — setuju?
-5. **Default rentang** = periode akademik terbaru — setuju?
+1. **"Tahun"** = tahun **kalender** dari `duty_date`. Periode akademik tetap
+   filter terpisah. ✅
+2. **Status log** (§3.3) approved/pending/rejected/auto_final. ✅
+3. **"Belum"** = petugas terjadwal tanpa log valid (alpha/berlangsung). ✅
+4. **Export CSV** ditunda ke iterasi berikutnya. ✅
+5. **Default rentang** = periode akademik terbaru. ✅
+
+### Keputusan tambahan
+
+6. **Tabel utama = dua tab**: (a) **Kepatuhan** (baris = petugas × bulan siklus
+   × pekan — meniru tabel kepatuhan `/piket/verifikasi`; kolom: Anggota, NIM,
+   Bulan, Pekan, Ruang, Rentang, Status) dan (b) **Log** (baris = log aktual;
+   kolom mengikuti tabel log `/piket/verifikasi`: Tanggal Tugas, Petugas,
+   Pekan, Bulan, Status, Bukti, Catatan, Verifikator).
+7. **Drawer histori anggota = lazy fetch** (server action/RPC terpisah) saat
+   drawer dibuka, untuk menghindari membebani muatan awal.
+8. **Cakupan drawer = SEMUA periode akademik** (riwayat lengkap anggota),
+   tidak terbatas pada filter halaman.
+9. **Pekan belum berakhir** → tetap tampil dengan status `berlangsung`.
 
 ---
 
