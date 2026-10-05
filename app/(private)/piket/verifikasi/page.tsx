@@ -33,21 +33,6 @@ interface RawPiketLog {
   } | null;
   reported_by: string | null;
   verified_by: string | null;
-  profiles: {
-    id: string;
-    nim: string | null;
-    full_name?: string | null;
-    registrations: {
-      full_name: string;
-    } | null;
-  } | null;
-  verifier: {
-    id: string;
-    full_name?: string | null;
-    registrations: {
-      full_name: string;
-    } | null;
-  } | null;
 }
 
 interface RawPiketFine {
@@ -60,14 +45,6 @@ interface RawPiketFine {
   created_at: string;
   profile_id: string;
   schedule_id: string | null;
-  profiles: {
-    id: string;
-    nim: string | null;
-    full_name?: string | null;
-    registrations: {
-      full_name: string;
-    } | null;
-  } | null;
   piket_schedules: {
     id: string;
     academic_period: string;
@@ -76,28 +53,42 @@ interface RawPiketFine {
   } | null;
 }
 
+/**
+ * Baris hasil RPC `get_piket_person_names` (SECURITY DEFINER). Sumber nama
+ * pelapor / verifikator / pemilik denda yang aman terhadap RLS `profiles`
+ * (lihat migration 20261005010000_fix_piket_verifikasi_names_rls.sql).
+ */
+interface RawPiketPersonName {
+  id: string;
+  nim: string | null;
+  full_name: string | null;
+}
+
 interface RawPiketSchedule {
   id: string;
   academic_period: string;
   week_number: number;
   room_target: string;
-  piket_members:
-    | {
-        id: string;
-        profile_id: string | null;
-        profiles: {
-          id: string;
-          nim: string | null;
-          full_name?: string | null;
-          is_on_internship?: boolean;
-          internship_start_date?: string | null;
-          internship_end_date?: string | null;
-          registrations: {
-            full_name: string;
-          } | null;
-        } | null;
-      }[]
-    | null;
+}
+
+/**
+ * Baris hasil RPC `get_piket_roster` (SECURITY DEFINER). Sumber nama petugas
+ * yang aman terhadap RLS `profiles` (lihat migration
+ * 20261005000000_fix_piket_roster_rls_for_members.sql).
+ */
+interface RawPiketRosterRow {
+  schedule_id: string;
+  academic_period: string;
+  week_number: number;
+  room_target: string;
+  member_id: string;
+  profile_id: string | null;
+  nim: string | null;
+  full_name: string | null;
+  role: string | null;
+  is_on_internship: boolean;
+  internship_start_date: string | null;
+  internship_end_date: string | null;
 }
 
 export default async function PiketVerifikasiPage() {
@@ -140,22 +131,7 @@ export default async function PiketVerifikasiPage() {
       id,
       academic_period,
       week_number,
-      room_target,
-      piket_members (
-        id,
-        profile_id,
-        profiles (
-          id,
-          nim,
-          full_name,
-          is_on_internship,
-          internship_start_date,
-          internship_end_date,
-          registrations (
-            full_name
-          )
-        )
-      )
+      room_target
     `,
     )
     .order("academic_period", { ascending: false })
@@ -163,6 +139,23 @@ export default async function PiketVerifikasiPage() {
 
   if (schedulesError) {
     console.error("[PIKET_PAGE_ERROR] Schedules query error:", schedulesError);
+  }
+
+  // 1b. Roster petugas via SECURITY DEFINER RPC (aman terhadap RLS profiles).
+  const { data: rosterRows, error: rosterError } = await supabase.rpc(
+    "get_piket_roster",
+    { p_academic_period: null },
+  );
+
+  if (rosterError) {
+    console.error("[PIKET_PAGE_ERROR] Roster RPC error:", rosterError);
+  }
+
+  const rosterBySchedule = new Map<string, RawPiketRosterRow[]>();
+  for (const row of (rosterRows ?? []) as RawPiketRosterRow[]) {
+    const list = rosterBySchedule.get(row.schedule_id) ?? [];
+    list.push(row);
+    rosterBySchedule.set(row.schedule_id, list);
   }
 
   // Derive available periods dynamically so kelola & user view stay in sync
@@ -175,7 +168,7 @@ export default async function PiketVerifikasiPage() {
   }
   const availablePeriods = Array.from(periodSet).sort().reverse();
 
-  // 2. Fetch all piket logs (dengan relasi pelapor & verifikator)
+  // 2. Fetch all piket logs (id pelapor & verifikator saja; nama diambil via RPC)
   const { data: logs, error: logsError } = await supabase
     .from("piket_logs")
     .select(
@@ -197,22 +190,7 @@ export default async function PiketVerifikasiPage() {
         room_target
       ),
       reported_by,
-      verified_by,
-      profiles:reported_by (
-        id,
-        nim,
-        full_name,
-        registrations (
-          full_name
-        )
-      ),
-      verifier:verified_by (
-        id,
-        full_name,
-        registrations (
-          full_name
-        )
-      )
+      verified_by
     `,
     )
     .order("duty_date", { ascending: false });
@@ -235,14 +213,6 @@ export default async function PiketVerifikasiPage() {
       created_at,
       profile_id,
       schedule_id,
-      profiles:profile_id (
-        id,
-        nim,
-        full_name,
-        registrations (
-          full_name
-        )
-      ),
       piket_schedules (
         id,
         academic_period,
@@ -255,6 +225,32 @@ export default async function PiketVerifikasiPage() {
 
   if (finesError) {
     console.error("[PIKET_PAGE_ERROR] Fines query error:", finesError);
+  }
+
+  // 3b. Resolve nama pelapor / verifikator / pemilik denda via SECURITY DEFINER
+  // RPC. RLS `profiles` memblokir admin-kestari membaca profil pengurus
+  // (super-admin / admin-*), sehingga join langsung menghasilkan null.
+  const personIds = new Set<string>();
+  for (const log of (logs ?? []) as unknown as RawPiketLog[]) {
+    if (log.reported_by) personIds.add(log.reported_by);
+    if (log.verified_by) personIds.add(log.verified_by);
+  }
+  for (const fine of (fines ?? []) as unknown as RawPiketFine[]) {
+    if (fine.profile_id) personIds.add(fine.profile_id);
+  }
+
+  const personById = new Map<string, RawPiketPersonName>();
+  if (personIds.size > 0) {
+    const { data: personRows, error: personsError } = await supabase.rpc(
+      "get_piket_person_names",
+      { p_ids: Array.from(personIds) },
+    );
+    if (personsError) {
+      console.error("[PIKET_PAGE_ERROR] Person names RPC error:", personsError);
+    }
+    for (const person of (personRows ?? []) as RawPiketPersonName[]) {
+      personById.set(person.id, person);
+    }
   }
 
   // Format logs data
@@ -279,13 +275,12 @@ export default async function PiketVerifikasiPage() {
         schedule_day: scheduleLabel,
         reporter_id: log.reported_by || "",
         reporter_name:
-          log.profiles?.full_name ||
-          log.profiles?.registrations?.full_name ||
+          (log.reported_by ? personById.get(log.reported_by)?.full_name : "") ||
           "Anggota",
-        reporter_nim: log.profiles?.nim || "",
+        reporter_nim:
+          (log.reported_by ? personById.get(log.reported_by)?.nim : "") || "",
         verifier_name:
-          log.verifier?.full_name ||
-          log.verifier?.registrations?.full_name ||
+          (log.verified_by ? personById.get(log.verified_by)?.full_name : "") ||
           "",
       };
     },
@@ -306,14 +301,15 @@ export default async function PiketVerifikasiPage() {
       academic_period: fine.piket_schedules?.academic_period || "",
       week_number: fine.piket_schedules?.week_number ?? 0,
       member_name:
-        fine.profiles?.full_name ||
-        fine.profiles?.registrations?.full_name ||
+        (fine.profile_id ? personById.get(fine.profile_id)?.full_name : "") ||
         "Anggota",
-      member_nim: fine.profiles?.nim || "",
+      member_nim:
+        (fine.profile_id ? personById.get(fine.profile_id)?.nim : "") || "",
     }),
   );
 
-  // Format schedules data — keep real week_number / academic_period from DB
+  // Format schedules data — keep real week_number / academic_period from DB.
+  // Members diambil dari RPC roster (bukan nested join profiles yang kena RLS).
   const formattedSchedules = (
     (schedules as unknown as RawPiketSchedule[]) || []
   ).map((sched) => ({
@@ -321,17 +317,14 @@ export default async function PiketVerifikasiPage() {
     academic_period: sched.academic_period,
     week_number: sched.week_number,
     room_target: sched.room_target,
-    members: (sched.piket_members || []).map((m) => ({
-      member_id: m.id,
+    members: (rosterBySchedule.get(sched.id) ?? []).map((m) => ({
+      member_id: m.member_id,
       profile_id: m.profile_id || "",
-      nim: m.profiles?.nim || "",
-      name:
-        m.profiles?.full_name ||
-        m.profiles?.registrations?.full_name ||
-        "Anggota",
-      is_on_internship: m.profiles?.is_on_internship ?? false,
-      internship_start_date: m.profiles?.internship_start_date || null,
-      internship_end_date: m.profiles?.internship_end_date || null,
+      nim: m.nim || "",
+      name: m.full_name || "Anggota",
+      is_on_internship: m.is_on_internship ?? false,
+      internship_start_date: m.internship_start_date || null,
+      internship_end_date: m.internship_end_date || null,
     })),
   }));
 

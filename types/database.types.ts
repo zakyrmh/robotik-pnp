@@ -551,6 +551,55 @@ export type Database = {
         };
         Relationships: [];
       };
+      event_member_verifications: {
+        Row: {
+          id: string;
+          member_id: string;
+          notes: string | null;
+          result: string;
+          scanned_at: string;
+          verified_by: string;
+        };
+        Insert: {
+          id?: string;
+          member_id: string;
+          notes?: string | null;
+          result: string;
+          scanned_at?: string;
+          verified_by: string;
+        };
+        Update: {
+          id?: string;
+          member_id?: string;
+          notes?: string | null;
+          result?: string;
+          scanned_at?: string;
+          verified_by?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "event_member_verifications_member_id_fkey";
+            columns: ["member_id"];
+            isOneToOne: false;
+            referencedRelation: "event_team_members";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "event_member_verifications_verified_by_fkey";
+            columns: ["verified_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "event_member_verifications_verified_by_fkey";
+            columns: ["verified_by"];
+            isOneToOne: false;
+            referencedRelation: "v_user_discipline_summary";
+            referencedColumns: ["profile_id"];
+          },
+        ];
+      };
       event_registration_change_requests: {
         Row: {
           created_at: string;
@@ -597,51 +646,9 @@ export type Database = {
             referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
-        ];
-      };
-      event_member_verifications: {
-        Row: {
-          id: string;
-          member_id: string;
-          notes: string | null;
-          result: string;
-          scanned_at: string;
-          verified_by: string;
-        };
-        Insert: {
-          id?: string;
-          member_id: string;
-          notes?: string | null;
-          result: string;
-          scanned_at?: string;
-          verified_by: string;
-        };
-        Update: {
-          id?: string;
-          member_id?: string;
-          notes?: string | null;
-          result?: string;
-          scanned_at?: string;
-          verified_by?: string;
-        };
-        Relationships: [
           {
-            foreignKeyName: "event_member_verifications_member_id_fkey";
-            columns: ["member_id"];
-            isOneToOne: false;
-            referencedRelation: "event_team_members";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "event_member_verifications_verified_by_fkey";
-            columns: ["verified_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "event_member_verifications_verified_by_fkey";
-            columns: ["verified_by"];
+            foreignKeyName: "event_registration_change_requests_reviewed_by_fkey";
+            columns: ["reviewed_by"];
             isOneToOne: false;
             referencedRelation: "v_user_discipline_summary";
             referencedColumns: ["profile_id"];
@@ -2110,6 +2117,31 @@ export type Database = {
         Args: { v_current_nim: string; v_name: string };
         Returns: string;
       };
+      get_piket_person_names: {
+        Args: { p_ids: string[] };
+        Returns: {
+          full_name: string;
+          id: string;
+          nim: string;
+        }[];
+      };
+      get_piket_roster: {
+        Args: { p_academic_period?: string };
+        Returns: {
+          academic_period: string;
+          full_name: string;
+          internship_end_date: string;
+          internship_start_date: string;
+          is_on_internship: boolean;
+          member_id: string;
+          nim: string;
+          profile_id: string;
+          role: string;
+          room_target: string;
+          schedule_id: string;
+          week_number: number;
+        }[];
+      };
       get_unrecorded_activity_members: {
         Args: { p_activity_id: string };
         Returns: {
@@ -2136,6 +2168,10 @@ export type Database = {
         };
         Returns: string;
       };
+      reserve_slot_for_payment: {
+        Args: { p_access_token: string; p_proof_url: string };
+        Returns: string;
+      };
       slugify: { Args: { v_text: string }; Returns: string };
       update_caang_registration_status: {
         Args: {
@@ -2144,6 +2180,10 @@ export type Database = {
           p_status: Database["public"]["Enums"]["reg_status"];
         };
         Returns: Json;
+      };
+      verify_payment_with_quota: {
+        Args: { p_registration_id: string };
+        Returns: undefined;
       };
     };
     Enums: {

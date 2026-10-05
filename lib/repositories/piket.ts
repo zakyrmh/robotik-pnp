@@ -48,6 +48,21 @@ export interface RawComplianceSchedule {
     | null;
 }
 
+/** Baris hasil RPC `get_piket_roster` (SECURITY DEFINER). */
+interface RawPiketRosterRow {
+  schedule_id: string;
+  academic_period: string;
+  week_number: number;
+  room_target: string;
+  member_id: string;
+  profile_id: string | null;
+  nim: string | null;
+  full_name: string | null;
+  is_on_internship: boolean;
+  internship_start_date: string | null;
+  internship_end_date: string | null;
+}
+
 export interface RawComplianceLog {
   schedule_id: string | null;
   reported_by: string | null;
@@ -252,20 +267,7 @@ export async function getPiketComplianceReport(
       id,
       academic_period,
       week_number,
-      room_target,
-      piket_members (
-        id,
-        profile_id,
-        profiles (
-          id,
-          nim,
-          full_name,
-          is_on_internship,
-          internship_start_date,
-          internship_end_date,
-          registrations ( full_name )
-        )
-      )
+      room_target
     `,
     )
     .eq("academic_period", academicPeriod)
@@ -279,8 +281,62 @@ export async function getPiketComplianceReport(
     );
   }
 
-  const typedSchedules = (schedules ??
-    []) as unknown as RawComplianceSchedule[];
+  const baseSchedules =
+    (schedules as unknown as {
+      id: string;
+      academic_period: string;
+      week_number: number;
+      room_target: string;
+    }[]) ?? [];
+  if (baseSchedules.length === 0) return [];
+
+  // Roster petugas via SECURITY DEFINER RPC. RLS `profiles` memblokir viewer
+  // (mis. admin-kestari) membaca profil pengurus (super-admin/admin-*), sehingga
+  // nested join `piket_members -> profiles` menghasilkan null untuk mereka.
+  const { data: rosterRows, error: rosterError } = await supabase.rpc(
+    "get_piket_roster",
+    { p_academic_period: academicPeriod },
+  );
+
+  if (rosterError) {
+    console.error("[PIKET_COMPLIANCE_ERROR] Roster:", rosterError);
+    throw new PiketComplianceError(
+      "Gagal memuat daftar petugas piket untuk periode ini.",
+      rosterError,
+    );
+  }
+
+  // Rekonstruksi bentuk RawComplianceSchedule dari (schedules + roster RPC)
+  // agar buildComplianceRows tetap dipakai tanpa perubahan.
+  const membersBySchedule = new Map<string, RawPiketRosterRow[]>();
+  for (const row of (rosterRows ?? []) as unknown as RawPiketRosterRow[]) {
+    const list = membersBySchedule.get(row.schedule_id) ?? [];
+    list.push(row);
+    membersBySchedule.set(row.schedule_id, list);
+  }
+
+  const typedSchedules: RawComplianceSchedule[] = baseSchedules.map((s) => ({
+    id: s.id,
+    academic_period: s.academic_period,
+    week_number: s.week_number,
+    room_target: s.room_target,
+    piket_members: (membersBySchedule.get(s.id) ?? []).map((m) => ({
+      id: m.member_id,
+      profile_id: m.profile_id,
+      profiles: m.profile_id
+        ? {
+            id: m.profile_id,
+            nim: m.nim,
+            full_name: m.full_name,
+            is_on_internship: m.is_on_internship,
+            internship_start_date: m.internship_start_date,
+            internship_end_date: m.internship_end_date,
+            registrations: null,
+          }
+        : null,
+    })),
+  }));
+
   if (typedSchedules.length === 0) return [];
 
   const scheduleIds = typedSchedules.map((s) => s.id);

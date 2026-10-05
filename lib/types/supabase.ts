@@ -828,6 +828,31 @@ export type Database = {
         Args: never;
         Returns: Database["public"]["Enums"]["user_role"];
       };
+      get_piket_roster: {
+        Args: { p_academic_period?: string | null };
+        Returns: {
+          schedule_id: string;
+          academic_period: string;
+          week_number: number;
+          room_target: string;
+          member_id: string;
+          profile_id: string;
+          nim: string | null;
+          full_name: string | null;
+          role: string | null;
+          is_on_internship: boolean;
+          internship_start_date: string | null;
+          internship_end_date: string | null;
+        }[];
+      };
+      get_piket_person_names: {
+        Args: { p_ids: string[] };
+        Returns: {
+          id: string;
+          nim: string | null;
+          full_name: string | null;
+        }[];
+      };
       promote_legacy_member_to_anggota: {
         Args: { input_nim: string; user_id: string };
         Returns: boolean;

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render } from "@testing-library/react";
 
 // --- Mocks ---------------------------------------------------------------
 
@@ -17,11 +18,10 @@ vi.mock("next/navigation", () => ({
   }),
 }));
 
-const { mockSupabase, currentRole } = vi.hoisted(() => {
-  const state = { role: "anggota" as string };
+// Tangkap props yang diterima komponen klien (untuk assert nama ter-resolve).
+const { capturedProps, mockSupabase, currentRole } = vi.hoisted(() => {
+  const state = { role: "anggota" as string, props: null as unknown };
 
-  // A generic thenable query builder: every chained method returns itself and
-  // `single` / `order` / `maybeSingle` resolve with the seeded payloads.
   const makeBuilder = (payload: unknown) => {
     const builder: Record<string, unknown> = {};
     const chain = () => builder;
@@ -45,15 +45,37 @@ const { mockSupabase, currentRole } = vi.hoisted(() => {
     builder.maybeSingle = vi.fn(() =>
       Promise.resolve({ data: payload, error: null }),
     );
-    // Make the builder awaitable (for `.order(...).order(...)` chains).
     (builder as { then?: unknown }).then = (
       resolve: (value: unknown) => unknown,
     ) => resolve({ data: payload, error: null });
     return builder;
   };
 
+  const logRow = {
+    id: "log-1",
+    duty_date: "2026-09-10",
+    notes: "bersih",
+    proof_image_url: "after.jpg",
+    proof_image_before_url: "before.jpg",
+    is_verified: true,
+    is_final: false,
+    rejection_reason: null,
+    verified_at: null,
+    schedule_id: "sched-1",
+    piket_schedules: {
+      id: "sched-1",
+      academic_period: "2026/2027",
+      week_number: 1,
+      room_target: "workshop_dan_sekretariat",
+    },
+    // Pelapor = super-admin (role yang TIDAK bisa dibaca admin-kestari via RLS).
+    reported_by: "super-admin-id",
+    verified_by: null,
+  };
+
   return {
     currentRole: state,
+    capturedProps: state,
     mockSupabase: {
       auth: {
         getUser: vi.fn(),
@@ -67,7 +89,36 @@ const { mockSupabase, currentRole } = vi.hoisted(() => {
             is_onboarded: true,
           });
         }
+        if (table === "piket_logs") {
+          return makeBuilder([logRow]);
+        }
+        if (table === "piket_schedules") {
+          return makeBuilder([
+            {
+              id: "sched-1",
+              academic_period: "2026/2027",
+              week_number: 1,
+              room_target: "workshop_dan_sekretariat",
+            },
+          ]);
+        }
         return makeBuilder([]);
+      }),
+      // RPC: get_piket_person_names → nama pengurus; get_piket_roster → kosong.
+      rpc: vi.fn((fn: string) => {
+        if (fn === "get_piket_person_names") {
+          return Promise.resolve({
+            data: [
+              {
+                id: "super-admin-id",
+                nim: "2411082024",
+                full_name: "Zaky Ramadhan",
+              },
+            ],
+            error: null,
+          });
+        }
+        return Promise.resolve({ data: [], error: null });
       }),
     },
   };
@@ -85,6 +136,14 @@ vi.mock("@/lib/repositories/piket", () => ({
   getPiketComplianceReport: vi.fn().mockResolvedValue([]),
 }));
 
+// Ganti komponen klien dengan spy yang merekam props.
+vi.mock("@/components/features/piket/piket-verification-client", () => ({
+  PiketVerificationClient: (props: Record<string, unknown>) => {
+    capturedProps.props = props;
+    return null;
+  },
+}));
+
 import PiketVerifikasiPage from "./page";
 import { redirect } from "next/navigation";
 
@@ -96,6 +155,7 @@ function renderPage() {
 describe("PiketVerifikasiPage — RBAC guard (Finding 4)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    capturedProps.props = null;
     mockSupabase.auth.getUser.mockResolvedValue({
       data: { user: { id: "user-id" } },
       error: null,
@@ -121,4 +181,31 @@ describe("PiketVerifikasiPage — RBAC guard (Finding 4)", () => {
       expect(redirect).not.toHaveBeenCalled();
     },
   );
+});
+
+describe("PiketVerifikasiPage — nama pengurus untuk admin-kestari (RLS fix)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    capturedProps.props = null;
+    currentRole.role = "admin-kestari";
+    mockSupabase.auth.getUser.mockResolvedValue({
+      data: { user: { id: "user-id" } },
+      error: null,
+    });
+  });
+
+  it("resolve reporter_name via RPC get_piket_person_names (bukan 'Anggota')", async () => {
+    render(await renderPage());
+
+    const props = capturedProps.props as {
+      logs?: { reporter_name: string; reporter_nim: string }[];
+    };
+    expect(props?.logs).toHaveLength(1);
+    expect(props?.logs?.[0].reporter_name).toBe("Zaky Ramadhan");
+    expect(props?.logs?.[0].reporter_nim).toBe("2411082024");
+
+    expect(mockSupabase.rpc).toHaveBeenCalledWith("get_piket_person_names", {
+      p_ids: ["super-admin-id"],
+    });
+  });
 });

@@ -16,20 +16,26 @@ interface RawPiketSchedule {
   academic_period: string;
   week_number: number;
   room_target: string;
-  piket_members:
-    | {
-        id: string;
-        profile_id: string;
-        profiles: {
-          id: string;
-          nim: string | null;
-          role: string;
-          registrations: {
-            full_name: string;
-          } | null;
-        } | null;
-      }[]
-    | null;
+}
+
+/**
+ * Baris hasil RPC `get_piket_roster` (SECURITY DEFINER). Sumber nama petugas
+ * yang aman terhadap RLS `profiles` (lihat migration
+ * 20261005000000_fix_piket_roster_rls_for_members.sql).
+ */
+interface RawPiketRosterRow {
+  schedule_id: string;
+  academic_period: string;
+  week_number: number;
+  room_target: string;
+  member_id: string;
+  profile_id: string | null;
+  nim: string | null;
+  full_name: string | null;
+  role: string | null;
+  is_on_internship: boolean;
+  internship_start_date: string | null;
+  internship_end_date: string | null;
 }
 
 interface RawProfileCandidate {
@@ -76,26 +82,23 @@ export default async function KelolaPiketPage() {
       id,
       academic_period,
       week_number,
-      room_target,
-      piket_members (
-        id,
-        profile_id,
-        profiles (
-          id,
-          nim,
-          role,
-          is_on_internship,
-          internship_start_date,
-          internship_end_date,
-          registrations (
-            full_name
-          )
-        )
-      )
+      room_target
     `,
     )
     .order("academic_period", { ascending: false })
     .order("week_number", { ascending: true });
+
+  // 1b. Roster petugas via SECURITY DEFINER RPC (aman terhadap RLS profiles).
+  const { data: rosterRows } = await supabase.rpc("get_piket_roster", {
+    p_academic_period: null,
+  });
+
+  const rosterBySchedule = new Map<string, RawPiketRosterRow[]>();
+  for (const row of (rosterRows ?? []) as RawPiketRosterRow[]) {
+    const list = rosterBySchedule.get(row.schedule_id) ?? [];
+    list.push(row);
+    rosterBySchedule.set(row.schedule_id, list);
+  }
 
   // Extract distinct available academic periods
   const periodSet = new Set<string>();
@@ -152,7 +155,8 @@ export default async function KelolaPiketPage() {
     internship_end_date: c.internship_end_date || null,
   }));
 
-  // Format schedules data
+  // Format schedules data. Members diambil dari RPC roster (bukan nested
+  // join profiles yang kena RLS untuk role non-admin).
   const formattedSchedules = (
     (schedules as unknown as RawPiketSchedule[]) || []
   ).map((sched) => ({
@@ -160,24 +164,16 @@ export default async function KelolaPiketPage() {
     academic_period: sched.academic_period,
     week_number: sched.week_number,
     room_target: sched.room_target,
-    members: (sched.piket_members || []).map((m) => {
-      type ExtendedProfile = typeof m.profiles & {
-        is_on_internship?: boolean;
-        internship_start_date?: string | null;
-        internship_end_date?: string | null;
-      };
-      const prof = m.profiles as ExtendedProfile | null;
-      return {
-        member_id: m.id,
-        profile_id: m.profile_id,
-        nim: prof?.nim || "",
-        name: prof?.registrations?.full_name || "Anggota",
-        role: prof?.role || "",
-        is_on_internship: prof?.is_on_internship ?? false,
-        internship_start_date: prof?.internship_start_date || null,
-        internship_end_date: prof?.internship_end_date || null,
-      };
-    }),
+    members: (rosterBySchedule.get(sched.id) ?? []).map((m) => ({
+      member_id: m.member_id,
+      profile_id: m.profile_id || "",
+      nim: m.nim || "",
+      name: m.full_name || "Anggota",
+      role: m.role || "",
+      is_on_internship: m.is_on_internship ?? false,
+      internship_start_date: m.internship_start_date || null,
+      internship_end_date: m.internship_end_date || null,
+    })),
   }));
 
   return (

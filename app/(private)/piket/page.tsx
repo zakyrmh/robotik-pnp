@@ -78,23 +78,26 @@ interface RawPiketSchedule {
   academic_period: string;
   week_number: number;
   room_target: string;
-  piket_members:
-    | {
-        id: string;
-        profile_id: string | null;
-        profiles: {
-          id: string;
-          nim: string | null;
-          full_name?: string | null;
-          is_on_internship?: boolean;
-          internship_start_date?: string | null;
-          internship_end_date?: string | null;
-          registrations: {
-            full_name: string;
-          } | null;
-        } | null;
-      }[]
-    | null;
+}
+
+/**
+ * Baris hasil RPC `get_piket_roster` (SECURITY DEFINER).
+ * Dipakai karena RLS `profiles` memblokir anggota/caang membaca profil
+ * anggota lain, sehingga nested join `piket_members -> profiles` null.
+ */
+interface RawPiketRosterRow {
+  schedule_id: string;
+  academic_period: string;
+  week_number: number;
+  room_target: string;
+  member_id: string;
+  profile_id: string | null;
+  nim: string | null;
+  full_name: string | null;
+  role: string | null;
+  is_on_internship: boolean;
+  internship_start_date: string | null;
+  internship_end_date: string | null;
 }
 
 interface RawPiketAssignment {
@@ -138,22 +141,7 @@ export default async function PiketPage() {
       id,
       academic_period,
       week_number,
-      room_target,
-      piket_members (
-        id,
-        profile_id,
-        profiles (
-          id,
-          nim,
-          full_name,
-          is_on_internship,
-          internship_start_date,
-          internship_end_date,
-          registrations (
-            full_name
-          )
-        )
-      )
+      room_target
     `,
     )
     .order("academic_period", { ascending: false })
@@ -161,6 +149,28 @@ export default async function PiketPage() {
 
   if (schedulesError) {
     console.error("[PIKET_PAGE_ERROR] Schedules query error:", schedulesError);
+  }
+
+  // 1b. Fetch the piket roster via SECURITY DEFINER RPC.
+  // RLS pada `profiles` hanya mengizinkan anggota/caang membaca profil miliknya
+  // sendiri, sehingga join langsung ke `profiles` menghasilkan null untuk
+  // anggota lain (nama petugas tidak muncul). RPC ini memproyeksikan hanya
+  // field publik roster sehingga nama petugas tetap tampil untuk semua role.
+  const { data: rosterRows, error: rosterError } = await supabase.rpc(
+    "get_piket_roster",
+    { p_academic_period: null },
+  );
+
+  if (rosterError) {
+    console.error("[PIKET_PAGE_ERROR] Roster RPC error:", rosterError);
+  }
+
+  // Kelompokkan baris roster per schedule_id untuk dirender sebagai members.
+  const rosterBySchedule = new Map<string, RawPiketRosterRow[]>();
+  for (const row of (rosterRows ?? []) as RawPiketRosterRow[]) {
+    const list = rosterBySchedule.get(row.schedule_id) ?? [];
+    list.push(row);
+    rosterBySchedule.set(row.schedule_id, list);
   }
 
   // Derive available periods dynamically so kelola & user view stay in sync
@@ -330,7 +340,8 @@ export default async function PiketPage() {
     member_nim: fine.profiles?.nim || "",
   }));
 
-  // Format schedules data — keep real week_number / academic_period from DB
+  // Format schedules data — keep real week_number / academic_period from DB.
+  // Members diambil dari RPC roster (bukan nested join profiles yang kena RLS).
   const formattedSchedules = (
     (schedules as unknown as RawPiketSchedule[]) || []
   ).map((sched) => ({
@@ -338,17 +349,14 @@ export default async function PiketPage() {
     academic_period: sched.academic_period,
     week_number: sched.week_number,
     room_target: sched.room_target,
-    members: (sched.piket_members || []).map((m) => ({
-      member_id: m.id,
+    members: (rosterBySchedule.get(sched.id) ?? []).map((m) => ({
+      member_id: m.member_id,
       profile_id: m.profile_id || "",
-      nim: m.profiles?.nim || "",
-      name:
-        m.profiles?.full_name ||
-        m.profiles?.registrations?.full_name ||
-        "Anggota",
-      is_on_internship: m.profiles?.is_on_internship ?? false,
-      internship_start_date: m.profiles?.internship_start_date || null,
-      internship_end_date: m.profiles?.internship_end_date || null,
+      nim: m.nim || "",
+      name: m.full_name || "Anggota",
+      is_on_internship: m.is_on_internship ?? false,
+      internship_start_date: m.internship_start_date || null,
+      internship_end_date: m.internship_end_date || null,
     })),
   }));
 
