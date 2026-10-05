@@ -4,7 +4,12 @@ import { createClient } from "@/lib/supabase/server";
 import { ServerActionResponse } from "@/lib/types/action";
 import type { ActionResult } from "@/types/event-registration";
 import type { PiketComplianceRow } from "@/lib/repositories/piket";
-import { getPiketComplianceReport } from "@/lib/repositories/piket";
+import {
+  getPiketComplianceReport,
+  getPiketMemberHistory,
+} from "@/lib/repositories/piket";
+import type { PiketMemberHistoryEntry } from "@/lib/repositories/piket";
+import { piketMemberHistorySchema } from "@/lib/schemas/piket";
 import { z } from "zod";
 import {
   getPiketWeekInfo,
@@ -1261,6 +1266,64 @@ export async function removePiketMember(
     return {
       success: false,
       message: "Gagal menghapus penugasan piket anggota.",
+      error: { code: "SERVER_ERROR", details: errMsg },
+    };
+  }
+}
+
+/**
+ * SPEC drawer riwayat anggota: ambil histori log piket seorang anggota lintas
+ * periode. Read-only, dipanggil lazy oleh drawer (Task 7).
+ * RBAC: hanya Kestari / Super Admin. `profileId` divalidasi Zod sebelum DB.
+ */
+export async function getPiketMemberHistoryAction(
+  profileId: string,
+): Promise<ServerActionResponse<PiketMemberHistoryEntry[]>> {
+  try {
+    const parsed = piketMemberHistorySchema.safeParse({ profileId });
+    if (!parsed.success) {
+      return {
+        success: false,
+        message: "ID anggota tidak valid.",
+        error: { code: "BAD_REQUEST", details: "profileId is not a UUID" },
+      };
+    }
+
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+    if (authError || !user) {
+      return {
+        success: false,
+        message: "Sesi tidak ditemukan. Silakan login kembali.",
+        error: { code: "UNAUTHORIZED", details: "User is not logged in" },
+      };
+    }
+
+    if (!(await requireKestariManager(supabase, user.id))) {
+      return {
+        success: false,
+        message:
+          "Akses ditolak. Hanya Kestari dan Super Admin yang dapat melihat histori piket anggota.",
+        error: { code: "FORBIDDEN", details: "User role is not authorized" },
+      };
+    }
+
+    const entries = await getPiketMemberHistory(parsed.data.profileId);
+
+    return {
+      success: true,
+      message: "Histori piket anggota berhasil dimuat.",
+      data: entries,
+    };
+  } catch (err: unknown) {
+    const errMsg = err instanceof Error ? err.message : String(err);
+    return {
+      success: false,
+      message: "Gagal memuat histori piket anggota.",
       error: { code: "SERVER_ERROR", details: errMsg },
     };
   }

@@ -590,3 +590,96 @@ export async function getPiketHistoryCompliance(
 ): Promise<PiketComplianceRow[]> {
   return getPiketComplianceReport(academicPeriod);
 }
+
+/**
+ * Entri histori piket seorang anggota lintas periode, siap-pakai untuk
+ * drawer riwayat anggota (`getPiketMemberHistory`).
+ *
+ * `id` bersifat sintetis (`${scheduleId ?? "no-schedule"}::${createdAt}`) karena
+ * RPC `get_piket_member_history` tidak memproyeksikan `piket_logs.id`;
+ * kombinasi jadwal + waktu dibuat unik dan stabil sebagai React key.
+ */
+export interface PiketMemberHistoryEntry {
+  id: string;
+  scheduleId: string | null;
+  academicPeriod: string;
+  weekNumber: number;
+  roomTarget: string;
+  dutyDate: string;
+  status: PiketLogStatus;
+  rejectionReason: string;
+  verifierName: string;
+  notes: string;
+  proofImageUrl: string;
+  proofImageBeforeUrl: string;
+  createdAt: string;
+}
+
+/** Baris hasil RPC `get_piket_member_history` (SECURITY DEFINER). */
+interface RawPiketMemberHistoryRow {
+  schedule_id: string | null;
+  academic_period: string | null;
+  week_number: number | null;
+  room_target: string | null;
+  duty_date: string | null;
+  is_verified: boolean | null;
+  is_final: boolean | null;
+  rejection_reason: string | null;
+  verified_by: string | null;
+  verifier_name: string | null;
+  notes: string | null;
+  proof_image_url: string | null;
+  proof_image_before_url: string | null;
+  created_at: string | null;
+}
+
+/**
+ * Ambil histori log piket seorang anggota via RPC `get_piket_member_history`
+ * (SECURITY DEFINER, menembus RLS `profiles` agar nama verifier pengurus ikut
+ * terbaca). Mengembalikan seluruh periode, terurut menurun per `duty_date`.
+ */
+export async function getPiketMemberHistory(
+  profileId: string,
+): Promise<PiketMemberHistoryEntry[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("get_piket_member_history", {
+    p_profile_id: profileId,
+  });
+
+  if (error) {
+    console.error("[PIKET_MEMBER_HISTORY_ERROR] Logs:", error);
+    throw new PiketHistoryError(
+      "Gagal memuat histori piket anggota ini.",
+      error,
+    );
+  }
+
+  return ((data ?? []) as unknown as RawPiketMemberHistoryRow[]).map((row) => {
+    const isVerified = row.is_verified === true;
+    const isFinal = row.is_final === true;
+    const verifierName = row.verifier_name ?? "";
+    const rejectionReason = row.rejection_reason ?? "";
+    const createdAt = row.created_at ?? "";
+    return {
+      id: `${row.schedule_id ?? "no-schedule"}::${createdAt}`,
+      scheduleId: row.schedule_id,
+      academicPeriod: row.academic_period ?? "",
+      weekNumber: row.week_number ?? 0,
+      roomTarget: row.room_target ?? "",
+      dutyDate: row.duty_date ?? "",
+      status: deriveLogStatus(
+        isVerified,
+        isFinal,
+        verifierName,
+        rejectionReason,
+      ),
+      rejectionReason,
+      verifierName,
+      notes: row.notes ?? "",
+      proofImageUrl: row.proof_image_url ?? "",
+      proofImageBeforeUrl: row.proof_image_before_url ?? "",
+      createdAt,
+    };
+  });
+}
