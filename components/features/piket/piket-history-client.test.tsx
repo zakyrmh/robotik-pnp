@@ -247,4 +247,82 @@ describe("PiketHistoryClient", () => {
       expect(screen.getByText("Ruangan sudah bersih")).toBeTruthy();
     });
   });
+
+  it("tab Log menampilkan kolom Bukti, Catatan, dan Verifikator", () => {
+    render(
+      <PiketHistoryClient
+        {...baseProps}
+        compliance={complianceFixture}
+        logs={logFixture}
+        initialTab="log"
+      />,
+    );
+    expect(screen.getByText("Bukti")).toBeTruthy();
+    expect(screen.getByText("Catatan")).toBeTruthy();
+    expect(screen.getByText("Verifikator")).toBeTruthy();
+    expect(screen.getByText("Kestari Satu")).toBeTruthy();
+    expect(
+      screen.getAllByRole("button", { name: /Lihat/i }).length,
+    ).toBeGreaterThan(0);
+  });
+
+  it("drawer tidak memanggil action saat tertutup", () => {
+    render(
+      <PiketHistoryClient
+        {...baseProps}
+        compliance={complianceFixture}
+        logs={logFixture}
+        initialTab="kepatuhan"
+      />,
+    );
+
+    expect(getPiketMemberHistoryActionMock).not.toHaveBeenCalled();
+  });
+
+  it("drawer menampilkan empty state saat action sukses tanpa data", async () => {
+    getPiketMemberHistoryActionMock.mockResolvedValueOnce({
+      success: true,
+      message: "OK",
+      data: [],
+    });
+
+    render(
+      <PiketHistoryClient
+        {...baseProps}
+        compliance={complianceFixture}
+        logs={logFixture}
+        initialTab="kepatuhan"
+      />,
+    );
+
+    fireEvent.click(screen.getByText("Budi Alpha"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("piket-member-drawer-empty")).toBeTruthy();
+    });
+    expect(screen.getByText("Belum ada riwayat piket")).toBeTruthy();
+  });
+
+  it("drawer menampilkan error state saat action gagal", async () => {
+    getPiketMemberHistoryActionMock.mockResolvedValueOnce({
+      success: false,
+      message: "Akses ditolak.",
+    });
+
+    render(
+      <PiketHistoryClient
+        {...baseProps}
+        compliance={complianceFixture}
+        logs={logFixture}
+        initialTab="kepatuhan"
+      />,
+    );
+
+    fireEvent.click(screen.getByText("Budi Alpha"));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("piket-member-drawer-error")).toBeTruthy();
+    });
+    expect(screen.getByText("Akses ditolak.")).toBeTruthy();
+  });
 });

@@ -3,8 +3,12 @@
 import { useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Calendar03Icon } from "@hugeicons/core-free-icons";
+import {
+  Calendar03Icon,
+  Image01Icon,
+} from "@hugeicons/core-free-icons";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -14,6 +18,7 @@ import {
 } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { getPiketWeekInfo } from "@/lib/utils/piket-date";
+import { getPublicR2Url } from "@/lib/storage/r2";
 import type {
   PiketComplianceRow,
   PiketComplianceStatus,
@@ -22,6 +27,7 @@ import type {
 import type { PiketProfile } from "./types";
 import { PiketComplianceBadge, PiketLogStatusBadge } from "./piket-status-badge";
 import { PiketHistoryMemberDrawer } from "./piket-history-member-drawer";
+import { PiketPhotoPreviewDialog } from "./piket-photo-preview-dialog";
 
 /** Nama bulan Indonesia (0-indexed) untuk picker filter bulan. */
 const MONTH_NAMES_ID = [
@@ -85,6 +91,14 @@ export function PiketHistoryClient({
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(
     null,
   );
+  // Pratinjau bukti foto baris Log (before/after).
+  const [photoPreview, setPhotoPreview] = useState<{
+    beforeUrl: string | null;
+    afterUrl: string | null;
+    reporterName: string;
+    dutyDate: string;
+    activeTab: "before" | "after";
+  } | null>(null);
 
   const weekInfo = getPiketWeekInfo(new Date());
 
@@ -463,9 +477,13 @@ export function PiketHistoryClient({
                     <tr className="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 font-mono text-[11px] uppercase tracking-wider text-slate-600 dark:text-slate-400">
                       <th className="p-3">Tanggal Tugas</th>
                       <th className="p-3">Petugas</th>
-                      <th className="p-3">Ruang</th>
                       <th className="p-3">Pekan</th>
+                      <th className="p-3">Bulan</th>
+                      <th className="p-3">Ruang</th>
                       <th className="p-3">Status</th>
+                      <th className="p-3">Bukti</th>
+                      <th className="p-3">Catatan</th>
+                      <th className="p-3">Verifikator</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
@@ -510,14 +528,64 @@ export function PiketHistoryClient({
                             {log.reporterNim || "-"}
                           </span>
                         </td>
-                        <td className="p-3 font-mono text-slate-600 dark:text-slate-400">
-                          {log.roomTarget}
-                        </td>
                         <td className="p-3 font-mono text-slate-700 dark:text-slate-300">
                           Pekan {log.weekNumber}
                         </td>
+                        <td className="p-3 font-mono text-slate-700 dark:text-slate-300">
+                          {new Date(log.dutyDate).toLocaleDateString("id-ID", {
+                            month: "long",
+                            year: "numeric",
+                          })}
+                        </td>
+                        <td className="p-3 font-mono text-slate-600 dark:text-slate-400">
+                          {log.roomTarget}
+                        </td>
                         <td className="p-3">
                           <PiketLogStatusBadge status={log.status} />
+                        </td>
+                        <td className="p-3">
+                          {log.proofImageUrl || log.proofImageBeforeUrl ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="min-h-[44px] font-mono text-xs"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPhotoPreview({
+                                  beforeUrl: getPublicR2Url(
+                                    log.proofImageBeforeUrl,
+                                  ) || null,
+                                  afterUrl:
+                                    getPublicR2Url(log.proofImageUrl) || null,
+                                  reporterName: log.reporterName,
+                                  dutyDate: new Date(
+                                    log.dutyDate,
+                                  ).toLocaleDateString("id-ID", {
+                                    dateStyle: "medium",
+                                  }),
+                                  activeTab: log.proofImageUrl
+                                    ? "after"
+                                    : "before",
+                                });
+                              }}
+                            >
+                              <HugeiconsIcon
+                                icon={Image01Icon}
+                                size={16}
+                                className="mr-1.5"
+                              />
+                              Lihat
+                            </Button>
+                          ) : (
+                            <span className="font-mono text-slate-400">-</span>
+                          )}
+                        </td>
+                        <td className="p-3 text-slate-700 dark:text-slate-300 max-w-[16rem]">
+                          {log.notes || "-"}
+                        </td>
+                        <td className="p-3 font-mono text-slate-600 dark:text-slate-400">
+                          {log.verifierName || "-"}
                         </td>
                       </tr>
                     ))}
@@ -537,6 +605,22 @@ export function PiketHistoryClient({
         onOpenChange={(o) => {
           if (!o) setSelectedProfileId(null);
         }}
+      />
+
+      {/* Pratinjau bukti foto baris Log */}
+      <PiketPhotoPreviewDialog
+        open={!!photoPreview}
+        beforeUrl={photoPreview?.beforeUrl ?? null}
+        afterUrl={photoPreview?.afterUrl ?? null}
+        reporterName={photoPreview?.reporterName ?? "Petugas"}
+        dutyDate={photoPreview?.dutyDate ?? ""}
+        activeTab={photoPreview?.activeTab ?? "after"}
+        onTabChange={(tab) =>
+          setPhotoPreview((prev) =>
+            prev ? { ...prev, activeTab: tab } : null,
+          )
+        }
+        onClose={() => setPhotoPreview(null)}
       />
 
     </div>
