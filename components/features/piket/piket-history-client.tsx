@@ -459,7 +459,30 @@ export function PiketHistoryClient({
                     {logs.map((log) => (
                       <tr
                         key={log.id}
-                        className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors"
+                        onClick={() => {
+                          if (log.reportedById) {
+                            handleRowClick(log.reportedById);
+                          }
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (
+                            log.reportedById &&
+                            (e.key === "Enter" || e.key === " ")
+                          ) {
+                            e.preventDefault();
+                            handleRowClick(log.reportedById);
+                          }
+                        }}
+                        aria-pressed={selectedProfileId === log.reportedById}
+                        className={cn(
+                          "transition-colors",
+                          log.reportedById ? "cursor-pointer" : "",
+                          selectedProfileId === log.reportedById
+                            ? "bg-[#eaf1f8] dark:bg-slate-800/60"
+                            : "hover:bg-slate-50/70 dark:hover:bg-slate-800/40",
+                        )}
                       >
                         <td className="p-3 font-mono text-slate-700 dark:text-slate-300">
                           {new Date(log.dutyDate).toLocaleDateString("id-ID", {
@@ -493,8 +516,6 @@ export function PiketHistoryClient({
         </Card>
       </div>
 
-      {/* Drawer anggota (Task 7) dirender di sini menggunakan selectedProfileId. */}
-      {selectedProfileId === null ? null : null}
     </div>
   );
 }

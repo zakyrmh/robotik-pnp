@@ -124,4 +124,47 @@ describe("PiketHistoryClient", () => {
       screen.getByTestId("piket-history-summary-sudah-lapor").textContent,
     ).toContain("Sudah Lapor");
   });
+
+  it("perubahan periode memperbarui query lewat router.replace dan mempertahankan param lain", () => {
+    replaceMock.mockClear();
+    render(
+      <PiketHistoryClient
+        {...baseProps}
+        compliance={complianceFixture}
+        logs={logFixture}
+        initialTab="kepatuhan"
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("Periode DPH"), {
+      target: { value: "2025/2026" },
+    });
+
+    expect(replaceMock).toHaveBeenCalledTimes(1);
+    const [url] = replaceMock.mock.calls[0] as [string];
+    expect(url).toContain("period=2025%2F2026");
+    expect(url).toContain("tab=kepatuhan");
+    expect(url.startsWith("/piket/riwayat?")).toBe(true);
+  });
+
+  it("perubahan tahun memperbarui query lewat router.replace dan mempertahankan param lain", () => {
+    replaceMock.mockClear();
+    render(
+      <PiketHistoryClient
+        {...baseProps}
+        compliance={complianceFixture}
+        logs={logFixture}
+        initialTab="kepatuhan"
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("Tahun"), {
+      target: { value: "2027" },
+    });
+
+    expect(replaceMock).toHaveBeenCalledTimes(1);
+    const [url] = replaceMock.mock.calls[0] as [string];
+    expect(url).toContain("year=2027");
+    expect(url).toContain("tab=kepatuhan");
+  });
 });
