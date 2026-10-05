@@ -21,6 +21,7 @@ import type {
 } from "@/lib/repositories/piket";
 import type { PiketProfile } from "./types";
 import { PiketComplianceBadge, PiketLogStatusBadge } from "./piket-status-badge";
+import { PiketHistoryMemberDrawer } from "./piket-history-member-drawer";
 
 /** Nama bulan Indonesia (0-indexed) untuk picker filter bulan. */
 const MONTH_NAMES_ID = [
@@ -128,6 +129,18 @@ export function PiketHistoryClient({
     // handler & pemilihan baris sudah aktif.
     setSelectedProfileId(profileId);
   };
+
+  // Nama anggota untuk header drawer, diturunkan dari baris yang tersedia.
+  const selectedMemberName = (() => {
+    if (!selectedProfileId) return "Anggota";
+    const fromCompliance = compliance.find(
+      (r) => r.profileId === selectedProfileId,
+    );
+    if (fromCompliance) return fromCompliance.memberName;
+    const fromLog = logs.find((l) => l.reportedById === selectedProfileId);
+    if (fromLog) return fromLog.reporterName;
+    return "Anggota";
+  })();
 
   const complianceCounts: Record<PiketComplianceStatus, number> = {
     alpha: compliance.filter((r) => r.status === "alpha").length,
@@ -515,6 +528,16 @@ export function PiketHistoryClient({
           </CardContent>
         </Card>
       </div>
+
+      {/* Drawer riwayat anggota (lazy fetch saat dibuka) */}
+      <PiketHistoryMemberDrawer
+        profileId={selectedProfileId}
+        memberName={selectedMemberName}
+        open={selectedProfileId !== null}
+        onOpenChange={(o) => {
+          if (!o) setSelectedProfileId(null);
+        }}
+      />
 
     </div>
   );

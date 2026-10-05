@@ -1,13 +1,23 @@
-import { describe, it, expect, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { PiketHistoryClient } from "./piket-history-client";
-import type { PiketComplianceRow, PiketHistoryLog } from "@/lib/repositories/piket";
+import type {
+  PiketComplianceRow,
+  PiketHistoryLog,
+  PiketMemberHistoryEntry,
+} from "@/lib/repositories/piket";
 
 const replaceMock = vi.fn();
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace: replaceMock, refresh: vi.fn() }),
   usePathname: () => "/piket/riwayat",
   useSearchParams: () => new URLSearchParams("tab=kepatuhan"),
+}));
+
+const getPiketMemberHistoryActionMock = vi.fn();
+vi.mock("@/lib/actions/piket", () => ({
+  getPiketMemberHistoryAction: (profileId: string) =>
+    getPiketMemberHistoryActionMock(profileId),
 }));
 
 const baseProps = {
@@ -63,7 +73,34 @@ const logFixture: PiketHistoryLog[] = [
   },
 ];
 
+const memberHistoryFixture: PiketMemberHistoryEntry[] = [
+  {
+    id: "hist-1",
+    scheduleId: "sch-1",
+    academicPeriod: "2026/2027",
+    weekNumber: 1,
+    roomTarget: "Workshop",
+    dutyDate: "2026-06-30",
+    status: "approved",
+    rejectionReason: "",
+    verifierName: "Kestari Satu",
+    notes: "Ruangan sudah bersih",
+    proofImageUrl: "proofs/after.jpg",
+    proofImageBeforeUrl: "proofs/before.jpg",
+    createdAt: "2026-06-30T00:00:00.000Z",
+  },
+];
+
 describe("PiketHistoryClient", () => {
+  beforeEach(() => {
+    getPiketMemberHistoryActionMock.mockReset();
+    getPiketMemberHistoryActionMock.mockResolvedValue({
+      success: true,
+      message: "OK",
+      data: memberHistoryFixture,
+    });
+  });
+
   it("menampilkan judul/heading histori piket", () => {
     render(
       <PiketHistoryClient
@@ -166,5 +203,48 @@ describe("PiketHistoryClient", () => {
     const [url] = replaceMock.mock.calls[0] as [string];
     expect(url).toContain("year=2027");
     expect(url).toContain("tab=kepatuhan");
+  });
+
+  it("klik baris Kepatuhan membuka drawer dan memanggil action dengan profileId", async () => {
+    render(
+      <PiketHistoryClient
+        {...baseProps}
+        compliance={complianceFixture}
+        logs={logFixture}
+        initialTab="kepatuhan"
+      />,
+    );
+
+    fireEvent.click(screen.getByText("Budi Alpha"));
+
+    await waitFor(() => {
+      expect(getPiketMemberHistoryActionMock).toHaveBeenCalledWith("p-2");
+    });
+
+    // Hasil action dirender: status badge + catatan
+    await waitFor(() => {
+      expect(screen.getByText("Ruangan sudah bersih")).toBeTruthy();
+    });
+    expect(screen.getAllByText("TERVERIFIKASI").length).toBeGreaterThan(0);
+  });
+
+  it("klik baris Log membuka drawer dan memanggil action dengan profileId", async () => {
+    render(
+      <PiketHistoryClient
+        {...baseProps}
+        compliance={complianceFixture}
+        logs={logFixture}
+        initialTab="log"
+      />,
+    );
+
+    fireEvent.click(screen.getByText("Citra Petugas"));
+
+    await waitFor(() => {
+      expect(getPiketMemberHistoryActionMock).toHaveBeenCalledWith("p-3");
+    });
+    await waitFor(() => {
+      expect(screen.getByText("Ruangan sudah bersih")).toBeTruthy();
+    });
   });
 });
