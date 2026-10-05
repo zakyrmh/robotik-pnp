@@ -434,5 +434,59 @@ describe("Modul Server Actions Komdis Attendance", () => {
       expect(res.success).toBe(true);
       expect(res.message).toContain("Berhasil memperbarui status magang");
     });
+
+    it("menolak saat magang aktif tanpa tanggal mulai", async () => {
+      await expect(
+        updateMemberInternshipStatus({
+          profileId: VALID_UUID_1,
+          isOnInternship: true,
+          internshipStartDate: null,
+          internshipEndDate: "2026-12-31",
+        }),
+      ).rejects.toThrow();
+    });
+
+    it("menolak saat magang aktif tanpa tanggal selesai", async () => {
+      await expect(
+        updateMemberInternshipStatus({
+          profileId: VALID_UUID_1,
+          isOnInternship: true,
+          internshipStartDate: "2026-09-01",
+          internshipEndDate: null,
+        }),
+      ).rejects.toThrow();
+    });
+
+    it("menolak saat tanggal selesai lebih awal dari tanggal mulai", async () => {
+      await expect(
+        updateMemberInternshipStatus({
+          profileId: VALID_UUID_1,
+          isOnInternship: true,
+          internshipStartDate: "2026-12-31",
+          internshipEndDate: "2026-09-01",
+        }),
+      ).rejects.toThrow();
+    });
+
+    it("menolak format tanggal yang tidak valid", async () => {
+      await expect(
+        updateMemberInternshipStatus({
+          profileId: VALID_UUID_1,
+          isOnInternship: true,
+          internshipStartDate: "01/09/2026",
+          internshipEndDate: "31/12/2026",
+        }),
+      ).rejects.toThrow();
+    });
+
+    it("mengizinkan nonaktif magang tanpa tanggal", async () => {
+      const res = await updateMemberInternshipStatus({
+        profileId: VALID_UUID_1,
+        isOnInternship: false,
+        internshipStartDate: null,
+        internshipEndDate: null,
+      });
+      expect(res.success).toBe(true);
+    });
   });
 });

@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { getPiketWeekInfo, getPiketWeeksForMonth } from "./piket-date";
+import {
+  getPiketWeekInfo,
+  getPiketWeeksForMonth,
+  isMemberOnInternship,
+} from "./piket-date";
 
 describe("getPiketWeeksForMonth", () => {
   it("mengembalikan pekan 1..4 dengan rentang Senin–Minggu", () => {
@@ -30,5 +34,49 @@ describe("getPiketWeeksForMonth", () => {
     const weeks = getPiketWeeksForMonth(2026, 8); // September 2026
     expect(weeks[0].startIsoDate).toBe("2026-08-31");
     expect(weeks[0].endIsoDate).toBe("2026-09-06");
+  });
+});
+
+describe("isMemberOnInternship", () => {
+  const RANGE = {
+    is_on_internship: true,
+    internship_start_date: "2026-08-03",
+    internship_end_date: "2027-02-26",
+  };
+
+  it("true bila is_on_internship aktif tanpa tanggal (dianggap magang)", () => {
+    expect(
+      isMemberOnInternship({
+        is_on_internship: true,
+        internship_start_date: null,
+        internship_end_date: null,
+      }),
+    ).toBe(true);
+  });
+
+  it("true bila tanggal referensi berada dalam rentang magang", () => {
+    expect(isMemberOnInternship(RANGE, "2026-09-14")).toBe(true);
+  });
+
+  it("false bila tanggal referensi di luar rentang magang", () => {
+    expect(isMemberOnInternship(RANGE, "2027-06-01")).toBe(false);
+  });
+
+  it("false bila is_on_internship tidak aktif", () => {
+    expect(
+      isMemberOnInternship({ is_on_internship: false }, "2026-09-14"),
+    ).toBe(false);
+  });
+
+  it("analog kasus ZERO-DAY (start=end) gagal mendeteksi pekan lain sebagai magang", () => {
+    // Data rusak 2027-02-26..2027-02-26 tidak mencakup pekan piket 2026.
+    const broken = {
+      is_on_internship: true,
+      internship_start_date: "2027-02-26",
+      internship_end_date: "2027-02-26",
+    };
+    expect(isMemberOnInternship(broken, "2026-08-31")).toBe(false);
+    // Setelah diperbaiki ke rentang benar, terdeteksi magang.
+    expect(isMemberOnInternship(RANGE, "2026-08-31")).toBe(true);
   });
 });

@@ -82,6 +82,22 @@ export function MemberInternshipModal({
     e.preventDefault();
     if (!member) return;
 
+    // Validasi klien: periode magang wajib lengkap & konsisten saat diaktifkan.
+    if (isOnInternship) {
+      if (!startDate || !endDate) {
+        setErrorMsg(
+          "Tanggal mulai dan selesai magang wajib diisi bila status magang diaktifkan.",
+        );
+        return;
+      }
+      if (startDate > endDate) {
+        setErrorMsg(
+          "Tanggal selesai magang tidak boleh lebih awal dari tanggal mulai.",
+        );
+        return;
+      }
+    }
+
     setIsSubmitting(true);
     setErrorMsg(null);
     setSuccessMsg(null);

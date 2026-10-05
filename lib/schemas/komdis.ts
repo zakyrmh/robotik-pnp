@@ -78,12 +78,56 @@ export const IssueSanctionSchema = z.object({
 
 export type IssueSanctionInput = z.infer<typeof IssueSanctionSchema>;
 
-export const UpdateMemberInternshipSchema = z.object({
-  profileId: z.string().uuid("ID profil tidak valid"),
-  isOnInternship: z.boolean(),
-  internshipStartDate: z.string().nullable().optional(),
-  internshipEndDate: z.string().nullable().optional(),
-});
+const ISO_DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+export const UpdateMemberInternshipSchema = z
+  .object({
+    profileId: z.string().uuid("ID profil tidak valid"),
+    isOnInternship: z.boolean(),
+    internshipStartDate: z
+      .string()
+      .regex(ISO_DATE_REGEX, "Format tanggal mulai harus YYYY-MM-DD")
+      .nullable()
+      .optional(),
+    internshipEndDate: z
+      .string()
+      .regex(ISO_DATE_REGEX, "Format tanggal selesai harus YYYY-MM-DD")
+      .nullable()
+      .optional(),
+  })
+  // Validasi konsistensi periode magang. Tanpa ini, status magang bisa
+  // tersimpan dengan rentang kosong / terbalik / nol-hari, yang membuat
+  // deteksi magang di modul piket (isMemberOnInternship) gagal.
+  .superRefine((data, ctx) => {
+    if (!data.isOnInternship) return;
+
+    const start = data.internshipStartDate || null;
+    const end = data.internshipEndDate || null;
+
+    if (!start) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["internshipStartDate"],
+        message:
+          "Tanggal mulai magang wajib diisi saat status magang diaktifkan.",
+      });
+    }
+    if (!end) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["internshipEndDate"],
+        message:
+          "Tanggal selesai magang wajib diisi saat status magang diaktifkan.",
+      });
+    }
+    if (start && end && start > end) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["internshipEndDate"],
+        message: "Tanggal selesai magang tidak boleh lebih awal dari mulai.",
+      });
+    }
+  });
 
 export type UpdateMemberInternshipInput = z.infer<
   typeof UpdateMemberInternshipSchema
