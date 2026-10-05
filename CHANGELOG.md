@@ -2,16 +2,6 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
-## [0.17.1](https://github.com/zakyrmh/robotik-pnp/compare/v0.17.0...v0.17.1) (2026-10-05)
-
-### Fixed
-
-- **Nama Roster Piket Tidak Muncul di Tampilan Role Anggota/Caang (`supabase/migrations/20261005000000_fix_piket_roster_rls_for_members.sql` baru, `app/(private)/piket/page.tsx`, `app/(private)/piket/kelola/page.tsx`, `app/(private)/piket/verifikasi/page.tsx`, `app/(private)/piket/page.test.tsx` baru, `app/(private)/piket/verifikasi/page.test.tsx`, `types/database.types.ts`)**: Pada halaman `/piket` (tampilan member), daftar "Daftar Petugas Piket DPH" tidak menampilkan nama petugas untuk role `anggota`/`caang` — semua jatuh ke fallback `"Anggota"`. Akar masalah: RLS pada `public.profiles` hanya mengizinkan anggota/caang membaca baris profil **dirinya sendiri**, sehingga nested join `piket_schedules → piket_members → profiles` mengembalikan `profiles = null` untuk semua anggota lain (terbukti empiris: `SELECT count(*) FROM profiles WHERE id <> auth.uid()` = 0). Perbaikan memakai RPC `SECURITY DEFINER` terbatas `get_piket_roster(p_academic_period)` yang hanya memproyeksikan field publik roster (jadwal, nama, NIM, status magang) — tanpa melonggarkan RLS `profiles` (menghindari ekspos PII email/telepon). Ketiga halaman piket (`/piket`, `/piket/kelola`, `/piket/verifikasi`) kini memakai RPC ini alih-alih nested join. Ditambah test regresi yang membuktikan nama anggota lain ter-resolve (bukan `"Anggota"`).
-- **Nama Pelapor/Verifikator/Petugas Kosong di Halaman Verifikasi Piket untuk Admin-Kestari (`supabase/migrations/20261005010000_fix_piket_verifikasi_names_rls.sql` baru, `app/(private)/piket/verifikasi/page.tsx`, `lib/repositories/piket.ts`)**: Di `/piket/verifikasi`, nama pada tabel Log Piket dan Denda Administratif kosong (fallback `"Anggota"`) saat pelapor/petugas ber-role **super-admin/admin-\***. Akar masalah: policy `Admin Kestari read anggota and caang` hanya mengizinkan kestari membaca `role IN ('anggota','caang','alumni')`, sehingga join `profiles` untuk pengurus mengembalikan `null` (terbukti: dari 4 log, 2 pelapor super-admin & admin-komdis → null; laporan kepatuhan juga kehilangan 9/54 member). Perbaikan:
-  - RPC `SECURITY DEFINER` baru `get_piket_person_names(p_ids uuid[])` mengembalikan `id, nim, full_name` (proyeksi minimal) untuk sekumpulan id; halaman mengumpulkan id pelapor/verifikator/pemilik denda lalu mengisi nama dari satu panggilan RPC.
-  - `getPiketComplianceReport()` (`lib/repositories/piket.ts`) mengganti nested join `piket_members → profiles` dengan RPC `get_piket_roster`, sambil tetap memakai `buildComplianceRows` (bentuk data identik) sehingga tidak mengubah perilaku lain.
-  - Ditambah test regresi yang mengunci bahwa `reporter_name` ter-resolve via RPC (bukan `"Anggota"`).
-
 ## [0.17.0](https://github.com/zakyrmh/robotik-pnp/compare/v0.16.2...v0.17.0) (2026-10-04)
 
 ### Added
