@@ -103,6 +103,10 @@ vi.mock("@/components/features/piket/piket-history-client", () => ({
 
 import PiketRiwayatPage from "./page";
 import { redirect } from "next/navigation";
+import {
+  getPiketHistoryLogs,
+  getPiketHistoryCompliance,
+} from "@/lib/repositories/piket";
 
 type SearchParams = {
   period?: string;
@@ -134,6 +138,10 @@ describe("PiketRiwayatPage — RBAC guard", () => {
       currentRole.role = role;
       await expect(renderPage()).rejects.toThrow("REDIRECT:/piket");
       expect(redirect).toHaveBeenCalledWith("/piket");
+      // Guard dijalankan SEBELUM fetch data admin apa pun — role terlarang
+      // tidak boleh menyentuh data histori seluruh anggota.
+      expect(getPiketHistoryLogs).not.toHaveBeenCalled();
+      expect(getPiketHistoryCompliance).not.toHaveBeenCalled();
     },
   );
 
