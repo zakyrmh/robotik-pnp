@@ -10,6 +10,140 @@ export type PiketComplianceStatus =
   | "berlangsung"
   | "magang";
 
+/**
+ * Status turunan sebuah log piket. Sumber tunggal (single source of truth)
+ * untuk server & klien — `components/features/piket/types.ts` hanya
+ * me-re-export tipe ini.
+ */
+export type PiketLogStatus = "approved" | "pending" | "rejected" | "auto_final";
+
+/**
+ * Derivasi status log piket dari flag verifikasi (murni). Logika identik
+ * dengan `getPiketLogStatus` di sisi komponen; disalin ke repo agar layer
+ * data tidak mengimpor komponen.
+ *
+ * - `rejected`  → belum diverifikasi (`isVerified === false`)
+ * - `auto_final` → final tanpa nama verifier (auto-finalize sistem)
+ * - `approved`  → final dan ber-verifier
+ * - `pending`   → selainnya
+ *
+ * `rejectionReason` disertakan agar pemanggil dapat menurunkan status dari
+ * baris RPC secara lengkap tanpa pra-proses.
+ */
+export function deriveLogStatus(
+  isVerified: boolean,
+  isFinal: boolean,
+  verifierName: string,
+  rejectionReason: string,
+): PiketLogStatus {
+  void rejectionReason;
+  if (!isVerified) return "rejected";
+  if (isFinal) return verifierName ? "approved" : "auto_final";
+  return "pending";
+}
+
+/** Baris histori log piket siap-pakai untuk halaman `/piket/riwayat`. */
+export interface PiketHistoryLog {
+  id: string;
+  scheduleId: string | null;
+  academicPeriod: string;
+  weekNumber: number;
+  roomTarget: string;
+  dutyDate: string;
+  reportedById: string | null;
+  reporterName: string;
+  reporterNim: string | null;
+  status: PiketLogStatus;
+  rejectionReason: string;
+  verifiedAt: string;
+  verifierName: string;
+  notes: string;
+  proofImageUrl: string;
+  proofImageBeforeUrl: string;
+  createdAt: string;
+}
+
+/** Filter histori piket (server/klien). `null`/`undefined` = tanpa filter. */
+export interface PiketHistoryFilter {
+  academicPeriod: string;
+  year?: number | null;
+  monthIndex0?: number | null;
+  weekNumber?: number | null;
+}
+
+/** Parse `YYYY-MM-DD` → `{ y, m0 }`; null bila tanggal tidak valid. */
+function parseIsoDate(iso: string): { y: number; m0: number } | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
+  if (!match) return null;
+  return { y: Number(match[1]), m0: Number(match[2]) - 1 };
+}
+
+/**
+ * Apakah `(y, m0)` berada di dalam rentang periode akademik "YYYY/YYYY"
+ * (1 Juli tahun pertama s.d. 30 Juni tahun kedua). Bila periode tak
+ * terparsir, anggap cocok (jangan saring keluar).
+ */
+function withinPeriod(academicPeriod: string, y: number, m0: number): boolean {
+  const span = getPeriodSpan(academicPeriod);
+  if (!span) return true;
+  const months = y * 12 + m0;
+  const start = span.startYear * 12 + span.startMonthIndex0;
+  const end = span.endYear * 12 + span.endMonthIndex0;
+  return months >= start && months <= end;
+}
+
+function matchesFilter(
+  parts: { y: number; m0: number } | null,
+  f: PiketHistoryFilter,
+  weekNumber: number,
+): boolean {
+  if (!parts) return false;
+  // Batasi tahun kalender ke rentang periode akademik HANYA bila filter
+  // tahun/bulan aktif, sehingga tanpa filter tahun/bulan seluruh baris
+  // periode tetap lolos (mis. data lama di luar rentang tetap tampil).
+  const yearOrMonthActive = f.year != null || f.monthIndex0 != null;
+  if (yearOrMonthActive && !withinPeriod(f.academicPeriod, parts.y, parts.m0)) {
+    return false;
+  }
+  if (f.year != null && parts.y !== f.year) return false;
+  if (f.monthIndex0 != null && parts.m0 !== f.monthIndex0) return false;
+  if (f.weekNumber != null && weekNumber !== f.weekNumber) return false;
+  return true;
+}
+
+/**
+ * Saring log histori berdasarkan periode akademik + tahun/bulan/pekan (murni).
+ * Rentang periode akademik ikut membatasi tahun kalender (mis. "2026/2027"
+ * hanya menjangkau Jul 2026 – Jun 2027), lalu hasil diurutkan menurun per
+ * `dutyDate` mengikuti urutan RPC.
+ */
+export function filterPiketLogs(
+  logs: PiketHistoryLog[],
+  f: PiketHistoryFilter,
+): PiketHistoryLog[] {
+  return logs
+    .filter(
+      (log) =>
+        log.academicPeriod === f.academicPeriod &&
+        matchesFilter(parseIsoDate(log.dutyDate), f, log.weekNumber),
+    )
+    .sort((a, b) =>
+      a.dutyDate < b.dutyDate ? 1 : a.dutyDate > b.dutyDate ? -1 : 0,
+    );
+}
+
+/** Saring baris compliance berdasarkan periode akademik + tahun/bulan/pekan (murni). */
+export function filterComplianceRows(
+  rows: PiketComplianceRow[],
+  f: PiketHistoryFilter,
+): PiketComplianceRow[] {
+  return rows.filter(
+    (row) =>
+      row.academicPeriod === f.academicPeriod &&
+      matchesFilter(parseIsoDate(row.startIsoDate), f, row.weekNumber),
+  );
+}
+
 export interface PiketComplianceRow {
   profileId: string;
   memberName: string;
@@ -359,4 +493,100 @@ export async function getPiketComplianceReport(
     schedules: typedSchedules,
     logs: (logs ?? []) as unknown as RawComplianceLog[],
   });
+}
+
+/** Baris hasil RPC `get_piket_history_logs` (SECURITY DEFINER). */
+interface RawPiketHistoryRow {
+  id: string;
+  schedule_id: string | null;
+  academic_period: string | null;
+  week_number: number | null;
+  room_target: string | null;
+  duty_date: string | null;
+  reported_by: string | null;
+  reporter_name: string | null;
+  reporter_nim: string | null;
+  is_verified: boolean | null;
+  is_final: boolean | null;
+  rejection_reason: string | null;
+  verified_at: string | null;
+  verifier_name: string | null;
+  notes: string | null;
+  proof_image_url: string | null;
+  proof_image_before_url: string | null;
+  created_at: string | null;
+}
+
+export class PiketHistoryError extends Error {
+  constructor(
+    message: string,
+    readonly cause?: unknown,
+  ) {
+    super(message);
+    this.name = "PiketHistoryError";
+  }
+}
+
+/**
+ * Ambil histori log piket via RPC `get_piket_history_logs` (SECURITY DEFINER,
+ * menembus RLS `profiles` agar nama pengurus ikut terbaca). `academicPeriod`
+ * `null` = seluruh periode.
+ */
+export async function getPiketHistoryLogs(
+  academicPeriod: string | null,
+): Promise<PiketHistoryLog[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("get_piket_history_logs", {
+    p_academic_period: academicPeriod,
+  });
+
+  if (error) {
+    console.error("[PIKET_HISTORY_ERROR] Logs:", error);
+    throw new PiketHistoryError(
+      "Gagal memuat histori piket untuk periode ini.",
+      error,
+    );
+  }
+
+  return ((data ?? []) as unknown as RawPiketHistoryRow[]).map((row) => {
+    const isVerified = row.is_verified === true;
+    const isFinal = row.is_final === true;
+    const verifierName = row.verifier_name ?? "";
+    const rejectionReason = row.rejection_reason ?? "";
+    return {
+      id: row.id,
+      scheduleId: row.schedule_id,
+      academicPeriod: row.academic_period ?? "",
+      weekNumber: row.week_number ?? 0,
+      roomTarget: row.room_target ?? "",
+      dutyDate: row.duty_date ?? "",
+      reportedById: row.reported_by,
+      reporterName: row.reporter_name ?? "Anggota",
+      reporterNim: row.reporter_nim,
+      status: deriveLogStatus(
+        isVerified,
+        isFinal,
+        verifierName,
+        rejectionReason,
+      ),
+      rejectionReason,
+      verifiedAt: row.verified_at ?? "",
+      verifierName,
+      notes: row.notes ?? "",
+      proofImageUrl: row.proof_image_url ?? "",
+      proofImageBeforeUrl: row.proof_image_before_url ?? "",
+      createdAt: row.created_at ?? "",
+    };
+  });
+}
+
+/**
+ * Laporan kepatuhan piket untuk halaman riwayat. Delegasi tipis ke
+ * `getPiketComplianceReport` agar konsumen histori punya satu pintu.
+ */
+export async function getPiketHistoryCompliance(
+  academicPeriod: string,
+): Promise<PiketComplianceRow[]> {
+  return getPiketComplianceReport(academicPeriod);
 }

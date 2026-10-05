@@ -3,8 +3,12 @@ import fc from "fast-check";
 import {
   classifyPiketCompliance,
   buildComplianceRows,
+  filterPiketLogs,
+  filterComplianceRows,
   type RawComplianceSchedule,
   type RawComplianceLog,
+  type PiketHistoryLog,
+  type PiketComplianceRow,
 } from "./piket";
 
 describe("classifyPiketCompliance", () => {
@@ -228,5 +232,91 @@ describe("classifyPiketCompliance — invariant", () => {
         },
       ),
     );
+  });
+});
+
+describe("filterPiketLogs / filterComplianceRows", () => {
+  const logs: PiketHistoryLog[] = [
+    mkLog("2026-09-19", 3), // Sep 2026, pekan 3
+    mkLog("2026-10-03", 1), // Okt 2026, pekan 1
+    mkLog("2025-09-19", 3), // Sep 2025
+  ];
+  function mkLog(dutyDate: string, weekNumber: number): PiketHistoryLog {
+    return {
+      id: `l-${dutyDate}`,
+      scheduleId: "s-1",
+      academicPeriod: "2026/2027",
+      weekNumber,
+      roomTarget: "workshop_dan_sekretariat",
+      dutyDate,
+      reportedById: "p-1",
+      reporterName: "A",
+      reporterNim: "1",
+      status: "approved",
+      rejectionReason: "",
+      verifiedAt: "",
+      verifierName: "",
+      notes: "",
+      proofImageUrl: "",
+      proofImageBeforeUrl: "",
+      createdAt: "",
+    };
+  }
+
+  it("filter tahun kalender", () => {
+    expect(
+      filterPiketLogs(logs, { academicPeriod: "2026/2027", year: 2026 }).map(
+        (l) => l.dutyDate,
+      ),
+    ).toEqual(["2026-10-03", "2026-09-19"]);
+  });
+  it("filter bulan (0-based) & pekan", () => {
+    expect(
+      filterPiketLogs(logs, {
+        academicPeriod: "2026/2027",
+        monthIndex0: 8,
+        weekNumber: 3,
+      }).map((l) => l.id),
+    ).toEqual(["l-2026-09-19"]);
+  });
+  it("null = tanpa filter", () => {
+    expect(filterPiketLogs(logs, { academicPeriod: "2026/2027" })).toHaveLength(
+      3,
+    );
+  });
+  it("compliance difilter dari startIsoDate", () => {
+    const rows = [
+      {
+        profileId: "p1",
+        memberName: "A",
+        nim: null,
+        academicPeriod: "2026/2027",
+        weekNumber: 3,
+        roomTarget: "x",
+        startIsoDate: "2026-09-14",
+        endIsoDate: "2026-09-20",
+        cycleMonthLabel: "September 2026",
+        status: "alpha",
+      },
+      {
+        profileId: "p2",
+        memberName: "B",
+        nim: null,
+        academicPeriod: "2026/2027",
+        weekNumber: 1,
+        roomTarget: "x",
+        startIsoDate: "2026-09-28",
+        endIsoDate: "2026-10-04",
+        cycleMonthLabel: "September 2026",
+        status: "sudah-lapor",
+      },
+    ] as PiketComplianceRow[];
+    expect(
+      filterComplianceRows(rows, {
+        academicPeriod: "2026/2027",
+        monthIndex0: 8,
+        weekNumber: 1,
+      }).map((r) => r.profileId),
+    ).toEqual(["p2"]);
   });
 });
