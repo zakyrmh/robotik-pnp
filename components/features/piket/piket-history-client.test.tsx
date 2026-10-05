@@ -71,6 +71,42 @@ const logFixture: PiketHistoryLog[] = [
     proofImageBeforeUrl: "proofs/before.jpg",
     createdAt: "2026-06-30T00:00:00.000Z",
   },
+  {
+    id: "log-2",
+    scheduleId: "sch-2",
+    academicPeriod: "2026/2027",
+    weekNumber: 2,
+    roomTarget: "Workshop",
+    dutyDate: "2026-07-07",
+    reportedById: "p-4",
+    reporterName: "Dewi Pending",
+    reporterNim: "210109004",
+    status: "pending",
+    rejectionReason: "",
+    verifiedAt: "",
+    verifierName: "",
+    notes: "",
+    proofImageUrl: "",
+    proofImageBeforeUrl: "",
+    createdAt: "2026-07-07T00:00:00.000Z",
+  },
+];
+
+/** Fixture kaya: 2 anggota beda nama & status untuk uji filter klien. */
+const complianceMultiFixture: PiketComplianceRow[] = [
+  ...complianceFixture,
+  {
+    profileId: "p-5",
+    memberName: "Andi Berlangsung",
+    nim: "210109005",
+    academicPeriod: "2026/2027",
+    weekNumber: 2,
+    roomTarget: "Workshop",
+    startIsoDate: "2026-07-06",
+    endIsoDate: "2026-07-12",
+    cycleMonthLabel: "Juli 2026",
+    status: "berlangsung",
+  },
 ];
 
 const memberHistoryFixture: PiketMemberHistoryEntry[] = [
@@ -324,5 +360,166 @@ describe("PiketHistoryClient", () => {
       expect(screen.getByTestId("piket-member-drawer-error")).toBeTruthy();
     });
     expect(screen.getByText("Akses ditolak.")).toBeTruthy();
+  });
+
+  it("mencari nama anggota menyaring baris Kepatuhan", () => {
+    render(
+      <PiketHistoryClient
+        {...baseProps}
+        compliance={complianceMultiFixture}
+        logs={logFixture}
+        initialTab="kepatuhan"
+      />,
+    );
+
+    expect(screen.getByText("Budi Alpha")).toBeTruthy();
+    expect(screen.getByText("Andi Berlangsung")).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText("Cari nama anggota"), {
+      target: { value: "andi" },
+    });
+
+    expect(screen.getByText("Andi Berlangsung")).toBeTruthy();
+    expect(screen.queryByText("Budi Alpha")).toBeNull();
+  });
+
+  it("memilih status menyaring baris Kepatuhan", () => {
+    render(
+      <PiketHistoryClient
+        {...baseProps}
+        compliance={complianceMultiFixture}
+        logs={logFixture}
+        initialTab="kepatuhan"
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("Status"), {
+      target: { value: "alpha" },
+    });
+
+    expect(screen.getByText("Budi Alpha")).toBeTruthy();
+    expect(screen.queryByText("Andi Berlangsung")).toBeNull();
+  });
+
+  it("mencari nama petugas menyaring baris Log", () => {
+    render(
+      <PiketHistoryClient
+        {...baseProps}
+        compliance={complianceFixture}
+        logs={logFixture}
+        initialTab="log"
+      />,
+    );
+
+    expect(screen.getByText("Citra Petugas")).toBeTruthy();
+    expect(screen.getByText("Dewi Pending")).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText("Cari nama anggota"), {
+      target: { value: "dewi" },
+    });
+
+    expect(screen.getByText("Dewi Pending")).toBeTruthy();
+    expect(screen.queryByText("Citra Petugas")).toBeNull();
+  });
+
+  it("memilih status menyaring baris Log", () => {
+    render(
+      <PiketHistoryClient
+        {...baseProps}
+        compliance={complianceFixture}
+        logs={logFixture}
+        initialTab="log"
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("Status"), {
+      target: { value: "pending" },
+    });
+
+    expect(screen.getByText("Dewi Pending")).toBeTruthy();
+    expect(screen.queryByText("Citra Petugas")).toBeNull();
+  });
+
+  it("empty state membedakan hasil filter kosong dari data kosong", () => {
+    render(
+      <PiketHistoryClient
+        {...baseProps}
+        compliance={complianceMultiFixture}
+        logs={logFixture}
+        initialTab="kepatuhan"
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText("Cari nama anggota"), {
+      target: { value: "tidak-ada-nama" },
+    });
+
+    expect(
+      screen.getByText("Tidak ada hasil kepatuhan untuk filter yang dipilih."),
+    ).toBeTruthy();
+    expect(
+      screen.queryByText(/Belum ada data kepatuhan untuk periode/i),
+    ).toBeNull();
+  });
+
+  it("perpindahan tab Log memperbarui query dengan tab=log", () => {
+    replaceMock.mockClear();
+    render(
+      <PiketHistoryClient
+        {...baseProps}
+        compliance={complianceFixture}
+        logs={logFixture}
+        initialTab="kepatuhan"
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: /^Log$/i }));
+
+    expect(replaceMock).toHaveBeenCalledTimes(1);
+    const [url] = replaceMock.mock.calls[0] as [string];
+    expect(url).toContain("tab=log");
+  });
+
+  it("menampilkan panel error + tombol muat ulang di tab Kepatuhan saat loadError", () => {
+    render(
+      <PiketHistoryClient
+        {...baseProps}
+        compliance={[]}
+        logs={logFixture}
+        initialTab="kepatuhan"
+        loadError="Gagal memuat rekap kepatuhan piket. Coba muat ulang halaman ini."
+      />,
+    );
+
+    expect(
+      screen.getAllByText(/Gagal memuat rekap kepatuhan piket/).length,
+    ).toBeGreaterThan(0);
+    expect(
+      screen.getAllByRole("button", { name: /Muat ulang/i }).length,
+    ).toBeGreaterThan(0);
+    // Empty state palsu tidak ditampilkan saat error.
+    expect(
+      screen.queryByText(/Belum ada data kepatuhan untuk periode/i),
+    ).toBeNull();
+  });
+
+  it("menampilkan panel error + tombol muat ulang di tab Log saat loadError", () => {
+    render(
+      <PiketHistoryClient
+        {...baseProps}
+        compliance={complianceFixture}
+        logs={[]}
+        initialTab="log"
+        loadError="Gagal memuat log laporan piket. Coba muat ulang halaman ini."
+      />,
+    );
+
+    expect(
+      screen.getAllByText(/Gagal memuat log laporan piket/).length,
+    ).toBeGreaterThan(0);
+    expect(
+      screen.getAllByRole("button", { name: /Muat ulang/i }).length,
+    ).toBeGreaterThan(0);
+    expect(screen.queryByText(/Belum ada log piket untuk periode/i)).toBeNull();
   });
 });

@@ -6,6 +6,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import {
   Calendar03Icon,
   Image01Icon,
+  RefreshIcon,
 } from "@hugeicons/core-free-icons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -23,9 +24,13 @@ import type {
   PiketComplianceRow,
   PiketComplianceStatus,
   PiketHistoryLog,
+  PiketLogStatus,
 } from "@/lib/repositories/piket";
 import type { PiketProfile } from "./types";
-import { PiketComplianceBadge, PiketLogStatusBadge } from "./piket-status-badge";
+import {
+  PiketComplianceBadge,
+  PiketLogStatusBadge,
+} from "./piket-status-badge";
 import { PiketHistoryMemberDrawer } from "./piket-history-member-drawer";
 import { PiketPhotoPreviewDialog } from "./piket-photo-preview-dialog";
 
@@ -64,6 +69,12 @@ export interface PiketHistoryClientProps {
     monthIndex0: number | null;
     weekNumber: number | null;
   };
+  /**
+   * Pesan error ramah bila salah satu fetch RPC di RSC gagal (mis. logs atau
+   * compliance). `null` = tidak ada kegagalan. Ketika terisi, tab terkait
+   * menampilkan panel error + tombol muat ulang, bukan empty state.
+   */
+  loadError?: string | null;
 }
 
 /** Kunci tab yang tersedia pada switcher histori. */
@@ -81,12 +92,17 @@ export function PiketHistoryClient({
   compliance,
   initialTab,
   activeFilter,
+  loadError = null,
 }: PiketHistoryClientProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const [activeTab, setActiveTab] = useState<HistoryTab>(initialTab);
+  // Filter ringan (client-side, spec §6.4). Status bergantung tab aktif;
+  // pencarian mencocokkan nama anggota (case-insensitive substring).
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [searchTerm, setSearchTerm] = useState<string>("");
   // ID profil yang dipilih untuk drawer anggota (render drawer di Task 7).
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(
     null,
@@ -144,6 +160,17 @@ export function PiketHistoryClient({
     setSelectedProfileId(profileId);
   };
 
+  /**
+   * Ganti tab aktif + persist ke query (`?tab=`) agar bertahan saat refresh
+   * atau dibagikan (spec ringan; server sudah membaca `?tab=`). Status filter
+   * direset karena opsi status berbeda antar tab.
+   */
+  const handleTabChange = (tab: HistoryTab) => {
+    setActiveTab(tab);
+    setStatusFilter("");
+    updateFilter({ tab });
+  };
+
   // Nama anggota untuk header drawer, diturunkan dari baris yang tersedia.
   const selectedMemberName = (() => {
     if (!selectedProfileId) return "Anggota";
@@ -156,12 +183,58 @@ export function PiketHistoryClient({
     return "Anggota";
   })();
 
+  // Ringkasan count tetap dihitung dari himpunan hasil server (sebelum
+  // filter status/pencarian klien) — lihat catatan keputusan di report.
   const complianceCounts: Record<PiketComplianceStatus, number> = {
     alpha: compliance.filter((r) => r.status === "alpha").length,
     berlangsung: compliance.filter((r) => r.status === "berlangsung").length,
     magang: compliance.filter((r) => r.status === "magang").length,
     "sudah-lapor": compliance.filter((r) => r.status === "sudah-lapor").length,
   };
+
+  // Opsi status mengikuti tab aktif (spec §2.2).
+  const complianceStatusOptions: {
+    value: PiketComplianceStatus;
+    label: string;
+  }[] = [
+    { value: "sudah-lapor", label: "Sudah Lapor" },
+    { value: "alpha", label: "Alpha" },
+    { value: "berlangsung", label: "Berlangsung" },
+    { value: "magang", label: "Magang" },
+  ];
+
+  const logStatusOptions: { value: PiketLogStatus; label: string }[] = [
+    { value: "approved", label: "Disetujui" },
+    { value: "pending", label: "Menunggu" },
+    { value: "rejected", label: "Ditolak" },
+    { value: "auto_final", label: "Final Otomatis" },
+  ];
+
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+  const hasLightFilter = statusFilter !== "" || normalizedSearch !== "";
+
+  // Terapkan filter status + pencarian nama di atas data ter-filter server.
+  const filteredCompliance = compliance.filter((r) => {
+    if (statusFilter && r.status !== statusFilter) return false;
+    if (
+      normalizedSearch &&
+      !r.memberName.toLowerCase().includes(normalizedSearch)
+    ) {
+      return false;
+    }
+    return true;
+  });
+
+  const filteredLogs = logs.filter((l) => {
+    if (statusFilter && l.status !== statusFilter) return false;
+    if (
+      normalizedSearch &&
+      !l.reporterName.toLowerCase().includes(normalizedSearch)
+    ) {
+      return false;
+    }
+    return true;
+  });
 
   const summaryItems: { key: PiketComplianceStatus; label: string }[] = [
     { key: "alpha", label: "Alpha" },
@@ -221,9 +294,9 @@ export function PiketHistoryClient({
         </div>
       </div>
 
-      {/* Filter Bar: Periode / Tahun / Bulan / Pekan */}
+      {/* Filter Bar: Periode / Tahun / Bulan / Pekan / Status / Cari */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3.5 rounded-xl shadow-xs">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
           <label className="flex flex-col gap-1.5">
             <span className="text-[10px] font-mono font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
               Periode DPH
@@ -249,9 +322,7 @@ export function PiketHistoryClient({
             <select
               aria-label="Tahun"
               value={activeFilter.year ?? ""}
-              onChange={(e) =>
-                updateFilter({ year: e.target.value || null })
-              }
+              onChange={(e) => updateFilter({ year: e.target.value || null })}
               className={filterSelectClass}
             >
               <option value="">Semua Tahun</option>
@@ -297,9 +368,7 @@ export function PiketHistoryClient({
             <select
               aria-label="Pekan"
               value={activeFilter.weekNumber ?? ""}
-              onChange={(e) =>
-                updateFilter({ week: e.target.value || null })
-              }
+              onChange={(e) => updateFilter({ week: e.target.value || null })}
               className={filterSelectClass}
             >
               <option value="">Semua Pekan</option>
@@ -310,6 +379,45 @@ export function PiketHistoryClient({
               ))}
             </select>
           </label>
+
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[10px] font-mono font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+              Status
+            </span>
+            <select
+              aria-label="Status"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className={filterSelectClass}
+            >
+              <option value="">Semua status</option>
+              {activeTab === "kepatuhan"
+                ? complianceStatusOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))
+                : logStatusOptions.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+            </select>
+          </label>
+
+          <label className="flex flex-col gap-1.5">
+            <span className="text-[10px] font-mono font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+              Cari Anggota
+            </span>
+            <input
+              type="search"
+              aria-label="Cari nama anggota"
+              placeholder="Nama anggota..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 min-h-[44px] text-xs font-mono font-medium text-[#0a192f] dark:text-slate-100 outline-none focus:ring-2 focus:ring-[#1e3a8a]"
+            />
+          </label>
         </div>
       </div>
 
@@ -317,14 +425,14 @@ export function PiketHistoryClient({
       <div className="flex gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-1.5 rounded-xl shadow-xs">
         <button
           type="button"
-          onClick={() => setActiveTab("kepatuhan")}
+          onClick={() => handleTabChange("kepatuhan")}
           className={tabClass("kepatuhan")}
         >
           Kepatuhan
         </button>
         <button
           type="button"
-          onClick={() => setActiveTab("log")}
+          onClick={() => handleTabChange("log")}
           className={tabClass("log")}
         >
           Log
@@ -354,10 +462,7 @@ export function PiketHistoryClient({
                 <div
                   key={item.key}
                   data-testid={`piket-history-summary-${item.key}`}
-                  className={cn(
-                    "p-3 rounded-lg border",
-                    summaryTone[item.key],
-                  )}
+                  className={cn("p-3 rounded-lg border", summaryTone[item.key])}
                 >
                   <span className="text-[10px] font-mono uppercase tracking-widest block">
                     {item.label}
@@ -369,10 +474,32 @@ export function PiketHistoryClient({
               ))}
             </div>
 
-            {compliance.length === 0 ? (
+            {loadError ? (
+              <div
+                role="alert"
+                className="p-4 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-red-700 dark:text-red-300 font-mono text-xs flex flex-col sm:flex-row sm:items-center gap-3"
+              >
+                <span className="flex-1">{loadError}</span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => router.refresh()}
+                  className="min-h-[44px] font-mono text-xs border-red-200 dark:border-red-900/60 text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer self-start sm:self-auto"
+                >
+                  <HugeiconsIcon
+                    icon={RefreshIcon}
+                    size={16}
+                    className="mr-1.5"
+                  />
+                  Muat ulang
+                </Button>
+              </div>
+            ) : filteredCompliance.length === 0 ? (
               <div className="p-8 text-center text-slate-500 dark:text-slate-400 font-mono text-xs">
-                Belum ada data kepatuhan untuk periode{" "}
-                {activeFilter.academicPeriod}.
+                {hasLightFilter
+                  ? "Tidak ada hasil kepatuhan untuk filter yang dipilih."
+                  : `Belum ada data kepatuhan untuk periode ${activeFilter.academicPeriod}.`}
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -389,7 +516,7 @@ export function PiketHistoryClient({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                    {compliance.map((r) => (
+                    {filteredCompliance.map((r) => (
                       <tr
                         key={`${r.profileId}-${r.weekNumber}-${r.roomTarget}-${r.startIsoDate}`}
                         onClick={() => handleRowClick(r.profileId)}
@@ -427,9 +554,12 @@ export function PiketHistoryClient({
                           {r.roomTarget}
                         </td>
                         <td className="p-3 font-mono text-slate-600 dark:text-slate-400">
-                          {new Date(r.startIsoDate).toLocaleDateString("id-ID", {
-                            dateStyle: "medium",
-                          })}
+                          {new Date(r.startIsoDate).toLocaleDateString(
+                            "id-ID",
+                            {
+                              dateStyle: "medium",
+                            },
+                          )}
                           {" – "}
                           {new Date(r.endIsoDate).toLocaleDateString("id-ID", {
                             dateStyle: "medium",
@@ -465,10 +595,32 @@ export function PiketHistoryClient({
             </CardDescription>
           </CardHeader>
           <CardContent className="p-4 sm:p-6">
-            {logs.length === 0 ? (
+            {loadError ? (
+              <div
+                role="alert"
+                className="p-4 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-red-700 dark:text-red-300 font-mono text-xs flex flex-col sm:flex-row sm:items-center gap-3"
+              >
+                <span className="flex-1">{loadError}</span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => router.refresh()}
+                  className="min-h-[44px] font-mono text-xs border-red-200 dark:border-red-900/60 text-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/40 cursor-pointer self-start sm:self-auto"
+                >
+                  <HugeiconsIcon
+                    icon={RefreshIcon}
+                    size={16}
+                    className="mr-1.5"
+                  />
+                  Muat ulang
+                </Button>
+              </div>
+            ) : filteredLogs.length === 0 ? (
               <div className="p-8 text-center text-slate-500 dark:text-slate-400 font-mono text-xs">
-                Belum ada log piket untuk periode{" "}
-                {activeFilter.academicPeriod}.
+                {hasLightFilter
+                  ? "Tidak ada hasil log untuk filter yang dipilih."
+                  : `Belum ada log piket untuk periode ${activeFilter.academicPeriod}.`}
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -487,7 +639,7 @@ export function PiketHistoryClient({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
-                    {logs.map((log) => (
+                    {filteredLogs.map((log) => (
                       <tr
                         key={log.id}
                         onClick={() => {
@@ -553,9 +705,9 @@ export function PiketHistoryClient({
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setPhotoPreview({
-                                  beforeUrl: getPublicR2Url(
-                                    log.proofImageBeforeUrl,
-                                  ) || null,
+                                  beforeUrl:
+                                    getPublicR2Url(log.proofImageBeforeUrl) ||
+                                    null,
                                   afterUrl:
                                     getPublicR2Url(log.proofImageUrl) || null,
                                   reporterName: log.reporterName,
@@ -616,13 +768,10 @@ export function PiketHistoryClient({
         dutyDate={photoPreview?.dutyDate ?? ""}
         activeTab={photoPreview?.activeTab ?? "after"}
         onTabChange={(tab) =>
-          setPhotoPreview((prev) =>
-            prev ? { ...prev, activeTab: tab } : null,
-          )
+          setPhotoPreview((prev) => (prev ? { ...prev, activeTab: tab } : null))
         }
         onClose={() => setPhotoPreview(null)}
       />
-
     </div>
   );
 }

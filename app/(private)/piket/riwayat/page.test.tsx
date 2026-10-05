@@ -227,4 +227,20 @@ describe("PiketRiwayatPage — periode & parsing filter", () => {
     expect(props.activeFilter.monthIndex0).toBeNull();
     expect(props.activeFilter.weekNumber).toBeNull();
   });
+
+  it("loadError null saat kedua fetcher sukses", async () => {
+    render(await renderPage());
+
+    const props = capturedProps.props as { loadError: string | null };
+    expect(props.loadError).toBeNull();
+  });
+
+  it("mengisi loadError ramah saat fetcher gagal (bukan empty state)", async () => {
+    vi.mocked(getPiketHistoryLogs).mockRejectedValueOnce(new Error("rpc boom"));
+
+    render(await renderPage());
+
+    const props = capturedProps.props as { loadError: string | null };
+    expect(props.loadError).toContain("Gagal memuat log laporan piket");
+  });
 });

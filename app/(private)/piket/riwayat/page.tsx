@@ -130,21 +130,30 @@ export default async function PiketRiwayatPage({
   };
 
   // 4. Ambil data via repository (RPC SECURITY DEFINER). Kegagalan fetch
-  //    ditangani lunak agar halaman tetap dapat dirender.
+  //    ditangkap agar halaman tetap dirender, namun ditandai `loadError`
+  //    supaya klien menampilkan panel error ramah (bukan empty state palsu).
   let rawLogs = [] as Awaited<ReturnType<typeof getPiketHistoryLogs>>;
   let rawCompliance = [] as Awaited<
     ReturnType<typeof getPiketHistoryCompliance>
   >;
+  const loadErrors: string[] = [];
   try {
     rawLogs = await getPiketHistoryLogs(period);
   } catch (err: unknown) {
     console.error("[PIKET_RIWAYAT_ERROR] Logs fetch error:", err);
+    loadErrors.push(
+      "Gagal memuat log laporan piket. Coba muat ulang halaman ini.",
+    );
   }
   try {
     rawCompliance = await getPiketHistoryCompliance(period);
   } catch (err: unknown) {
     console.error("[PIKET_RIWAYAT_ERROR] Compliance fetch error:", err);
+    loadErrors.push(
+      "Gagal memuat rekap kepatuhan piket. Coba muat ulang halaman ini.",
+    );
   }
+  const loadError = loadErrors.length > 0 ? loadErrors.join(" ") : null;
 
   // 5. Terapkan filter tahun/bulan/pekan (murni), seragam untuk kedua sumber.
   const logs = filterPiketLogs(rawLogs, activeFilter);
@@ -167,6 +176,7 @@ export default async function PiketRiwayatPage({
         compliance={compliance}
         initialTab={initialTab}
         activeFilter={activeFilter}
+        loadError={loadError}
       />
     </Suspense>
   );
