@@ -2,6 +2,46 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.18.0](https://github.com/zakyrmh/robotik-pnp/compare/v0.17.0...v0.18.0) (2026-10-05)
+
+### ✅ Tests
+
+- **piket:** assert fetcher admin tidak dipanggil saat guard menolak role ([a3bc0e4](https://github.com/zakyrmh/robotik-pnp/commit/a3bc0e43ac9d293bd470e9e00a71d5e326bfd64e))
+
+### 🏠 Chores
+
+- ignore .worktrees/ untuk kerja terisolasi ([672f58b](https://github.com/zakyrmh/robotik-pnp/commit/672f58b749821d191222a79d2a9e14f8cca03d82))
+- **piket:** regenerate tipe DB (RPC histori piket) ([98f418e](https://github.com/zakyrmh/robotik-pnp/commit/98f418e7735fe875be08301e21594f7a831333b2))
+
+### ✨ Features
+
+- **piket:** action getPiketMemberHistoryAction (read-only, guard kestari) ([0b96b90](https://github.com/zakyrmh/robotik-pnp/commit/0b96b90f6b403e93ba11e09689fa199731ff5f55))
+- **piket:** halaman /piket/riwayat + guard RBAC ([3dc20c9](https://github.com/zakyrmh/robotik-pnp/commit/3dc20c9b6d72c0491f82077e7d405fd698b4a57d))
+- **piket:** halaman riwayat piket (/piket/riwayat) ([1eeb5c9](https://github.com/zakyrmh/robotik-pnp/commit/1eeb5c9154b5ce23e5a7e6338b60021de4ce5229))
+- **piket:** menu sidebar Riwayat Piket untuk kestari & super-admin ([e958841](https://github.com/zakyrmh/robotik-pnp/commit/e9588415da984a8a2b51b5bee2f51401fad2bf78))
+- **piket:** PiketHistoryClient (filter bar + tab Kepatuhan) ([bc05c83](https://github.com/zakyrmh/robotik-pnp/commit/bc05c839c307d860ce290b326f37e643bd270273))
+- **piket:** repository histori piket + filter tahun/bulan/pekan ([c44150a](https://github.com/zakyrmh/robotik-pnp/commit/c44150aff19d356ada8265701cee2e3046f139d8))
+- **piket:** RPC get_piket_history_logs untuk halaman riwayat ([e9f0b6e](https://github.com/zakyrmh/robotik-pnp/commit/e9f0b6e26863b632f20be67a0ce379e168a6c160))
+- **piket:** RPC get_piket_member_history untuk drawer anggota ([147bde0](https://github.com/zakyrmh/robotik-pnp/commit/147bde0979b4b667d051b8810d1bf72a05222095))
+- **piket:** tab Log + drawer histori anggota (lazy) ([0499556](https://github.com/zakyrmh/robotik-pnp/commit/0499556521520af05f48b572a7236b397b03c9e6))
+
+### 🐛 Bug Fixes
+
+- **komdis:** validasi periode magang agar deteksi piket tidak gagal ([dfc39e1](https://github.com/zakyrmh/robotik-pnp/commit/dfc39e11e9ad713ff95e56a6eb70b10165e17141))
+- **piket:** filter bulan siklus compliance pakai cycleMonthLabel ([f9c9c0d](https://github.com/zakyrmh/robotik-pnp/commit/f9c9c0ddce995d4081610acf96106c1ee6c7a48a))
+- **piket:** guard order auth→rbac→zod & pakai id asli dari RPC member history ([78eafbb](https://github.com/zakyrmh/robotik-pnp/commit/78eafbb2a1b5730b15a67496f7f1a60f1f2bf33f))
+- **piket:** lengkapi kolom tab Log & uji state drawer histori ([277b664](https://github.com/zakyrmh/robotik-pnp/commit/277b664f82c42d61fcf7628aa7650db4bed39403))
+- **piket:** status+search filter & panel error ramah di riwayat ([64f1bd0](https://github.com/zakyrmh/robotik-pnp/commit/64f1bd0c7beb8f9937d97a3a06c57b4179549a71))
+- **piket:** tampilkan nama petugas untuk semua role via RPC SECURITY DEFINER ([b114f95](https://github.com/zakyrmh/robotik-pnp/commit/b114f9546b39eb9a7439aba03a9b452b39866fd4))
+- **piket:** wiring seleksi baris + uji filter router.replace ([2707a56](https://github.com/zakyrmh/robotik-pnp/commit/2707a56c61a926f17b2e11a1a4c1697cb747464f))
+
+### 📝 Documentation
+
+- **changelog:** rapikan entri sebelum rilis 0.18.0 ([5e2398b](https://github.com/zakyrmh/robotik-pnp/commit/5e2398bdca5bc42841b3b2d0d4a19def2d100986))
+- **piket:** finalisasi spek histori piket (2 tab, drawer lazy, semua periode) ([7f1ff00](https://github.com/zakyrmh/robotik-pnp/commit/7f1ff00f6ab62159469daabd708c5872ce65527e))
+- **piket:** rencana implementasi halaman histori piket ([e008b3d](https://github.com/zakyrmh/robotik-pnp/commit/e008b3d5c4246d4104542a61160fec38a9d57784))
+- **piket:** spek desain halaman histori piket (/piket/riwayat) ([3e7807b](https://github.com/zakyrmh/robotik-pnp/commit/3e7807b19327335f5af95e5f89e160888a55a6b5))
+
 ## [0.17.0](https://github.com/zakyrmh/robotik-pnp/compare/v0.16.2...v0.17.0) (2026-10-04)
 
 ### Added
