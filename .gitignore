@@ -74,3 +74,6 @@ sentry-wizard-installation-error-*.log
 # ===== Generic logs =====
 *.log
 /logs/
+
+# ===== Git worktrees (isolated SDD work) =====
+/.worktrees/
