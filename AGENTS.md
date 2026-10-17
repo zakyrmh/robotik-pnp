@@ -276,14 +276,14 @@ AI Agents should reference and execute the specialized skills installed in `.age
 
 # 11. Integrasi Memori Jangka Panjang (Obsidian Vault)
 
-Untuk mempertahankan _context awareness_ lintas sesi terminal, AI Agent diinstruksikan untuk menggunakan **Obsidian Vault `opencode_brain`** sebagai media penyimpanan memori jangka panjang (_Long-term Memory_).
+Untuk mempertahankan _context awareness_ lintas sesi terminal, AI Agent diinstruksikan untuk menggunakan **Obsidian Vault `agents_brain`** sebagai media penyimpanan memori jangka panjang (_Long-term Memory_).
 
 ### 11.1 Lokasi Direktori Vault
 
-- **Path Utama (Absolute):** `~/Documents/opencode_brain/`
-- **Sub-folder Memori:** `~/Documents/opencode_brain/02_agent_memory/`
-- **Sub-folder Referensi/Knowledge:** `~/Documents/opencode_brain/01_knowledge/`
-- **Sub-folder Dokumen Proyek (symlink):** `~/Documents/opencode_brain/04_projects/robotik-pnp/` → `~/Documents/Project/robotik-pnp/docs/` (seluruh `docs/` proyek ini tersedia di dalam vault).
+- **Path Utama (Absolute):** `~/Documents/agents_brain/`
+- **Sub-folder Memori:** `~/Documents/agents_brain/02_agent_memory/`
+- **Sub-folder Referensi/Knowledge:** `~/Documents/agents_brain/01_knowledge/`
+- **Sub-folder Dokumen Proyek (symlink):** `~/Documents/agents_brain/04_projects/robotik-pnp/` → `~/Documents/Project/robotik-pnp/docs/` (seluruh `docs/` proyek ini tersedia di dalam vault).
 
 _(Catatan: Di root proyek ini tersedia symlink `./.brain/` yang menunjuk ke root vault. Agen diizinkan membaca/menulis langsung melalui `./.brain/`, misal `./.brain/02_agent_memory/`. Symlink ini di-gitignore dan tidak boleh di-commit)._
 
@@ -295,7 +295,7 @@ Sebelum mengerjakan tugas yang melibatkan salah satu dari domain berikut:
 2. Logika RBAC & domain inti (piket, absensi QR dinamis, kedisiplinan/SP, oprec).
 3. Styling Tailwind CSS v4 & design system (`@theme`, token `--color-*`).
 
-**AI Agent WAJIB memeriksa catatan terdahulu** di `~/Documents/opencode_brain/02_agent_memory/` untuk melihat apakah ada keputusan teknis, gotchas, atau solusi bug serupa yang pernah dicatat sebelumnya. Catatan relevan yang sudah ada antara lain:
+**AI Agent WAJIB memeriksa catatan terdahulu** di `~/Documents/agents_brain/02_agent_memory/` untuk melihat apakah ada keputusan teknis, gotchas, atau solusi bug serupa yang pernah dicatat sebelumnya. Catatan relevan yang sudah ada antara lain:
 
 - `robotik-pnp-security-audit-mrc-form`
 - `robotik-pnp-qa-security-fixes-idor-ssrf-quota`
@@ -316,7 +316,7 @@ Setelah menulis catatan baru, **daftarkan tautannya di `Index.md`** vault (bagia
 
 #### Format Standar File Memori:
 
-- **Lokasi Simpan:** `~/Documents/opencode_brain/02_agent_memory/robotik-pnp-<kategori>-<topik-singkat>.md`
+- **Lokasi Simpan:** `~/Documents/agents_brain/02_agent_memory/robotik-pnp-<kategori>-<topik-singkat>.md`
 - **Struktur Markdown & YAML Frontmatter:**
 
 ```markdown
@@ -356,7 +356,7 @@ Poin penting yang harus diingat agen di sesi berikutnya agar tidak mengulangi ke
 
 ### 11.4 Definition of Done & Checklist Memori (WAJIB)
 
-Aturan memori ini **mengikat** dan berlaku untuk setiap sesi di repo ini. Sumber otoritas tertinggi adalah `~/Documents/opencode_brain/02_agent_memory/Preferences.md` (dibaca saat sesi dimulai). Sebuah task **belum dianggap selesai** sebelum seluruh checklist berikut terpenuhi:
+Aturan memori ini **mengikat** dan berlaku untuk setiap sesi di repo ini. Sumber otoritas tertinggi adalah `~/Documents/agents_brain/02_agent_memory/Preferences.md` (dibaca saat sesi dimulai). Sebuah task **belum dianggap selesai** sebelum seluruh checklist berikut terpenuhi:
 
 - [ ] **Cek (READ):** sebelum mulai, telusuri `02_agent_memory/` untuk catatan relevan dengan domain/tugas (lihat §11.2). Gunakan keputusan, gotchas, dan solusi terdahulu.
 - [ ] **Kerjakan task** sesuai standar proyek.

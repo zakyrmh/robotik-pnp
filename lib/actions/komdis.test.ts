@@ -5,6 +5,7 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { encryptToken } from "@/lib/utils/crypto";
+import { generateAttendanceQR } from "@/lib/actions/attendance";
 
 // Valid UUIDs conforming to Zod RFC 4122
 const VALID_UUID_1 = "00000000-0000-0000-0000-000000000000";
@@ -116,14 +117,17 @@ vi.mock("@/lib/supabase/server", () => {
           delete: vi.fn(() => ({
             eq: vi.fn(async () => ({ error: mockUpdateError })),
           })),
-          select: vi.fn(() => ({
-            eq: vi.fn(() => ({
+          select: vi.fn(() => {
+            const query = {
+              eq: vi.fn(() => query),
+              is: vi.fn(() => query),
               single: vi.fn(async () => ({
                 data: mockActivityData,
                 error: null,
               })),
-            })),
-          })),
+            };
+            return query;
+          }),
         };
       }
       if (table === "attendances" || table === "in_app_notifications") {
@@ -261,6 +265,34 @@ describe("Modul Server Actions Komdis Attendance", () => {
 
   // --- Test 2: scanAttendanceQRByAdmin ---
   describe("scanAttendanceQRByAdmin", () => {
+    it("accepts a server-issued caang QR when scanned by admin-or", async () => {
+      mockUser = { id: VALID_UUID_2 };
+      mockProfileRole = "caang";
+      const generated = await generateAttendanceQR(VALID_UUID_1);
+      expect(generated.success).toBe(true);
+      if (!generated.data) throw new Error("Expected server-issued QR");
+
+      mockUser = { id: VALID_UUID_1 };
+      mockProfileRole = "admin-or";
+      const scanned = await scanAttendanceQRByAdmin(
+        VALID_UUID_1,
+        generated.data.qrString,
+      );
+      expect(scanned.success).toBe(true);
+      expect(scanned.status).toBe("hadir");
+    });
+
+    it("returns a recovery instruction without leaking decryption internals", async () => {
+      mockProfileRole = "admin-or";
+      const result = await scanAttendanceQRByAdmin(
+        VALID_UUID_1,
+        "invalid-token",
+      );
+      expect(result.success).toBe(false);
+      expect(result.message).toContain("memuat ulang");
+      expect(result.message).not.toMatch(/Provider|decrypt|1C800064/);
+    });
+
     it("harus sukses memindai QR Code valid tepat waktu (status: hadir)", async () => {
       const activityId = VALID_UUID_1;
       const profileId = VALID_UUID_2;

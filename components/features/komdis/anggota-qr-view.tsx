@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
-import { encryptToken } from "@/lib/utils/crypto";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +16,10 @@ import {
   Cancel01Icon,
 } from "@hugeicons/core-free-icons";
 import { toast } from "sonner";
-import { submitLeaveRequest } from "@/lib/actions/attendance";
+import {
+  generateAttendanceQR,
+  submitLeaveRequest,
+} from "@/lib/actions/attendance";
 import { compressAndConvertToWebp } from "@/lib/utils/image-compressor";
 
 interface AnggotaQrViewProps {
@@ -69,14 +71,23 @@ export function AnggotaQrView({
   profileName,
   nim,
 }: AnggotaQrViewProps) {
-  const [qrToken, setQrToken] = useState(() =>
-    encryptToken({
-      profile_id: profileId,
-      activity_id: activityId,
-      generated_at: Date.now(),
-    }),
-  );
-  const [countdown, setCountdown] = useState(300); // 5 menit TTL
+  const [refreshVersion, setRefreshVersion] = useState(0);
+  const [qrResult, setQrResult] = useState<{
+    activityId: string;
+    version: number;
+    token: string | null;
+    expiresAt: number | null;
+    error: string | null;
+  } | null>(null);
+  const currentQr =
+    qrResult?.activityId === activityId && qrResult.version === refreshVersion
+      ? qrResult
+      : null;
+  const qrToken = currentQr?.token ?? "";
+  const qrError = currentQr?.error ?? null;
+  const isGeneratingQr = currentQr === null;
+  const expiresAt = currentQr?.expiresAt ?? null;
+  const [countdown, setCountdown] = useState(0);
   const [isLeaveFormOpen, setIsLeaveFormOpen] = useState(false);
   const [leaveStatus, setLeaveStatus] = useState<"izin" | "sakit">("izin");
   const [leaveNotes, setLeaveNotes] = useState("");
@@ -178,14 +189,54 @@ export function AnggotaQrView({
   }, [activityId, profileId, attendanceRecord]);
 
   const generateNewQR = useCallback(() => {
-    const token = encryptToken({
-      profile_id: profileId,
-      activity_id: activityId,
-      generated_at: Date.now(),
-    });
-    setQrToken(token);
-    setCountdown(300);
-  }, [activityId, profileId]);
+    setRefreshVersion((version) => version + 1);
+  }, []);
+
+  useEffect(() => {
+    if (!isQrWindowActive || attendanceRecord) return;
+    let cancelled = false;
+
+    async function loadQR() {
+      try {
+        const result = await generateAttendanceQR(activityId);
+        if (cancelled) return;
+        if (!result.success || !result.data) {
+          throw new Error(
+            result.message || "Gagal membuat QR Code. Silakan coba lagi.",
+          );
+        }
+        const expiration = Date.parse(result.data.expiresAt);
+        if (!Number.isFinite(expiration) || expiration <= Date.now()) {
+          throw new Error("QR Code sudah kedaluwarsa. Silakan coba lagi.");
+        }
+        setQrResult({
+          activityId,
+          version: refreshVersion,
+          token: result.data.qrString,
+          expiresAt: expiration,
+          error: null,
+        });
+        setCountdown(Math.max(0, Math.ceil((expiration - Date.now()) / 1000)));
+      } catch (error: unknown) {
+        if (cancelled) return;
+        setQrResult({
+          activityId,
+          version: refreshVersion,
+          token: null,
+          expiresAt: null,
+          error:
+            error instanceof Error
+              ? error.message
+              : "Gagal memuat QR Code. Silakan coba lagi.",
+        });
+      }
+    }
+
+    void loadQR();
+    return () => {
+      cancelled = true;
+    };
+  }, [activityId, refreshVersion, isQrWindowActive, attendanceRecord]);
 
   const handleSubmitLeave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -235,19 +286,17 @@ export function AnggotaQrView({
   };
 
   useEffect(() => {
-    if (!isQrWindowActive || attendanceRecord) return;
+    if (!isQrWindowActive || attendanceRecord || !expiresAt) return;
     const interval = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          generateNewQR();
-          return 300;
-        }
-        return prev - 1;
-      });
+      const remaining = Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000));
+      setCountdown(remaining);
+      if (remaining === 0) {
+        clearInterval(interval);
+        generateNewQR();
+      }
     }, 1000);
-
     return () => clearInterval(interval);
-  }, [generateNewQR, isQrWindowActive, attendanceRecord]);
+  }, [generateNewQR, isQrWindowActive, attendanceRecord, expiresAt]);
 
   const qrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(
     qrToken,
@@ -418,8 +467,18 @@ export function AnggotaQrView({
                 className="object-contain p-2"
                 priority
               />
+            ) : qrError ? (
+              <p
+                role="alert"
+                className="h-full flex items-center justify-center text-sm text-destructive"
+              >
+                {qrError}
+              </p>
             ) : (
-              <div className="h-full flex items-center justify-center font-mono text-xs text-slate-400">
+              <div
+                role="status"
+                className="h-full flex items-center justify-center font-mono text-xs text-slate-400"
+              >
                 MEMUAT QR CODE...
               </div>
             )}
@@ -433,7 +492,13 @@ export function AnggotaQrView({
                 size={14}
                 className="animate-spin"
               />
-              <span>KEDALUWARSA DALAM: {countdown} DETIK</span>
+              <span>
+                {qrToken
+                  ? `KEDALUWARSA DALAM: ${countdown} DETIK`
+                  : isGeneratingQr
+                    ? "MEMUAT QR CODE..."
+                    : "QR CODE BELUM TERSEDIA"}
+              </span>
             </div>
             <p className="font-mono text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-widest">
               Tunjukkan QR Code ini kepada panitia Komdis di lokasi
@@ -443,6 +508,7 @@ export function AnggotaQrView({
           <Button
             type="button"
             onClick={generateNewQR}
+            disabled={isGeneratingQr}
             className="w-full bg-[#1e3a8a] hover:bg-[#1e40af] dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-mono text-xs uppercase tracking-wider rounded-lg cursor-pointer py-2.5 shadow-xs"
           >
             REFRESH QR CODE SEKARANG

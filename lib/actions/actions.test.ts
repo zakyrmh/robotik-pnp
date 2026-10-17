@@ -17,6 +17,7 @@ const { mockSupabase } = vi.hoisted(() => {
       from: vi.fn().mockReturnThis(),
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
+      is: vi.fn().mockReturnThis(),
       single: vi.fn().mockReturnThis(),
       maybeSingle: vi.fn().mockReturnThis(),
       upsert: vi.fn().mockReturnThis(),
@@ -102,34 +103,69 @@ describe("Attendance Server Actions", () => {
   });
 
   describe("generateAttendanceQR", () => {
+    it("honors a configured check-in window instead of the default activity window", async () => {
+      mockSupabase.auth.getUser.mockResolvedValueOnce({
+        data: { user: { id: "550e8400-e29b-41d4-a716-446655440000" } },
+      });
+      mockSupabase.single.mockResolvedValueOnce({ data: { role: "caang" } });
+      mockSupabase.single.mockResolvedValueOnce({
+        data: {
+          start_date: new Date(Date.now() - 7200000).toISOString(),
+          end_date: new Date(Date.now() - 3600000).toISOString(),
+          checkin_open_at: new Date(Date.now() - 60000).toISOString(),
+          checkin_close_at: new Date(Date.now() + 60000).toISOString(),
+        },
+      });
+      const result = await generateAttendanceQR(
+        "550e8400-e29b-41d4-a716-446655440001",
+      );
+      expect(result.success).toBe(true);
+      expect(mockSupabase.is).toHaveBeenCalledWith("deleted_at", null);
+    });
+
+    it("rejects malformed activity IDs before querying activities", async () => {
+      mockSupabase.auth.getUser.mockResolvedValueOnce({
+        data: { user: { id: "550e8400-e29b-41d4-a716-446655440000" } },
+      });
+      mockSupabase.single.mockResolvedValueOnce({ data: { role: "caang" } });
+      const result = await generateAttendanceQR("invalid-id");
+      expect(result.success).toBe(false);
+      expect(result.error?.code).toBe("BAD_REQUEST");
+      expect(mockSupabase.from).not.toHaveBeenCalledWith("activities");
+    });
+
     it("should reject if the user is not authenticated", async () => {
       mockSupabase.auth.getUser.mockResolvedValueOnce({
         data: { user: null },
         error: new Error("No session"),
       });
 
-      const res = await generateAttendanceQR("activity-id");
+      const res = await generateAttendanceQR(
+        "550e8400-e29b-41d4-a716-446655440001",
+      );
       expect(res.success).toBe(false);
       expect(res.error?.code).toBe("UNAUTHORIZED");
     });
 
     it("should reject if user role is not authorized", async () => {
       mockSupabase.auth.getUser.mockResolvedValueOnce({
-        data: { user: { id: "user-id" } },
+        data: { user: { id: "550e8400-e29b-41d4-a716-446655440000" } },
       });
       mockSupabase.from.mockReturnThis();
       mockSupabase.select.mockReturnThis();
       mockSupabase.eq.mockReturnThis();
       mockSupabase.single.mockResolvedValueOnce({ data: { role: "admin-or" } });
 
-      const res = await generateAttendanceQR("activity-id");
+      const res = await generateAttendanceQR(
+        "550e8400-e29b-41d4-a716-446655440001",
+      );
       expect(res.success).toBe(false);
       expect(res.error?.code).toBe("FORBIDDEN");
     });
 
     it("should reject if activity time window has not started yet", async () => {
       mockSupabase.auth.getUser.mockResolvedValueOnce({
-        data: { user: { id: "user-id" } },
+        data: { user: { id: "550e8400-e29b-41d4-a716-446655440000" } },
       });
       mockSupabase.from.mockReturnThis();
       mockSupabase.select.mockReturnThis();
@@ -142,7 +178,9 @@ describe("Attendance Server Actions", () => {
         data: { start_date: futureStart, end_date: futureEnd },
       });
 
-      const res = await generateAttendanceQR("activity-id");
+      const res = await generateAttendanceQR(
+        "550e8400-e29b-41d4-a716-446655440001",
+      );
       expect(res.success).toBe(false);
       expect(res.error?.code).toBe("BAD_REQUEST");
       expect(res.message).toContain("belum dibuka");
@@ -150,7 +188,7 @@ describe("Attendance Server Actions", () => {
 
     it("should reject if activity time window has already ended", async () => {
       mockSupabase.auth.getUser.mockResolvedValueOnce({
-        data: { user: { id: "user-id" } },
+        data: { user: { id: "550e8400-e29b-41d4-a716-446655440000" } },
       });
       mockSupabase.from.mockReturnThis();
       mockSupabase.select.mockReturnThis();
@@ -163,7 +201,9 @@ describe("Attendance Server Actions", () => {
         data: { start_date: pastStart, end_date: pastEnd },
       });
 
-      const res = await generateAttendanceQR("activity-id");
+      const res = await generateAttendanceQR(
+        "550e8400-e29b-41d4-a716-446655440001",
+      );
       expect(res.success).toBe(false);
       expect(res.error?.code).toBe("BAD_REQUEST");
       expect(res.message).toContain("sudah ditutup");
@@ -171,7 +211,7 @@ describe("Attendance Server Actions", () => {
 
     it("should succeed and return encrypted token if user is authorized and time window is open", async () => {
       mockSupabase.auth.getUser.mockResolvedValueOnce({
-        data: { user: { id: "user-id" } },
+        data: { user: { id: "550e8400-e29b-41d4-a716-446655440000" } },
       });
       mockSupabase.from.mockReturnThis();
       mockSupabase.select.mockReturnThis();
@@ -184,10 +224,13 @@ describe("Attendance Server Actions", () => {
         data: { start_date: pastStart, end_date: futureEnd },
       });
 
-      const res = await generateAttendanceQR("activity-id", {
-        lat: -0.9,
-        lng: 100.3,
-      });
+      const res = await generateAttendanceQR(
+        "550e8400-e29b-41d4-a716-446655440001",
+        {
+          lat: -0.9,
+          lng: 100.3,
+        },
+      );
       expect(res.success).toBe(true);
       expect(res.data?.qrString).toBeTypeOf("string");
       expect(res.data?.expiresAt).toBeTypeOf("string");
@@ -195,7 +238,7 @@ describe("Attendance Server Actions", () => {
 
     it("should succeed and return encrypted token even if coordinates are not provided (TS-ABS-02)", async () => {
       mockSupabase.auth.getUser.mockResolvedValueOnce({
-        data: { user: { id: "user-id" } },
+        data: { user: { id: "550e8400-e29b-41d4-a716-446655440000" } },
       });
       mockSupabase.from.mockReturnThis();
       mockSupabase.select.mockReturnThis();
@@ -208,7 +251,9 @@ describe("Attendance Server Actions", () => {
         data: { start_date: pastStart, end_date: futureEnd },
       });
 
-      const res = await generateAttendanceQR("activity-id");
+      const res = await generateAttendanceQR(
+        "550e8400-e29b-41d4-a716-446655440001",
+      );
       expect(res.success).toBe(true);
       expect(res.data?.qrString).toBeTypeOf("string");
       expect(res.data?.expiresAt).toBeTypeOf("string");

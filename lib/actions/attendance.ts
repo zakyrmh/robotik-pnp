@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { attendanceQrRequestSchema } from "@/lib/schemas/attendance";
 import { createClient } from "@/lib/supabase/server";
 import { encryptToken, decryptToken } from "@/lib/utils/crypto";
 import { ServerActionResponse } from "@/lib/types/action";
@@ -66,11 +67,24 @@ export async function generateAttendanceQR(
       };
     }
 
-    // 3. Verify activity time window
+    const validated = attendanceQrRequestSchema.safeParse({
+      activityId,
+      coordinates,
+    });
+    if (!validated.success) {
+      return {
+        success: false,
+        message: "Data pembuatan QR Code tidak valid.",
+        error: { code: "BAD_REQUEST", details: "Invalid QR request" },
+      };
+    }
+
+    // 3. Verify activity time window, including configured check-in overrides.
     const { data: activity, error: activityError } = await supabase
       .from("activities")
-      .select("start_date, end_date")
-      .eq("id", activityId)
+      .select("start_date, end_date, checkin_open_at, checkin_close_at")
+      .eq("id", validated.data.activityId)
+      .is("deleted_at", null)
       .single();
 
     if (activityError || !activity) {
@@ -86,9 +100,12 @@ export async function generateAttendanceQR(
     const endDate = new Date(activity.end_date);
 
     // Absensi dibuka 2 jam sebelum kegiatan dimulai
-    const attendanceOpen = new Date(startDate.getTime() - 2 * 60 * 60 * 1000);
-    // Absensi ditutup tepat saat kegiatan berakhir (end_date)
-    const attendanceClose = endDate;
+    const attendanceOpen = activity.checkin_open_at
+      ? new Date(activity.checkin_open_at)
+      : new Date(startDate.getTime() - 2 * 60 * 60 * 1000);
+    const attendanceClose = activity.checkin_close_at
+      ? new Date(activity.checkin_close_at)
+      : endDate;
 
     if (now < attendanceOpen) {
       return {
@@ -158,7 +175,6 @@ export async function scanAttendanceQR(
   qrString: string,
 ): Promise<ServerActionResponse<{ name: string; status: "hadir" | "telat" }>> {
   console.log("=== SERVER DEBUG: scanAttendanceQR STARTED ===");
-  console.log("qrString received:", qrString);
   try {
     const supabase = await createClient();
 
@@ -220,7 +236,6 @@ export async function scanAttendanceQR(
     let payload: DecryptedPayload;
     try {
       payload = decryptToken(qrString) as unknown as DecryptedPayload;
-      console.log("Successfully decrypted token. Payload:", payload);
     } catch (e: unknown) {
       const errorMsg = e instanceof Error ? e.message : String(e);
       console.error("Token decryption failed. Error details:", errorMsg);

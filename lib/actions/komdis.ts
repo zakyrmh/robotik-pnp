@@ -228,11 +228,11 @@ export async function scanAttendanceQRByAdmin(
       profile_id: string;
       generated_at: number;
     };
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
+  } catch {
     return {
       success: false,
-      message: `QR Code tidak dapat didekripsi: ${msg}`,
+      message:
+        "QR Code tidak valid. Minta peserta memuat ulang halaman dan membuat QR Code baru.",
     };
   }
 
