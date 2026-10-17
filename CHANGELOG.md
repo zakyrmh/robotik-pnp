@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.18.1](https://github.com/zakyrmh/robotik-pnp/compare/v0.18.0...v0.18.1) (2026-10-18)
+
+### 🐛 Bug Fixes
+
+- **presensi:** perbaiki error dekripsi QR pada alur caang → admin-or dengan memindahkan pembuatan token dari browser ke Server Action. Generator dan pemindai kini memakai kunci di server; identitas peserta diambil dari sesi terverifikasi dan modul kriptografi dibatasi untuk server ([105e3e8](https://github.com/zakyrmh/robotik-pnp/commit/105e3e8)).
+- **presensi:** tambahkan loading, retry, refresh manual, dan refresh otomatis berdasarkan waktu kedaluwarsa dari server. Pembuatan QR memvalidasi input dengan Zod, menghormati konfigurasi waktu buka/tutup presensi, dan menolak kegiatan yang sudah dihapus. Hapus log token mentah serta tampilkan instruksi membuat QR baru saat dekripsi gagal.
+- **kegiatan:** batasi akses role caang melalui RLS ke kegiatan target caang yang dibuat pada September–Desember di tahun pendaftarannya, berdasarkan `registrations.created_at` dan `activities.created_at` dalam zona waktu WIB. Pembatasan berlaku pada daftar dan akses detail langsung, dengan akses role lain tetap mengikuti aturan sebelumnya.
+
+### ✅ Tests
+
+- Tambahkan delapan tes regresi untuk generator QR server, alur caang → admin-or, refresh otomatis/manual, retry, validasi input, dan konfigurasi jendela presensi. Sebanyak 45 tes terkait QR dan presensi lulus.
+- Tambahkan sepuluh skenario integrasi RLS untuk rentang bulan/tahun WIB, akses detail, registrasi tidak tersedia, dan akses role lain; seluruh skenario lulus.
+- Build produksi dan typecheck berhasil. Lint menghasilkan 0 error dan 21 warning yang sudah ada. Full suite menghasilkan 422 tes lulus dan 9 kegagalan onboarding yang sudah ada.
+
+### 📝 Documentation
+
+- Perbarui rujukan vault memori pada instruksi proyek menjadi `agents_brain`.
+
+### Deployment
+
+- Terapkan migrasi `20261017000000_restrict_caang_activities_registration_year.sql` dan `20261018000000_restrict_caang_activities_september_december.sql` ke Supabase Cloud agar filter kegiatan berlaku di produksi. Kedua migrasi sudah diuji dan diterapkan di Local.
+- Setelah aplikasi diperbarui, muat ulang halaman peserta dan admin, lalu buat QR baru. QR lama yang dibuat browser dapat tetap gagal didekripsi.
+
 ## [0.18.0](https://github.com/zakyrmh/robotik-pnp/compare/v0.17.0...v0.18.0) (2026-10-05)
 
 ### ✅ Tests
