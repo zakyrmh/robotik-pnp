@@ -5,7 +5,12 @@ vi.mock("server-only", () => ({}));
 const { mockRevalidatePath, mockRecordAuditLog, mockRpc } = vi.hoisted(() => ({
   mockRevalidatePath: vi.fn(),
   mockRecordAuditLog: vi.fn(async () => {}),
-  mockRpc: vi.fn(async () => "reg-1"),
+  mockRpc: vi.fn(
+    async (): Promise<unknown> => ({
+      data: "reg-1",
+      error: null,
+    }),
+  ),
 }));
 
 vi.mock("next/cache", () => ({
@@ -37,6 +42,7 @@ const state = vi.hoisted(() => ({
 vi.mock("@/lib/supabase/server", () => ({
   createClient: vi.fn(async () => ({
     auth: { getUser: vi.fn(async () => ({ data: { user: state.user } })) },
+    rpc: mockRpc,
     from: () => ({
       select: () => ({
         eq: () => ({
@@ -90,7 +96,7 @@ describe("reviewRegistrationChangeRequestAction", () => {
       requested_data: { team: {}, members: [] },
     };
     state.rejectError = null;
-    mockRpc.mockResolvedValue("reg-1");
+    mockRpc.mockResolvedValue({ data: "reg-1", error: null });
   });
 
   it("menolak bila belum login", async () => {
@@ -141,6 +147,24 @@ describe("reviewRegistrationChangeRequestAction", () => {
     expect(mockRpc).toHaveBeenCalled();
     expect(mockRecordAuditLog).toHaveBeenCalled();
     expect(mockRevalidatePath).toHaveBeenCalled();
+  });
+
+  it("menolak apply setelah daftar ulang dimulai", async () => {
+    mockRpc.mockResolvedValue({
+      data: null,
+      error: { message: "registration_checkin_already_started" },
+    });
+
+    const res = await reviewRegistrationChangeRequestAction({
+      request_id: REQ_ID,
+      action: "approve",
+    });
+
+    expect(res).toEqual({
+      success: false,
+      error: "Perubahan anggota ditolak karena daftar ulang tim sudah dimulai.",
+    });
+    expect(mockRecordAuditLog).not.toHaveBeenCalled();
   });
 
   it("reject menyimpan catatan + audit log", async () => {

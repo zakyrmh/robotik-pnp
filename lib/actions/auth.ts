@@ -279,6 +279,7 @@ export async function getCurrentUser() {
     email: user.email,
     name,
     role: profile.role,
+    role_event: profile.role_event,
     avatar_url: avatarUrl,
     nim: profile.nim,
     is_onboarded: profile.is_onboarded,

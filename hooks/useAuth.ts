@@ -8,6 +8,7 @@ interface User {
   email: string;
   name: string;
   role: string;
+  role_event?: string | null;
   avatar_url?: string;
   nim?: string;
   is_onboarded?: boolean;
@@ -43,6 +44,7 @@ export const useAuth = (): AuthContextType => {
               email: userData.email || "",
               name: userData.name,
               role: userData.role,
+              role_event: userData.role_event,
               avatar_url: userData.avatar_url || undefined,
               nim: userData.nim || undefined,
               is_onboarded: userData.is_onboarded,
@@ -95,6 +97,7 @@ export const useAuth = (): AuthContextType => {
           email: userData.email || "",
           name: userData.name,
           role: userData.role,
+          role_event: userData.role_event,
           avatar_url: userData.avatar_url || undefined,
           nim: userData.nim || undefined,
           is_onboarded: userData.is_onboarded,

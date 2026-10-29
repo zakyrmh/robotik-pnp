@@ -1,6 +1,7 @@
 // lib/supabase/proxy.ts
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { isEventCommittee } from "@/lib/event-rbac";
 
 // Rate limiting cache (in-memory)
 const ipCache = new Map<string, { count: number; resetTime: number }>();
@@ -145,14 +146,18 @@ export async function updateSession(request: NextRequest) {
   }
 
   // 2. Ambil data profil (is_onboarded) dan registrasi HANYA jika user sudah login
-  let profile: { role: string; is_onboarded: boolean } | null = null;
+  let profile: {
+    role: string;
+    role_event: string | null;
+    is_onboarded: boolean;
+  } | null = null;
   let regStatus: string | null = null;
   let deletedAt: string | null = null;
   if (user) {
     const { data, error } = await supabase
       .from("profiles")
       .select(
-        "role, is_onboarded, registrations(status, deleted_at, delete_reason)",
+        "role, role_event, is_onboarded, registrations(status, deleted_at, delete_reason)",
       )
       .eq("id", user.id)
       .single();
@@ -162,6 +167,7 @@ export async function updateSession(request: NextRequest) {
     } else if (data) {
       profile = {
         role: data.role,
+        role_event: data.role_event,
         is_onboarded: data.is_onboarded,
       };
       if (data.registrations) {
@@ -185,8 +191,13 @@ export async function updateSession(request: NextRequest) {
   // Kasus: User Sudah Login
   if (user && profile) {
     let targetRoute: string | null = null;
+    const isEventManagementRoute = matchRoute(pathname, "/manajemen-event");
 
-    if (profile.role === "caang" && deletedAt) {
+    if (isEventManagementRoute) {
+      if (!isEventCommittee(profile.role, profile.role_event)) {
+        targetRoute = "/dashboard";
+      }
+    } else if (profile.role === "caang" && deletedAt) {
       // Jika calon anggota di soft-delete, arahkan ke halaman /deleted
       if (
         !matchRoute(pathname, "/deleted") &&

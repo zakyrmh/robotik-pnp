@@ -551,6 +551,87 @@ export type Database = {
         };
         Relationships: [];
       };
+      event_member_checkins: {
+        Row: {
+          badge_handed_at: string | null;
+          badge_handed_by: string | null;
+          badge_handoff_type: string | null;
+          badge_recipient_name: string | null;
+          badge_recipient_role: string | null;
+          checked_in_at: string | null;
+          checked_in_by: string | null;
+          created_at: string;
+          member_id: string;
+          registration_id: string;
+          updated_at: string;
+          version: number;
+        };
+        Insert: {
+          badge_handed_at?: string | null;
+          badge_handed_by?: string | null;
+          badge_handoff_type?: string | null;
+          badge_recipient_name?: string | null;
+          badge_recipient_role?: string | null;
+          checked_in_at?: string | null;
+          checked_in_by?: string | null;
+          created_at?: string;
+          member_id: string;
+          registration_id: string;
+          updated_at?: string;
+          version?: number;
+        };
+        Update: {
+          badge_handed_at?: string | null;
+          badge_handed_by?: string | null;
+          badge_handoff_type?: string | null;
+          badge_recipient_name?: string | null;
+          badge_recipient_role?: string | null;
+          checked_in_at?: string | null;
+          checked_in_by?: string | null;
+          created_at?: string;
+          member_id?: string;
+          registration_id?: string;
+          updated_at?: string;
+          version?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "event_member_checkins_badge_handed_by_fkey";
+            columns: ["badge_handed_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "event_member_checkins_badge_handed_by_fkey";
+            columns: ["badge_handed_by"];
+            isOneToOne: false;
+            referencedRelation: "v_user_discipline_summary";
+            referencedColumns: ["profile_id"];
+          },
+          {
+            foreignKeyName: "event_member_checkins_checked_in_by_fkey";
+            columns: ["checked_in_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "event_member_checkins_checked_in_by_fkey";
+            columns: ["checked_in_by"];
+            isOneToOne: false;
+            referencedRelation: "v_user_discipline_summary";
+            referencedColumns: ["profile_id"];
+          },
+          {
+            foreignKeyName: "event_member_checkins_member_registration_fkey";
+            columns: ["member_id", "registration_id"];
+            isOneToOne: true;
+            referencedRelation: "event_team_members";
+            referencedColumns: ["id", "registration_id"];
+          },
+        ];
+      };
       event_member_verifications: {
         Row: {
           id: string;
@@ -658,8 +739,15 @@ export type Database = {
       event_registrations: {
         Row: {
           access_token: string;
+          advisor_badge_handed_at: string | null;
+          advisor_badge_handed_by: string | null;
+          advisor_badge_handoff_type: string | null;
+          advisor_badge_recipient_name: string | null;
+          advisor_badge_recipient_role: string | null;
+          advisor_badge_version: number;
           advisor_name: string | null;
           category_id: string;
+          checkin_started_at: string | null;
           created_at: string;
           id: string;
           institution: string;
@@ -688,8 +776,15 @@ export type Database = {
         };
         Insert: {
           access_token?: string;
+          advisor_badge_handed_at?: string | null;
+          advisor_badge_handed_by?: string | null;
+          advisor_badge_handoff_type?: string | null;
+          advisor_badge_recipient_name?: string | null;
+          advisor_badge_recipient_role?: string | null;
+          advisor_badge_version?: number;
           advisor_name?: string | null;
           category_id: string;
+          checkin_started_at?: string | null;
           created_at?: string;
           id?: string;
           institution: string;
@@ -718,8 +813,15 @@ export type Database = {
         };
         Update: {
           access_token?: string;
+          advisor_badge_handed_at?: string | null;
+          advisor_badge_handed_by?: string | null;
+          advisor_badge_handoff_type?: string | null;
+          advisor_badge_recipient_name?: string | null;
+          advisor_badge_recipient_role?: string | null;
+          advisor_badge_version?: number;
           advisor_name?: string | null;
           category_id?: string;
+          checkin_started_at?: string | null;
           created_at?: string;
           id?: string;
           institution?: string;
@@ -747,6 +849,20 @@ export type Database = {
           updated_at?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "event_registrations_advisor_badge_handed_by_fkey";
+            columns: ["advisor_badge_handed_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "event_registrations_advisor_badge_handed_by_fkey";
+            columns: ["advisor_badge_handed_by"];
+            isOneToOne: false;
+            referencedRelation: "v_user_discipline_summary";
+            referencedColumns: ["profile_id"];
+          },
           {
             foreignKeyName: "event_registrations_category_id_fkey";
             columns: ["category_id"];
@@ -2098,6 +2214,17 @@ export type Database = {
           member_data: Json;
         }[];
       };
+      correct_event_checkin: {
+        Args: {
+          p_expected_version?: number;
+          p_field: string;
+          p_member_id?: string;
+          p_reason: string;
+          p_registration_id: string;
+          p_target: string;
+        };
+        Returns: Json;
+      };
       get_event_finance_summary_by_bank: {
         Args: never;
         Returns: {
@@ -2196,6 +2323,26 @@ export type Database = {
         Args: { input_nim: string; user_id: string };
         Returns: boolean;
       };
+      record_event_advisor_badge: {
+        Args: {
+          p_expected_version: number;
+          p_proxy_member_id: string;
+          p_recipient_role: string;
+          p_registration_id: string;
+        };
+        Returns: Json;
+      };
+      record_event_member_checkins: {
+        Args: {
+          p_action: string;
+          p_expected_versions: Json;
+          p_member_ids: string[];
+          p_proxy_member_id?: string;
+          p_proxy_role?: string;
+          p_registration_id: string;
+        };
+        Returns: Json;
+      };
       register_team: {
         Args: {
           p_advisor_name: string;
@@ -2215,6 +2362,29 @@ export type Database = {
       reserve_slot_for_payment: {
         Args: { p_access_token: string; p_proof_url: string };
         Returns: string;
+      };
+      search_event_checkins: {
+        Args: {
+          p_attendance?: string;
+          p_badge?: string;
+          p_category_id?: string;
+          p_limit?: number;
+          p_offset?: number;
+          p_query?: string;
+        };
+        Returns: {
+          badge_count: number;
+          category_id: string;
+          category_name: string;
+          institution: string;
+          member_count: number;
+          payment_status: string;
+          present_count: number;
+          registration_code: string;
+          registration_id: string;
+          team_name: string;
+          total_count: number;
+        }[];
       };
       slugify: { Args: { v_text: string }; Returns: string };
       update_caang_registration_status: {
