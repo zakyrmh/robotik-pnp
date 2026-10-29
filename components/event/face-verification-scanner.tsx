@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
-import { Html5Qrcode } from "html5-qrcode";
+import type { Html5Qrcode as Html5QrcodeType } from "html5-qrcode";
 import {
   getMemberByQrTokenAction,
   submitFaceVerificationAction,
@@ -35,8 +35,9 @@ export function FaceVerificationScanner() {
 
   // Scanner state
   const [isCameraActive, setIsCameraActive] = useState(false);
+  const [isStartingCamera, setIsStartingCamera] = useState(false);
   const [cameraError, setCameraError] = useState<string | null>(null);
-  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const scannerRef = useRef<Html5QrcodeType | null>(null);
   const lastScannedRef = useRef<{ token: string; time: number } | null>(null);
 
   const [notes, setNotes] = useState("");
@@ -93,44 +94,98 @@ export function FaceVerificationScanner() {
   const startCamera = async () => {
     setCameraError(null);
     setErrorMsg(null);
+    setIsStartingCamera(true);
+    setIsCameraActive(true);
+
+    // Pastikan DOM sudah me-render container viewfinder sebelum scanner mengukur lebar/tinggi elemen
+    await new Promise((resolve) => setTimeout(resolve, 80));
+
     await stopCamera();
+    setIsCameraActive(true);
 
     const element = document.getElementById("mrc-qr-reader");
-    if (!element) return;
+    if (!element) {
+      setIsStartingCamera(false);
+      setIsCameraActive(false);
+      setCameraError("Wadah viewfinder kamera tidak ditemukan.");
+      return;
+    }
 
     try {
+      // Lazy load html5-qrcode hanya di client side saat tombol diklik (zero server bundle overhead)
+      const { Html5Qrcode } = await import("html5-qrcode");
       const scanner = new Html5Qrcode("mrc-qr-reader");
       scannerRef.current = scanner;
 
-      await scanner.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 250 } },
-        (decodedText) => {
-          const now = Date.now();
-          if (
-            lastScannedRef.current &&
-            lastScannedRef.current.token === decodedText &&
-            now - lastScannedRef.current.time < 3000
-          ) {
-            return;
-          }
-          lastScannedRef.current = { token: decodedText, time: now };
-          setQrTokenInput(decodedText);
-          handleScanLookup(decodedText);
-        },
-        () => {
-          // ignore frame scan misses
-        },
-      );
+      const config = {
+        fps: 10,
+        qrbox: { width: 250, height: 250 },
+        aspectRatio: 1.0,
+      };
+
+      const onScanSuccess = (decodedText: string) => {
+        const now = Date.now();
+        if (
+          lastScannedRef.current &&
+          lastScannedRef.current.token === decodedText &&
+          now - lastScannedRef.current.time < 3000
+        ) {
+          return;
+        }
+        lastScannedRef.current = { token: decodedText, time: now };
+        setQrTokenInput(decodedText);
+        handleScanLookup(decodedText);
+      };
+
+      try {
+        // Coba kamera belakang (environment) terlebih dahulu
+        await scanner.start(
+          { facingMode: "environment" },
+          config,
+          onScanSuccess,
+          () => {},
+        );
+      } catch (envErr) {
+        console.warn(
+          "Kamera belakang tidak tersedia, mencoba fallback kamera depan/default:",
+          envErr,
+        );
+        // Fallback jika perangkat laptop/PC tidak punya 'environment' camera
+        await scanner.start(
+          { facingMode: "user" },
+          config,
+          onScanSuccess,
+          () => {},
+        );
+      }
 
       setIsCameraActive(true);
     } catch (err) {
-      setCameraError(
-        err instanceof Error
-          ? err.message
-          : "Gagal mengakses kamera. Periksa izin perangkat Anda.",
-      );
+      console.error("Camera scanner start error:", err);
+      const msg = err instanceof Error ? err.message : String(err);
+      if (
+        msg.includes("NotAllowedError") ||
+        msg.includes("Permission") ||
+        msg.includes("denied")
+      ) {
+        setCameraError(
+          "Izin kamera ditolak. Harap izinkan akses kamera di peramban Anda.",
+        );
+      } else if (msg.includes("NotReadableError") || msg.includes("in use")) {
+        setCameraError(
+          "Kamera sedang dipakai oleh aplikasi lain. Tutup aplikasi lain lalu coba lagi.",
+        );
+      } else if (
+        msg.includes("NotFoundError") ||
+        msg.includes("requested device")
+      ) {
+        setCameraError("Kamera tidak terdeteksi pada perangkat ini.");
+      } else {
+        setCameraError(msg || "Gagal mengakses kamera.");
+      }
       setIsCameraActive(false);
+    } finally {
+      setIsStartingCamera(false);
     }
   };
 
@@ -206,15 +261,21 @@ export function FaceVerificationScanner() {
           </h2>
           <button
             type="button"
+            disabled={isStartingCamera}
             onClick={isCameraActive ? stopCamera : startCamera}
             className={cn(
-              "inline-flex min-h-[44px] items-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              "inline-flex min-h-[44px] items-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50",
               isCameraActive
                 ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
                 : "bg-primary text-primary-foreground hover:bg-primary-hover",
             )}
           >
-            {isCameraActive ? (
+            {isStartingCamera ? (
+              <>
+                <Loader2 className="size-4 animate-spin" aria-hidden="true" />{" "}
+                Menyiapkan Kamera...
+              </>
+            ) : isCameraActive ? (
               <>
                 <CameraOff className="size-4" aria-hidden="true" /> Matikan
                 Kamera
@@ -231,12 +292,12 @@ export function FaceVerificationScanner() {
         <div
           className={cn(
             "relative overflow-hidden rounded-lg border border-border bg-black/5 dark:bg-black/40 transition-all",
-            isCameraActive ? "min-h-[280px] p-2" : "hidden",
+            isCameraActive || isStartingCamera ? "min-h-[280px] p-2" : "hidden",
           )}
         >
           <div
             id="mrc-qr-reader"
-            className="w-full overflow-hidden rounded-md"
+            className="w-full overflow-hidden rounded-md [&_video]:w-full [&_video]:object-cover [&_video]:rounded-md"
           />
           <p className="mt-2 text-center text-xs text-muted-foreground">
             Arahkan kamera ke QR code yang tercetak di kokarde atau e-ticket
