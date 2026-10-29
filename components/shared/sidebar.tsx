@@ -26,6 +26,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   History,
+  ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
 import Image from "next/image";
@@ -47,6 +48,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useSidebar } from "@/components/shared/sidebar-provider";
+import { resolveEventAwareNavigationRole } from "@/lib/event-rbac";
 
 // ─────────────────────────────────────────────────────────────
 // Modul — tiap kelompok menu mewakili satu domain tanggung jawab nyata.
@@ -228,6 +230,20 @@ const allMenuItems = {
     module: "mrc" as ModuleKey,
     adminOnly: false,
   },
+  mrcPresensi: {
+    title: "Presensi & Kokarde",
+    href: "/manajemen-event/presensi",
+    icon: ClipboardCheck,
+    module: "mrc" as ModuleKey,
+    adminOnly: false,
+  },
+  mrcVerifikasi: {
+    title: "Verifikasi Lapangan",
+    href: "/manajemen-event/verifikasi",
+    icon: ShieldCheck,
+    module: "mrc" as ModuleKey,
+    adminOnly: false,
+  },
   mrcKategori: {
     title: "Kategori Lomba",
     href: "/manajemen-event/kategori",
@@ -291,12 +307,26 @@ const roleMenuKeys: Record<string, MenuKey[]> = {
     "dashboard",
     "mrcDashboard",
     "mrcPendaftaran",
+    "mrcPresensi",
+    "mrcVerifikasi",
     "mrcKategori",
     "mrcTimeline",
     "mrcPembayaran",
   ],
-  "panitia-verifikasi": ["dashboard", "mrcDashboard", "mrcPendaftaran"],
-  "panitia-pertandingan": ["dashboard", "mrcDashboard", "mrcPendaftaran"],
+  "panitia-verifikasi": [
+    "dashboard",
+    "mrcDashboard",
+    "mrcPendaftaran",
+    "mrcPresensi",
+    "mrcVerifikasi",
+  ],
+  "panitia-pertandingan": [
+    "dashboard",
+    "mrcDashboard",
+    "mrcPendaftaran",
+    "mrcPresensi",
+    "mrcVerifikasi",
+  ],
   "super-admin": [
     "dashboard",
     "manajemenStruktur",
@@ -317,6 +347,8 @@ const roleMenuKeys: Record<string, MenuKey[]> = {
     "pengaturanOr",
     "mrcDashboard",
     "mrcPendaftaran",
+    "mrcPresensi",
+    "mrcVerifikasi",
     "mrcKategori",
     "mrcTimeline",
     "mrcPembayaran",
@@ -351,6 +383,8 @@ const menuOrderWithinModule: Record<ModuleKey, MenuKey[]> = {
   mrc: [
     "mrcDashboard",
     "mrcPendaftaran",
+    "mrcPresensi",
+    "mrcVerifikasi",
     "mrcKategori",
     "mrcTimeline",
     "mrcPembayaran",
@@ -851,8 +885,9 @@ export function Sidebar({
   const { collapsed, toggleCollapsed, mobileOpen, setMobileOpen } =
     useSidebar();
 
-  const role = user?.role;
-  const isOnboarded = user?.is_onboarded;
+  const role =
+    resolveEventAwareNavigationRole(user?.role, user?.role_event) ?? undefined;
+  const isOnboarded = user?.role_event ? true : user?.is_onboarded;
 
   const visibleKeys = useMemo(
     () => resolveVisibleKeys(role, isOnboarded),
