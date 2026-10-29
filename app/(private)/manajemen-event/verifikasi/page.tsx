@@ -27,7 +27,8 @@ export default async function FaceVerificationPage() {
   if (
     !isSuperAdmin &&
     roleEvent !== "panitia-verifikasi" &&
-    roleEvent !== "panitia-pendaftaran"
+    roleEvent !== "panitia-pendaftaran" &&
+    roleEvent !== "panitia-pertandingan"
   ) {
     return (
       <main className="mx-auto max-w-md px-4 py-12 sm:px-6">
@@ -39,11 +40,7 @@ export default async function FaceVerificationPage() {
             Akses Terbatas
           </h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Hanya Panitia Verifikasi (
-            <code className="font-mono text-xs font-semibold text-foreground">
-              panitia-verifikasi
-            </code>
-            ) atau Super Admin yang dapat mengakses halaman ini.
+            Hanya Panitia MRC atau Super Admin yang dapat mengakses halaman ini.
           </p>
         </div>
       </main>

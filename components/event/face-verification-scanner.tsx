@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
+import { Html5Qrcode } from "html5-qrcode";
 import {
   getMemberByQrTokenAction,
   submitFaceVerificationAction,
@@ -13,11 +14,14 @@ import type {
 } from "@/types/event-registration";
 import {
   QrCode,
+  Camera,
+  CameraOff,
   AlertTriangle,
   ShieldAlert,
   Loader2,
   UserCheck,
   UserX,
+  RotateCw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +33,12 @@ export function FaceVerificationScanner() {
     (EventTeamMember & { registration: EventRegistration }) | null
   >(null);
 
+  // Scanner state
+  const [isCameraActive, setIsCameraActive] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const lastScannedRef = useRef<{ token: string; time: number } | null>(null);
+
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
@@ -39,22 +49,105 @@ export function FaceVerificationScanner() {
   const [warningNumber, setWarningNumber] = useState(1);
   const [violationDesc, setViolationDesc] = useState("");
 
-  const handleScanLookup = async (token: string) => {
-    if (!token.trim()) return;
-    setIsLoading(true);
+  const stopCamera = useCallback(async () => {
+    if (scannerRef.current) {
+      try {
+        if (scannerRef.current.isScanning) {
+          await scannerRef.current.stop();
+        }
+        await scannerRef.current.clear();
+      } catch (err) {
+        console.warn("Gagal menghentikan scanner kamera:", err);
+      }
+      scannerRef.current = null;
+    }
+    const el = document.getElementById("mrc-qr-reader");
+    if (el) el.innerHTML = "";
+    setIsCameraActive(false);
+  }, []);
+
+  const handleScanLookup = useCallback(
+    async (token: string) => {
+      const cleanToken = token.trim();
+      if (!cleanToken) return;
+
+      setIsLoading(true);
+      setErrorMsg(null);
+      setSuccessMsg(null);
+      setMemberData(null);
+
+      const res = await getMemberByQrTokenAction(cleanToken);
+      setIsLoading(false);
+
+      if (res.success) {
+        setMemberData(res.data);
+        // shortcut: auto-stop camera on successful scan to save device battery & focus user on verification
+        void stopCamera();
+      } else {
+        setErrorMsg(res.error || "Anggota tidak ditemukan.");
+      }
+    },
+    [stopCamera],
+  );
+
+  const startCamera = async () => {
+    setCameraError(null);
     setErrorMsg(null);
-    setSuccessMsg(null);
-    setMemberData(null);
+    await stopCamera();
 
-    const res = await getMemberByQrTokenAction(token.trim());
-    setIsLoading(false);
+    const element = document.getElementById("mrc-qr-reader");
+    if (!element) return;
 
-    if (res.success) {
-      setMemberData(res.data);
-    } else {
-      setErrorMsg(res.error || "Anggota tidak ditemukan.");
+    try {
+      const scanner = new Html5Qrcode("mrc-qr-reader");
+      scannerRef.current = scanner;
+
+      await scanner.start(
+        { facingMode: "environment" },
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        (decodedText) => {
+          const now = Date.now();
+          if (
+            lastScannedRef.current &&
+            lastScannedRef.current.token === decodedText &&
+            now - lastScannedRef.current.time < 3000
+          ) {
+            return;
+          }
+          lastScannedRef.current = { token: decodedText, time: now };
+          setQrTokenInput(decodedText);
+          handleScanLookup(decodedText);
+        },
+        () => {
+          // ignore frame scan misses
+        },
+      );
+
+      setIsCameraActive(true);
+    } catch (err) {
+      setCameraError(
+        err instanceof Error
+          ? err.message
+          : "Gagal mengakses kamera. Periksa izin perangkat Anda.",
+      );
+      setIsCameraActive(false);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (scannerRef.current) {
+        try {
+          if (scannerRef.current.isScanning) {
+            scannerRef.current.stop();
+          }
+          scannerRef.current.clear();
+        } catch (e) {
+          console.warn("Cleanup scanner error:", e);
+        }
+      }
+    };
+  }, []);
 
   const handleVerifyResult = async (result: "verified" | "mismatch") => {
     if (!memberData) return;
@@ -104,34 +197,87 @@ export function FaceVerificationScanner() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      {/* Search/Scan QR Input */}
+      {/* Scanner & Manual Input */}
       <div className="bg-card p-5 sm:p-6 rounded-lg border border-border shadow-xs space-y-4">
-        <h2 className="font-display text-base font-semibold text-foreground flex items-center gap-2">
-          <QrCode className="size-5 text-primary" aria-hidden="true" /> Scan /
-          Input Token QR Kokarde Anggota
-        </h2>
-        <div className="flex flex-col sm:flex-row gap-2">
-          <input
-            type="text"
-            placeholder="Paste member_qr_token (UUID)..."
-            value={qrTokenInput}
-            onChange={(e) => setQrTokenInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleScanLookup(qrTokenInput);
-            }}
-            className="flex-1 min-h-[44px] px-3 py-2 border border-input bg-background rounded-md text-xs font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-          />
+        <div className="flex items-center justify-between">
+          <h2 className="font-display text-base font-semibold text-foreground flex items-center gap-2">
+            <QrCode className="size-5 text-primary" aria-hidden="true" /> Scan /
+            Cari QR Kokarde Peserta
+          </h2>
           <button
-            onClick={() => handleScanLookup(qrTokenInput)}
-            disabled={isLoading}
-            className="inline-flex min-h-[44px] items-center justify-center px-4 py-2 bg-primary hover:bg-primary-hover text-primary-foreground rounded-md text-xs font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            type="button"
+            onClick={isCameraActive ? stopCamera : startCamera}
+            className={cn(
+              "inline-flex min-h-[44px] items-center gap-1.5 px-3.5 py-2 rounded-md text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              isCameraActive
+                ? "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                : "bg-primary text-primary-foreground hover:bg-primary-hover",
+            )}
           >
-            {isLoading ? (
-              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+            {isCameraActive ? (
+              <>
+                <CameraOff className="size-4" aria-hidden="true" /> Matikan
+                Kamera
+              </>
             ) : (
-              "Cek QR"
+              <>
+                <Camera className="size-4" aria-hidden="true" /> Buka Kamera
+              </>
             )}
           </button>
+        </div>
+
+        {/* Viewfinder Kamera */}
+        <div
+          className={cn(
+            "relative overflow-hidden rounded-lg border border-border bg-black/5 dark:bg-black/40 transition-all",
+            isCameraActive ? "min-h-[280px] p-2" : "hidden",
+          )}
+        >
+          <div
+            id="mrc-qr-reader"
+            className="w-full overflow-hidden rounded-md"
+          />
+          <p className="mt-2 text-center text-xs text-muted-foreground">
+            Arahkan kamera ke QR code yang tercetak di kokarde atau e-ticket
+            peserta.
+          </p>
+        </div>
+
+        {cameraError && (
+          <div className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-xs text-destructive">
+            {cameraError}
+          </div>
+        )}
+
+        {/* Input manual sebagai alternatif */}
+        <div className="space-y-1">
+          <label className="text-xs text-muted-foreground font-medium">
+            Atau masukkan Token QR secara manual:
+          </label>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <input
+              type="text"
+              placeholder="Paste member_qr_token (UUID)..."
+              value={qrTokenInput}
+              onChange={(e) => setQrTokenInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleScanLookup(qrTokenInput);
+              }}
+              className="flex-1 min-h-[44px] px-3 py-2 border border-input bg-background rounded-md text-xs font-mono text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            />
+            <button
+              onClick={() => handleScanLookup(qrTokenInput)}
+              disabled={isLoading}
+              className="inline-flex min-h-[44px] items-center justify-center px-4 py-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-md text-xs font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {isLoading ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+              ) : (
+                "Cek QR"
+              )}
+            </button>
+          </div>
         </div>
 
         {errorMsg && (
@@ -228,7 +374,7 @@ export function FaceVerificationScanner() {
             </div>
           </div>
 
-          {/* Action Buttons (Min 44px Touch Targets) */}
+          {/* Action Buttons */}
           <div className="border-t border-border pt-4 flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2">
               <button
@@ -236,26 +382,43 @@ export function FaceVerificationScanner() {
                 disabled={isSubmitting}
                 className="inline-flex min-h-[44px] items-center gap-1.5 px-4 py-2.5 bg-success hover:bg-success/90 text-white rounded-md text-xs font-semibold shadow-xs transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <UserCheck className="size-4" aria-hidden="true" /> Wajah Cocok
-                (Verified)
+                <UserCheck className="size-4" aria-hidden="true" /> Peserta Asli
+                (Cocok)
               </button>
               <button
                 onClick={() => handleVerifyResult("mismatch")}
                 disabled={isSubmitting}
                 className="inline-flex min-h-[44px] items-center gap-1.5 px-4 py-2.5 bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-md text-xs font-semibold shadow-xs transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <UserX className="size-4" aria-hidden="true" /> Wajah Beda
-                (Mismatch)
+                <UserX className="size-4" aria-hidden="true" /> Tidak Cocok
+                (Penyusup/Joki)
               </button>
             </div>
 
-            <button
-              onClick={() => setShowViolationModal(true)}
-              className="inline-flex min-h-[44px] items-center gap-1.5 px-3 py-2 bg-warning-soft text-warning border border-warning/30 hover:bg-warning/20 rounded-md text-xs font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <ShieldAlert className="size-4 text-warning" aria-hidden="true" />{" "}
-              Catat Pelanggaran Tim
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setMemberData(null);
+                  setQrTokenInput("");
+                  startCamera();
+                }}
+                className="inline-flex min-h-[44px] items-center gap-1.5 px-3 py-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-md text-xs font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <RotateCw className="size-4" aria-hidden="true" /> Scan Peserta
+                Lain
+              </button>
+              <button
+                onClick={() => setShowViolationModal(true)}
+                className="inline-flex min-h-[44px] items-center gap-1.5 px-3 py-2 bg-warning-soft text-warning border border-warning/30 hover:bg-warning/20 rounded-md text-xs font-semibold transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
+                <ShieldAlert
+                  className="size-4 text-warning"
+                  aria-hidden="true"
+                />{" "}
+                Catat Pelanggaran Tim
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -318,22 +481,22 @@ export function FaceVerificationScanner() {
                   onChange={(e) => setViolationDesc(e.target.value)}
                   className="w-full px-3 py-2 border border-input bg-background rounded-md text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                   rows={3}
-                  placeholder="Tuliskan alasan / bukti singkat..."
+                  placeholder="Jelaskan detail ketidakcocokan wajah / dokumen..."
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-border">
+              <div className="flex justify-end gap-2 pt-2 border-t border-border">
                 <button
                   type="button"
                   onClick={() => setShowViolationModal(false)}
-                  className="inline-flex min-h-[44px] items-center px-4 py-2 font-semibold text-muted-foreground hover:bg-secondary rounded-md transition-colors"
+                  className="px-4 py-2 border border-input rounded-md text-foreground hover:bg-muted font-medium min-h-[44px]"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="inline-flex min-h-[44px] items-center px-4 py-2 bg-warning text-warning-foreground font-semibold rounded-md hover:bg-warning/90 transition-colors"
+                  className="px-4 py-2 bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-md font-semibold min-h-[44px]"
                 >
                   {isSubmitting ? "Menyimpan..." : "Simpan Pelanggaran"}
                 </button>

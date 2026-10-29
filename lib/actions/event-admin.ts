@@ -1491,16 +1491,23 @@ export async function reviewRegistrationChangeRequestAction(
 
   if (action === "approve") {
     try {
-      await untypedRpc<string>(
-        adminSupabase,
-        "apply_registration_change_request",
-        { p_request_id: request_id, p_reviewer_id: check.user.id },
-      );
+      const authenticatedSupabase = await createClient();
+      const response = await untypedRpc<{
+        data: string | null;
+        error: { message: string } | null;
+      }>(authenticatedSupabase, "apply_registration_change_request", {
+        p_request_id: request_id,
+        p_reviewer_id: check.user.id,
+      });
+      if (response.error) throw new Error(response.error.message);
     } catch (err) {
       console.error("apply_registration_change_request error:", err);
+      const message = err instanceof Error ? err.message : "";
       return {
         success: false,
-        error: "Gagal menerapkan perubahan data pendaftaran.",
+        error: message.includes("registration_checkin_already_started")
+          ? "Perubahan anggota ditolak karena daftar ulang tim sudah dimulai."
+          : "Gagal menerapkan perubahan data pendaftaran.",
       };
     }
   } else {

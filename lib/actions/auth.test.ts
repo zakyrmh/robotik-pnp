@@ -174,6 +174,7 @@ import {
   forgotPassword,
   updatePassword,
   confirmRecoveryAction,
+  getCurrentUser,
 } from "@/lib/actions/auth";
 
 // =======================================================================
@@ -771,5 +772,39 @@ describe("D. Server Action: confirmRecoveryAction()", () => {
     // Pesan generik: jangan bocorkan detail internal Supabase
     expect(res?.error).not.toContain("Token has expired");
     expect(mockRedirectCalled).toBe(false);
+  });
+});
+
+// =======================================================================
+// E. PROFIL SESI UNTUK SIDEBAR & RBAC EVENT
+// =======================================================================
+describe("E. Server Action: getCurrentUser()", () => {
+  it("meneruskan role_event agar sidebar menampilkan menu MRC", async () => {
+    mockGetUserResult = {
+      data: {
+        user: {
+          id: "user-panitia",
+          email: "panitia@example.com",
+          user_metadata: {},
+        },
+      },
+      error: null,
+    };
+    mockProfileResult = {
+      data: {
+        full_name: "Panitia MRC",
+        role: "anggota",
+        role_event: "panitia-verifikasi",
+        avatar_url: null,
+        nim: "2301091001",
+        is_onboarded: true,
+      },
+      error: null,
+    };
+
+    await expect(getCurrentUser()).resolves.toMatchObject({
+      role: "anggota",
+      role_event: "panitia-verifikasi",
+    });
   });
 });
