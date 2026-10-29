@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [0.19.0](https://github.com/zakyrmh/robotik-pnp/compare/v0.18.1...v0.19.0) (2026-10-29)
+
+### ✨ Features
+
+- **mrc:** sistem meja daftar ulang dan penyerahan kokarde MRC (`/manajemen-event/presensi`) mencakup pencarian cepat, kartu metrik kehadiran, penyerahan kokarde perwakilan/mandiri, koreksi, dan ekspor CSV.
+- **mrc:** scanner kamera fisik QR kokarde untuk verifikasi keaslian peserta di venue lapangan (`/manajemen-event/verifikasi`) berbasis `html5-qrcode` dengan mode kamera belakang, perbandingan pas foto, dan pencatatan pelanggaran joki/penyusup.
+- **mrc:** integrasi izin navigasi sidebar berbasis `role_event` untuk `panitia-pendaftaran`, `panitia-verifikasi`, dan `panitia-pertandingan`.
+
+### 🗄️ Database
+
+- **migrations:** penambahan tabel `event_member_checkins`, kolom `advisor_badge_*` pada `event_registrations`, serta proteksi integritas transaksi daftar ulang melalui migrasi `20261027000000_add_mrc_event_checkins.sql`.
+
 ## [0.18.1](https://github.com/zakyrmh/robotik-pnp/compare/v0.18.0...v0.18.1) (2026-10-18)
 
 ### 🐛 Bug Fixes
